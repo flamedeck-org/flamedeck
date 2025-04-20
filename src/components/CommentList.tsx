@@ -5,34 +5,32 @@ import CommentItem from './CommentItem';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 
+// Type for structured comment including potentially nested replies
+type StructuredComment = TraceCommentWithAuthor & { replies: StructuredComment[] };
+
 interface CommentListProps {
   traceId: string;
 }
 
-// Helper to structure comments into threads
-const structureComments = (comments: TraceCommentWithAuthor[]) => {
-  const commentMap: { [key: string]: TraceCommentWithAuthor & { replies: TraceCommentWithAuthor[] } } = {};
-  const rootComments: (TraceCommentWithAuthor & { replies: TraceCommentWithAuthor[] })[] = [];
+const structureComments = (comments: TraceCommentWithAuthor[]): StructuredComment[] => {
+  const commentMap: { [key: string]: StructuredComment } = {};
+  const rootComments: StructuredComment[] = [];
 
-  // Initialize map and add replies array
   comments.forEach(comment => {
     commentMap[comment.id] = { ...comment, replies: [] };
   });
 
-  // Populate replies and identify root comments
   comments.forEach(comment => {
     const mappedComment = commentMap[comment.id];
     if (comment.parent_comment_id && commentMap[comment.parent_comment_id]) {
+      // Ensure parent exists before pushing
       commentMap[comment.parent_comment_id].replies.push(mappedComment);
     } else {
       rootComments.push(mappedComment);
     }
   });
 
-  // Sort root comments and replies by creation date (optional, API already sorts)
-  // rootComments.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  // Object.values(commentMap).forEach(c => c.replies.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
-
+  // Optional: Sorting can happen here if needed, API sorts initially
   return rootComments;
 };
 
@@ -76,23 +74,17 @@ const CommentList: React.FC<CommentListProps> = ({ traceId }) => {
     return <p className="text-muted-foreground py-4">No comments yet.</p>;
   }
 
-  // Structure comments into threads
   const threadedComments = structureComments(comments);
 
   return (
-    <div className="space-y-4 divide-y divide-border">
+    <div className="space-y-0 pt-4">
       {threadedComments.map(comment => (
-        <div key={comment.id}>
-          <CommentItem comment={comment} traceId={traceId} />
-          {/* Render replies nested */}
-          {comment.replies.length > 0 && (
-            <div className="ml-8 pl-4 border-l border-border space-y-4">
-              {comment.replies.map(reply => (
-                <CommentItem key={reply.id} comment={reply} traceId={traceId} />
-              ))}
-            </div>
-          )}
-        </div>
+        <CommentItem
+          key={comment.id}
+          comment={comment}
+          traceId={traceId}
+          currentDepth={0}
+        />
       ))}
     </div>
   );

@@ -220,6 +220,40 @@ export const traceApi = {
       console.error('Error creating trace comment:', error);
       return { data: null, error: (error as Error).message };
     }
+  },
+
+  // Fetch the raw trace data blob
+  getTraceDataBlob: async (id: string): Promise<{ data: string | ArrayBuffer; fileName: string }> => {
+    // This assumes your backend endpoint `/api/traces/:id/data` handles authentication
+    // and streams the blob data correctly.
+    console.log(`Fetching trace data blob for ${id}...`);
+    const response = await fetch(`/api/traces/${id}/data`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch trace data: ${response.statusText}`);
+    }
+
+    // Attempt to get a filename from headers or URL
+    const contentDisposition = response.headers.get('content-disposition');
+    let suggestedFilename = `trace-${id.substring(0, 7)}`;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+)"?/i);
+      if (match && match[1]) {
+        suggestedFilename = match[1];
+      }
+    }
+
+    // Determine if data is JSON (text) or binary (ArrayBuffer)
+    const contentType = response.headers.get("content-type");
+    let data: string | ArrayBuffer;
+    if (contentType?.includes("application/json")) {
+      data = await response.text();
+    } else {
+      // Assume binary format like pprof or other non-JSON formats
+      data = await response.arrayBuffer();
+    }
+
+    return { data, fileName: suggestedFilename };
   }
 };
 
