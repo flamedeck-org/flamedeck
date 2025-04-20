@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import {
@@ -15,12 +15,27 @@ import { Link } from "react-router-dom";
 import { formatBytes, formatDate } from "@/lib/utils";
 import { traceApi } from "@/lib/api";
 import { TraceMetadata } from "@/types";
-import { FileJson } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileJson, UploadCloud, Trash2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import PageLayout from "./PageLayout";
+import PageHeader from "./PageHeader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const TraceList = () => {
   const [page, setPage] = useState(0);
   const pageSize = 10;
+  const queryClient = useQueryClient();
 
   const { data: traces, isLoading, error } = useQuery({
     queryKey: ["traces", page],
@@ -38,21 +53,46 @@ const TraceList = () => {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (traceId: string) => traceApi.deleteTrace(traceId),
+    onSuccess: () => {
+      toast({
+        title: "Trace deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['traces'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting trace",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const uploadAction = (
+    <Link to="/upload">
+      <Button size="sm">
+        <UploadCloud className="mr-2 h-4 w-4" /> Upload New Trace
+      </Button>
+    </Link>
+  );
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Performance Traces</h2>
-          <div className="animate-pulse bg-muted h-10 w-32 rounded"></div>
-        </div>
+      <PageLayout>
+        <PageHeader 
+          title={<Skeleton className="h-8 w-48" />} 
+          actions={<Skeleton className="h-9 w-36 rounded-md" />} 
+        />
         <div className="border rounded-lg p-4">
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse bg-muted h-12 rounded"></div>
+              <Skeleton key={i} className="animate-pulse bg-muted h-12 rounded" />
             ))}
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -69,14 +109,8 @@ const TraceList = () => {
 
   if (!traces || traces.length === 0) {
     return (
-      <div className="space-y-6 w-full">
-        <div className="flex justify-between items-center pb-4 mb-6 border-b">
-          <h2 className="text-2xl font-bold">Performance Traces</h2>
-          <Link to="/upload">
-            <Button>Upload New Trace</Button>
-          </Link>
-        </div>
-        
+      <PageLayout>
+        <PageHeader title="Performance Traces" actions={uploadAction} />
         <Card>
           <CardContent className="pt-12 pb-12 text-center">
             <FileJson className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
@@ -85,23 +119,17 @@ const TraceList = () => {
               Upload your first performance trace to get started
             </p>
             <Link to="/upload">
-              <Button>Upload Trace</Button>
+              <Button size="sm"><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
             </Link>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="space-y-6 w-full">
-      <div className="flex justify-between items-center pb-4 mb-6 border-b">
-        <h2 className="text-2xl font-bold">Performance Traces</h2>
-        <Link to="/upload">
-          <Button>Upload New Trace</Button>
-        </Link>
-      </div>
-
+    <PageLayout>
+      <PageHeader title="Performance Traces" actions={uploadAction} />
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -127,12 +155,39 @@ const TraceList = () => {
                   <TableCell className="py-3">{trace.device_model || "N/A"}</TableCell>
                   <TableCell className="py-3">{formatDuration(trace.duration_ms)}</TableCell>
                   <TableCell className="py-3">{formatDate(trace.uploaded_at)}</TableCell>
-                  <TableCell className="text-right pr-6 py-3">
+                  <TableCell className="text-right pr-6 py-3 space-x-2 flex items-center justify-end">
                     <Link to={`/traces/${trace.id}`}>
                       <Button variant="outline" size="sm">
                         View
                       </Button>
                     </Link>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the trace{' '}
+                            <strong>{trace.scenario || `ID: ${trace.id.substring(0, 7)}`}</strong>{' '}
+                            and all associated data.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteMutation.mutate(trace.id)}
+                            disabled={deleteMutation.isPending}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -173,7 +228,7 @@ const TraceList = () => {
           </Pagination>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 };
 
