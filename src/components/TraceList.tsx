@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { formatBytes, formatDate } from "@/lib/utils";
 import { traceApi } from "@/lib/api";
 import { TraceMetadata } from "@/types";
@@ -36,6 +36,7 @@ const TraceList = () => {
   const [page, setPage] = useState(0);
   const pageSize = 10;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: traces, isLoading, error } = useQuery({
     queryKey: ["traces", page],
@@ -146,7 +147,11 @@ const TraceList = () => {
             </TableHeader>
             <TableBody>
               {traces.map((trace: TraceMetadata) => (
-                <TableRow key={trace.id}>
+                <TableRow 
+                  key={trace.id} 
+                  onClick={() => navigate(`/traces/${trace.id}`)} 
+                  className="cursor-pointer hover:bg-muted/50"
+                >
                   <TableCell className="font-medium pl-6 py-3">{trace.scenario || "N/A"}</TableCell>
                   <TableCell className="py-3">{trace.branch || "N/A"}</TableCell>
                   <TableCell className="font-mono text-xs py-3">
@@ -155,39 +160,36 @@ const TraceList = () => {
                   <TableCell className="py-3">{trace.device_model || "N/A"}</TableCell>
                   <TableCell className="py-3">{formatDuration(trace.duration_ms)}</TableCell>
                   <TableCell className="py-3">{formatDate(trace.uploaded_at)}</TableCell>
-                  <TableCell className="text-right pr-6 py-3 space-x-2 flex items-center justify-end">
-                    <Link to={`/traces/${trace.id}`}>
-                      <Button variant="outline" size="sm">
-                        View
-                      </Button>
-                    </Link>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the trace{' '}
-                            <strong>{trace.scenario || `ID: ${trace.id.substring(0, 7)}`}</strong>{' '}
-                            and all associated data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteMutation.mutate(trace.id)}
-                            disabled={deleteMutation.isPending}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                  <TableCell className="text-right pr-6 py-3">
+                    <div onClick={(e) => e.stopPropagation()} className="inline-block">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the trace{' '}
+                              <strong>{trace.scenario || `ID: ${trace.id.substring(0, 7)}`}</strong>{' '}
+                              and all associated data.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteMutation.mutate(trace.id)}
+                              disabled={deleteMutation.isPending}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
