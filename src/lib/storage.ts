@@ -78,3 +78,28 @@ export const getTraceFile = async (path: string): Promise<any> => {
         throw error;
     }
 };
+
+// List all traces for the current user
+export const listUserTraces = async () => {
+    try {
+        const session = await supabase.auth.getSession();
+        if (!session.data.session) {
+            throw new Error('Authentication required to list traces');
+        }
+        
+        const { data, error } = await supabase
+            .from('traces')
+            .select('*')
+            .order('uploaded_at', { ascending: false });
+        
+        if (error) {
+            console.error("Error listing traces:", error);
+            throw new Error(`Failed to list traces: ${error.message}`);
+        }
+        
+        return data;
+    } catch (error) {
+        console.error("Error in listUserTraces:", error);
+        throw error;
+    }
+};
