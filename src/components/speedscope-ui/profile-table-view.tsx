@@ -23,17 +23,18 @@ interface HBarProps {
 }
 
 function HBarDisplay(props: HBarProps) {
-  const hBarBgColor = 'rgba(128, 128, 128, 0.2)'
-  const hBarFillColor = 'gray'
+  // Use a low-contrast gray for the background track
+  const hBarBgColorClass = "bg-gray-200 dark:bg-gray-800"; // Low contrast track
+  // Keep the solid blue fill for debugging visibility
+  const hBarFillColorClass = "bg-blue-500";
 
   return (
     <div
-      className="absolute bottom-0.5 h-0.5 right-[30px] w-[calc(100%-60px)]"
-      style={{ backgroundColor: hBarBgColor }}
+      className={`absolute bottom-0.5 h-0.5 right-[30px] w-[calc(100%-60px)] ${hBarBgColorClass}`}
     >
       <div
-        className="absolute h-full right-0"
-        style={{ width: `${props.perc}%`, backgroundColor: hBarFillColor }}
+        className={`absolute h-full right-0 ${hBarFillColorClass}`}
+        style={{ width: `${props.perc}%` }}
       />
     </div>
   )
@@ -44,24 +45,23 @@ interface SortIconProps {
 }
 
 function SortIcon(props: SortIconProps) {
-  const primaryColor = 'black'
-  const secondaryColor = 'gray'
+  const activeClass = "text-text dark:text-dark-text"
+  const inactiveClass = "text-text-secondary dark:text-dark-text-secondary"
 
   const { activeDirection } = props
-  const upFill = activeDirection === SortDirection.ASCENDING ? primaryColor : secondaryColor
-  const downFill = activeDirection === SortDirection.DESCENDING ? primaryColor : secondaryColor
+  const upColorClass = activeDirection === SortDirection.ASCENDING ? activeClass : inactiveClass
+  const downColorClass = activeDirection === SortDirection.DESCENDING ? activeClass : inactiveClass
 
   return (
     <svg
       width="8"
       height="10"
       viewBox="0 0 8 10"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="relative top-px mr-1.5 inline-block"
+      className={`relative top-px mr-1.5 inline-block ${upColorClass}`}
     >
-      <path d="M0 4L4 0L8 4H0Z" fill={upFill} />
-      <path d="M0 4L4 0L8 4H0Z" transform="translate(0 10) scale(1 -1)" fill={downFill} />
+      <path d="M0 4L4 0L8 4H0Z" fill="currentColor" />
+      <path d="M0 4L4 0L8 4H0Z" transform="translate(0 10) scale(1 -1)" fill="currentColor" className={downColorClass} />
     </svg>
   )
 }
@@ -109,19 +109,25 @@ const ProfileTableRowView = ({
 
   const selected = frame === selectedFrame
 
-  let rowClasses = ['h-[30px]']
+  let rowClasses = [
+    "h-[30px]",
+    "text-text dark:text-dark-text",
+  ];
   if (index % 2 === 0) {
-    rowClasses.push('bg-gray-100')
+    rowClasses.push("bg-background-secondary dark:bg-dark-background-secondary");
   } else {
-    rowClasses.push('bg-white')
+    rowClasses.push("bg-background dark:bg-dark-background");
   }
   if (selected) {
-    rowClasses = ['h-[30px]', 'bg-blue-500 text-white']
+    rowClasses = ["h-[30px]", "bg-selection text-text-alt dark:bg-dark-selection dark:text-dark-text-alt"];
   }
 
-  const matchedBaseClass = 'border-b-2 border-black'
-  const matchedSelectedClass = 'border-b-2 border-white'
-  const matchedClassName = selected ? matchedSelectedClass : matchedBaseClass
+  const matchedBaseClass = "border-b-2 border-text dark:border-dark-text";
+  const matchedSelectedClass = "border-b-2 border-text-alt dark:border-dark-text-alt";
+  const matchedClassName = selected ? matchedSelectedClass : matchedBaseClass;
+
+  const numericCellBaseClass = "relative text-ellipsis overflow-hidden whitespace-nowrap text-right pr-[30px] w-[180px] min-w-[180px] align-top pt-1";
+  const textCellBaseClass = "text-ellipsis overflow-hidden whitespace-nowrap w-full max-w-0 align-top pt-1 pl-1";
 
   return (
     <tr
@@ -129,15 +135,15 @@ const ProfileTableRowView = ({
       onClick={() => setSelectedFrame(frame)}
       className={rowClasses.join(' ')}
     >
-      <td className="relative text-ellipsis overflow-hidden whitespace-nowrap text-right pr-[30px] w-[180px] min-w-[180px]">
+      <td className={numericCellBaseClass}>
         {profile.formatValue(totalWeight)} ({formatPercent(totalPerc)})
         <HBarDisplay perc={totalPerc} />
       </td>
-      <td className="relative text-ellipsis overflow-hidden whitespace-nowrap text-right pr-[30px] w-[180px] min-w-[180px]">
+      <td className={numericCellBaseClass}>
         {profile.formatValue(selfWeight)} ({formatPercent(selfPerc)})
         <HBarDisplay perc={selfPerc} />
       </td>
-      <td title={frame.file} className="text-ellipsis overflow-hidden whitespace-nowrap w-full max-w-0">
+      <td title={frame.file} className={textCellBaseClass}>
         <ColorChit color={getCSSColorForFrame(frame)} />
         {matchedRanges
           ? highlightRanges(
@@ -230,7 +236,7 @@ export const ProfileTableView = memo(
           )
         }
 
-        const emptyStateClass = 'text-center font-bold p-2'
+        const emptyStateClass = "p-2 text-center font-bold text-text dark:text-dark-text"
 
         if (rows.length === 0) {
           if (searchIsActive) {
@@ -252,7 +258,7 @@ export const ProfileTableView = memo(
           }
         }
 
-        return <tbody className="w-full text-xs bg-white">{rows}</tbody>
+        return <tbody className="w-full text-xs bg-background dark:bg-dark-background">{rows}</tbody>
       },
       [
         sandwichContext,
@@ -277,15 +283,15 @@ export const ProfileTableView = memo(
     const onSelfClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SELF, ev), [onSortClick])
     const onSymbolNameClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SYMBOL_NAME, ev), [onSortClick])
 
-    const numericCellClass = 'relative text-ellipsis overflow-hidden whitespace-nowrap text-right pr-[30px] w-[180px] min-w-[180px] p-1'
-    const textCellClass = 'text-ellipsis overflow-hidden whitespace-nowrap w-full max-w-0 p-1'
+    const numericHeaderCellClass = "relative p-1 pr-[30px] w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text"
+    const textHeaderCellClass = "p-1 w-full max-w-0 text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text"
 
     return (
-      <div className="flex flex-col bg-white h-full">
-        <table className="w-full text-xs table-fixed">
-          <thead className="border-b-2 border-gray-200 text-left text-black select-none">
+      <div className="flex h-full flex-col bg-background dark:bg-dark-background">
+        <table className="w-full table-fixed text-xs">
+          <thead className="select-none border-b-2 border-background-secondary dark:border-dark-background-secondary text-left">
             <tr>
-              <th className={numericCellClass} onClick={onTotalClick}>
+              <th className={numericHeaderCellClass} onClick={onTotalClick}>
                 <SortIcon
                   activeDirection={
                     sortMethod.field === SortField.TOTAL ? sortMethod.direction : null
@@ -293,7 +299,7 @@ export const ProfileTableView = memo(
                 />
                 Total
               </th>
-              <th className={numericCellClass} onClick={onSelfClick}>
+              <th className={numericHeaderCellClass} onClick={onSelfClick}>
                 <SortIcon
                   activeDirection={
                     sortMethod.field === SortField.SELF ? sortMethod.direction : null
@@ -301,7 +307,7 @@ export const ProfileTableView = memo(
                 />
                 Self
               </th>
-              <th className={textCellClass} onClick={onSymbolNameClick}>
+              <th className={textHeaderCellClass} onClick={onSymbolNameClick}>
                 <SortIcon
                   activeDirection={
                     sortMethod.field === SortField.SYMBOL_NAME ? sortMethod.direction : null
@@ -315,7 +321,7 @@ export const ProfileTableView = memo(
         <ScrollableListView
           axis={'y'}
           items={listItems}
-          className="overflow-y-auto overflow-x-hidden flex-grow"
+          className="flex-grow overflow-y-auto overflow-x-hidden bg-background dark:bg-dark-background"
           renderItems={renderItems}
           initialIndexInView={
             selectedFrame == null ? null : sandwichContext?.getIndexForFrame(selectedFrame)
