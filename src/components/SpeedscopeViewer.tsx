@@ -1,23 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   importProfilesFromArrayBuffer,
   importProfileGroupFromText 
-} from '@/lib/speedscope-import'; // Import the main entry points
-import { ProfileGroup } from '@/lib/speedscope-import/profile'; // Import the type
+} from '@/lib/speedscope-import';
+import { profileGroupAtom, glCanvasAtom } from '@/lib/speedscope-core/app-state';
+import { ActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state';
+import { useAtom } from '@/lib/speedscope-core/atom';
+import { SandwichViewContainer } from './speedscope-ui/sandwich-view';
+import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
 
 interface SpeedscopeViewerProps {
-  traceData: string | ArrayBuffer; // Or the specific type expected after fetching
+  traceData: string | ArrayBuffer; 
   fileName: string;
 }
 
 const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName }) => {
-  const [profileGroup, setProfileGroup] = useState<ProfileGroup | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const profileGroup = useAtom(profileGroupAtom);
+  const glCanvas = useAtom(glCanvasAtom);
 
   useEffect(() => {
+    let isCancelled = false;
     if (traceData && fileName) {
-      setProfileGroup(null);
       setError(null);
+      setIsLoading(true);
+      profileGroupAtom.set(null);
 
       const importerPromise = 
         traceData instanceof ArrayBuffer
@@ -26,19 +35,50 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
 
       importerPromise
         .then(loadedProfileGroup => {
+          if (isCancelled) return;
           if (loadedProfileGroup && loadedProfileGroup.profiles.length > 0) {
-             setProfileGroup(loadedProfileGroup);
+            profileGroupAtom.setProfileGroup(loadedProfileGroup);
+            setError(null);
           } else if (loadedProfileGroup) {
              setError('Could not parse the profile file. The format might be unsupported or the file corrupted.');
+             profileGroupAtom.set(null); 
+          } else {
+            setError('Import process failed unexpectedly.');
+            profileGroupAtom.set(null); 
           }
         })
         .catch(err => {
+          if (isCancelled) return;
           setError(`An error occurred during import: ${err instanceof Error ? err.message : String(err)}`);
+          profileGroupAtom.set(null);
+        })
+        .finally(() => {
+          if (isCancelled) return;
+          setIsLoading(false);
         });
     }
+    return () => {
+      isCancelled = true;
+    };
   }, [traceData, fileName]);
 
-  // Render logic based on profileGroup and error state
+  const activeProfileState: ActiveProfileState | null = useMemo(() => {
+    return profileGroup
+      ? {
+          ...profileGroup.profiles[profileGroup.indexToView],
+          index: profileGroup.indexToView,
+        }
+      : null;
+  }, [profileGroup]);
+
+  if (isLoading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center p-4 border border-gray-300">
+        <p>Parsing profile...</p> 
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="h-full w-full flex items-center justify-center p-4 border border-red-500 bg-red-100 text-red-700">
@@ -47,24 +87,22 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
     );
   }
 
-  if (!profileGroup) {
-    // Show loading state or initial placeholder if profileGroup is null and no error
-    return (
+  if (!profileGroup || !activeProfileState) {
+     return (
       <div className="h-full w-full flex items-center justify-center p-4 border border-gray-300">
-        <p>Parsing profile...</p> {/* Or a spinner */}
+        <p>Profile loaded, but no active view state found.</p> 
       </div>
     );
   }
 
-  // TODO: Replace placeholder with actual Speedscope UI rendering
-  // using the loaded profileGroup data.
   return (
-    <div className="h-full w-full border border-green-500 p-2.5">
-      <h2>Speedscope Viewer Placeholder (Loaded!)</h2>
-      <p>Profile Name: {profileGroup.name}</p>
-      <p>Number of Profiles: {profileGroup.profiles.length}</p>
-      <p>Weight Unit: {profileGroup.profiles[0]?.getWeightUnit()}</p>
-      {/* Placeholder for actual Speedscope UI (Toolbar, Flamegraph, etc.) */}
+    <div className="h-full w-full speedscope-app-container">
+      <ProfileSearchContextProvider>
+        <SandwichViewContainer 
+          activeProfileState={activeProfileState} 
+          glCanvas={glCanvas} 
+        />
+      </ProfileSearchContextProvider>
     </div>
   );
 };

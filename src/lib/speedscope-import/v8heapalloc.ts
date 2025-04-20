@@ -1,6 +1,6 @@
-import {Profile, FrameInfo, StackListProfileBuilder} from './profile'
-import {getOrInsert} from './lib-utils'
-import {ByteFormatter} from './value-formatters'
+import {Profile, FrameInfo, StackListProfileBuilder} from '../speedscope-core/profile'
+import {getOrInsert} from '../speedscope-core/lib-utils'
+import {ByteFormatter} from '../speedscope-core/value-formatters'
 
 /**
  * The V8 Heap Allocation profile is a way to represent heap allocation for each

@@ -85,9 +85,9 @@
 // strat;backup;write, even though that never happened in the real program
 // execution.
 
-import { CallTreeProfileBuilder, Frame, FrameInfo, Profile, ProfileGroup } from './profile'
-import { getOrElse, getOrInsert, KeyedSet } from './lib-utils'
-import { ByteFormatter, TimeFormatter, RawValueFormatter } from './value-formatters'
+import { CallTreeProfileBuilder, Frame, FrameInfo, Profile, ProfileGroup } from '../speedscope-core/profile'
+import { getOrElse, getOrInsert, KeyedSet } from '../speedscope-core/lib-utils'
+import { ByteFormatter, TimeFormatter, RawValueFormatter } from '../speedscope-core/value-formatters'
 import { TextFileContent } from './importer-utils'
 
 class CallGraph {

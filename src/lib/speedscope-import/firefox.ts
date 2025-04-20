@@ -1,6 +1,6 @@
-import {Profile, FrameInfo, CallTreeProfileBuilder} from './profile'
-import {getOrInsert} from './lib-utils'
-import {TimeFormatter} from './value-formatters'
+import {Profile, FrameInfo, CallTreeProfileBuilder} from '../speedscope-core/profile'
+import {getOrInsert} from '../speedscope-core/lib-utils'
+import {TimeFormatter} from '../speedscope-core/value-formatters'
 
 interface Allocations {
   frames: any[]
