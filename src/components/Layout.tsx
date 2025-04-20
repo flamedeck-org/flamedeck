@@ -16,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNav = false }) => {
       </main>
       <footer className="border-t py-4">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          Speedscope Plus &copy; {new Date().getFullYear()}
+          Professo &copy; {new Date().getFullYear()}
         </div>
       </footer>
     </div>
