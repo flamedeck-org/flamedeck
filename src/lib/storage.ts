@@ -40,6 +40,11 @@ export const ensureTracesBucketExists = async (): Promise<void> => {
 // Upload a trace file to Supabase storage
 export const uploadTraceFile = async (file: File): Promise<{ path: string; size: number }> => {
     try {
+        const session = await supabase.auth.getSession();
+        if (!session.data.session) {
+            throw new Error('Authentication required to upload files');
+        }
+
         await ensureTracesBucketExists();
         
         // Create a unique filename for the trace
@@ -78,6 +83,11 @@ export const uploadTraceFile = async (file: File): Promise<{ path: string; size:
 // Get a trace file from Supabase storage
 export const getTraceFile = async (path: string): Promise<any> => {
     try {
+        const session = await supabase.auth.getSession();
+        if (!session.data.session) {
+            throw new Error('Authentication required to download files');
+        }
+
         // Extract bucket and file path from the full path
         const [bucket, ...pathParts] = path.split('/');
         const filePath = pathParts.join('/');
