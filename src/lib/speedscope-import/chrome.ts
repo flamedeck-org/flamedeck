@@ -1,6 +1,6 @@
-import {Profile, FrameInfo, CallTreeProfileBuilder, ProfileGroup} from './profile'
-import {getOrInsert, lastOf, sortBy, itForEach} from './lib-utils'
-import {TimeFormatter} from './value-formatters'
+import {Profile, FrameInfo, CallTreeProfileBuilder, ProfileGroup} from '../speedscope-core/profile'
+import {getOrInsert, lastOf, sortBy, itForEach} from '../speedscope-core/lib-utils'
+import {TimeFormatter} from '../speedscope-core/value-formatters'
 import {chromeTreeToNodes, OldCPUProfile} from './v8cpuFormatter'
 
 // See: https://github.com/v8/v8/blob/master/src/inspector/js_protocol.json

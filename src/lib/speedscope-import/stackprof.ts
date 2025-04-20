@@ -1,7 +1,7 @@
 // https://github.com/tmm1/stackprof
 
-import {Profile, FrameInfo, StackListProfileBuilder} from './profile'
-import {RawValueFormatter, TimeFormatter} from './value-formatters'
+import {Profile, FrameInfo, StackListProfileBuilder} from '../speedscope-core/profile'
+import {RawValueFormatter, TimeFormatter} from '../speedscope-core/value-formatters'
 
 interface StackprofFrame {
   name?: string

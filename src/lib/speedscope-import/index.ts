@@ -1,4 +1,4 @@
-import {Profile, ProfileGroup} from './profile'
+import {Profile, ProfileGroup} from '../speedscope-core/profile'
 
 import {
   importFromChromeCPUProfile,
@@ -18,7 +18,7 @@ import {importFromHaskell} from './haskell'
 import {importFromSafari} from './safari'
 import {ProfileDataSource, TextProfileDataSource, MaybeCompressedDataReader} from './importer-utils'
 import {importAsPprofProfile} from './pprof'
-import {decodeBase64} from './lib-utils'
+import {decodeBase64} from '../speedscope-core/lib-utils'
 import {importFromChromeHeapProfile} from './v8heapalloc'
 import {isTraceEventFormatted, importTraceEvents} from './trace-event'
 import {importFromCallgrind} from './callgrind'

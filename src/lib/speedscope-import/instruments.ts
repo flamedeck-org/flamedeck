@@ -7,9 +7,9 @@ import {
   CallTreeProfileBuilder,
   StackListProfileBuilder,
   ProfileGroup,
-} from './profile'
-import {sortBy, getOrThrow, getOrInsert, lastOf, getOrElse, zeroPad} from './lib-utils'
-import {ByteFormatter, TimeFormatter} from './value-formatters'
+} from '../speedscope-core/profile'
+import {sortBy, getOrThrow, getOrInsert, lastOf, getOrElse, zeroPad} from '../speedscope-core/lib-utils'
+import {ByteFormatter, TimeFormatter} from '../speedscope-core/value-formatters'
 import {MaybeCompressedDataReader, TextFileContent} from './importer-utils'
 
 function parseTSV<T>(contents: TextFileContent): T[] {
