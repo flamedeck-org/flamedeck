@@ -112,7 +112,18 @@ const TraceDetail: React.FC = () => {
       <Button 
         variant="outline" 
         size="sm" 
-        onClick={() => navigate(`/traces/${id}/view`)}
+        onClick={() => {
+          if (trace?.blob_path) {
+            navigate(`/traces/${id}/view`, { state: { blobPath: trace.blob_path } });
+          } else {
+            toast({
+              title: "Cannot view trace",
+              description: "Trace data path is missing.",
+              variant: "destructive",
+            });
+          }
+        }}
+        disabled={!trace || !trace.blob_path}
       >
         <Eye className="h-4 w-4 mr-2" />
         View Trace Data
