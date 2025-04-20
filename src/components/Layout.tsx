@@ -13,17 +13,14 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNav = false }) => {
   const isLoggedIn = !!user;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {!hideNav && <Navbar />}
-      <div className={`flex-1 flex ${isLoggedIn ? 'flex-row' : 'flex-col'} pt-16`}>
+      <div className={`flex-1 flex ${isLoggedIn ? 'flex-row' : 'flex-col'} overflow-hidden mt-[var(--navbar-height)]`}>
         {isLoggedIn && <Sidebar />}
-        <main className="flex-1 px-6 md:px-8 py-6 overflow-y-auto">
+        <main className="flex-1 h-full overflow-y-auto px-6 md:px-8 py-6">
           {children}
         </main>
       </div>
-      <footer className="border-t py-4 text-center text-sm text-muted-foreground px-4">
-        Professo &copy; {new Date().getFullYear()}
-      </footer>
     </div>
   );
 };

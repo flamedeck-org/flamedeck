@@ -1,4 +1,3 @@
-
 import { TraceMetadata, TraceUpload, ApiResponse } from "@/types";
 import { uploadTraceFile, listUserTraces } from "./storage";
 import { supabase } from "@/integrations/supabase/client";
@@ -107,6 +106,59 @@ export const traceApi = {
       return { data: null, error: (error as Error).message };
     }
   },
+
+  // Delete a trace by ID
+  deleteTrace: async (id: string): Promise<ApiResponse<void>> => {
+    try {
+      // 1. Get the trace record to find the blob path
+      const { data: trace, error: fetchError } = await supabase
+        .from('traces')
+        .select('blob_path')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        // Handle case where trace doesn't exist or other fetch errors
+        if (fetchError.code === 'PGRST116') { 
+          // PGRST116: Row not found
+          console.warn(`Trace with ID ${id} not found for deletion.`);
+          // Optionally return success if not finding it is okay
+          return { data: null, error: null }; 
+        }
+        throw fetchError;
+      }
+
+      if (!trace?.blob_path) {
+        console.warn(`Trace with ID ${id} has no blob_path. Skipping storage deletion.`);
+      } else {
+        // 2. Delete the file from storage
+        const { error: storageError } = await supabase.storage
+          .from('traces') // Make sure this matches your bucket name
+          .remove([trace.blob_path]);
+
+        if (storageError) {
+          // Log the error but attempt to delete the DB record anyway
+          console.error(`Error deleting storage object ${trace.blob_path}:`, storageError);
+          // Depending on requirements, you might want to throw here
+        }
+      }
+
+      // 3. Delete the trace record from the database
+      const { error: deleteError } = await supabase
+        .from('traces')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      return { data: null, error: null }; // Indicate success
+    } catch (error) {
+      console.error(`Failed to delete trace ${id}:`, error);
+      return { data: null, error: (error as Error).message };
+    }
+  }
 };
 
 // Function to extract duration from trace file

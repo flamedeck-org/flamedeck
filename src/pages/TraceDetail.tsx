@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -11,6 +10,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { TraceMetadata } from "@/types";
 import { traceApi } from "@/lib/api";
 import { ArrowLeft } from "lucide-react";
+import PageLayout from "@/components/PageLayout";
+import PageHeader from "@/components/PageHeader";
 
 const TraceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -60,24 +61,31 @@ const TraceDetail: React.FC = () => {
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
+  const backAction = (
+    <Link to="/traces">
+      <Button variant="outline" size="sm">
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Traces
+      </Button>
+    </Link>
+  );
+
   if (loading) {
     return (
       <AuthGuard>
         <Layout>
-          <div className="container py-6 space-y-6">
-            <div className="flex items-center space-x-2">
-              <Skeleton className="h-8 w-8 rounded" />
-              <Skeleton className="h-8 w-32" />
-            </div>
-
+          <PageLayout>
+            <PageHeader 
+              title={<Skeleton className="h-8 w-48" />} 
+              actions={<Skeleton className="h-9 w-36 rounded-md" />} 
+            />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
                 <Skeleton key={i} className="h-28" />
               ))}
             </div>
-
             <Skeleton className="h-[60vh]" />
-          </div>
+          </PageLayout>
         </Layout>
       </AuthGuard>
     );
@@ -87,15 +95,11 @@ const TraceDetail: React.FC = () => {
     return (
       <AuthGuard>
         <Layout>
-          <div className="container py-6">
-            <div className="text-center py-12 space-y-6">
-              <p className="text-destructive">
-                {error || "Trace not found"}
-              </p>
-              <Link to="/traces">
-                <Button>Back to Traces</Button>
-              </Link>
-            </div>
+          <div className="text-center py-12 space-y-6">
+            <p className="text-destructive">{error || "Trace not found"}</p>
+            <Link to="/traces">
+              <Button>Back to Traces</Button>
+            </Link>
           </div>
         </Layout>
       </AuthGuard>
@@ -105,15 +109,11 @@ const TraceDetail: React.FC = () => {
   return (
     <AuthGuard>
       <Layout>
-        <div className="container py-6 space-y-6">
-          <div className="flex items-center space-x-2">
-            <Link to="/traces">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Trace Details</h1>
-          </div>
+        <PageLayout>
+          <PageHeader 
+            title={trace.scenario || "Trace Details"} 
+            actions={backAction} 
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
@@ -167,7 +167,7 @@ const TraceDetail: React.FC = () => {
           )}
 
           <TraceViewer traceUrl={`/api/traces/${trace.id}/data`} />
-        </div>
+        </PageLayout>
       </Layout>
     </AuthGuard>
   );
