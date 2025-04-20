@@ -25,7 +25,7 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 border-r bg-background flex flex-col h-[calc(100vh-4rem)]">
+    <aside className="w-64 border-r bg-background flex flex-col">
       {/* Main Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
         <NavLink

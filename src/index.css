@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,6 +36,9 @@
     --trace-foreground: 222 47% 11%;
 
     --radius: 0.5rem;
+    
+    /* Define Navbar Height */
+    --navbar-height: 4rem; /* Corresponds to h-16 */
   }
 }
 
