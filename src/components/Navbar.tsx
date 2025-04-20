@@ -9,14 +9,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar: React.FC = () => {
-  // This would use actual user data from auth context in a real app
-  const user = { email: "user@example.com" };
+  const { user, signOut } = useAuth();
 
-  const handleLogout = () => {
-    // Would handle logout through Supabase auth in real implementation
-    console.log("Logout clicked");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   return (
@@ -64,14 +67,14 @@ const Navbar: React.FC = () => {
               >
                 <Avatar>
                   <AvatarFallback className="bg-secondary">
-                    {user.email.charAt(0).toUpperCase()}
+                    {user?.email?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem className="cursor-default">
-                <span className="text-sm font-medium">{user.email}</span>
+                <span className="text-sm font-medium">{user?.email}</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
