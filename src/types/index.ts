@@ -1,3 +1,4 @@
+
 export interface TraceMetadata {
   id: string;
   uploaded_at: string;
@@ -30,4 +31,6 @@ export interface Profile {
   email: string;
   avatar_url: string | null;
   updated_at: string | null;
+  trace_blob_path: string | null;
+  trace_size_bytes: number | null;
 }
