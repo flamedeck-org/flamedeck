@@ -38,7 +38,7 @@ export const traceApi = {
   ): Promise<ApiResponse<TraceMetadata[]>> => {
     try {
       const traces = await listUserTraces();
-      return { data: traces as TraceMetadata[], error: null };
+      return { data: traces, error: null };
     } catch (error) {
       return { data: null, error: (error as Error).message };
     }
@@ -79,22 +79,20 @@ export const traceApi = {
       }
       
       // Insert new trace record in the traces table
-      const traceData = {
-        user_id: user.id,
-        commit_sha: metadata.commit_sha,
-        branch: metadata.branch,
-        scenario: metadata.scenario,
-        device_model: metadata.device_model,
-        duration_ms: durationMs,
-        blob_path: blobPath,
-        file_size_bytes: fileSize,
-        notes: metadata.notes,
-        uploaded_at: new Date().toISOString()
-      };
-      
       const { data, error } = await supabase
         .from('traces')
-        .insert(traceData)
+        .insert({
+          user_id: user.id,
+          commit_sha: metadata.commit_sha,
+          branch: metadata.branch,
+          scenario: metadata.scenario,
+          device_model: metadata.device_model,
+          duration_ms: durationMs,
+          blob_path: blobPath,
+          file_size_bytes: fileSize,
+          notes: metadata.notes,
+          uploaded_at: new Date().toISOString()
+        })
         .select()
         .single();
       

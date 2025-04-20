@@ -36,6 +36,48 @@ export type Database = {
         }
         Relationships: []
       }
+      traces: {
+        Row: {
+          blob_path: string
+          branch: string | null
+          commit_sha: string | null
+          device_model: string | null
+          duration_ms: number | null
+          file_size_bytes: number | null
+          id: string
+          notes: string | null
+          scenario: string | null
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          blob_path: string
+          branch?: string | null
+          commit_sha?: string | null
+          device_model?: string | null
+          duration_ms?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          notes?: string | null
+          scenario?: string | null
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          blob_path?: string
+          branch?: string | null
+          commit_sha?: string | null
+          device_model?: string | null
+          duration_ms?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          notes?: string | null
+          scenario?: string | null
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
