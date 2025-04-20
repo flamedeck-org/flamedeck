@@ -2,41 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 
-// Create a bucket for traces if it doesn't exist
-export const ensureTracesBucketExists = async (): Promise<void> => {
-    try {
-        const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-        
-        if (listError) {
-            console.error("Error listing buckets:", listError);
-            throw new Error(`Failed to list buckets: ${listError.message}`);
-        }
-        
-        const tracesBucketExists = buckets?.some((bucket) => bucket.name === 'traces');
-        
-        if (!tracesBucketExists) {
-            // Create bucket without the fileSizeLimit option as it might be causing issues
-            const { error } = await supabase.storage.createBucket('traces', {
-                public: false,
-                allowedMimeTypes: ['application/json']
-                // Removed the fileSizeLimit option that caused the error
-            });
-            
-            if (error) {
-                console.error("Error creating traces bucket:", error);
-                throw new Error(`Failed to create traces bucket: ${error.message}`);
-            }
-            
-            console.log("Traces bucket created successfully");
-        } else {
-            console.log("Traces bucket already exists");
-        }
-    } catch (error) {
-        console.error("Error in ensureTracesBucketExists:", error);
-        throw error;
-    }
-};
-
 // Upload a trace file to Supabase storage
 export const uploadTraceFile = async (file: File): Promise<{ path: string; size: number }> => {
     try {
@@ -45,8 +10,6 @@ export const uploadTraceFile = async (file: File): Promise<{ path: string; size:
             throw new Error('Authentication required to upload files');
         }
 
-        await ensureTracesBucketExists();
-        
         // Create a unique filename for the trace
         const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "/");
         const fileName = `${uuidv4()}.json`;
