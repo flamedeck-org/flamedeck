@@ -38,7 +38,7 @@ const Navbar: React.FC = () => {
                 <path d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="text-xl font-semibold">Speedscope Plus</span>
+            <span className="text-xl font-semibold">Professo</span>
           </Link>
         </div>
 
