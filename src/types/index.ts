@@ -1,4 +1,3 @@
-
 export interface TraceMetadata {
   id: string;
   user_id: string;
@@ -26,4 +25,22 @@ export interface TraceUpload {
 export interface ApiResponse<T> {
   data: T | null;
   error: string | null;
+}
+
+// Add or ensure this UserProfile type is exported
+export interface UserProfile {
+  id: string; // uuid
+  username: string | null;
+  avatar_url: string | null;
+}
+
+// Type for the trace_comments table row
+export interface TraceComment {
+  id: string; // uuid
+  trace_id: string; // uuid
+  user_id: string; // uuid
+  parent_comment_id: string | null; // uuid
+  content: string; // text
+  trace_timestamp_ms: number | null; // integer or bigint
+  created_at: string; // timestamptz
 }

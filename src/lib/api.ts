@@ -1,6 +1,17 @@
-import { TraceMetadata, TraceUpload, ApiResponse } from "@/types";
+import { TraceMetadata, TraceUpload, ApiResponse, TraceComment } from "@/types";
+import { Database } from "@/integrations/supabase/types";
 import { uploadTraceFile, listUserTraces } from "./storage";
 import { supabase } from "@/integrations/supabase/client";
+
+// Define the profile type using the generated table type
+type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
+
+// Define types for comment data (assuming these are added to @/types)
+export interface TraceCommentWithAuthor extends TraceComment {
+  author: Pick<UserProfileType, 'id' | 'username' | 'avatar_url' | 'first_name' | 'last_name'> | null;
+}
+
+export type NewTraceComment = Omit<TraceComment, 'id' | 'created_at' | 'user_id'>;
 
 // Utility for API calls
 export async function fetchApi<T>(
@@ -156,6 +167,57 @@ export const traceApi = {
       return { data: null, error: null }; // Indicate success
     } catch (error) {
       console.error(`Failed to delete trace ${id}:`, error);
+      return { data: null, error: (error as Error).message };
+    }
+  },
+
+  // Get comments for a specific trace
+  getTraceComments: async (traceId: string): Promise<ApiResponse<TraceCommentWithAuthor[]>> => {
+    try {
+      // Explicitly type the select statement to help TS resolve the relationship
+      const { data, error } = await supabase
+        .from('trace_comments')
+        .select<string, TraceCommentWithAuthor>(`
+          *,
+          author: user_profiles ( id, username, avatar_url, first_name, last_name )
+        `)
+        .eq('trace_id', traceId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Cast might still not be needed now, but keep for safety
+      const commentsWithAuthor = data as TraceCommentWithAuthor[]; 
+      
+      return { data: commentsWithAuthor, error: null };
+    } catch (error) {
+      console.error(`Error fetching comments for trace ${traceId}:`, error);
+      return { data: null, error: (error as Error).message };
+    }
+  },
+
+  // Create a new comment for a trace
+  createTraceComment: async (commentData: NewTraceComment & { trace_id: string }): Promise<ApiResponse<TraceComment>> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Authentication required to comment.");
+
+      const { data, error } = await supabase
+        .from('trace_comments')
+        .insert({
+          ...commentData,
+          user_id: user.id, // Set the user_id from the authenticated user
+        })
+        .select('*') // Explicitly select all columns of the new row
+        .single();
+
+      if (error) throw error;
+      if (!data) throw new Error("Comment created but data not returned.");
+
+      // Cast might still be needed if types are stale
+      return { data: data as TraceComment, error: null };
+    } catch (error) {
+      console.error('Error creating trace comment:', error);
       return { data: null, error: (error as Error).message };
     }
   }

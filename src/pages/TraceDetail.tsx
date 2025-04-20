@@ -1,20 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
-import TraceViewer from "@/components/TraceViewer";
+// import TraceViewer from "@/components/TraceViewer"; // Removed TraceViewer import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { TraceMetadata } from "@/types";
 import { traceApi } from "@/lib/api";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2, Eye } from "lucide-react";
 import PageLayout from "@/components/PageLayout";
 import PageHeader from "@/components/PageHeader";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const TraceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [trace, setTrace] = useState<TraceMetadata | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +64,38 @@ const TraceDetail: React.FC = () => {
     fetchTrace();
   }, [id, toast]);
 
+  const deleteMutation = useMutation({
+    mutationFn: (traceId: string) => traceApi.deleteTrace(traceId),
+    onSuccess: () => {
+      toast({
+        title: "Trace deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['traces'] });
+      navigate("/traces");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting trace",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Unknown";
-    return new Date(dateString).toLocaleString();
+    const date = new Date(dateString);
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric'
+    };
+    const timeOptions: Intl.DateTimeFormatOptions = {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    };
+    return `${date.toLocaleDateString(undefined, dateOptions)} ${date.toLocaleTimeString(undefined, timeOptions)}`;
   };
 
   const formatDuration = (ms: number | undefined) => {
@@ -61,13 +104,49 @@ const TraceDetail: React.FC = () => {
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
-  const backAction = (
-    <Link to="/traces">
-      <Button variant="outline" size="sm">
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Traces
+  const headerActions = (
+    <div className="flex items-center space-x-2">
+      <Button variant="outline" size="sm" onClick={() => { /* TODO: Implement view logic */ }}>
+        <Eye className="h-4 w-4 mr-2" />
+        View Trace Data
       </Button>
-    </Link>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the trace{' '}
+              <strong>{trace?.scenario || `ID: ${trace?.id.substring(0, 7)}`}</strong>{' '}
+              and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => id && deleteMutation.mutate(id)}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Link to="/traces">
+        <Button variant="outline" size="sm">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+      </Link>
+    </div>
   );
 
   if (loading) {
@@ -112,7 +191,7 @@ const TraceDetail: React.FC = () => {
         <PageLayout>
           <PageHeader 
             title={trace.scenario || "Trace Details"} 
-            actions={backAction} 
+            actions={headerActions}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -166,7 +245,7 @@ const TraceDetail: React.FC = () => {
             </Card>
           )}
 
-          <TraceViewer traceUrl={`/api/traces/${trace.id}/data`} />
+          {/* <TraceViewer traceUrl={`/api/traces/${trace.id}/data`} /> */} {/* Removed TraceViewer component rendering */}
         </PageLayout>
       </Layout>
     </AuthGuard>
