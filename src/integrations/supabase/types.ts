@@ -14,18 +14,24 @@ export type Database = {
           avatar_url: string | null
           email: string
           id: string
+          trace_blob_path: string | null
+          trace_size_bytes: number | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           email: string
           id: string
+          trace_blob_path?: string | null
+          trace_size_bytes?: number | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           email?: string
           id?: string
+          trace_blob_path?: string | null
+          trace_size_bytes?: number | null
           updated_at?: string | null
         }
         Relationships: []

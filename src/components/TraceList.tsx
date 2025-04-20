@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/types";
+import { formatBytes } from "@/lib/utils";
 
 const TraceList = () => {
   const { data: profiles, isLoading, error } = useQuery({
@@ -72,6 +73,7 @@ const TraceList = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
+              <TableHead>Trace Size</TableHead>
               <TableHead>Last Updated</TableHead>
             </TableRow>
           </TableHeader>
@@ -79,6 +81,11 @@ const TraceList = () => {
             {profiles?.map((profile) => (
               <TableRow key={profile.id}>
                 <TableCell>{profile.email}</TableCell>
+                <TableCell>
+                  {profile.trace_size_bytes 
+                    ? formatBytes(profile.trace_size_bytes)
+                    : "No trace"}
+                </TableCell>
                 <TableCell>
                   {profile.updated_at
                     ? new Date(profile.updated_at).toLocaleDateString()
