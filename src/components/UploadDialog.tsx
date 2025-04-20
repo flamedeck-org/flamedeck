@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,12 +6,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { traceApi } from "@/lib/api";
 import { TraceUpload } from "@/types";
+import { AlertCircle } from "lucide-react";
 
 const UploadDialog: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<Omit<TraceUpload, "blob_path" | "duration_ms">>({
     commit_sha: "",
     branch: "",
@@ -26,6 +28,9 @@ const UploadDialog: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // Clear any previous errors
+      setError(null);
+      
       if (selectedFile.type !== "application/json" && !selectedFile.name.endsWith(".json")) {
         toast({
           title: "Invalid file type",
@@ -51,6 +56,9 @@ const UploadDialog: React.FC = () => {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
+    
+    // Clear any previous errors
+    setError(null);
     
     if (droppedFile) {
       if (droppedFile.type !== "application/json" && !droppedFile.name.endsWith(".json")) {
@@ -100,10 +108,18 @@ const UploadDialog: React.FC = () => {
 
     try {
       setIsUploading(true);
+      setError(null);
+      
       const response = await traceApi.uploadTrace(file, metadata);
       
       if (response.error) {
-        throw new Error(response.error);
+        setError(response.error);
+        toast({
+          title: "Upload failed",
+          description: response.error,
+          variant: "destructive",
+        });
+        return;
       }
 
       toast({
@@ -114,9 +130,12 @@ const UploadDialog: React.FC = () => {
       // Navigate to the traces list
       navigate("/traces");
     } catch (error) {
+      const errorMessage = (error as Error).message || "Something went wrong";
+      setError(errorMessage);
+      
       toast({
         title: "Upload failed",
-        description: (error as Error).message || "Something went wrong",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -130,6 +149,14 @@ const UploadDialog: React.FC = () => {
         <CardTitle className="text-2xl">Upload Performance Trace</CardTitle>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div
             className={`border-2 border-dashed rounded-lg p-6 text-center ${

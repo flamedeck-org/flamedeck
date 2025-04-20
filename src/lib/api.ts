@@ -1,5 +1,7 @@
 
 import { TraceMetadata, TraceUpload, ApiResponse } from "@/types";
+import { uploadTraceFile } from "./storage";
+import { supabase } from "@/integrations/supabase/client";
 
 // Utility for API calls
 export async function fetchApi<T>(
@@ -47,25 +49,46 @@ export const traceApi = {
     file: File,
     metadata: Omit<TraceUpload, "blob_path" | "duration_ms">
   ): Promise<ApiResponse<TraceMetadata>> => {
-    // First, parse the file to extract duration
-    const durationMs = await extractTraceDuration(file);
-    
-    // Upload file to Supabase Storage (this would be handled by backend in production)
-    // Mocking the response for now
-    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "/");
-    const fileName = `${crypto.randomUUID()}.json`;
-    const blobPath = `traces/${timestamp}/${fileName}`;
-    
-    // For now we're simulating the upload - in a real implementation this would use 
-    // the Supabase client to upload the file and then make an API call with the metadata
-    return fetchApi<TraceMetadata>("/api/traces/new", {
-      method: "POST",
-      body: JSON.stringify({
-        ...metadata,
+    try {
+      // First, parse the file to extract duration
+      const durationMs = await extractTraceDuration(file);
+      
+      // Upload file to Supabase Storage
+      const { path: blobPath, size: fileSize } = await uploadTraceFile(file);
+      
+      // Now update the user's profile with the trace information
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          trace_blob_path: blobPath,
+          trace_size_bytes: fileSize,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+      
+      if (updateError) {
+        console.error("Error updating profile:", updateError);
+        throw new Error(`Failed to update profile: ${updateError.message}`);
+      }
+      
+      // Create a response object with the upload information
+      const responseData: TraceMetadata = {
+        id: crypto.randomUUID(),
+        uploaded_at: new Date().toISOString(),
+        commit_sha: metadata.commit_sha,
+        branch: metadata.branch,
+        scenario: metadata.scenario,
+        device_model: metadata.device_model,
         duration_ms: durationMs,
         blob_path: blobPath,
-      }),
-    });
+        notes: metadata.notes
+      };
+      
+      return { data: responseData, error: null };
+    } catch (error) {
+      console.error("Upload trace error:", error);
+      return { data: null, error: (error as Error).message };
+    }
   },
 };
 
