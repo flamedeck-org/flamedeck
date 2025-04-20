@@ -1,6 +1,6 @@
 
 import { TraceMetadata, TraceUpload, ApiResponse } from "@/types";
-import { uploadTraceFile } from "./storage";
+import { uploadTraceFile, listUserTraces } from "./storage";
 import { supabase } from "@/integrations/supabase/client";
 
 // Utility for API calls
@@ -36,12 +36,28 @@ export const traceApi = {
     page: number = 0,
     limit: number = 20
   ): Promise<ApiResponse<TraceMetadata[]>> => {
-    return fetchApi<TraceMetadata[]>(`/api/traces?page=${page}&limit=${limit}`);
+    try {
+      const traces = await listUserTraces();
+      return { data: traces as TraceMetadata[], error: null };
+    } catch (error) {
+      return { data: null, error: (error as Error).message };
+    }
   },
 
   // Get a single trace by ID
   getTrace: async (id: string): Promise<ApiResponse<TraceMetadata>> => {
-    return fetchApi<TraceMetadata>(`/api/traces/${id}`);
+    try {
+      const { data, error } = await supabase
+        .from('traces')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      return { data: data as TraceMetadata, error: null };
+    } catch (error) {
+      return { data: null, error: (error as Error).message };
+    }
   },
 
   // Upload a new trace
@@ -56,35 +72,38 @@ export const traceApi = {
       // Upload file to Supabase Storage
       const { path: blobPath, size: fileSize } = await uploadTraceFile(file);
       
-      // Now update the user's profile with the trace information
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          trace_blob_path: blobPath,
-          trace_size_bytes: fileSize,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', (await supabase.auth.getUser()).data.user?.id);
-      
-      if (updateError) {
-        console.error("Error updating profile:", updateError);
-        throw new Error(`Failed to update profile: ${updateError.message}`);
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Authentication required');
       }
       
-      // Create a response object with the upload information
-      const responseData: TraceMetadata = {
-        id: crypto.randomUUID(),
-        uploaded_at: new Date().toISOString(),
+      // Insert new trace record in the traces table
+      const traceData = {
+        user_id: user.id,
         commit_sha: metadata.commit_sha,
         branch: metadata.branch,
         scenario: metadata.scenario,
         device_model: metadata.device_model,
         duration_ms: durationMs,
         blob_path: blobPath,
-        notes: metadata.notes
+        file_size_bytes: fileSize,
+        notes: metadata.notes,
+        uploaded_at: new Date().toISOString()
       };
       
-      return { data: responseData, error: null };
+      const { data, error } = await supabase
+        .from('traces')
+        .insert(traceData)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error creating trace record:", error);
+        throw new Error(`Failed to create trace record: ${error.message}`);
+      }
+      
+      return { data: data as TraceMetadata, error: null };
     } catch (error) {
       console.error("Upload trace error:", error);
       return { data: null, error: (error as Error).message };
