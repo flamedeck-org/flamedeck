@@ -1,10 +1,8 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
@@ -13,11 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAuth } from "@/contexts/AuthContext";
-import UploadProfileDialog from "./UploadProfileDialog";
+import { supabase } from "@/integrations/supabase/client";
+import type { Profile } from "@/types";
 
 const TraceList = () => {
-  const { user } = useAuth();
   const { data: profiles, isLoading, error } = useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
@@ -25,8 +22,15 @@ const TraceList = () => {
         .from("profiles")
         .select("*");
       
-      if (error) throw error;
-      return data;
+      if (error) {
+        toast({
+          title: "Error loading profiles",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
+      return data as Profile[];
     },
   });
 
@@ -61,14 +65,12 @@ const TraceList = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Profiles</h2>
-        <UploadProfileDialog />
       </div>
 
       <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Last Updated</TableHead>
             </TableRow>
@@ -76,16 +78,6 @@ const TraceList = () => {
           <TableBody>
             {profiles?.map((profile) => (
               <TableRow key={profile.id}>
-                <TableCell className="flex items-center gap-3">
-                  {profile.avatar_url && (
-                    <img
-                      src={profile.avatar_url}
-                      alt={profile.email}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  )}
-                  <span>{profile.email}</span>
-                </TableCell>
                 <TableCell>{profile.email}</TableCell>
                 <TableCell>
                   {profile.updated_at
