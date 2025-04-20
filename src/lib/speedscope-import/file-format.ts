@@ -6,9 +6,9 @@ import {
   FrameInfo,
   StackListProfileBuilder,
   ProfileGroup,
-} from './profile'
-import {TimeFormatter, ByteFormatter, RawValueFormatter} from './value-formatters'
-import {FileFormat} from './file-format-spec'
+} from '../speedscope-core/profile'
+import {TimeFormatter, ByteFormatter, RawValueFormatter} from '../speedscope-core/value-formatters'
+import {FileFormat} from '../speedscope-core/file-format-spec'
 
 export function exportProfileGroup(profileGroup: ProfileGroup): FileFormat.File {
   const frames: FileFormat.Frame[] = []
