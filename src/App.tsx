@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,7 @@ import Traces from "./pages/Traces";
 import TraceDetail from "./pages/TraceDetail";
 import Upload from "./pages/Upload";
 import NotFound from "./pages/NotFound";
+import TraceViewerPage from "./pages/TraceViewerPage";
 import { useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -29,6 +29,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/traces" element={<Traces />} />
       <Route path="/traces/:id" element={<TraceDetail />} />
+      <Route path="/traces/:id/view" element={<TraceViewerPage />} />
       <Route path="/upload" element={<Upload />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

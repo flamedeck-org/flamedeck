@@ -24,6 +24,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import CommentForm from "@/components/CommentForm";
+import CommentList from "@/components/CommentList";
+import { Separator } from "@/components/ui/separator";
 
 const TraceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -106,7 +109,11 @@ const TraceDetail: React.FC = () => {
 
   const headerActions = (
     <div className="flex items-center space-x-2">
-      <Button variant="outline" size="sm" onClick={() => { /* TODO: Implement view logic */ }}>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => navigate(`/traces/${id}/view`)}
+      >
         <Eye className="h-4 w-4 mr-2" />
         View Trace Data
       </Button>
@@ -148,6 +155,8 @@ const TraceDetail: React.FC = () => {
       </Link>
     </div>
   );
+
+  const traceId = trace?.id;
 
   if (loading) {
     return (
@@ -237,12 +246,25 @@ const TraceDetail: React.FC = () => {
           </div>
 
           {trace.notes && (
-            <Card>
+            <Card className="mt-4">
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground">Notes</div>
                 <div className="whitespace-pre-wrap">{trace.notes}</div>
               </CardContent>
             </Card>
+          )}
+
+          {traceId && (
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold mb-4">Comments</h2>
+              <Separator className="mb-4" />
+              
+              <div className="mb-6">
+                <CommentForm traceId={traceId} />
+              </div>
+
+              <CommentList traceId={traceId} />
+            </div>
           )}
 
           {/* <TraceViewer traceUrl={`/api/traces/${trace.id}/data`} /> */} {/* Removed TraceViewer component rendering */}
