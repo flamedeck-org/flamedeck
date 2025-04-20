@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import type { TraceMetadata } from "@/types";
 
 // Upload a trace file to Supabase storage
 export const uploadTraceFile = async (file: File): Promise<{ path: string; size: number }> => {
@@ -23,7 +24,7 @@ export const uploadTraceFile = async (file: File): Promise<{ path: string; size:
             .upload(filePath, file, {
                 contentType: 'application/json',
                 cacheControl: '3600',
-                upsert: false // Ensure we don't overwrite existing files
+                upsert: false
             });
         
         if (uploadError) {
@@ -80,7 +81,7 @@ export const getTraceFile = async (path: string): Promise<any> => {
 };
 
 // List all traces for the current user
-export const listUserTraces = async () => {
+export const listUserTraces = async (): Promise<TraceMetadata[]> => {
     try {
         const session = await supabase.auth.getSession();
         if (!session.data.session) {
@@ -97,7 +98,7 @@ export const listUserTraces = async () => {
             throw new Error(`Failed to list traces: ${error.message}`);
         }
         
-        return data;
+        return data as TraceMetadata[];
     } catch (error) {
         console.error("Error in listUserTraces:", error);
         throw error;
