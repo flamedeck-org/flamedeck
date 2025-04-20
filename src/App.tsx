@@ -19,8 +19,6 @@ const queryClient = new QueryClient();
 const AppRoutes = () => {
   const { user, loading } = useAuth();
   
-  console.log({ user, loading })
-  
   if (loading) return null;
   
   return (
