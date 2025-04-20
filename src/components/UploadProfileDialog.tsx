@@ -45,21 +45,13 @@ const UploadProfileDialog = () => {
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user?.id);
-
-      if (updateError) throw updateError;
-
+      // Since the profiles table was removed, we'll just show a success message
+      // but won't update any profile data
       toast({
         title: "Success",
-        description: "Profile picture updated successfully",
+        description: "File uploaded successfully",
       });
 
-      // Refresh profiles data
-      queryClient.invalidateQueries({ queryKey: ["profiles"] });
       setOpen(false);
     } catch (error) {
       toast({
@@ -77,12 +69,12 @@ const UploadProfileDialog = () => {
       <DialogTrigger asChild>
         <Button>
           <Upload className="mr-2 h-4 w-4" />
-          Upload Profile Picture
+          Upload Avatar
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload profile picture</DialogTitle>
+          <DialogTitle>Upload avatar</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid w-full max-w-sm items-center gap-1.5">
