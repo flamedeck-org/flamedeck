@@ -1,16 +1,16 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import PricingTable from "@/components/PricingTable";
+import { UploadCloud, Database, BarChart } from "lucide-react";
 
 const Index: React.FC = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <div className="min-h-[80vh] flex flex-col items-center justify-center py-12 px-4 text-center">
-        <div className="max-w-3xl space-y-8">
+      <div className="min-h-[80vh] flex flex-col items-center justify-center py-24 px-4 text-center bg-gradient-to-b from-background to-background/90">
+        <div className="max-w-4xl space-y-10">
           <div className="space-y-4">
             <div className="inline-block bg-primary p-3 rounded-lg mb-4">
               <svg
@@ -48,23 +48,26 @@ const Index: React.FC = () => {
             </a>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-            <div className="p-6 border rounded-lg bg-card">
-              <div className="text-3xl font-bold mb-2">Upload</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+            <div className="p-6 border rounded-lg bg-card text-left space-y-3">
+              <UploadCloud className="h-8 w-8 text-primary mb-2" />
+              <div className="text-2xl font-bold">Upload</div>
               <p className="text-muted-foreground">
                 Easily upload Speedscope-compatible JSON trace files with
                 relevant metadata
               </p>
             </div>
-            <div className="p-6 border rounded-lg bg-card">
-              <div className="text-3xl font-bold mb-2">Store</div>
+            <div className="p-6 border rounded-lg bg-card text-left space-y-3">
+              <Database className="h-8 w-8 text-primary mb-2" />
+              <div className="text-2xl font-bold">Store</div>
               <p className="text-muted-foreground">
                 Organize and search through your performance traces with rich
                 metadata
               </p>
             </div>
-            <div className="p-6 border rounded-lg bg-card">
-              <div className="text-3xl font-bold mb-2">Analyze</div>
+            <div className="p-6 border rounded-lg bg-card text-left space-y-3">
+              <BarChart className="h-8 w-8 text-primary mb-2" />
+              <div className="text-2xl font-bold">Analyze</div>
               <p className="text-muted-foreground">
                 Visualize trace data with the powerful Speedscope flame graph
                 viewer
