@@ -3,11 +3,14 @@ import {
   importProfilesFromArrayBuffer,
   importProfileGroupFromText 
 } from '@/lib/speedscope-import';
-import { profileGroupAtom, glCanvasAtom } from '@/lib/speedscope-core/app-state';
-import { ActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state';
-import { useAtom } from '@/lib/speedscope-core/atom';
-import { SandwichViewContainer } from './speedscope-ui/sandwich-view';
+import { profileGroupAtom, glCanvasAtom } from '@/lib/speedscope-core/app-state'; 
+import { ActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state'; 
+import { useAtom } from '@/lib/speedscope-core/atom'; 
+import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
+import { GLCanvas } from './speedscope-ui/application';
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
+import { useTheme } from './speedscope-ui/themes/theme';
+import { getCanvasContext } from '@/lib/speedscope-core/app-state/getters';
 
 interface SpeedscopeViewerProps {
   traceData: string | ArrayBuffer; 
@@ -20,6 +23,11 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
+  const theme = useTheme()
+  const canvasContext = useMemo(
+    () => (glCanvas ? getCanvasContext({theme, canvas: glCanvas}) : null),
+    [theme, glCanvas],
+  )
 
   useEffect(() => {
     let isCancelled = false;
@@ -88,19 +96,23 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   }
 
   if (!profileGroup || !activeProfileState) {
-     return (
+    return (
       <div className="h-full w-full flex items-center justify-center p-4 border border-gray-300">
-        <p>Profile loaded, but no active view state found.</p> 
+        <p>Profile loaded, but still initializing view state...</p> 
       </div>
     );
   }
 
   return (
-    <div className="h-full w-full speedscope-app-container">
+    <div className="h-full w-full speedscope-app-container relative">
+      <div className="absolute top-0 left-0 w-0 h-0 -z-10 pointer-events-none">
+        <GLCanvas theme={theme} setGLCanvas={glCanvasAtom.set} canvasContext={canvasContext} />
+      </div>
+      
       <ProfileSearchContextProvider>
         <SandwichViewContainer 
           activeProfileState={activeProfileState} 
-          glCanvas={glCanvas} 
+          glCanvas={glCanvas}
         />
       </ProfileSearchContextProvider>
     </div>

@@ -7,6 +7,18 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getTraceBlob } from "@/lib/storage";
+import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+
+// Define a fallback component to display on error
+function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
+  return (
+    <div role="alert" className="flex flex-col items-center justify-center h-full w-full p-4 text-center border border-destructive bg-destructive/10 text-destructive">
+      <h2 className="text-xl font-semibold">Something went wrong rendering the trace viewer:</h2>
+      <pre className="mt-2 whitespace-pre-wrap">{error.message}</pre>
+      <Button variant="outline" className="mt-4" onClick={resetErrorBoundary}>Try again</Button>
+    </div>
+  );
+}
 
 const TraceViewerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,10 +64,17 @@ const TraceViewerPage: React.FC = () => {
 
         {!isLoadingBlob && !blobError && traceBlobData && (
           <div className="h-full w-full">
-            <SpeedscopeViewer 
-              traceData={traceBlobData.data}
-              fileName={traceBlobData.fileName}
-            />
+            <ErrorBoundary
+              FallbackComponent={ErrorFallback}
+              onReset={() => {
+                console.log("Attempting to reset Speedscope viewer boundary...");
+              }}
+            >
+              <SpeedscopeViewer 
+                traceData={traceBlobData.data}
+                fileName={traceBlobData.fileName}
+              />
+            </ErrorBoundary>
           </div>
         )}
 
