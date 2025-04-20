@@ -16,11 +16,9 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
 
   useEffect(() => {
     if (traceData && fileName) {
-      setProfileGroup(null); // Clear previous profile
-      setError(null); // Clear previous error
-      console.log(`Attempting to import profile: ${fileName}`);
+      setProfileGroup(null);
+      setError(null);
 
-      // Determine which importer function to use based on data type
       const importerPromise = 
         traceData instanceof ArrayBuffer
           ? importProfilesFromArrayBuffer(fileName, traceData)
@@ -29,27 +27,16 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
       importerPromise
         .then(loadedProfileGroup => {
           if (loadedProfileGroup && loadedProfileGroup.profiles.length > 0) {
-             console.log('Profile group loaded successfully:', loadedProfileGroup);
-             // TODO: Perform any necessary post-processing like demangling if needed/possible
-             // loadedProfileGroup.profiles.forEach(p => p.demangle?.()); 
              setProfileGroup(loadedProfileGroup);
           } else if (loadedProfileGroup) {
-             console.error('Import successful, but profile group contains no profiles.');
-             setError('Import successful, but the profile contains no data.');
-          } else {
-             console.error('Failed to parse profile: Unrecognized format or other error.');
              setError('Could not parse the profile file. The format might be unsupported or the file corrupted.');
           }
         })
         .catch(err => {
-          console.error('Error during profile import:', err);
           setError(`An error occurred during import: ${err instanceof Error ? err.message : String(err)}`);
         });
     }
   }, [traceData, fileName]);
-
-  console.log('SpeedscopeViewer rendering with profileGroup:', profileGroup);
-  console.log('Error state:', error);
 
   // Render logic based on profileGroup and error state
   if (error) {

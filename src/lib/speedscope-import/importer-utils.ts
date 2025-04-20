@@ -235,10 +235,8 @@ export class MaybeCompressedDataReader implements ProfileDataSource {
       try {
         // Try to inflate, return original if it fails (e.g., not gzipped)
         const result = pako.inflate(new Uint8Array(fileData)).buffer
-        console.log("Successfully inflated gzipped data.");
         return result
       } catch (e) {
-        console.log("Data does not appear to be gzipped, using as is.");
         return fileData
       }
     })
