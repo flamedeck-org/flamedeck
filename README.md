@@ -36,6 +36,14 @@ npm i
 npm run dev
 ```
 
+** Updating schema **
+
+Run:
+
+```bash
+SUPABASE_ACCESS_TOKEN=<my-token> npx supabase gen types typescript --project-id jczffinsulwdzhgzggcj --schema public > src/integrations/supabase/types.ts
+```
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
