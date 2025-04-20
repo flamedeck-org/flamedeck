@@ -1,4 +1,3 @@
-
 import React from "react";
 import Layout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
@@ -8,7 +7,7 @@ const Traces: React.FC = () => {
   return (
     <AuthGuard>
       <Layout>
-        <div className="container py-6">
+        <div>
           <TraceList />
         </div>
       </Layout>

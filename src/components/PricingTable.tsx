@@ -1,8 +1,8 @@
-
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 const PricingTable = () => {
   const tiers = [
@@ -30,9 +30,15 @@ const PricingTable = () => {
   ];
 
   return (
-    <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+    <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
       {tiers.map((tier) => (
-        <Card key={tier.name} className="relative">
+        <Card
+          key={tier.name}
+          className={cn(
+            "relative flex flex-col hover:shadow-lg transition-shadow",
+            tier.name === "Personal" && "border-2 border-primary"
+          )}
+        >
           <CardHeader>
             <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
             <div className="mt-2">
@@ -40,8 +46,8 @@ const PricingTable = () => {
               <span className="text-muted-foreground">/month</span>
             </div>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
+          <CardContent className="flex-1 flex flex-col">
+            <ul className="space-y-3 flex-1">
               {tier.features.map((feature) => (
                 <li key={feature} className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary" />
@@ -50,8 +56,13 @@ const PricingTable = () => {
               ))}
             </ul>
             <div className="mt-6">
-              <Link to="/login">
-                <Button className="w-full">Get Started</Button>
+              <Link to="/login" className="block w-full">
+                <Button
+                  className="w-full"
+                  variant={tier.name === "Personal" ? "default" : "outline"}
+                >
+                  Get Started
+                </Button>
               </Link>
             </div>
           </CardContent>
