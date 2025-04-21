@@ -1,5 +1,6 @@
 import React, {useCallback} from 'react'
 import {Vec2} from '../../lib/speedscope-core/math'
+import { useTheme } from './themes/theme'
 
 interface HovertipProps {
   containerSize: Vec2
@@ -8,6 +9,7 @@ interface HovertipProps {
 }
 
 export function Hovertip(props: HovertipProps) {
+  const theme = useTheme()
   const {containerSize, offset} = props
   const containerWidth = containerSize.x
   const containerHeight = containerSize.y
@@ -59,7 +61,14 @@ export function Hovertip(props: HovertipProps) {
 
   return (
     <div
-      className="absolute bg-white border border-black p-0.5 text-xs font-mono max-w-xs pointer-events-none select-none z-50 shadow-md"
+      className="absolute p-0.5 text-xs font-mono max-w-xs pointer-events-none select-none z-50 shadow-md"
+      style={{
+        backgroundColor: theme.bgPrimaryColor,
+        borderColor: theme.fgPrimaryColor,
+        color: theme.fgPrimaryColor,
+        borderWidth: '1px',
+        borderStyle: 'solid',
+      }}
       ref={updateLocation}
     >
       <div className="truncate whitespace-nowrap overflow-hidden px-0.5 max-w-xs">

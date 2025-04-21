@@ -51,8 +51,8 @@ class SandwichView extends Component<SandwichViewProps> {
         {selectedFrame && (
           <div className="w-80 h-full flex-1 border-l border-l-border flex flex-col relative overflow-hidden">
             <div className="flex-1 flex flex-row">
-              <div className="flex flex-col justify-end items-start text-sm w-[1.2em] border-r border-r-border shrink-0">
-                <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center">Callers</div>
+              <div className="flex flex-col justify-end items-start text-xs w-[1.2em] border-r border-r-border shrink-0">
+                <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center font-mono mb-1">Callers</div>
               </div>
               <InvertedCallerFlamegraphView
                 glCanvas={this.props.glCanvas}
@@ -61,8 +61,8 @@ class SandwichView extends Component<SandwichViewProps> {
             </div>
             <div className="h-0.5 bg-border" />
             <div className="flex-1 flex flex-row">
-              <div className="flex flex-col justify-start items-start text-sm w-[1.2em] border-r border-r-border shrink-0">
-                <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center flex justify-end">Callees</div>
+              <div className="flex flex-col justify-start items-start text-xs w-[1.2em] border-r border-r-border shrink-0">
+                <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center flex justify-end font-mono mt-1">Callees</div>
               </div>
               <CalleeFlamegraphView
                 glCanvas={this.props.glCanvas}
