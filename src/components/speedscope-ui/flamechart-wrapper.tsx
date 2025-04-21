@@ -67,12 +67,14 @@ export class FlamechartWrapper extends React.Component<FlamechartViewProps> {
   }
 
   render() {
+    
     return (
       <div
         className="h-full w-full flex flex-col relative"
         ref={this.containerRef}
       >
         <FlamechartPanZoomView
+          theme={this.props.theme}
           selectedNode={null}
           onNodeHover={this.setNodeHover}
           onNodeSelect={noop}

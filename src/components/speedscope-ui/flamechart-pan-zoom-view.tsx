@@ -71,11 +71,6 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
 
   private hoveredLabel: FlamechartFrameLabel | null = null
 
-  private getStyle() {
-    // return getFlamechartStyle(this.props.theme)
-    return {}
-  }
-
   private setConfigSpaceViewportRect(r: Rect) {
     this.props.setConfigSpaceViewportRect(r)
   }
@@ -793,11 +788,9 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
   }
 
   render() {
-    const style = this.getStyle()
-
     return (
       <div
-        className="panZoomView-placeholder vbox-placeholder"
+        className="flex flex-col"
         onMouseDown={this.onMouseDown as any}
         onMouseMove={this.onMouseMove as any}
         onMouseLeave={this.onMouseLeave as any}
