@@ -87,7 +87,7 @@ export function importFromChromeTimeline(events: TimelineEvent[], fileName: stri
   // that they are.
   sortBy(events, e => e.ts)
 
-  for (let event of events) {
+  for (const event of events) {
     if (event.name === 'CpuProfile') {
       const pidTid = `${event.pid}:${event.tid}`
       const id = event.id || pidTid
@@ -149,7 +149,7 @@ export function importFromChromeTimeline(events: TimelineEvent[], fileName: stri
 
     itForEach(cpuProfileByID.keys(), profileId => {
       let threadName: string | null = null
-      let pidTid = pidTidById.get(profileId)
+      const pidTid = pidTidById.get(profileId)
       if (pidTid) {
         threadName = threadNameByPidTid.get(pidTid) || null
         if (threadName) {
@@ -221,16 +221,16 @@ export function importFromChromeCPUProfile(chromeProfile: CPUProfile): Profile {
   const profile = new CallTreeProfileBuilder(chromeProfile.endTime - chromeProfile.startTime)
 
   const nodeById = new Map<number, CPUProfileNode>()
-  for (let node of chromeProfile.nodes) {
+  for (const node of chromeProfile.nodes) {
     nodeById.set(node.id, node)
   }
-  for (let node of chromeProfile.nodes) {
+  for (const node of chromeProfile.nodes) {
     if (typeof node.parent === 'number') {
       node.parent = nodeById.get(node.parent)
     }
 
     if (!node.children) continue
-    for (let childId of node.children) {
+    for (const childId of node.children) {
       const child = nodeById.get(childId)
       if (!child) continue
       child.parent = node
@@ -286,7 +286,7 @@ export function importFromChromeCPUProfile(chromeProfile: CPUProfile): Profile {
   for (let i = 0; i < samples.length; i++) {
     const value = sampleTimes[i]
     const nodeId = samples[i]
-    let stackTop = nodeById.get(nodeId)
+    const stackTop = nodeById.get(nodeId)
     if (!stackTop) continue
 
     // Find lowest common ancestor of the current stack and the previous one
@@ -323,7 +323,7 @@ export function importFromChromeCPUProfile(chromeProfile: CPUProfile): Profile {
     }
     toOpen.reverse()
 
-    for (let node of toOpen) {
+    for (const node of toOpen) {
       profile.enterFrame(frameInfoForCallFrame(node.callFrame), value)
     }
 

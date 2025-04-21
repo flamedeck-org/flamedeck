@@ -66,12 +66,12 @@ export class CanvasContext {
 
   setViewport(physicalBounds: Rect, cb: () => void): void {
     const {origin, size} = physicalBounds
-    let viewportBefore = this.gl.viewport
+    const viewportBefore = this.gl.viewport
     this.gl.setViewport(origin.x, origin.y, size.x, size.y)
 
     cb()
 
-    let {x, y, width, height} = viewportBefore
+    const {x, y, width, height} = viewportBefore
     this.gl.setViewport(x, y, width, height)
   }
 

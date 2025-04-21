@@ -32,7 +32,7 @@ export function importFromBGFlameGraph(contents: TextFileContent): Profile | nul
   if (parsed.length === 0) {
     return null
   }
-  for (let sample of parsed) {
+  for (const sample of parsed) {
     profile.appendSampleWithWeight(sample.stack, sample.duration)
   }
   return profile.build()

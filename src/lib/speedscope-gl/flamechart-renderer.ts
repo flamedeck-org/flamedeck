@@ -58,7 +58,7 @@ class RangeTreeInteriorNode implements RangeTreeNode {
     let maxRight = -Infinity
     let minTop = Infinity
     let maxBottom = -Infinity
-    for (let child of children) {
+    for (const child of children) {
       this.rectCount += child.getRectCount()
       const bounds = child.getBounds()
       minLeft = Math.min(minLeft, bounds.left())
@@ -84,7 +84,7 @@ class RangeTreeInteriorNode implements RangeTreeNode {
 
   forEachLeafNodeWithinBounds(configSpaceBounds: Rect, cb: (leaf: RangeTreeLeafNode) => void) {
     if (!this.bounds.hasIntersectionWith(configSpaceBounds)) return
-    for (let child of this.children) {
+    for (const child of this.children) {
       child.forEachLeafNodeWithinBounds(configSpaceBounds, cb)
     }
   }
@@ -346,13 +346,13 @@ export class FlamechartRenderer {
       const configToViewport = AffineTransform.betweenRects(configSpaceSrcRect, viewportRect)
 
       // Render from the cache
-      for (let key of keysToRenderCached) {
+      for (const key of keysToRenderCached) {
         const configSpaceSrcRect = this.configSpaceBoundsForKey(key)
         this.rowAtlas.renderViaAtlas(key, configToViewport.transformRect(configSpaceSrcRect))
       }
 
       // Render entries that didn't make it into the cache
-      for (let key of keysToRenderUncached) {
+      for (const key of keysToRenderUncached) {
         const configSpaceBounds = this.configSpaceBoundsForKey(key)
         const physicalBounds = configToViewport.transformRect(configSpaceBounds)
         this.layers[key.stackDepth].forEachLeafNodeWithinBounds(configSpaceBounds, leaf => {

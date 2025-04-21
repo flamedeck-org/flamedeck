@@ -113,7 +113,7 @@ export class FlamechartColorPassRenderer {
       {pos: [1, -1], uv: [1, 0]},
     ]
     const floats: number[] = []
-    for (let v of vertices) {
+    for (const v of vertices) {
       floats.push(v.pos[0])
       floats.push(v.pos[1])
       floats.push(v.uv[0])

@@ -151,7 +151,7 @@ export function importFromV8ProfLog(v8log: V8LogProfile): Profile {
 
   sortBy(v8log.ticks, tick => tick.tm)
 
-  for (let tick of v8log.ticks) {
+  for (const tick of v8log.ticks) {
     const stack: FrameInfo[] = []
 
     // tick.s holds the call stack at the time the sample was taken. The

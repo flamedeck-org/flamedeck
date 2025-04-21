@@ -206,7 +206,7 @@ export function importFromFirefox(firefoxProfile: FirefoxProfile): Profile {
   const profile = new CallTreeProfileBuilder(firefoxProfile.duration)
 
   let prevStack: FrameInfo[] = []
-  for (let sample of thread.samples.data) {
+  for (const sample of thread.samples.data) {
     const stack = extractStack(sample)
     const value = sample[1]
 

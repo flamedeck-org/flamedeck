@@ -25,7 +25,7 @@ interface PerfEvent {
 
 function* parseEvents(contents: TextFileContent): Generator<PerfEvent | null> {
   let buffer: string[] = []
-  for (let line of contents.splitLines()) {
+  for (const line of contents.splitLines()) {
     if (line === '') {
       yield parseEvent(buffer)
       buffer = []
@@ -77,7 +77,7 @@ function parseEvent(rawEvent: string[]): PerfEvent | null {
     event.eventType = evName[1]
   }
 
-  for (let line of lines) {
+  for (const line of lines) {
     const lineMatch = /^\s*(\w+)\s*(.+) \((\S*)\)/.exec(line)
     if (!lineMatch) continue
     let [, address, symbolName, file] = lineMatch
@@ -99,13 +99,13 @@ export function importFromLinuxPerf(contents: TextFileContent): ProfileGroup | n
 
   let eventType: string | null = null
 
-  for (let event of parseEvents(contents)) {
+  for (const event of parseEvents(contents)) {
     if (event == null) continue
     if (eventType != null && eventType != event.eventType) continue
     if (event.time == null) continue
     eventType = event.eventType
 
-    let profileNameParts = []
+    const profileNameParts = []
     if (event.command) profileNameParts.push(event.command)
     if (event.processID) profileNameParts.push(`pid: ${event.processID}`)
     if (event.threadID) profileNameParts.push(`tid: ${event.threadID}`)

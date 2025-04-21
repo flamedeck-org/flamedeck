@@ -67,7 +67,7 @@ export class RectangleBatch {
       // the performance here since I need 6x the memory to allocate these
       // things. Adding instanced drawing to graphics.ts is non-trivial, so I'm
       // just going to try this for now.
-      for (let corner of corners) {
+      for (const corner of corners) {
         floats[idx++] = rect.origin.x + corner[0] * rect.size.x
         floats[idx++] = rect.origin.y + corner[1] * rect.size.y
 

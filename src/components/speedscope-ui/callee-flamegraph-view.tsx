@@ -27,7 +27,7 @@ const getCalleeProfile = memoizeByShallowEquality<
   },
   Profile
 >(({profile, frame, flattenRecursion}) => {
-  let p = profile.getProfileForCalleesOf(frame)
+  const p = profile.getProfileForCalleesOf(frame)
   return flattenRecursion ? p.getProfileWithRecursionFlattened() : p
 })
 

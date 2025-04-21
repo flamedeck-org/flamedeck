@@ -29,7 +29,7 @@ const getInvertedCallerProfile = memoizeByShallowEquality(
     frame: Frame
     flattenRecursion: boolean
   }): Profile => {
-    let p = profile.getInvertedProfileForCallersOf(frame)
+    const p = profile.getInvertedProfileForCallersOf(frame)
     return flattenRecursion ? p.getProfileWithRecursionFlattened() : p
   },
 )
@@ -55,7 +55,7 @@ const getInvertedCallerFlamegraphRenderer = createMemoizedFlamechartRenderer({in
 
 export const InvertedCallerFlamegraphView = memo((ownProps: FlamechartViewContainerProps) => {
   const {activeProfileState} = ownProps
-  let {profile, sandwichViewState} = activeProfileState
+  const {profile, sandwichViewState} = activeProfileState
   const flattenRecursion = useAtom(flattenRecursionAtom)
   const glCanvas = useAtom(glCanvasAtom)
   const theme = useTheme()
@@ -68,7 +68,7 @@ export const InvertedCallerFlamegraphView = memo((ownProps: FlamechartViewContai
 
   const frameToColorBucket = getFrameToColorBucket(profile)
   const getColorBucketForFrame = createGetColorBucketForFrame(frameToColorBucket)
-  const getCSSColorForFrame = createGetCSSColorForFrame({frameToColorBucket})
+  const getCSSColorForFrame = createGetCSSColorForFrame({theme, frameToColorBucket})
   const canvasContext = getCanvasContext({theme, canvas: glCanvas})
 
   const flamechart = getInvertedCallerFlamegraph({

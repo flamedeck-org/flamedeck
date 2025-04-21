@@ -24,7 +24,7 @@ function highlightRanges(
 ): JSX.Element {
   const spans: ComponentChild[] = [];
   let last = 0;
-  for (let range of ranges) {
+  for (const range of ranges) {
     spans.push(text.slice(last, range[0]));
     spans.push(<span className={highlightedClassName}>{text.slice(range[0], range[1])}</span>);
     last = range[1];
