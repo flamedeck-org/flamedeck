@@ -24,17 +24,13 @@ interface HBarProps {
 }
 
 function HBarDisplay(props: HBarProps) {
-  // Use gray-200 for light track, and a darker gray with opacity for dark track
-  const hBarBgColorClass = "bg-gray-200 dark:bg-gray-700"; // Adjusted dark track
-  // Keep the solid blue fill for debugging visibility
+  const hBarBgColorClass = "bg-gray-200 dark:bg-gray-700";
   const hBarFillColorClass = "bg-primary";
 
   return (
-    <div
-      className={`absolute bottom-0.5 h-0.5 right-[30px] w-[calc(100%-60px)] ${hBarBgColorClass}`}
-    >
+    <div className={`relative w-full h-full ${hBarBgColorClass}`}>
       <div
-        className={`absolute h-full right-0 ${hBarFillColorClass}`}
+        className={`absolute top-0 right-0 h-full ${hBarFillColorClass}`}
         style={{ width: `${props.perc}%` }}
       />
     </div>
@@ -110,25 +106,40 @@ const ProfileTableRowView = ({
 
   const selected = frame === selectedFrame
 
-  let rowClasses = [
+  // Base classes applied to all rows
+  const baseClasses = [
     "h-[30px]",
     "text-text dark:text-dark-text",
     "font-mono",
+    "relative",
+    "cursor-pointer",
+    "transition-colors duration-100",
   ];
-  if (index % 2 === 0) {
-    rowClasses.push("bg-background-secondary dark:bg-dark-background-secondary");
-  } else {
-    rowClasses.push("bg-background dark:bg-dark-background");
-  }
+
+  // Determine specific classes based on selected state and index
+  let specificClasses: string[];
   if (selected) {
-    rowClasses = ["h-[30px]", "bg-selection text-text-alt dark:bg-dark-selection dark:text-dark-text-alt"];
+    // Selected rows use accent colors
+    specificClasses = ["bg-accent text-accent-foreground"];
+  } else {
+    // Non-selected rows get alternating background + hover
+    // Use more distinct standard colors for alternation
+    const bgClass = index % 2 === 0
+      ? "bg-gray-50 dark:bg-gray-800/50" // Lighter gray / Slightly lighter dark gray
+      : "bg-white dark:bg-gray-900";      // White / Near-black
+    specificClasses = [bgClass, "hover:bg-muted/50 dark:hover:bg-muted/50"];
   }
 
-  const matchedBaseClass = "border-b-2 border-text dark:border-dark-text";
-  const matchedSelectedClass = "border-b-2 border-text-alt dark:border-dark-text-alt";
+  // Combine base and specific classes
+  const rowClasses = [...baseClasses, ...specificClasses];
+
+  const matchedBaseClass = "bg-highlight dark:bg-dark-highlight rounded-[1px] px-0.5";
+  const matchedSelectedClass = "bg-primary text-primary-foreground rounded-[1px] px-0.5";
   const matchedClassName = selected ? matchedSelectedClass : matchedBaseClass;
 
-  const numericCellBaseClass = "relative text-ellipsis overflow-hidden whitespace-nowrap text-right pr-[30px] w-[180px] min-w-[180px] align-top pt-1";
+  const baseNumericCellClass = "relative text-ellipsis overflow-hidden whitespace-nowrap text-right w-[180px] min-w-[180px] align-top pt-1";
+  const totalCellClass = `${baseNumericCellClass} pl-2 pr-2`;
+  const selfCellClass = `${baseNumericCellClass} pl-4 pr-[30px]`;
   const textCellBaseClass = "text-ellipsis overflow-hidden whitespace-nowrap w-full max-w-0 align-top pt-1 pl-1";
 
   return (
@@ -137,13 +148,17 @@ const ProfileTableRowView = ({
       onClick={() => setSelectedFrame(frame)}
       className={rowClasses.join(' ')}
     >
-      <td className={numericCellBaseClass}>
+      <td className={totalCellClass}>
         {profile.formatValue(totalWeight)} ({formatPercent(totalPerc)})
-        <HBarDisplay perc={totalPerc} />
+        <div className="absolute bottom-0 left-4 right-4 h-0.5">
+          <HBarDisplay perc={totalPerc} />
+        </div>
       </td>
-      <td className={numericCellBaseClass}>
+      <td className={selfCellClass}>
         {profile.formatValue(selfWeight)} ({formatPercent(selfPerc)})
-        <HBarDisplay perc={selfPerc} />
+        <div className="absolute bottom-0 left-4 right-[34px] h-0.5">
+          <HBarDisplay perc={selfPerc} />
+        </div>
       </td>
       <td title={frame.file} className={textCellBaseClass}>
         <ColorChit color={getCSSColorForFrame(frame)} />
@@ -260,7 +275,7 @@ export const ProfileTableView = memo(
           }
         }
 
-        return <tbody className="w-full text-xs bg-background dark:bg-dark-background">{rows}</tbody>
+        return <tbody className="w-full text-[10px] bg-background dark:bg-dark-background">{rows}</tbody>
       },
       [
         sandwichContext,
@@ -285,17 +300,20 @@ export const ProfileTableView = memo(
     const onSelfClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SELF, ev), [onSortClick])
     const onSymbolNameClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SYMBOL_NAME, ev), [onSortClick])
 
-    const numericHeaderCellClass = "p-1 pr-[30px] w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
+    const baseNumericHeaderCellClass = "p-1 w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
+    const totalHeaderCellClass = `${baseNumericHeaderCellClass} pr-2`;
+    const selfHeaderCellClass = `${baseNumericHeaderCellClass} pr-[30px]`;
+
     const textHeaderCellClass = "p-1 w-full max-w-0 text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
     const headerFlexContainerClass = "flex items-center cursor-pointer"
     const numericHeaderFlexContainerClass = `${headerFlexContainerClass} justify-end`
 
     return (
       <div className="flex h-full flex-col bg-background dark:bg-dark-background">
-        <table className="w-full table-fixed text-xs">
+        <table className="w-full table-fixed text-[10px]">
           <thead className="select-none border-b-2 border-background-secondary dark:border-dark-background-secondary text-left">
             <tr>
-              <th className={numericHeaderCellClass}>
+              <th className={totalHeaderCellClass}>
                 <div className={numericHeaderFlexContainerClass} onClick={onTotalClick}>
                   <SortIcon
                     activeDirection={
@@ -305,7 +323,7 @@ export const ProfileTableView = memo(
                   Total
                 </div>
               </th>
-              <th className={numericHeaderCellClass}>
+              <th className={selfHeaderCellClass}>
                 <div className={numericHeaderFlexContainerClass} onClick={onSelfClick}>
                   <SortIcon
                     activeDirection={
