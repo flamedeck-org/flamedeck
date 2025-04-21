@@ -10,7 +10,7 @@ import {
   trimTextMid,
   remapRangesToTrimmedText,
 } from '../../lib/speedscope-core/text-utils'
-import React, {Component, MouseEvent, WheelEvent} from 'react'
+import React, {Component, MouseEvent as ReactMouseEvent, WheelEvent as ReactWheelEvent} from 'react'
 import {ProfileSearchResults} from '../../lib/speedscope-core/profile-search'
 import {BatchCanvasTextRenderer, BatchCanvasRectRenderer} from '../../lib/speedscope-core/canvas-2d-batch-renderers'
 import {Color} from '../../lib/speedscope-core/color'
@@ -47,7 +47,7 @@ export interface FlamechartPanZoomViewProps {
   selectedNode: CallTreeNode | null
   theme: Theme
 
-  onNodeHover: (hover: {node: CallTreeNode; event: MouseEvent} | null) => void
+  onNodeHover: (hover: {node: CallTreeNode; event: ReactMouseEvent<HTMLDivElement>} | null) => void
   onNodeSelect: (node: CallTreeNode | null) => void
 
   configSpaceViewportRect: Rect
@@ -60,7 +60,10 @@ export interface FlamechartPanZoomViewProps {
   searchResults: ProfileSearchResults | null
 }
 
-export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps, {}> {
+export class FlamechartPanZoomView extends Component<
+  FlamechartPanZoomViewProps,
+  Record<string, never> // Use Record<string, never> for empty state
+> {
   private container: Element | null = null
   private containerRef = (element: Element | null) => {
     this.container = element || null
@@ -552,15 +555,15 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
 
   private lastDragPos: Vec2 | null = null
   private mouseDownPos: Vec2 | null = null
-  private onMouseDown = (ev: MouseEvent) => {
-    this.mouseDownPos = this.lastDragPos = new Vec2(ev.offsetX, ev.offsetY)
+  private onMouseDown = (ev: ReactMouseEvent<HTMLDivElement>) => {
+    this.mouseDownPos = this.lastDragPos = new Vec2(ev.clientX, ev.clientY)
     this.updateCursor()
     window.addEventListener('mouseup', this.onWindowMouseUp)
   }
 
-  private onMouseDrag = (ev: MouseEvent) => {
+  private onMouseDrag = (ev: ReactMouseEvent<HTMLDivElement>) => {
     if (!this.lastDragPos) return
-    const logicalMousePos = new Vec2(ev.offsetX, ev.offsetY)
+    const logicalMousePos = new Vec2(ev.clientX, ev.clientY)
     this.pan(this.lastDragPos.minus(logicalMousePos))
     this.lastDragPos = logicalMousePos
 
@@ -571,7 +574,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
     }
   }
 
-  private onDblClick = (ev: MouseEvent) => {
+  private onDblClick = (ev: ReactMouseEvent<HTMLDivElement>) => {
     if (this.hoveredLabel) {
       const hoveredBounds = this.hoveredLabel.configSpaceBounds
       const viewportRect = new Rect(
@@ -582,8 +585,8 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
     }
   }
 
-  private onClick = (ev: MouseEvent) => {
-    const logicalMousePos = new Vec2(ev.offsetX, ev.offsetY)
+  private onClick = (ev: ReactMouseEvent<HTMLDivElement>) => {
+    const logicalMousePos = new Vec2(ev.clientX, ev.clientY)
     const mouseDownPos = this.mouseDownPos
     this.mouseDownPos = null
 
@@ -616,7 +619,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
     window.removeEventListener('mouseup', this.onWindowMouseUp)
   }
 
-  private onMouseMove = (ev: MouseEvent) => {
+  private onMouseMove = (ev: ReactMouseEvent<HTMLDivElement>) => {
     this.updateCursor()
     if (this.lastDragPos) {
       ev.preventDefault()
@@ -624,7 +627,13 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
       return
     }
 
-    const logicalViewSpaceMouse = new Vec2(ev.offsetX, ev.offsetY)
+    // Ensure the container exists and get its bounding rect
+    if (!this.container) return
+    const rect = this.container.getBoundingClientRect()
+
+    // Calculate mouse position relative to the container element
+    const logicalViewSpaceMouse = new Vec2(ev.clientX - rect.left, ev.clientY - rect.top)
+
     const physicalViewSpaceMouse =
       this.logicalToPhysicalViewSpace().transformPosition(logicalViewSpaceMouse)
     const configSpaceMouse =
@@ -679,13 +688,19 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
     this.renderCanvas()
   }
 
-  private onMouseLeave = (ev: MouseEvent) => {
+  private onMouseLeave = (ev: ReactMouseEvent<HTMLDivElement>) => {
     this.hoveredLabel = null
     this.props.onNodeHover(null)
     this.renderCanvas()
   }
 
+  // Use native WheelEvent since this listener is attached manually
   private onWheel = (ev: WheelEvent) => {
+    // Ensure the container exists before proceeding
+    if (!this.container) return
+
+    // We still call preventDefault, but if the listener is passive,
+    // this will cause a console warning and have no effect.
     ev.preventDefault()
     this.frameHadWheelEvent = true
 
@@ -693,7 +708,8 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
 
     let deltaY = ev.deltaY
     let deltaX = ev.deltaX
-    if (ev.deltaMode === ev.DOM_DELTA_LINE) {
+    // Use static property WheelEvent.DOM_DELTA_LINE
+    if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
       deltaY *= this.LOGICAL_VIEW_SPACE_FRAME_HEIGHT
       deltaX *= this.LOGICAL_VIEW_SPACE_FRAME_HEIGHT
     }
@@ -710,7 +726,13 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
 
       multiplier = clamp(multiplier, 0.1, 10.0)
 
-      this.zoom(new Vec2(ev.offsetX, ev.offsetY), multiplier)
+      // Calculate mouse position relative to the container element
+      const rect = this.container.getBoundingClientRect()
+      const offsetX = ev.clientX - rect.left
+      const offsetY = ev.clientY - rect.top
+
+      // Use relative coordinates for zoom center
+      this.zoom(new Vec2(offsetX, offsetY), multiplier)
     } else if (this.interactionLock !== 'zoom') {
       this.pan(new Vec2(deltaX, deltaY))
     }
@@ -780,23 +802,30 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
     this.props.canvasContext.addBeforeFrameHandler(this.onBeforeFrame)
     window.addEventListener('resize', this.onWindowResize)
     window.addEventListener('keydown', this.onWindowKeyPress)
+    // Manually add wheel listener with passive: false
+    if (this.container) {
+      this.container.addEventListener('wheel', this.onWheel, {passive: false})
+    }
   }
   componentWillUnmount() {
     this.props.canvasContext.removeBeforeFrameHandler(this.onBeforeFrame)
     window.removeEventListener('resize', this.onWindowResize)
     window.removeEventListener('keydown', this.onWindowKeyPress)
+    // Remove manually added wheel listener
+    if (this.container) {
+      this.container.removeEventListener('wheel', this.onWheel)
+    }
   }
 
   render() {
     return (
       <div
         className="flex-1 flex-col relative overflow-hidden"
-        onMouseDown={this.onMouseDown as any}
-        onMouseMove={this.onMouseMove as any}
-        onMouseLeave={this.onMouseLeave as any}
-        onClick={this.onClick as any}
-        onDblClick={this.onDblClick as any}
-        onWheel={this.onWheel as any}
+        onMouseDown={this.onMouseDown}
+        onMouseMove={this.onMouseMove}
+        onMouseLeave={this.onMouseLeave}
+        onClick={this.onClick}
+        onDoubleClick={this.onDblClick}
         ref={this.containerRef}
       >
         <canvas width={1} height={1} ref={this.overlayCanvasRef} className="w-full h-full absolute top-0 left-0" />

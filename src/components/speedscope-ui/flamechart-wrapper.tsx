@@ -49,7 +49,7 @@ export class FlamechartWrapper extends React.Component<FlamechartViewProps> {
 
     const {width, height, left, top} = container.getBoundingClientRect()
 
-    const event = hover.event as React.MouseEvent
+    const event = hover.event as unknown as React.MouseEvent
     const offset = new Vec2(event.clientX - left, event.clientY - top)
     const frame = hover.node.frame
 
