@@ -241,7 +241,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
             let left = physicalLabelBounds.left() + LABEL_PADDING_PX
 
             const padding = (physicalViewSpaceFrameHeight - physicalViewSpaceFontSize) / 2 - 2
-            for (let [startIndex, endIndex] of rangesToHighlightInTrimmedText) {
+            for (const [startIndex, endIndex] of rangesToHighlightInTrimmedText) {
               left += cachedMeasureTextWidth(
                 ctx,
                 trimmedText.trimmedString.substring(lastEndIndex, startIndex),
@@ -275,7 +275,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
           })
         }
       }
-      for (let child of frame.children) {
+      for (const child of frame.children) {
         renderFrameLabelAndChildren(child, depth + 1)
       }
     }
@@ -309,7 +309,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
         }
 
         if (this.props.selectedNode != null && frame.node.frame === this.props.selectedNode.frame) {
-          let batch =
+          const batch =
             frame.node === this.props.selectedNode
               ? directlySelectedOutlineBatch
               : indirectlySelectedOutlineBatch
@@ -323,16 +323,16 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
           })
         }
       }
-      for (let child of frame.children) {
+      for (const child of frame.children) {
         renderSpecialFrameOutlines(child, depth + 1)
       }
     }
 
-    for (let frame of this.props.flamechart.getLayers()[0] || []) {
+    for (const frame of this.props.flamechart.getLayers()[0] || []) {
       renderSpecialFrameOutlines(frame)
     }
 
-    for (let frame of this.props.flamechart.getLayers()[0] || []) {
+    for (const frame of this.props.flamechart.getLayers()[0] || []) {
       renderFrameLabelAndChildren(frame)
     }
 
@@ -646,7 +646,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
         }
       }
 
-      for (let child of frame.children) {
+      for (const child of frame.children) {
         setHoveredLabel(child, depth + 1)
       }
     }
@@ -666,7 +666,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
     }
     clearHoveredLabel()
 
-    for (let frame of this.props.flamechart.getLayers()[0] || []) {
+    for (const frame of this.props.flamechart.getLayers()[0] || []) {
       setHoveredLabel(frame)
     }
 

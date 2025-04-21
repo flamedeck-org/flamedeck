@@ -64,20 +64,20 @@ export class KeyedSet<T extends HasKey> implements Iterable<T> {
 }
 
 export function* itMap<T, U>(it: Iterable<T>, f: (t: T) => U): Iterable<U> {
-  for (let t of it) {
+  for (const t of it) {
     yield f(t)
   }
 }
 
 export function itForEach<T>(it: Iterable<T>, f: (t: T) => void): void {
-  for (let t of it) {
+  for (const t of it) {
     f(t)
   }
 }
 
 export function itReduce<T, U>(it: Iterable<T>, f: (a: U, b: T) => U, init: U): U {
   let accum: U = init
-  for (let t of it) {
+  for (const t of it) {
     accum = f(accum, t)
   }
   return accum
@@ -158,10 +158,10 @@ export function findIndexBisect<T>(ls: T[], f: (val: T) => boolean): number {
 export function noop(...args: any[]) {}
 
 export function objectsHaveShallowEquality<T extends object>(a: T, b: T): boolean {
-  for (let key in a) {
+  for (const key in a) {
     if (a[key] !== b[key]) return false
   }
-  for (let key in b) {
+  for (const key in b) {
     if (a[key] !== b[key]) return false
   }
   return true

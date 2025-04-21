@@ -150,7 +150,7 @@ function partitionByPidTid<T extends {tid: number | string; pid: number | string
 ): Map<string, T[]> {
   const map = new Map<string, T[]>()
 
-  for (let ev of events) {
+  for (const ev of events) {
     const list = getOrInsert(map, pidTidKey(Number(ev.pid), Number(ev.tid)), () => [])
     list.push(ev)
   }
@@ -195,17 +195,17 @@ function convertToEventQueues(events: ImportableTraceEvent[]): [BTraceEvent[], E
   // Rebase all of the timestamps on the lowest timestamp
   if (events.length > 0) {
     let firstTs = Number.MAX_SAFE_INTEGER
-    for (let ev of events) {
+    for (const ev of events) {
       firstTs = Math.min(firstTs, ev.ts)
     }
-    for (let ev of events) {
+    for (const ev of events) {
       ev.ts -= firstTs
     }
   }
 
   // Next, combine B, E, and X events into two timestamp ordered queues.
   const xEvents: XTraceEvent[] = []
-  for (let ev of events) {
+  for (const ev of events) {
     switch (ev.ph) {
       case 'B': {
         beginEvents.push(ev)
@@ -250,7 +250,7 @@ function convertToEventQueues(events: ImportableTraceEvent[]): [BTraceEvent[], E
     return 0
   })
 
-  for (let x of xEvents) {
+  for (const x of xEvents) {
     const xDur = dur(x)
     beginEvents.push({...x, ph: 'B'} as BTraceEvent)
     endEvents.push({...x, ph: 'E', ts: x.ts + xDur} as ETraceEvent)
@@ -273,7 +273,7 @@ function convertToEventQueues(events: ImportableTraceEvent[]): [BTraceEvent[], E
 
 function filterIgnoredEventTypes(events: TraceEvent[]): ImportableTraceEvent[] {
   const ret: ImportableTraceEvent[] = []
-  for (let ev of events) {
+  for (const ev of events) {
     switch (ev.ph) {
       case 'B':
       case 'E':
@@ -286,7 +286,7 @@ function filterIgnoredEventTypes(events: TraceEvent[]): ImportableTraceEvent[] {
 
 function getProcessNamesByPid(events: TraceEvent[]): Map<number, string> {
   const processNamesByPid = new Map<number, string>()
-  for (let ev of events) {
+  for (const ev of events) {
     if (ev.ph === 'M' && ev.name === 'process_name' && ev.args && ev.args.name) {
       processNamesByPid.set(ev.pid, ev.args.name)
     }
@@ -297,7 +297,7 @@ function getProcessNamesByPid(events: TraceEvent[]): Map<number, string> {
 function getThreadNamesByPidTid(events: TraceEvent[]): Map<string, string> {
   const threadNameByPidTid = new Map<string, string>()
 
-  for (let ev of events) {
+  for (const ev of events) {
     if (ev.ph === 'M' && ev.name === 'thread_name' && ev.args && ev.args.name) {
       threadNameByPidTid.set(pidTidKey(ev.pid, ev.tid), ev.args.name)
     }
@@ -688,7 +688,7 @@ function isTraceEventList(maybeEventList: any): maybeEventList is TraceEvent[] {
   // Both ph and ts should be provided for every event. In theory, many other
   // fields are mandatory, but without these fields, we won't usefully be able
   // to import the data, so we'll rely upon these.
-  for (let el of maybeEventList) {
+  for (const el of maybeEventList) {
     if (!('ph' in el)) {
       return false
     }

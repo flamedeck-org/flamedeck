@@ -82,7 +82,7 @@ export function importFromChromeHeapProfile(chromeProfile: HeapProfile): Profile
   // Compute all stacks by taking each last node and going upward
   const stacks: HeapProfileNode[][] = []
   for (let currentNode of nodeById.values()) {
-    let stack: HeapProfileNode[] = []
+    const stack: HeapProfileNode[] = []
     stack.push(currentNode)
     // While we found a parent
     while (true) {
@@ -98,7 +98,7 @@ export function importFromChromeHeapProfile(chromeProfile: HeapProfile): Profile
 
   const profile = new StackListProfileBuilder(total)
 
-  for (let stack of stacks) {
+  for (const stack of stacks) {
     const lastFrame = stack[stack.length - 1]
     profile.appendSampleWithWeight(
       stack.map(frame => frameInfoForCallFrame(frame.callFrame)),

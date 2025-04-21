@@ -24,7 +24,7 @@ function parseTSV<T>(contents: TextFileContent): T[] {
   }
 
   const ret: T[] = []
-  for (let line of lines) {
+  for (const line of lines) {
     const row = {} as T
     for (let i = 0; i < line.length; i++) {
       ;(row as any)[indexToField.get(i)!] = line[i]
@@ -109,24 +109,24 @@ export function importFromInstrumentsDeepCopy(contents: TextFileContent): Profil
   const stack: FrameInfoWithWeight[] = []
   let cumulativeValue: number = 0
 
-  for (let row of rows) {
+  for (const row of rows) {
     const symbolName = row['Symbol Name']
     if (!symbolName) continue
     const trimmedSymbolName = symbolName.trim()
-    let stackDepth = symbolName.length - trimmedSymbolName.length
+    const stackDepth = symbolName.length - trimmedSymbolName.length
 
     if (stack.length - stackDepth < 0) {
       throw new Error('Invalid format')
     }
 
-    let framesToLeave: FrameInfoWithWeight[] = []
+    const framesToLeave: FrameInfoWithWeight[] = []
 
     while (stackDepth < stack.length) {
       const stackTop = stack.pop()!
       framesToLeave.push(stackTop)
     }
 
-    for (let frameToLeave of framesToLeave) {
+    for (const frameToLeave of framesToLeave) {
       cumulativeValue = Math.max(cumulativeValue, frameToLeave.endValue)
       profile.leaveFrame(frameToLeave, cumulativeValue)
     }
@@ -176,7 +176,7 @@ async function extractDirectoryTree(entry: FileSystemDirectoryEntry): Promise<Tr
     }, reject)
   })
 
-  for (let child of children) {
+  for (const child of children) {
     if (child.isDirectory) {
       const subtree = await extractDirectoryTree(child as FileSystemDirectoryEntry)
       node.subdirectories.set(subtree.name, subtree)
@@ -263,7 +263,7 @@ interface Sample {
 
 async function getRawSampleList(core: TraceDirectoryTree): Promise<Sample[]> {
   const stores = getOrThrow(core.subdirectories, 'stores')
-  for (let storedir of stores.subdirectories.values()) {
+  for (const storedir of stores.subdirectories.values()) {
     const schemaFile = storedir.files.get('schema.xml')
     if (!schemaFile) continue
     const schema = await readAsText(schemaFile)
@@ -321,7 +321,7 @@ async function getIntegerArrays(samples: Sample[], core: TraceDirectoryTree): Pr
   // Header we don't care about
   indexreader.seek(32)
 
-  let arrays: number[][] = []
+  const arrays: number[][] = []
 
   while (indexreader.hasMore()) {
     const byteOffset = indexreader.readUint32() + indexreader.readUint32() * (1024 * 1024)
@@ -335,7 +335,7 @@ async function getIntegerArrays(samples: Sample[], core: TraceDirectoryTree): Pr
     datareader.seek(byteOffset)
 
     let length = datareader.readUint32()
-    let array: number[] = []
+    const array: number[] = []
 
     while (length--) {
       array.push(datareader.readUint64())
@@ -380,7 +380,7 @@ async function readFormTemplate(tree: TraceDirectoryTree): Promise<FormTemplateD
   const allRunData = archive['com.apple.xray.run.data']
 
   const runs: FormTemplateRunData[] = []
-  for (let runNumber of allRunData.runNumbers) {
+  for (const runNumber of allRunData.runNumbers) {
     const runData = getOrThrow<number, Map<any, any>>(allRunData.runData, runNumber)
 
     const symbolsByPid = getOrThrow<string, Map<number, {symbols: SymbolInfo[]}>>(
@@ -391,11 +391,11 @@ async function readFormTemplate(tree: TraceDirectoryTree): Promise<FormTemplateD
     const addressToFrameMap = new Map<number, FrameInfo>()
 
     // TODO(jlfwong): Deal with profiles with conflicting addresses?
-    for (let symbols of symbolsByPid.values()) {
-      for (let symbol of symbols.symbols) {
+    for (const symbols of symbolsByPid.values()) {
+      for (const symbol of symbols.symbols) {
         if (!symbol) continue
         const {sourcePath, symbolName, addressToLine} = symbol
-        for (let address of addressToLine.keys()) {
+        for (const address of addressToLine.keys()) {
           getOrInsert(addressToFrameMap, address, () => {
             const name = symbolName || `0x${zeroPad(address.toString(16), 16)}`
             const frame: FrameInfo = {
@@ -443,7 +443,7 @@ export async function importFromInstrumentsTrace(
   const profiles: Profile[] = []
   let indexToView = 0
 
-  for (let run of runs) {
+  for (const run of runs) {
     const {addressToFrameMap, number} = run
     const group = await importRunFromInstrumentsTrace({
       fileName: entry.name,
@@ -470,13 +470,13 @@ export async function importRunFromInstrumentsTrace(args: {
 }): Promise<ProfileGroup> {
   const {fileName, tree, addressToFrameMap, runNumber} = args
   const core = getCoreDirForRun(tree, runNumber)
-  let samples = await getRawSampleList(core)
+  const samples = await getRawSampleList(core)
   const arrays = await getIntegerArrays(samples, core)
 
   // We'll try to guess which thread is the main thread by assuming
   // it's the one with the most samples.
   const sampleCountByThreadID = new Map<number, number>()
-  for (let sample of samples) {
+  for (const sample of samples) {
     sampleCountByThreadID.set(
       sample.threadID,
       getOrElse(sampleCountByThreadID, sample.threadID, () => 0) + 1,
@@ -521,7 +521,7 @@ export function importThreadFromInstrumentsTrace(args: {
     if (frame) {
       stack.push(frame)
     } else if (k in arrays) {
-      for (let addr of arrays[k]) {
+      for (const addr of arrays[k]) {
         appendRecursive(addr, stack)
       }
     } else {
@@ -535,7 +535,7 @@ export function importThreadFromInstrumentsTrace(args: {
   }
 
   let lastTimestamp: null | number = null
-  for (let sample of samples) {
+  for (const sample of samples) {
     const stackForSample = getOrInsert(backtraceIDtoStack, sample.backtraceID, id => {
       const stack: FrameInfo[] = []
       appendRecursive(id, stack)
@@ -683,7 +683,7 @@ function expandKeyedArchive(
   }
 
   // Reconstruct the DAG from the parse tree
-  let visit = (object: any) => {
+  const visit = (object: any) => {
     if (object instanceof UID) {
       return root.$objects[object.index]
     } else if (isArray(object)) {
@@ -691,13 +691,13 @@ function expandKeyedArchive(
         object[i] = visit(object[i])
       }
     } else if (isDictionary(object)) {
-      for (let key in object) {
+      for (const key in object) {
         object[key] = visit(object[key])
       }
     } else if (object instanceof Map) {
       const clone = new Map(object)
       object.clear()
-      for (let [k, v] of clone.entries()) {
+      for (const [k, v] of clone.entries()) {
         object.set(visit(k), visit(v))
       }
     }
@@ -715,14 +715,14 @@ function paternMatchObjectiveC(
   interpretClass: ($classname: string, obj: any) => any = x => x,
 ): any {
   if (isDictionary(value) && value.$class) {
-    let name = followUID(objects, value.$class).$classname
+    const name = followUID(objects, value.$class).$classname
     switch (name) {
       case 'NSDecimalNumberPlaceholder': {
-        let length: number = value['NS.length']
-        let exponent: number = value['NS.exponent']
-        let byteOrder: number = value['NS.mantissa.bo']
-        let negative: boolean = value['NS.negative']
-        let mantissa = new Uint16Array(new Uint8Array(value['NS.mantissa']).buffer)
+        const length: number = value['NS.length']
+        const exponent: number = value['NS.exponent']
+        const byteOrder: number = value['NS.mantissa.bo']
+        const negative: boolean = value['NS.negative']
+        const mantissa = new Uint16Array(new Uint8Array(value['NS.mantissa']).buffer)
         let decimal = 0
 
         for (let i = 0; i < length; i++) {
@@ -759,9 +759,9 @@ function paternMatchObjectiveC(
         if ('NS.objects' in value) {
           return value['NS.objects']
         }
-        let array: any[] = []
+        const array: any[] = []
         while (true) {
-          let object = 'NS.object.' + array.length
+          const object = 'NS.object.' + array.length
           if (!(object in value)) {
             break
           }
@@ -777,7 +777,7 @@ function paternMatchObjectiveC(
         // See: https://github.com/apple/swift-corelibs-foundation/blob/76995e8d3d8c10f3f3ec344dace43426ab941d0e/Foundation/NSObjCRuntime.swift#L19
         // const type = String.fromCharCode(value['NS.type'])
 
-        let array: any[] = []
+        const array: any[] = []
         for (let i = 0; i < count; i++) {
           const element = value['$' + i]
           array.push(element)
@@ -787,15 +787,15 @@ function paternMatchObjectiveC(
 
       case 'NSDictionary':
       case 'NSMutableDictionary':
-        let map = new Map()
+        const map = new Map()
         if ('NS.keys' in value && 'NS.objects' in value) {
           for (let i = 0; i < value['NS.keys'].length; i++) {
             map.set(value['NS.keys'][i], value['NS.objects'][i])
           }
         } else {
           while (true) {
-            let key = 'NS.key.' + map.size
-            let object = 'NS.object.' + map.size
+            const key = 'NS.key.' + map.size
+            const object = 'NS.object.' + map.size
             if (!(key in value) || !(object in value)) {
               break
             }
@@ -819,7 +819,7 @@ export class UID {
 }
 
 function parseBinaryPlist(bytes: Uint8Array): any {
-  let text = 'bplist00'
+  const text = 'bplist00'
   for (let i = 0; i < 8; i++) {
     if (bytes[i] !== text.charCodeAt(i)) {
       throw new Error('File is not a binary plist')
@@ -844,13 +844,13 @@ class BinaryPlistParser {
   constructor(public view: DataView) {}
 
   parseRoot(): any {
-    let trailer = this.view.byteLength - 32
-    let offsetSize = this.view.getUint8(trailer + 6)
+    const trailer = this.view.byteLength - 32
+    const offsetSize = this.view.getUint8(trailer + 6)
     this.referenceSize = this.view.getUint8(trailer + 7)
 
     // Just use the last 32-bits of these 64-bit big-endian values
-    let objectCount = this.view.getUint32(trailer + 12, false)
-    let rootIndex = this.view.getUint32(trailer + 20, false)
+    const objectCount = this.view.getUint32(trailer + 12, false)
+    const rootIndex = this.view.getUint32(trailer + 20, false)
     let tableOffset = this.view.getUint32(trailer + 28, false)
 
     // Parse all offsets before starting to parse objects
@@ -865,10 +865,10 @@ class BinaryPlistParser {
 
   parseLengthAndOffset(offset: number, extra: number): LengthAndOffset {
     if (extra !== 0x0f) return {length: extra, offset: 0}
-    let marker = this.view.getUint8(offset++)
+    const marker = this.view.getUint8(offset++)
     if ((marker & 0xf0) !== 0x10)
       throw new Error('Unexpected non-integer length at offset ' + offset)
-    let size = 1 << (marker & 0x0f)
+    const size = 1 << (marker & 0x0f)
     return {length: this.parseInteger(offset, size), offset: size + 1}
   }
 
@@ -911,17 +911,17 @@ class BinaryPlistParser {
 
   parseDate(offset: number, size: number): Date {
     if (size !== 8) throw new Error('Unexpected date of size ' + size + ' at offset ' + offset)
-    let seconds = this.view.getFloat64(offset, false)
+    const seconds = this.view.getFloat64(offset, false)
     return new Date(978307200000 + seconds * 1000) // Starts from January 1st, 2001
   }
 
   parseData(offset: number, extra: number): Uint8Array {
-    let both = this.parseLengthAndOffset(offset, extra)
+    const both = this.parseLengthAndOffset(offset, extra)
     return new Uint8Array(this.view.buffer, offset + both.offset, both.length)
   }
 
   parseStringASCII(offset: number, extra: number): string {
-    let both = this.parseLengthAndOffset(offset, extra)
+    const both = this.parseLengthAndOffset(offset, extra)
     let text = ''
     offset += both.offset
     for (let i = 0; i < both.length; i++) {
@@ -931,7 +931,7 @@ class BinaryPlistParser {
   }
 
   parseStringUTF16(offset: number, extra: number): string {
-    let both = this.parseLengthAndOffset(offset, extra)
+    const both = this.parseLengthAndOffset(offset, extra)
     let text = ''
     offset += both.offset
     for (let i = 0; i < both.length; i++) {
@@ -946,9 +946,9 @@ class BinaryPlistParser {
   }
 
   parseArray(offset: number, extra: number): any[] {
-    let both = this.parseLengthAndOffset(offset, extra)
-    let array: any[] = []
-    let size = this.referenceSize
+    const both = this.parseLengthAndOffset(offset, extra)
+    const array: any[] = []
+    const size = this.referenceSize
     offset += both.offset
     for (let i = 0; i < both.length; i++) {
       array.push(this.parseObject(this.offsetTable[this.parseInteger(offset, size)]))
@@ -957,15 +957,15 @@ class BinaryPlistParser {
     return array
   }
 
-  parseDictionary(offset: number, extra: number): Object {
-    let both = this.parseLengthAndOffset(offset, extra)
-    let dictionary = Object.create(null)
-    let size = this.referenceSize
+  parseDictionary(offset: number, extra: number): object {
+    const both = this.parseLengthAndOffset(offset, extra)
+    const dictionary = Object.create(null)
+    const size = this.referenceSize
     let nextKey = offset + both.offset
     let nextValue = nextKey + both.length * size
     for (let i = 0; i < both.length; i++) {
-      let key = this.parseObject(this.offsetTable[this.parseInteger(nextKey, size)])
-      let value = this.parseObject(this.offsetTable[this.parseInteger(nextValue, size)])
+      const key = this.parseObject(this.offsetTable[this.parseInteger(nextKey, size)])
+      const value = this.parseObject(this.offsetTable[this.parseInteger(nextValue, size)])
       if (typeof key !== 'string') throw new Error('Unexpected non-string key at offset ' + nextKey)
       dictionary[key] = value
       nextKey += size
@@ -975,8 +975,8 @@ class BinaryPlistParser {
   }
 
   parseObject(offset: number): any {
-    let marker = this.view.getUint8(offset++)
-    let extra = marker & 0x0f
+    const marker = this.view.getUint8(offset++)
+    const extra = marker & 0x0f
     switch (marker >> 4) {
       case 0x0:
         return this.parseSingleton(offset, extra)

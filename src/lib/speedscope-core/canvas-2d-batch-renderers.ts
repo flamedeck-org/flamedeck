@@ -22,7 +22,7 @@ export class BatchCanvasTextRenderer {
   fill(ctx: CanvasRenderingContext2D, color: string) {
     if (this.argsBatch.length === 0) return
     ctx.fillStyle = color
-    for (let args of this.argsBatch) {
+    for (const args of this.argsBatch) {
       ctx.fillText(args.text, args.x, args.y)
     }
     this.argsBatch = []
@@ -45,7 +45,7 @@ export class BatchCanvasRectRenderer {
 
   private drawPath(ctx: CanvasRenderingContext2D) {
     ctx.beginPath()
-    for (let args of this.argsBatch) {
+    for (const args of this.argsBatch) {
       ctx.rect(args.x, args.y, args.w, args.h)
     }
     ctx.closePath()

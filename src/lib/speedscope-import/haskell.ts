@@ -47,11 +47,11 @@ function addToProfile(
     return startVal
 
   let curVal = startVal
-  let frameInfo = infos.get(tree.id)!
+  const frameInfo = infos.get(tree.id)!
 
   profile.enterFrame(frameInfo, curVal)
 
-  for (let child of tree.children) {
+  for (const child of tree.children) {
     curVal = addToProfile(child, curVal, profile, infos, attribute)
   }
 
@@ -64,7 +64,7 @@ function addToProfile(
 
 export function importFromHaskell(haskellProfile: HaskellProfile): ProfileGroup {
   const idToFrameInfo = new Map<number, FrameInfo>()
-  for (let centre of haskellProfile.cost_centres) {
+  for (const centre of haskellProfile.cost_centres) {
     const frameInfo: FrameInfo = {
       key: centre.id,
       name: `${centre.module}.${centre.label}`,

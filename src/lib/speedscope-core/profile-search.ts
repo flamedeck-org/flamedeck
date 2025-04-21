@@ -27,7 +27,7 @@ export function exactMatchStrings(text: string, pattern: string): [number, numbe
   let lastIndex = 0
   const matchedRanges: Array<[number, number]> = []
   while (true) {
-    let index = lowerText.indexOf(lowerPattern, lastIndex)
+    const index = lowerText.indexOf(lowerPattern, lastIndex)
     if (index === -1) {
       return matchedRanges
     }
