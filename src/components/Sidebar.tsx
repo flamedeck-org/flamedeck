@@ -70,9 +70,9 @@ const Sidebar: React.FC = () => {
         <NavLink
           to="/traces"
           className={({ isActive }) =>
-            `flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               isActive
-                ? "bg-primary text-primary-foreground"
+                ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             }`
           }
@@ -87,8 +87,13 @@ const Sidebar: React.FC = () => {
       <div className="px-4 py-4 border-t">
         <div className="mb-4">
           <Link to="/upload">
-            <Button size="sm" variant="default" className="w-full">
-              <UploadCloud className="mr-2 h-4 w-4" /> Upload Trace
+            <Button 
+              size="sm" 
+              variant="default" 
+              className="w-full flex items-center space-x-2"
+            >
+              <UploadCloud className="h-5 w-5" />
+              <span>Upload Trace</span>
             </Button>
           </Link>
         </div>

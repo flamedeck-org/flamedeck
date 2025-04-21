@@ -21,6 +21,7 @@ const vert = `
 `
 
 const frag = (theme: Theme) => {
+  console.log('theme in overlay rectangle renderer', theme)
   const {r, g, b} = Color.fromCSSHex(theme.fgSecondaryColor)
   const rgb = `${r.toFixed(1)}, ${g.toFixed(1)}, ${b.toFixed(1)}`
   return `
@@ -74,6 +75,7 @@ export class ViewportRectangleRenderer {
     private gl: Graphics.Context,
     theme: Theme,
   ) {
+    console.log('instantiating overlay rectangle renderer')
     const vertices = [
       [-1, 1],
       [1, 1],

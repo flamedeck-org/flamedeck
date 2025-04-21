@@ -58,7 +58,7 @@ function SortIcon(props: SortIconProps) {
       height="10"
       viewBox="0 0 8 10"
       xmlns="http://www.w3.org/2000/svg"
-      className={`relative top-px mr-1.5 inline-block ${upColorClass}`}
+      className={`mr-1.5 inline-block ${upColorClass}`}
     >
       <path d="M0 4L4 0L8 4H0Z" fill="currentColor" />
       <path d="M0 4L4 0L8 4H0Z" transform="translate(0 10) scale(1 -1)" fill="currentColor" className={downColorClass} />
@@ -284,37 +284,45 @@ export const ProfileTableView = memo(
     const onSelfClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SELF, ev), [onSortClick])
     const onSymbolNameClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SYMBOL_NAME, ev), [onSortClick])
 
-    const numericHeaderCellClass = "relative p-1 pr-[30px] w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
+    const numericHeaderCellClass = "p-1 pr-[30px] w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
     const textHeaderCellClass = "p-1 w-full max-w-0 text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
+    const headerFlexContainerClass = "flex items-center cursor-pointer"
+    const numericHeaderFlexContainerClass = `${headerFlexContainerClass} justify-end`
 
     return (
       <div className="flex h-full flex-col bg-background dark:bg-dark-background">
         <table className="w-full table-fixed text-xs">
           <thead className="select-none border-b-2 border-background-secondary dark:border-dark-background-secondary text-left">
             <tr>
-              <th className={numericHeaderCellClass} onClick={onTotalClick}>
-                <SortIcon
-                  activeDirection={
-                    sortMethod.field === SortField.TOTAL ? sortMethod.direction : null
-                  }
-                />
-                Total
+              <th className={numericHeaderCellClass}>
+                <div className={numericHeaderFlexContainerClass} onClick={onTotalClick}>
+                  <SortIcon
+                    activeDirection={
+                      sortMethod.field === SortField.TOTAL ? sortMethod.direction : null
+                    }
+                  />
+                  Total
+                </div>
               </th>
-              <th className={numericHeaderCellClass} onClick={onSelfClick}>
-                <SortIcon
-                  activeDirection={
-                    sortMethod.field === SortField.SELF ? sortMethod.direction : null
-                  }
-                />
-                Self
+              <th className={numericHeaderCellClass}>
+                <div className={numericHeaderFlexContainerClass} onClick={onSelfClick}>
+                  <SortIcon
+                    activeDirection={
+                      sortMethod.field === SortField.SELF ? sortMethod.direction : null
+                    }
+                  />
+                  Self
+                </div>
               </th>
-              <th className={textHeaderCellClass} onClick={onSymbolNameClick}>
-                <SortIcon
-                  activeDirection={
-                    sortMethod.field === SortField.SYMBOL_NAME ? sortMethod.direction : null
-                  }
-                />
-                Symbol Name
+              <th className={textHeaderCellClass}>
+                <div className={headerFlexContainerClass} onClick={onSymbolNameClick}>
+                  <SortIcon
+                    activeDirection={
+                      sortMethod.field === SortField.SYMBOL_NAME ? sortMethod.direction : null
+                    }
+                  />
+                  Symbol Name
+                </div>
               </th>
             </tr>
           </thead>
