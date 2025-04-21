@@ -74,14 +74,14 @@ function fzfFuzzyMatchV1(text: string, pattern: string): FuzzyMatch | null {
   let sidx = -1
   let eidx = -1
 
-  let lenRunes = text.length
-  let lenPattern = pattern.length
+  const lenRunes = text.length
+  const lenPattern = pattern.length
 
   // Forward pass: scan over the text pattern, identifying the earliest start
   // and the latest end to consider.
   for (let index = 0; index < lenRunes; index++) {
-    let char = text[index]
-    let pchar = pattern[pidx]
+    const char = text[index]
+    const pchar = pattern[pidx]
     if (charsMatch(char, pchar)) {
       if (sidx < 0) {
         sidx = index
@@ -177,15 +177,15 @@ function fzfCalculateScore(text: string, pattern: string, sidx: number, eidx: nu
   let inGap = false
   let consecutive = 0
   let firstBonus = 0
-  let pos: number[] = new Array(pattern.length)
+  const pos: number[] = new Array(pattern.length)
   let prevClass = fzfCharClass.charNonWord
 
   if (sidx > 0) {
     prevClass = fzfCharClassOf(text[sidx - 1])
   }
   for (let idx = sidx; idx < eidx; idx++) {
-    let char = text[idx]
-    let curClass = fzfCharClassOf(char)
+    const char = text[idx]
+    const curClass = fzfCharClassOf(char)
     if (charsMatch(char, pattern[pidx])) {
       pos[pidx] = idx
       score += fzfScoreMatch
@@ -228,7 +228,7 @@ function fzfCalculateScore(text: string, pattern: string, sidx: number, eidx: nu
     )
   }
 
-  let matchedRanges: [number, number][] = [[pos[0], pos[0] + 1]]
+  const matchedRanges: [number, number][] = [[pos[0], pos[0] + 1]]
   for (let i = 1; i < pos.length; i++) {
     const curPos = pos[i]
     const curRange = matchedRanges[matchedRanges.length - 1]

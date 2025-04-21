@@ -330,7 +330,7 @@ export namespace WebGL {
 
     constructor(canvas: HTMLCanvasElement = document.createElement('canvas')) {
       super()
-      let gl = canvas.getContext('webgl', {
+      const gl = canvas.getContext('webgl', {
         alpha: false,
         antialias: false,
         depth: false,
@@ -343,7 +343,7 @@ export namespace WebGL {
       }
 
       this._gl = gl
-      let style = canvas.style
+      const style = canvas.style
       canvas.width = 0
       canvas.height = 0
       style.width = style.height = '0'
@@ -379,7 +379,7 @@ export namespace WebGL {
       this._currentClearColor = Graphics.Color.TRANSPARENT
       this._forceStateUpdate = true
       this._generation++
-      for (let handler of this._contextResetHandlers) {
+      for (const handler of this._contextResetHandlers) {
         handler()
       }
     }
@@ -472,7 +472,7 @@ export namespace WebGL {
       widthInAppUnits: number,
       heightInAppUnits: number,
     ) {
-      let canvas = this._gl.canvas as HTMLCanvasElement
+      const canvas = this._gl.canvas as HTMLCanvasElement
       const bounds = canvas.getBoundingClientRect()
 
       if (
@@ -485,7 +485,7 @@ export namespace WebGL {
         return
       }
 
-      let style = canvas.style
+      const style = canvas.style
       canvas.width = widthInPixels
       canvas.height = heightInPixels
       style.width = `${widthInAppUnits}px`
@@ -518,7 +518,7 @@ export namespace WebGL {
       vertexSource: string,
       fragmentSource: string,
     ): Graphics.Material {
-      let material = new Material(this, format, vertexSource, fragmentSource)
+      const material = new Material(this, format, vertexSource, fragmentSource)
 
       // Compiling shaders is really expensive so we want to get that started
       // as early as possible. In Chrome and possibly other browsers, shader
@@ -566,9 +566,9 @@ export namespace WebGL {
     }
 
     _updateRenderTargetAndViewport() {
-      let renderTarget = this._currentRenderTarget
-      let viewport = renderTarget != null ? renderTarget.viewport : this._defaultViewport
-      let gl = this._gl
+      const renderTarget = this._currentRenderTarget
+      const viewport = renderTarget != null ? renderTarget.viewport : this._defaultViewport
+      const gl = this._gl
 
       if (this._forceStateUpdate || this._oldRenderTarget != renderTarget) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? renderTarget.framebuffer : null)
@@ -588,11 +588,11 @@ export namespace WebGL {
 
     _updateBlendState() {
       if (this._forceStateUpdate || this._oldBlendOperations != this._blendOperations) {
-        let gl = this._gl
-        let operations = this._blendOperations
-        let oldOperations = this._oldBlendOperations
-        let source = (operations & 0xf) as Graphics.BlendOperation
-        let target = (operations >> 4) as Graphics.BlendOperation
+        const gl = this._gl
+        const operations = this._blendOperations
+        const oldOperations = this._oldBlendOperations
+        const source = (operations & 0xf) as Graphics.BlendOperation
+        const target = (operations >> 4) as Graphics.BlendOperation
 
         assert(source in this._blendOperationMap)
         assert(target in this._blendOperationMap)
@@ -615,12 +615,12 @@ export namespace WebGL {
 
     _updateFormat(format: Graphics.VertexFormat) {
       // Update the attributes
-      let gl = this._gl
-      let attributes = format.attributes
-      let count = attributes.length
+      const gl = this._gl
+      const attributes = format.attributes
+      const count = attributes.length
       for (let i = 0; i < count; i++) {
-        let attribute = attributes[i]
-        let isByte = attribute.type == Graphics.AttributeType.BYTE
+        const attribute = attributes[i]
+        const isByte = attribute.type == Graphics.AttributeType.BYTE
         gl.vertexAttribPointer(
           i,
           attribute.count,
@@ -682,17 +682,17 @@ export namespace WebGL {
     abstract prepare(): void
 
     get location(): WebGLUniformLocation {
-      let context = Context.from(this._material.context)
+      const context = Context.from(this._material.context)
       if (this._generation != context.generation) {
         this._location = context.gl.getUniformLocation(this._material.program, this._name)
         this._generation = context.generation
 
         // Validate the shader against this uniform
         if (!RELEASE) {
-          let program = this._material.program
-          let gl = context.gl
+          const program = this._material.program
+          const gl = context.gl
           for (let i = 0, ii = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS); i < ii; i++) {
-            let info = gl.getActiveUniform(program, i)
+            const info = gl.getActiveUniform(program, i)
             if (info && info.name == this._name) {
               assert(info.size == 1)
               switch (info.type) {
@@ -749,7 +749,7 @@ export namespace WebGL {
     }
 
     prepare() {
-      let context = Context.from(this._material.context)
+      const context = Context.from(this._material.context)
       if (this._generation != context.generation || this._isDirty) {
         context.gl.uniform1f(this.location, this._x)
         this._isDirty = false
@@ -768,7 +768,7 @@ export namespace WebGL {
     }
 
     prepare() {
-      let context = Context.from(this._material.context)
+      const context = Context.from(this._material.context)
       if (this._generation != context.generation || this._isDirty) {
         context.gl.uniform1i(this.location, this._x)
         this._isDirty = false
@@ -789,7 +789,7 @@ export namespace WebGL {
     }
 
     prepare() {
-      let context = Context.from(this._material.context)
+      const context = Context.from(this._material.context)
       if (this._generation != context.generation || this._isDirty) {
         context.gl.uniform2f(this.location, this._x, this._y)
         this._isDirty = false
@@ -812,7 +812,7 @@ export namespace WebGL {
     }
 
     prepare() {
-      let context = Context.from(this._material.context)
+      const context = Context.from(this._material.context)
       if (this._generation != context.generation || this._isDirty) {
         context.gl.uniform3f(this.location, this._x, this._y, this._z)
         this._isDirty = false
@@ -837,7 +837,7 @@ export namespace WebGL {
     }
 
     prepare() {
-      let context = Context.from(this._material.context)
+      const context = Context.from(this._material.context)
       if (this._generation != context.generation || this._isDirty) {
         context.gl.uniform4f(this.location, this._x, this._y, this._z, this._w)
         this._isDirty = false
@@ -872,7 +872,7 @@ export namespace WebGL {
 
       for (let i = 0; i < 9; i++) {
         if (UniformMat3._cachedValues[i] != this._values[i]) {
-          let swap = this._values
+          const swap = this._values
           this._values = UniformMat3._cachedValues
           UniformMat3._cachedValues = swap
           this._isDirty = true
@@ -882,7 +882,7 @@ export namespace WebGL {
     }
 
     prepare() {
-      let context = Context.from(this._material.context)
+      const context = Context.from(this._material.context)
       if (this._generation != context.generation || this._isDirty) {
         context.gl.uniformMatrix3fv(this.location, false, this._values)
         this._isDirty = false
@@ -906,8 +906,8 @@ export namespace WebGL {
     }
 
     prepare() {
-      let context = Context.from(this._material.context)
-      let gl = context.gl
+      const context = Context.from(this._material.context)
+      const gl = context.gl
       assert(
         this._texture == null ||
           context.currentRenderTarget == null ||
@@ -1041,12 +1041,12 @@ export namespace WebGL {
     }
 
     get program(): WebGLProgram {
-      let gl = this._context.gl
+      const gl = this._context.gl
       if (this._generation != this._context.generation) {
         this._program = gl.createProgram()!
         this._compileShader(gl, gl.VERTEX_SHADER, this.vertexSource)
         this._compileShader(gl, gl.FRAGMENT_SHADER, this.fragmentSource)
-        let attributes = this.format.attributes
+        const attributes = this.format.attributes
         for (let i = 0; i < attributes.length; i++) {
           gl.bindAttribLocation(this._program, i, attributes[i].name)
         }
@@ -1058,13 +1058,13 @@ export namespace WebGL {
 
         // Validate this shader against the format
         if (!RELEASE) {
-          for (let attribute of attributes) {
+          for (const attribute of attributes) {
             for (
               let i = 0, ii = gl.getProgramParameter(this.program, gl.ACTIVE_ATTRIBUTES);
               i < ii;
               i++
             ) {
-              let info = gl.getActiveAttrib(this.program, i)
+              const info = gl.getActiveAttrib(this.program, i)
               if (info && info.name == attribute.name) {
                 assert(info.size == 1)
                 switch (attribute.count) {
@@ -1098,13 +1098,13 @@ export namespace WebGL {
 
     prepare(): void {
       this._context.gl.useProgram(this.program)
-      for (let uniform of this._uniformsList) {
+      for (const uniform of this._uniformsList) {
         uniform.prepare()
       }
     }
 
     _compileShader(gl: WebGLRenderingContext, type: GLenum, source: string) {
-      let shader = gl.createShader(type)
+      const shader = gl.createShader(type)
       if (!shader) {
         throw new Error('Failed to create shader')
       }
@@ -1183,7 +1183,7 @@ export namespace WebGL {
     }
 
     prepare(): void {
-      let gl = this._context.gl
+      const gl = this._context.gl
 
       if (this._generation !== this._context.generation) {
         this._buffer = gl.createBuffer()
@@ -1267,7 +1267,7 @@ export namespace WebGL {
     }
 
     get texture(): WebGLTexture {
-      let gl = this._context.gl
+      const gl = this._context.gl
 
       // Create
       if (this._generation != this._context.generation) {
@@ -1362,8 +1362,8 @@ export namespace WebGL {
     }
 
     get framebuffer(): WebGLFramebuffer {
-      let gl = this._context.gl
-      let texture = this._texture.texture
+      const gl = this._context.gl
+      const texture = this._texture.texture
 
       // Create
       if (this._generation != this._context.generation) {

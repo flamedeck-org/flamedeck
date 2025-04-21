@@ -17,6 +17,7 @@ import {
 } from '../../lib/speedscope-core/app-state'
 import { useAtom } from '../../lib/speedscope-core/atom'
 import { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state'
+import { useTheme } from './themes/theme'
 
 interface HBarProps {
   perc: number
@@ -83,7 +84,7 @@ function highlightRanges(
 ): React.ReactElement {
   const spans: React.ReactNode[] = []
   let last = 0
-  for (let range of ranges) {
+  for (const range of ranges) {
     spans.push(text.slice(last, range[0]))
     spans.push(<span className={highlightedClassName}>{text.slice(range[0], range[1])}</span>)
     last = range[1]
@@ -348,12 +349,13 @@ interface ProfileTableViewContainerProps {
 export const ProfileTableViewContainer = memo((ownProps: ProfileTableViewContainerProps) => {
   const { activeProfileState } = ownProps
   const { profile, sandwichViewState } = activeProfileState
+  const theme = useTheme()
   if (!profile) throw new Error('profile missing')
   const tableSortMethod = useAtom(tableSortMethodAtom)
   const { callerCallee } = sandwichViewState
   const selectedFrame = callerCallee ? callerCallee.selectedFrame : null
   const frameToColorBucket = getFrameToColorBucket(profile)
-  const getCSSColorForFrame = createGetCSSColorForFrame({ frameToColorBucket })
+  const getCSSColorForFrame = createGetCSSColorForFrame({ theme, frameToColorBucket })
 
   const setSelectedFrame = useCallback((selectedFrame: Frame | null) => {
     profileGroupAtom.setSelectedFrame(selectedFrame)

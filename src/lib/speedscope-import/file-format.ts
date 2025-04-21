@@ -39,7 +39,7 @@ export function exportProfileGroup(profileGroup: ProfileGroup): FileFormat.File 
     profiles: [],
   }
 
-  for (let profile of profileGroup.profiles) {
+  for (const profile of profileGroup.profiles) {
     file.profiles.push(exportProfile(profile, getIndexForFrame))
   }
 
@@ -107,7 +107,7 @@ function importSpeedscopeProfile(
 
     const frameInfos: FrameInfo[] = frames.map((frame, i) => ({key: i, ...frame}))
 
-    for (let ev of events) {
+    for (const ev of events) {
       switch (ev.type) {
         case FileFormat.EventType.OPEN_FRAME: {
           profile.enterFrame(frameInfos[ev.frame], ev.at - startValue)

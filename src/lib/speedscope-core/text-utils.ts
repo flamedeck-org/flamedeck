@@ -41,7 +41,7 @@ export function buildTrimmedText(text: string, length: number): TrimmedTextResul
     }
   }
 
-  let prefixLength = Math.floor(length / 2)
+  const prefixLength = Math.floor(length / 2)
   const suffixLength = length - prefixLength - 1
   const prefix = text.substring(0, prefixLength)
   const suffix = text.substring(text.length - suffixLength, text.length)
@@ -116,9 +116,9 @@ export function remapRangesToTrimmedText(
   const lengthLoss = trimmedText.originalLength - trimmedText.trimmedLength
   let highlightedEllipsis = false
 
-  for (let [origStart, origEnd] of ranges) {
-    let startPosType = getIndexTypeInTrimmed(trimmedText, origStart)
-    let endPosType = getIndexTypeInTrimmed(trimmedText, origEnd - 1)
+  for (const [origStart, origEnd] of ranges) {
+    const startPosType = getIndexTypeInTrimmed(trimmedText, origStart)
+    const endPosType = getIndexTypeInTrimmed(trimmedText, origEnd - 1)
 
     switch (startPosType) {
       case IndexTypeInTrimmed.IN_PREFIX: {

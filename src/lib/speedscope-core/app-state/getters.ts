@@ -13,28 +13,19 @@ export const createGetColorBucketForFrame = memoizeByReference(
   },
 )
 
+
 export const createGetCSSColorForFrame = memoizeByShallowEquality(
   ({
-    // TODO: Re-enable or adapt theme usage for Tailwind
-    // theme, 
+    theme,
     frameToColorBucket,
   }: {
-    // TODO: Re-enable or adapt theme usage for Tailwind
-    // theme: Theme 
+    theme: Theme
     frameToColorBucket: Map<number | string, number>
   }) => {
     const getColorBucketForFrame = createGetColorBucketForFrame(frameToColorBucket)
     return (frame: Frame): string => {
-      const bucket = getColorBucketForFrame(frame);
-      
-      // TODO: Replace this placeholder logic with proper Tailwind color mapping or re-enable theme usage
-      // Simple grayscale mapping for now:
-      const lightness = 90 - (bucket % 5) * 10; // Example: Vary lightness
-      return `hsl(0, 0%, ${lightness}%)`;
-
-      // Original logic:
-      // const t = getColorBucketForFrame(frame) / 255
-      // return theme.colorForBucket(t).toCSS()
+      const t = getColorBucketForFrame(frame) / 255
+      return theme.colorForBucket(t).toCSS()
     }
   },
 )

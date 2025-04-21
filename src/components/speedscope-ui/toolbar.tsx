@@ -92,7 +92,7 @@ const getCachedProfileList = (() => {
   let cachedProfileList: Profile[] | null = null
 
   return (profileGroup: ProfileGroupState): Profile[] | null => {
-    let nextProfileList = profileGroup?.profiles.map(p => p.profile) || null
+    const nextProfileList = profileGroup?.profiles.map(p => p.profile) || null
 
     if (
       cachedProfileList === null ||

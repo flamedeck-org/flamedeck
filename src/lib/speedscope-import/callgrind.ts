@@ -154,7 +154,7 @@ class CallGraph {
     const currentStack = new Set<Frame>()
 
     let maxWeight = 0
-    for (let [_, totalWeight] of this.totalWeights) {
+    for (const [_, totalWeight] of this.totalWeights) {
       maxWeight = Math.max(maxWeight, totalWeight)
     }
 
@@ -223,13 +223,13 @@ class CallGraph {
       profile.enterFrame(frame, Math.round(totalCumulative * unitMultiplier))
 
       currentStack.add(frame)
-      for (let [child, totalWeightAsChild] of this.childrenTotalWeights.get(frame) || []) {
+      for (const [child, totalWeightAsChild] of this.childrenTotalWeights.get(frame) || []) {
         // To determine the weight of the child in the call tree, we look at the
         // weight of the child in the call graph relative to its parent.
         const childCallTreeWeight =
           subtreeTotalWeight * (totalWeightAsChild / totalWeightForFrameInCallgraph)
 
-        let prevTotalCumulative = totalCumulative
+        const prevTotalCumulative = totalCumulative
         visit(child, childCallTreeWeight)
 
         // Even though we tried to add a child with total weight equal to
@@ -307,13 +307,13 @@ class CallGraph {
 
     const rootNodes = new Set<Frame>(this.frameSet)
 
-    for (let [_, childMap] of this.childrenTotalWeights) {
-      for (let [child, _] of childMap) {
+    for (const [_, childMap] of this.childrenTotalWeights) {
+      for (const [child, _] of childMap) {
         rootNodes.delete(child)
       }
     }
 
-    for (let rootNode of rootNodes) {
+    for (const rootNode of rootNodes) {
       visit(rootNode, this.totalWeights.get(rootNode)!)
     }
 

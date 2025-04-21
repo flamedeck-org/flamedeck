@@ -57,7 +57,7 @@ export class RowAtlas<K> {
 
   writeToAtlasIfNeeded(keys: K[], render: (textureDstRect: Rect, key: K) => void) {
     renderInto(this.gl, this.renderTarget, () => {
-      for (let key of keys) {
+      for (const key of keys) {
         let row = this.rowCache.get(key)
         if (row != null) {
           // Already cached!
@@ -78,7 +78,7 @@ export class RowAtlas<K> {
   }
 
   renderViaAtlas(key: K, dstRect: Rect): boolean {
-    let row = this.rowCache.get(key)
+    const row = this.rowCache.get(key)
     if (row == null) {
       return false
     }

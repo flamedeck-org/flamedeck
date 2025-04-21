@@ -83,7 +83,7 @@ export class ViewportRectangleRenderer {
       [1, -1],
     ]
     const floats: number[] = []
-    for (let v of vertices) {
+    for (const v of vertices) {
       floats.push(v[0])
       floats.push(v[1])
     }

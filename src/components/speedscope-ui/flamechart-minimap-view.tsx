@@ -348,7 +348,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
 
     if (this.draggingMode === DraggingMode.DRAW_NEW_VIEWPORT) {
       const configStart = this.dragStartConfigSpaceMouse
-      let configEnd = configSpaceMouse
+      const configEnd = configSpaceMouse
 
       if (!configStart || !configEnd) return
       const left = Math.min(configStart.x, configEnd.x)
