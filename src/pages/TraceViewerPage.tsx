@@ -63,7 +63,6 @@ const TraceViewerPage: React.FC = () => {
         )}
 
         {!isLoadingBlob && !blobError && traceBlobData && (
-          <div className="h-full w-full">
             <ErrorBoundary
               FallbackComponent={ErrorFallback}
               onReset={() => {
@@ -75,7 +74,6 @@ const TraceViewerPage: React.FC = () => {
                 fileName={traceBlobData.fileName}
               />
             </ErrorBoundary>
-          </div>
         )}
 
         {!isLoadingBlob && !blobError && !traceBlobData && (

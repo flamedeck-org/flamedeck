@@ -104,10 +104,8 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   }
 
   return (
-    <div className="h-full w-full speedscope-app-container relative">
-      <div className="absolute top-0 left-0 w-0 h-0 -z-10 pointer-events-none">
+    <div className="h-full flex speedscope-app-container relative">
         <GLCanvas theme={theme} setGLCanvas={glCanvasAtom.set} canvasContext={canvasContext} />
-      </div>
       
       <ProfileSearchContextProvider>
         <SandwichViewContainer 

@@ -1,7 +1,7 @@
 import {Frame} from '../../lib/speedscope-core/profile'
 import {ProfileTableViewContainer} from './profile-table-view'
 import React, { JSX, createContext, memo, useCallback, useMemo, useContext, Component } from 'react'
-import {commonStyle, Sizes, FontSize} from './style'
+import {Sizes, FontSize} from './style'
 import {InvertedCallerFlamegraphView} from './inverted-caller-flamegraph-view'
 import {CalleeFlamegraphView} from './callee-flamegraph-view'
 import {SandwichSearchView} from './sandwich-search-view'
@@ -41,33 +41,6 @@ class SandwichView extends Component<SandwichViewProps> {
 
   render() {
     const {selectedFrame} = this.props
-    let flamegraphViews: JSX.Element | null = null
-
-    if (selectedFrame) {
-      flamegraphViews = (
-        <div className="flex-1 border-l border-l-border flex flex-col">
-          <div className="flex-1 flex flex-row relative">
-            <div className="flex flex-col justify-end items-start text-sm w-[1.2em] border-r border-r-border shrink-0">
-              <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center">Callers</div>
-            </div>
-            <InvertedCallerFlamegraphView
-              glCanvas={this.props.glCanvas}
-              activeProfileState={this.props.activeProfileState}
-            />
-          </div>
-          <div className="h-0.5 bg-border" />
-          <div className="flex-1 flex flex-row relative">
-            <div className="flex flex-col justify-start items-start text-sm w-[1.2em] border-r border-r-border shrink-0">
-              <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center flex justify-end">Callees</div>
-            </div>
-            <CalleeFlamegraphView
-              glCanvas={this.props.glCanvas}
-              activeProfileState={this.props.activeProfileState}
-            />
-          </div>
-        </div>
-      )
-    }
 
     return (
       <div className="flex flex-row h-full">
@@ -75,7 +48,29 @@ class SandwichView extends Component<SandwichViewProps> {
           <ProfileTableViewContainer activeProfileState={this.props.activeProfileState} />
           <SandwichSearchView />
         </div>
-        {flamegraphViews}
+        {selectedFrame && (
+          <div className="w-80 h-full flex-1 border-l border-l-border flex flex-col relative overflow-hidden">
+            <div className="flex-1 flex flex-row">
+              <div className="flex flex-col justify-end items-start text-sm w-[1.2em] border-r border-r-border shrink-0">
+                <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center">Callers</div>
+              </div>
+              <InvertedCallerFlamegraphView
+                glCanvas={this.props.glCanvas}
+                activeProfileState={this.props.activeProfileState}
+              />
+            </div>
+            <div className="h-0.5 bg-border" />
+            <div className="flex-1 flex flex-row">
+              <div className="flex flex-col justify-start items-start text-sm w-[1.2em] border-r border-r-border shrink-0">
+                <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center flex justify-end">Callees</div>
+              </div>
+              <CalleeFlamegraphView
+                glCanvas={this.props.glCanvas}
+                activeProfileState={this.props.activeProfileState}
+              />
+            </div>
+          </div>
+        )}
       </div>
     )
   }
