@@ -112,6 +112,7 @@ const ProfileTableRowView = ({
   let rowClasses = [
     "h-[30px]",
     "text-text dark:text-dark-text",
+    "font-mono",
   ];
   if (index % 2 === 0) {
     rowClasses.push("bg-background-secondary dark:bg-dark-background-secondary");
@@ -283,8 +284,8 @@ export const ProfileTableView = memo(
     const onSelfClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SELF, ev), [onSortClick])
     const onSymbolNameClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SYMBOL_NAME, ev), [onSortClick])
 
-    const numericHeaderCellClass = "relative p-1 pr-[30px] w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text"
-    const textHeaderCellClass = "p-1 w-full max-w-0 text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text"
+    const numericHeaderCellClass = "relative p-1 pr-[30px] w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
+    const textHeaderCellClass = "p-1 w-full max-w-0 text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
 
     return (
       <div className="flex h-full flex-col bg-background dark:bg-dark-background">
