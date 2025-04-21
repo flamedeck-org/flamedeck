@@ -17,6 +17,7 @@ import {FlamechartWrapper} from './flamechart-wrapper'
 import {FlamechartID} from '../../lib/speedscope-core/app-state/profile-group'
 import {flattenRecursionAtom, glCanvasAtom} from '../../lib/speedscope-core/app-state'
 import {useAtom} from '../../lib/speedscope-core/atom'
+import { useTheme } from './themes/theme'
 
 const getInvertedCallerProfile = memoizeByShallowEquality(
   ({
@@ -57,6 +58,7 @@ export const InvertedCallerFlamegraphView = memo((ownProps: FlamechartViewContai
   let {profile, sandwichViewState} = activeProfileState
   const flattenRecursion = useAtom(flattenRecursionAtom)
   const glCanvas = useAtom(glCanvasAtom)
+  const theme = useTheme()
 
   if (!profile) throw new Error('profile missing')
   if (!glCanvas) throw new Error('glCanvas missing')
@@ -67,7 +69,7 @@ export const InvertedCallerFlamegraphView = memo((ownProps: FlamechartViewContai
   const frameToColorBucket = getFrameToColorBucket(profile)
   const getColorBucketForFrame = createGetColorBucketForFrame(frameToColorBucket)
   const getCSSColorForFrame = createGetCSSColorForFrame({frameToColorBucket})
-  const canvasContext = getCanvasContext({canvas: glCanvas})
+  const canvasContext = getCanvasContext({theme, canvas: glCanvas})
 
   const flamechart = getInvertedCallerFlamegraph({
     invertedCallerProfile: getInvertedCallerProfile({
@@ -81,6 +83,7 @@ export const InvertedCallerFlamegraphView = memo((ownProps: FlamechartViewContai
 
   return (
     <FlamechartWrapper
+      theme={theme}
       renderInverted={true}
       flamechart={flamechart}
       flamechartRenderer={flamechartRenderer}
