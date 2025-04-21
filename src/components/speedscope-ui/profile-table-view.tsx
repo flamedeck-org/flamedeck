@@ -23,10 +23,10 @@ interface HBarProps {
 }
 
 function HBarDisplay(props: HBarProps) {
-  // Use a low-contrast gray for the background track
-  const hBarBgColorClass = "bg-gray-200 dark:bg-gray-800"; // Low contrast track
+  // Use gray-200 for light track, and a darker gray with opacity for dark track
+  const hBarBgColorClass = "bg-gray-200 dark:bg-gray-700"; // Adjusted dark track
   // Keep the solid blue fill for debugging visibility
-  const hBarFillColorClass = "bg-blue-500";
+  const hBarFillColorClass = "bg-primary";
 
   return (
     <div
