@@ -139,7 +139,7 @@ export class GLCanvas extends Component<GLCanvasProps> {
     // TODO: Fix theme styling
     // const style = getStyle(this.props.theme)
     return (
-      <div ref={this.containerRef} className="absolute inset-0 -z-10 pointer-events-none">
+      <div ref={this.containerRef} className="absolute inset-0 -z-1 pointer-events-none">
         <canvas ref={this.ref} width={1} height={1} />
       </div>
     )
@@ -267,7 +267,7 @@ export class Application extends Component<ApplicationProps> {
     content = this.renderContent()
 
     return (
-      <div className="w-screen h-screen overflow-hidden flex flex-col relative font-mono text-sm text-foreground">
+      <div className="w-full h-full overflow-hidden flex flex-col relative font-mono text-sm text-foreground">
         <GLCanvas
           setGLCanvas={this.props.setGLCanvas}
           canvasContext={this.props.canvasContext}
