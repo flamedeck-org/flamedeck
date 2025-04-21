@@ -58,7 +58,7 @@ export function colorSchemeToString(scheme: ColorScheme): string {
   }
 }
 
-function getTheme(colorScheme: ColorScheme, systemPrefersDarkMode: boolean) {
+function getTheme(colorScheme: ColorScheme, systemPrefersDarkMode: boolean): Theme {
   switch (colorScheme) {
     case ColorScheme.SYSTEM: {
       return systemPrefersDarkMode ? darkTheme : lightTheme
@@ -72,7 +72,7 @@ function getTheme(colorScheme: ColorScheme, systemPrefersDarkMode: boolean) {
   }
 }
 
-export function ThemeProvider(props: {children: ComponentChildren}) {
+export function ThemeProvider(props: {children: React.ReactNode}) {
   const [systemPrefersDarkMode, setSystemPrefersDarkMode] = useState(
     () => matchMediaDarkColorScheme().matches,
   )
@@ -94,5 +94,19 @@ export function ThemeProvider(props: {children: ComponentChildren}) {
 
   const colorScheme = useAtom(colorSchemeAtom)
   const theme = getTheme(colorScheme, systemPrefersDarkMode)
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const isDarkMode = 
+      colorScheme === ColorScheme.DARK || 
+      (colorScheme === ColorScheme.SYSTEM && systemPrefersDarkMode);
+
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [colorScheme, systemPrefersDarkMode]);
+
   return <ThemeContext.Provider value={theme} children={props.children} />
 }
