@@ -12,6 +12,12 @@ import Upload from "./pages/Upload";
 import NotFound from "./pages/NotFound";
 import TraceViewerPage from "./pages/TraceViewerPage";
 import { useAuth } from "./contexts/AuthContext";
+import { useTheme } from "./components/speedscope-ui/themes/theme";
+import { useAtom } from "./lib/speedscope-core/atom";
+import { glCanvasAtom } from "./lib/speedscope-core/app-state";
+import { useMemo } from "react";
+import { getCanvasContext } from "./lib/speedscope-core/app-state/getters";
+import { GLCanvas } from "./components/speedscope-ui/application";
 
 const queryClient = new QueryClient();
 
@@ -34,18 +40,30 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
+const App = () => {
+  const theme = useTheme()
+  const glCanvas = useAtom(glCanvasAtom);
+  const canvasContext = useMemo(
+    () => (glCanvas ? getCanvasContext({theme, canvas: glCanvas}) : null),
+    [theme, glCanvas],
+  )
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppRoutes />
+          <div className="h-full w-full flex flex-col speedscope-app-container relative">
+            <GLCanvas theme={theme} setGLCanvas={glCanvasAtom.set} canvasContext={canvasContext} />
+            <AppRoutes />
+          </div>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-);
+  )
+};
 
 export default App;

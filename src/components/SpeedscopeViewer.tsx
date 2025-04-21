@@ -24,10 +24,6 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
   const theme = useTheme()
-  const canvasContext = useMemo(
-    () => (glCanvas ? getCanvasContext({theme, canvas: glCanvas}) : null),
-    [theme, glCanvas],
-  )
 
   useEffect(() => {
     let isCancelled = false;
@@ -104,9 +100,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   }
 
   return (
-    <div className="h-full flex speedscope-app-container relative">
-        <GLCanvas theme={theme} setGLCanvas={glCanvasAtom.set} canvasContext={canvasContext} />
-      
+    <div className="h-full flex">
       <ProfileSearchContextProvider>
         <SandwichViewContainer 
           activeProfileState={activeProfileState} 
