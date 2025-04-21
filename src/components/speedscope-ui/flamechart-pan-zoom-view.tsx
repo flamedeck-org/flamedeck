@@ -790,7 +790,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
   render() {
     return (
       <div
-        className="flex flex-col relative overflow-hidden"
+        className="flex-1 flex-col relative overflow-hidden"
         onMouseDown={this.onMouseDown as any}
         onMouseMove={this.onMouseMove as any}
         onMouseLeave={this.onMouseLeave as any}
@@ -799,7 +799,7 @@ export class FlamechartPanZoomView extends Component<FlamechartPanZoomViewProps,
         onWheel={this.onWheel as any}
         ref={this.containerRef}
       >
-        <canvas width={1} height={1} ref={this.overlayCanvasRef} className="fill-placeholder" />
+        <canvas width={1} height={1} ref={this.overlayCanvasRef} className="w-full h-full absolute top-0 left-0" />
       </div>
     )
   }
