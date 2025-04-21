@@ -90,7 +90,7 @@ export class GLCanvas extends Component<GLCanvasProps> {
     if (!this.container) return
     if (!this.props.canvasContext) return
 
-    let {width, height} = this.container.getBoundingClientRect()
+    const {width, height} = this.container.getBoundingClientRect()
 
     const widthInAppUnits = width
     const heightInAppUnits = height
@@ -136,9 +136,10 @@ export class GLCanvas extends Component<GLCanvasProps> {
     window.removeEventListener('resize', this.onWindowResize)
   }
   render() {
+    // TODO: Fix theme styling
     // const style = getStyle(this.props.theme)
     return (
-      <div ref={this.containerRef} className="absolute w-screen h-screen -z-10 pointer-events-none">
+      <div ref={this.containerRef} className="absolute inset-0 -z-10 pointer-events-none">
         <canvas ref={this.ref} width={1} height={1} />
       </div>
     )
