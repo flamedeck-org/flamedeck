@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,12 +12,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { traceApi, TraceRole } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Globe, Link as LinkIcon, Users, Loader2, Search, UserPlus } from 'lucide-react';
+import {
+  AlertTriangle,
+  Globe,
+  Link as LinkIcon,
+  Users,
+  Loader2,
+  ChevronsUpDown,
+  Lock,
+  Copy as CopyIconInternal,
+  Mail,
+  HelpCircle,
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -28,12 +36,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList, CommandInput } from "@/components/ui/command";
 import { debounce } from 'lodash-es';
 import { Database } from '@/integrations/supabase/types';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTraceDetails } from '@/hooks/useTraceDetails';
 
-// Type for user profile needed for search
+// Type for user profile needed for search (adjust if email is missing)
 type UserProfileSearchResult = Database['public']['Tables']['user_profiles']['Row'];
+// Define a type for permissions that includes email (assuming it's available)
+type PermissionWithEmail = NonNullable<Awaited<ReturnType<typeof traceApi.getTracePermissions>>['data']>[number] & {
+  user?: UserProfileSearchResult & { email?: string | null } | null // Make user optional and add email
+};
 
 function SharingModalImpl() {
   const { isOpen, closeModal, traceId } = useSharingModal();
@@ -41,31 +55,43 @@ function SharingModalImpl() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // --- State for Invite Section ---
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState<UserProfileSearchResult | null>(null);
-  const [inviteRole, setInviteRole] = useState<TraceRole>('viewer');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<UserProfileSearchResult[]>([]);
-  const [popoverOpen, setPopoverOpen] = useState(false);
+  // --- State for Top Input --- (Placeholder)
+  const [topInput, setTopInput] = useState("");
+
+  // Fetch trace details using the new hook
+  const { 
+    data: traceDetails, 
+    isLoading: isLoadingDetails, 
+    error: detailsError 
+  } = useTraceDetails(traceId);
 
   // Fetch permissions when the modal is open and traceId is available
-  const { 
+  const {
     data: permissionsData,
-    isLoading,
-    error,
+    isLoading: isLoadingPermissions,
+    error: permissionsFetchError,
     refetch
-  } = useQuery({
-    queryKey: ['tracePermissions', traceId], // Query key includes traceId
-    queryFn: () => traceId ? traceApi.getTracePermissions(traceId) : Promise.resolve({ data: null, error: 'No Trace ID' }),
-    enabled: !!traceId && isOpen, // Only run query when modal is open and traceId is set
-    staleTime: 5 * 60 * 1000, // Cache data for 5 minutes
+  } = useQuery<PermissionWithEmail[] | null, string>({
+    queryKey: ['tracePermissions', traceId],
+    queryFn: async () => {
+      if (!traceId) return null;
+      const permResponse = await traceApi.getTracePermissions(traceId);
+      if (permResponse.error) {
+        throw permResponse.error;
+      }
+      return permResponse.data as PermissionWithEmail[];
+    },
+    enabled: !!traceId && isOpen,
+    staleTime: 5 * 60 * 1000,
     refetchInterval: isOpen ? 60 * 1000 : false,
     refetchOnWindowFocus: true,
   });
 
-  const permissions = permissionsData?.data ?? [];
-  const fetchError = permissionsData?.error || error?.message;
+  // Combine loading and error states
+  const isLoading = isLoadingDetails || isLoadingPermissions;
+  const fetchError = detailsError?.message || permissionsFetchError;
+
+  const permissions: PermissionWithEmail[] = permissionsData ?? [];
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -73,71 +99,17 @@ function SharingModalImpl() {
     }
   };
 
-  // Determine if the current user is the owner
-  const ownerPermission = permissions.find(p => p.role === 'owner');
-  const isOwner = currentUser && ownerPermission?.user?.id === currentUser.id;
-
-  // Determine if the current user can manage permissions (Editor or Owner)
-  const currentUserPermission = useMemo(() => permissions.find(p => p.user?.id === currentUser?.id), [permissions, currentUser]);
-  const canManagePermissions = currentUserPermission?.role === 'editor' || currentUserPermission?.role === 'owner';
-
-  // Calculate current public access state
+  // Calculate current public access state - Adapt later for General Access dropdown
   const publicPermission = useMemo(() => permissions.find(p => p.user === null), [permissions]);
-  const isPublic = publicPermission?.role === 'viewer';
-
-  // --- Debounced Search Function ---
-  const debouncedSearch = useCallback(
-    debounce(async (query: string) => {
-      if (query.trim().length < 2) {
-        setSearchResults([]);
-        setIsSearching(false);
-        return;
-      }
-      setIsSearching(true);
-      try {
-        const response = await traceApi.searchUsers(query);
-        if (response.data) {
-          // Filter out users already having permission (and self)
-          const existingUserIds = new Set(permissions.map(p => p.user?.id).filter(Boolean));
-          const filteredResults = response.data.filter(u => !existingUserIds.has(u.id));
-          setSearchResults(filteredResults);
-        } else {
-          setSearchResults([]);
-          // Optionally show toast on search error
-          console.error("Search error:", response.error);
-        }
-      } catch (err) {
-        console.error("Search failed:", err);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300), // 300ms debounce delay
-    [permissions] // Dependency on permissions to filter correctly
-  );
-
-  // Handle search input change
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setSelectedUser(null); // Clear selected user if query changes
-    debouncedSearch(value);
-  };
-
-  // Handle selecting a user from search results
-  const handleUserSelect = (user: UserProfileSearchResult) => {
-    setSelectedUser(user);
-    setSearchQuery(user.username || `${user.first_name} ${user.last_name}` || user.id); // Update input field
-    setSearchResults([]); // Clear results
-    setPopoverOpen(false); // Close popover
-  };
+  const isPublic = publicPermission?.role === 'viewer'; // Use this for General Access initial state
 
   // --- Mutations ---
 
-  // Mutation for setting public access
+  // Mutation for setting public access (Keep, adapt later for General Access)
   const { mutate: setPublicAccess, isPending: isSettingPublicAccess } = useMutation({
     mutationFn: (makePublic: boolean) => {
       if (!traceId) throw new Error("Trace ID is missing");
-      const targetRole: TraceRole | null = makePublic ? 'viewer' : null; // Set to viewer or remove
+      const targetRole: TraceRole | null = makePublic ? 'viewer' : null;
       return traceApi.setPublicTraceAccess(traceId, targetRole);
     },
     onSuccess: (data, makePublic) => {
@@ -149,12 +121,11 @@ function SharingModalImpl() {
     },
   });
 
-  // Mutation for adding a permission (inviting user)
+  // Mutation for adding a permission (inviting user) - Keep logic, remove UI for now
   const { mutate: inviteUser, isPending: isInvitingUser } = useMutation({
     mutationFn: (params: { userId: string; role: TraceRole }) => {
       if (!traceId) throw new Error("Trace ID is missing");
       if (!params.userId) throw new Error("User ID is missing");
-      // Prevent re-inviting someone already there (should be caught by RLS/DB too)
       if (permissions.some(p => p.user?.id === params.userId)) {
         throw new Error("User already has access.");
       }
@@ -163,39 +134,48 @@ function SharingModalImpl() {
     onSuccess: (data, params) => {
       toast({ title: "User Invited", description: `Access granted to user.` });
       queryClient.invalidateQueries({ queryKey: ['tracePermissions', traceId] });
-      // Reset invite form
-      setSearchQuery("");
-      setSelectedUser(null);
-      setInviteRole('viewer');
-      setSearchResults([]);
+      // Reset invite form - TODO: Adapt for new top input
+      // setSearchQuery("");
+      // setSelectedUser(null);
+      // setInviteRole('viewer');
+      // setSearchResults([]);
     },
     onError: (error) => {
       toast({ title: "Error Inviting User", description: error.message, variant: "destructive" });
     },
   });
 
-  // Handle Invite button click
-  const handleInviteClick = () => {
-    if (selectedUser) {
-      inviteUser({ userId: selectedUser.id, role: inviteRole });
-    }
+  // --- Copy Link --- (Placeholder Function)
+  const handleCopyLink = () => {
+    // TODO: Get trace URL and implement copy
+    const url = `${window.location.origin}/trace/${traceId}`; // Example URL structure
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        toast({ title: "Link Copied" });
+      })
+      .catch(err => {
+        toast({ title: "Error copying link", description: err.message, variant: "destructive" });
+      });
   };
 
   // --- Render Logic ---
   const renderContent = () => {
     if (isLoading) {
+      // Keep simple skeleton for loading state
       return (
-        <div className="space-y-3">
-          <Skeleton className="h-8 w-3/4" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
+        <div className="space-y-4 p-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="h-16 w-full" />
         </div>
       );
     }
 
     if (fetchError) {
       return (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="m-4">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error Fetching Permissions</AlertTitle>
           <AlertDescription>{fetchError}</AlertDescription>
@@ -203,145 +183,154 @@ function SharingModalImpl() {
       );
     }
 
-    // Basic list display (will be improved)
+    // Filter out the public permission entry for list display
+    const userPermissions = permissions.filter(p => p.user !== null);
+
     return (
-      <div>
-        {/* Public Access Section - Only visible to owner */}
-        {canManagePermissions && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
-              <div className="flex items-start space-x-3">
-                <Globe className="h-6 w-6 mt-1 text-muted-foreground" />
-                <div className="space-y-0.5">
-                  <Label htmlFor="public-access-switch" className="text-base">
-                    Public Access
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    {isPublic ? "Anyone with the link can view." : "Only invited people can access."}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                {isSettingPublicAccess && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} 
-                <Switch
-                  id="public-access-switch"
-                  checked={isPublic}
-                  onCheckedChange={setPublicAccess}
-                  disabled={isSettingPublicAccess}
-                />
-              </div>
+      <div className="space-y-4">
+        {/* Top Input Section */}
+        {/* TODO: Implement actual multi-user input/search/invite logic */}
+        <div className="px-4">
+          <Input
+            placeholder="Add people, groups, and calendar events"
+            value={topInput}
+            onChange={(e) => setTopInput(e.target.value)}
+            // Add handlers for search/selection later
+          />
+          {/* Add invite button/role selection integrated here later */}
+        </div>
+
+        {/* People with Access Section */}
+        <div className="px-4">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-medium text-sm">People with access</h4>
+            <div className="flex space-x-2">
+               {/* TODO: Add functionality to these buttons */}
+               <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <CopyIconInternal className="h-4 w-4" />
+               </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Mail className="h-4 w-4" />
+                </Button>
             </div>
           </div>
-        )}
+          <ul className="space-y-3"> {/* Increased spacing */}
+            {userPermissions.map((perm) => {
+              if (!perm.user) return null; // Should not happen with filtering, but safeguard
 
-        {/* Separator */} 
-        <Separator className="my-4" /> 
+              const userDisplayName = perm.user.username || `${perm.user.first_name || ''} ${perm.user.last_name || ''}`.trim() || `User`;
+              const initials = userDisplayName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+              const isCurrentUser = perm.user.id === currentUser?.id;
+              const isPermOwner = perm.role === 'owner';
 
-        {/* People with Access Section */} 
-        <h4 className="font-medium mb-2">People with Access</h4>
-        <ul>
-          {permissions.map((perm) => (
-            <li key={perm.id} className="text-sm mb-1 flex justify-between items-center">
-              {perm.user ? (
-                <div className="flex items-center">
-                  {/* Placeholder for Avatar */} 
-                  <span className="inline-block h-6 w-6 rounded-full bg-muted mr-2"></span> 
-                  <span>{perm.user.username || `${perm.user.first_name} ${perm.user.last_name}` || `User ${perm.user.id.substring(0,6)}`}
-                    {perm.user.id === currentUser?.id && ' (you)'}</span>
-                </div>
-              ) : null /* Don't show public access row here anymore */}
-              {perm.user && (
-                <span className="text-muted-foreground capitalize">{perm.role}</span>
-              )}
-              {/* TODO: Role dropdown and remove button for owner */}
-            </li>
-          ))}
-          {/* Filter out public permission before checking length */}
-          {permissions.filter(p => p.user !== null).length === 0 && (
-             <li className="text-sm text-muted-foreground">Only you have access.</li>
-          )}
-        </ul>
+              return (
+                <li key={perm.id} className="flex justify-between items-center text-sm">
+                  <div className="flex items-center space-x-3"> {/* Increased spacing */}
+                    <Avatar className="h-8 w-8"> {/* Slightly larger Avatar */}
+                      <AvatarImage src={perm.user.avatar_url ?? undefined} alt={userDisplayName} />
+                      <AvatarFallback>{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {userDisplayName}
+                        {isCurrentUser && ' (you)'}
+                      </span>
+                      {/* TODO: Check if email exists before displaying */}
+                      <span className="text-xs text-muted-foreground">{perm.user.email || 'No email available'}</span>
+                    </div>
+                  </div>
 
-        {/* Invite Users Section - Only visible to owner */} 
-        {canManagePermissions && (
-          <div className="mt-4 space-y-2">
-             <Label htmlFor="user-search">Invite people</Label>
-             <div className="flex space-x-2">
-               <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <div className="relative flex-grow">
-                      <Input
-                        id="user-search"
-                        placeholder="Search by name or username..."
-                        value={searchQuery}
-                        onChange={(e) => handleSearchChange(e.target.value)}
-                        className="pr-8" // Make space for loader
-                      />
-                      {isSearching && (
-                        <Loader2 className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                      )}
-                   </div>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <Command shouldFilter={false}> {/* We handle filtering manually */}
-                       <CommandList>
-                        <CommandEmpty>{isSearching ? "Searching..." : "No users found."}</CommandEmpty>
-                        <CommandGroup>
-                          {searchResults.map((user) => (
-                            <CommandItem
-                              key={user.id}
-                              value={`${user.username}-${user.id}`} // Unique value for selection
-                              onSelect={() => handleUserSelect(user)}
-                            >
-                              {/* Basic user display */} 
-                              {user.username || `${user.first_name} ${user.last_name}` || user.id}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                 </PopoverContent>
-                </Popover>
+                  {/* TODO: Implement Role Dropdown/Remove */}
+                  {isPermOwner ? (
+                     <span className="text-xs text-muted-foreground">Owner</span>
+                  ) : (
+                    // Placeholder for future role dropdown
+                    <span className="text-xs text-muted-foreground capitalize">{perm.role}</span>
+                    // <Select defaultValue={perm.role} onValueChange={(newRole) => {/* Handle update */}}>
+                    //   <SelectTrigger className="w-[90px] h-8 text-xs">
+                    //     <SelectValue />
+                    //   </SelectTrigger>
+                    //   <SelectContent>
+                    //     <SelectItem value="viewer">Viewer</SelectItem>
+                    //     <SelectItem value="editor">Editor</SelectItem>
+                    //     <SelectItem value="remove">Remove access</SelectItem>
+                    //   </SelectContent>
+                    // </Select>
+                  )}
+                </li>
+              );
+            })}
+            {userPermissions.length === 0 && (
+               <li className="text-sm text-muted-foreground">Only you have access.</li>
+            )}
+          </ul>
+        </div>
 
-               <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as TraceRole)}>
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue placeholder="Role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="viewer">Viewer</SelectItem>
-                    <SelectItem value="editor">Editor</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button 
-                  onClick={handleInviteClick} 
-                  disabled={!selectedUser || isInvitingUser}
-                  className="w-[90px]"
-                 > 
-                   {isInvitingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Invite"}
-                 </Button>
-              </div>
+        {/* General Access Section */}
+        {/* TODO: Implement actual dropdown logic */}
+        <div className="px-4 pt-2"> {/* Added padding top */}
+           <h4 className="font-medium text-sm mb-2">General access</h4>
+           <div className="flex items-start space-x-3">
+             <div className="mt-1">
+                {isPublic ? <Globe className="h-5 w-5 text-muted-foreground" /> : <Lock className="h-5 w-5 text-muted-foreground" />}
+             </div>
+             <div className="flex-grow">
+               {/* Placeholder for future dropdown */}
+                <p className="font-medium text-sm">{isPublic ? "Anyone with the link" : "Restricted"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {isPublic ? "Anyone on the internet with the link can view" : "Only people with access can open with the link"}
+                </p>
+               {/* <Select defaultValue={isPublic ? 'public' : 'restricted'} onValueChange={(value) => setPublicAccess(value === 'public')}>
+                 <SelectTrigger className="w-[180px] h-8 text-sm justify-start font-medium p-0 border-0 shadow-none focus:ring-0">
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="restricted">
+                      <div className="flex items-center"><Lock className="h-4 w-4 mr-2"/>Restricted</div>
+                      <p className="text-xs text-muted-foreground">Only people with access can open with the link</p>
+                    </SelectItem>
+                   <SelectItem value="public">
+                     <div className="flex items-center"><Globe className="h-4 w-4 mr-2"/>Anyone with the link</div>
+                     <p className="text-xs text-muted-foreground">Anyone on the internet with the link can view</p>
+                   </SelectItem>
+                 </SelectContent>
+               </Select> */}
+
+             </div>
            </div>
-         )}
+        </div>
+
+        {/* Removed old invite section and public access toggle */}
       </div>
     );
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md"> {/* Adjusted width */}
-        <DialogHeader>
-          <DialogTitle>Share Trace</DialogTitle>
-          <DialogDescription>
-            Manage who can access this trace.
-            {/* Maybe show trace name here later */}
-          </DialogDescription>
+      {/* Increased max-width */}
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader className="pr-16"> {/* Add padding to prevent overlap with close button */}
+          {/* Use fetched trace name, fallback to ID or placeholder */}
+          <DialogTitle className="truncate"> 
+             {isLoadingDetails 
+                ? <Skeleton className="h-6 w-48" /> 
+                : `Share "${traceDetails?.scenario || 'Trace'}"`
+             }
+          </DialogTitle>
+           {/* TODO: Add Help Button Action */}
+           <Button variant="ghost" size="icon" className="absolute top-3 right-14 h-8 w-8">
+              <HelpCircle className="h-5 w-5" />
+           </Button>
         </DialogHeader>
-        <div className="py-4 space-y-4">
+        {/* Removed py-4 space-y-4 from wrapper div */}
+        <div className="pt-2 pb-4">
           {renderContent()}
         </div>
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={closeModal}>Close</Button>
-          {/* Save button might be needed if changes aren't instant */}
+        <DialogFooter className="sm:justify-between px-4 pb-4 pt-0"> {/* Added padding */}
+          <Button type="button" variant="outline" onClick={handleCopyLink}>
+             <LinkIcon className="mr-2 h-4 w-4" /> Copy link
+           </Button>
+          <Button type="button" onClick={closeModal}>Done</Button> {/* Changed from Close */}
         </DialogFooter>
       </DialogContent>
     </Dialog>
