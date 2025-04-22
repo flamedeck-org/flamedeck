@@ -73,15 +73,14 @@ export const traceApi = {
   // Upload a new trace
   uploadTrace: async (
     file: File,
-    metadata: Omit<TraceUpload, "blob_path" | "duration_ms">
+    metadata: Omit<TraceUpload, "blob_path">
   ): Promise<ApiResponse<TraceMetadata>> => {
+    let blobPath: string | null = null; // Declare blobPath here to access in catch
     try {
-      // First, parse the file to extract duration
-      const durationMs = await extractTraceDuration(file);
-      
       // Upload file to Supabase Storage
-      const { path: blobPath, size: fileSize } = await uploadTraceFile(file);
-      
+      const { path, size: fileSize } = await uploadTraceFile(file);
+      blobPath = path; // Assign blobPath after successful upload
+
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -97,7 +96,7 @@ export const traceApi = {
           branch: metadata.branch,
           scenario: metadata.scenario,
           device_model: metadata.device_model,
-          duration_ms: durationMs,
+          duration_ms: metadata.duration_ms,
           blob_path: blobPath,
           file_size_bytes: fileSize,
           notes: metadata.notes,
@@ -114,6 +113,26 @@ export const traceApi = {
       return { data: data as TraceMetadata, error: null };
     } catch (error) {
       console.error("Upload trace error:", error);
+
+      // Attempt to clean up the uploaded file if the database insert failed
+      if (blobPath) {
+        const pathWithinBucket = blobPath.startsWith('traces/') ? blobPath.substring('traces/'.length) : blobPath;
+        console.log(`Attempting to delete orphaned storage object at path: ${pathWithinBucket}`);
+        try {
+          const { error: deleteError } = await supabase.storage
+            .from('traces') // Bucket name
+            .remove([pathWithinBucket]); // Use path without bucket prefix
+          if (deleteError) {
+            console.error(`Failed to delete orphaned storage object ${pathWithinBucket}:`, deleteError);
+            // Don't re-throw, the original error is more important
+          } else {
+              console.log(`Successfully deleted orphaned storage object: ${pathWithinBucket}`);
+          }
+        } catch (cleanupError) {
+          console.error(`Error during storage cleanup for ${pathWithinBucket}:`, cleanupError);
+        }
+      }
+
       return { data: null, error: (error as Error).message };
     }
   },
@@ -142,15 +161,23 @@ export const traceApi = {
       if (!trace?.blob_path) {
         console.warn(`Trace with ID ${id} has no blob_path. Skipping storage deletion.`);
       } else {
+        // Ensure path doesn't include bucket name for remove operation
+        const pathWithinBucket = trace.blob_path.startsWith('traces/')
+          ? trace.blob_path.substring('traces/'.length)
+          : trace.blob_path;
+
         // 2. Delete the file from storage
+        console.log(`Attempting to delete storage object: ${pathWithinBucket}`); // Log the path being deleted
         const { error: storageError } = await supabase.storage
-          .from('traces') // Make sure this matches your bucket name
-          .remove([trace.blob_path]);
+          .from('traces') // Bucket name
+          .remove([pathWithinBucket]); // Use path without bucket prefix
 
         if (storageError) {
           // Log the error but attempt to delete the DB record anyway
-          console.error(`Error deleting storage object ${trace.blob_path}:`, storageError);
+          console.error(`Error deleting storage object ${pathWithinBucket}:`, storageError);
           // Depending on requirements, you might want to throw here
+        } else {
+            console.log(`Successfully deleted storage object: ${pathWithinBucket}`); // Add success log
         }
       }
 
@@ -222,25 +249,3 @@ export const traceApi = {
     }
   }
 };
-
-// Function to extract duration from trace file
-async function extractTraceDuration(file: File): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      try {
-        const content = JSON.parse(e.target?.result as string);
-        // This is a simplification - the actual parsing logic would depend on the trace format
-        const duration = content.profile?.endValue - content.profile?.startValue || 0;
-        resolve(duration);
-      } catch (error) {
-        console.error("Error parsing trace file:", error);
-        resolve(0); // Default to 0 if we can't parse
-      }
-    };
-    
-    reader.onerror = () => reject(new Error("Failed to read file"));
-    reader.readAsText(file);
-  });
-}
