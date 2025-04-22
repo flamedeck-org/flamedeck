@@ -96,7 +96,7 @@ export const traceApi = {
           branch: metadata.branch,
           scenario: metadata.scenario,
           device_model: metadata.device_model,
-          duration_ms: metadata.duration_ms,
+          duration_ms: Math.round(metadata.duration_ms),
           blob_path: blobPath,
           file_size_bytes: fileSize,
           notes: metadata.notes,
