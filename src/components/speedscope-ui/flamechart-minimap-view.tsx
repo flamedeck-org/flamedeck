@@ -424,9 +424,6 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
   }
 
   render() {
-    const containerClasses = "relative w-full flex flex-col overflow-hidden h-[100px] border-b-2";
-    const canvasClasses = "absolute top-0 left-0 w-full h-full";
-
     return (
       <div
         ref={this.containerRef}
@@ -434,13 +431,13 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
         onMouseDown={this.onMouseDown as any}
         onMouseMove={this.onMouseMove as any}
         onMouseLeave={this.onMouseLeave as any}
-        className={containerClasses}
+        className="relative w-full flex flex-col overflow-hidden h-[100px] border-b-2"
       >
         <canvas 
           width={1}
           height={1}
           ref={this.overlayCanvasRef} 
-          className={canvasClasses}
+          className="absolute top-0 left-0 w-full h-full"
         />
       </div>
     )

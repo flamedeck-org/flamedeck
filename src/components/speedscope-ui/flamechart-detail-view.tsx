@@ -2,67 +2,49 @@ import {formatPercent} from '@/lib/speedscope-core/lib-utils'
 import {Frame, CallTreeNode} from '@/lib/speedscope-core/profile'
 import {ColorChit} from './color-chit'
 import {Flamechart} from '@/lib/speedscope-core/flamechart'
-import {useTheme} from './themes/theme'
 
 interface StatisticsTableProps {
   title: string
   grandTotal: number
   selectedTotal: number
   selectedSelf: number
-  // cellStyle: StyleDeclarationValue
+  instanceStyle: string
   formatter: (v: number) => string
 }
 
 function StatisticsTable(props: StatisticsTableProps) {
-  // const style = getFlamechartStyle(useTheme())
-
   const total = props.formatter(props.selectedTotal)
   const self = props.formatter(props.selectedSelf)
-  const totalPerc = (100.0 * props.selectedTotal) / props.grandTotal
-  const selfPerc = (100.0 * props.selectedSelf) / props.grandTotal
+  const totalPerc = props.grandTotal === 0 ? 0 : (100.0 * props.selectedTotal) / props.grandTotal
+  const selfPerc = props.grandTotal === 0 ? 0 : (100.0 * props.selectedSelf) / props.grandTotal
 
-  // return (
-  //   <div className={css(style.statsTable)}>
-  //     <div className={css(props.cellStyle, style.statsTableCell, style.statsTableHeader)}>
-  //       {props.title}
-  //     </div>
-
-  //     <div className={css(props.cellStyle, style.statsTableCell)}>Total</div>
-  //     <div className={css(props.cellStyle, style.statsTableCell)}>Self</div>
-
-  //     <div className={css(props.cellStyle, style.statsTableCell)}>{total}</div>
-  //     <div className={css(props.cellStyle, style.statsTableCell)}>{self}</div>
-
-  //     <div className={css(props.cellStyle, style.statsTableCell)}>
-  //       {formatPercent(totalPerc)}
-  //       <div className={css(style.barDisplay)} style={{height: `${totalPerc}%`}} />
-  //     </div>
-  //     <div className={css(props.cellStyle, style.statsTableCell)}>
-  //       {formatPercent(selfPerc)}
-  //       <div className={css(style.barDisplay)} style={{height: `${selfPerc}%`}} />
-  //     </div>
-  //   </div>
-  // )
+  const cellBaseStyle = 'relative flex justify-center items-center'
 
   return (
-    <div>
-      <div>
+    <div className="grid grid-cols-2 grid-rows-[24px_24px_24px] gap-px text-center pr-px">
+      <div className={`${cellBaseStyle} ${props.instanceStyle} col-span-2`}>
         {props.title}
       </div>
 
-      <div>Total</div>
-      <div>Self</div>
+      <div className={`${cellBaseStyle} ${props.instanceStyle}`}>Total</div>
+      <div className={`${cellBaseStyle} ${props.instanceStyle}`}>Self</div>
 
-      <div>{total}</div>
-      <div>{self}</div>
+      <div className={`${cellBaseStyle} ${props.instanceStyle}`}>{total}</div>
+      <div className={`${cellBaseStyle} ${props.instanceStyle}`}>{self}</div>
 
-      <div>
+      <div className={`${cellBaseStyle} ${props.instanceStyle}`}>
         {formatPercent(totalPerc)}
-        <div style={{height: `${totalPerc}%`}} />
+        <div
+          className="absolute top-0 left-0 bg-black/20 w-full"
+          style={{height: `${totalPerc}%`}}
+        />
       </div>
-      <div>
+      <div className={`${cellBaseStyle} ${props.instanceStyle}`}>
         {formatPercent(selfPerc)}
-        <div style={{height: `${selfPerc}%`}} />
+        <div
+          className="absolute top-0 left-0 bg-black/20 w-full"
+          style={{height: `${selfPerc}%`}}
+        />
       </div>
     </div>
   )
@@ -73,22 +55,18 @@ interface StackTraceViewProps {
   node: CallTreeNode
 }
 function StackTraceView(props: StackTraceViewProps) {
-  // const style = getFlamechartStyle(useTheme())
-
   const rows: JSX.Element[] = []
   let node: CallTreeNode | null = props.node
   for (; node && !node.isRoot(); node = node.parent) {
     const row: (JSX.Element | string)[] = []
     const {frame} = node
 
-    row.push(<ColorChit color={props.getFrameColor(frame)} />)
+    row.push(<ColorChit key={`${frame.key}-chit`} color={props.getFrameColor(frame)} />)
 
     if (rows.length) {
-      row.push(<span>&gt; </span>)
-      // row.push(<span className={css(style.stackFileLine)}>&gt; </span>)
+      row.push(<span key={`${frame.key}-sep`} className="text-gray-500 dark:text-gray-400">&nbsp;&gt; </span>)
     }
-
-    row.push(frame.name)
+    row.push(<span key={`${frame.key}-name`} className="text-gray-900 dark:text-gray-100">{frame.name}</span>)
 
     if (frame.file) {
       let pos = frame.file
@@ -98,20 +76,13 @@ function StackTraceView(props: StackTraceViewProps) {
           pos += `:${frame.col}`
         }
       }
-      // row.push(<span className={css(style.stackFileLine)}> ({pos})</span>)
-      row.push(<span> ({pos})</span>)
+      row.push(<span key={`${frame.key}-pos`} className="text-gray-500 dark:text-gray-400"> ({pos})</span>)
     }
-    rows.push(<div>{row}</div>)
+    rows.push(<div key={frame.key} className="whitespace-nowrap">{row}</div>)
   }
-
-  // return (
-  //   <div className={css(style.stackTraceView)}>
-  //     <div className={css(style.stackTraceViewPadding)}>{rows}</div>
-  //   </div>
-  // )
   return (
-    <div>
-      <div>{rows}</div>
+    <div className="h-40 leading-normal overflow-auto bg-background">
+      <div className="p-[5px]">{rows}</div>
     </div>
   )
 }
@@ -123,15 +94,14 @@ interface FlamechartDetailViewProps {
 }
 
 export function FlamechartDetailView(props: FlamechartDetailViewProps) {
-  // const style = getFlamechartStyle(useTheme())
-
   const {flamechart, selectedNode} = props
   const {frame} = selectedNode
 
   return (
-    <div>
+    <div className="grid h-40 overflow-hidden grid-cols-[120px_120px_1fr] grid-rows-1 border-t border-gray-300 dark:border-gray-700 text-xs absolute bg-background w-screen bottom-0 font-mono">
       <StatisticsTable
         title={'This Instance'}
+        instanceStyle="bg-blue-500 text-white"
         grandTotal={flamechart.getTotalWeight()}
         selectedTotal={selectedNode.getTotalWeight()}
         selectedSelf={selectedNode.getSelfWeight()}
@@ -139,6 +109,7 @@ export function FlamechartDetailView(props: FlamechartDetailViewProps) {
       />
       <StatisticsTable
         title={'All Instances'}
+        instanceStyle="bg-purple-500 text-white"
         grandTotal={flamechart.getTotalWeight()}
         selectedTotal={frame.getTotalWeight()}
         selectedSelf={frame.getSelfWeight()}
