@@ -161,7 +161,12 @@ export function UploadDialog() {
           title: "Trace saved",
           description: "Your trace file has been processed and uploaded successfully",
         });
-        navigate("/traces");
+        if (response.data?.id) {
+          navigate(`/traces/${response.data.id}`);
+        } else {
+          console.error("Upload succeeded but trace ID was missing in response.");
+          navigate("/traces");
+        }
       }
 
     } catch (error) {

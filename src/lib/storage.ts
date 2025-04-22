@@ -12,7 +12,7 @@ export const uploadTraceFile = async (file: File): Promise<{ path: string; size:
 
         // Create a unique filename for the trace
         const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "/");
-        const fileName = `${uuidv4()}.json`;
+        const fileName = `${uuidv4()}.speedscope.json`;
         const filePath = `${timestamp}/${fileName}`;
         
         console.log(`Attempting to upload file to path: ${filePath}`);
