@@ -142,7 +142,10 @@ export const listUserTraces = async (
         // Fetch the paginated data AND the total count
         const { data, error, count } = await supabase
             .from('traces')
-            .select('*', { count: 'exact' }) // Request total count
+            .select(`
+              *,
+              owner:user_profiles ( id, username, avatar_url, first_name, last_name )
+            `, { count: 'exact' }) // Request total count
             .order('uploaded_at', { ascending: false })
             .range(from, to); // Apply pagination range
 

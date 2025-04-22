@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const TRACE_LIST_PAGE_SIZE = 10;
 
@@ -144,59 +145,74 @@ const TraceList = () => {
                 <TableHead>Branch</TableHead>
                 <TableHead>Commit</TableHead>
                 <TableHead>Device</TableHead>
+                <TableHead>Owner</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right pr-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {traces.map((trace: TraceMetadata) => (
-                <TableRow 
-                  key={trace.id} 
-                  onClick={() => navigate(`/traces/${trace.id}`)} 
-                  className="cursor-pointer hover:bg-muted/50"
-                >
-                  <TableCell className="font-medium pl-6 py-3">{trace.scenario || "N/A"}</TableCell>
-                  <TableCell className="py-3">{trace.branch || "N/A"}</TableCell>
-                  <TableCell className="font-mono text-xs py-3">
-                    {trace.commit_sha ? trace.commit_sha.substring(0, 7) : "N/A"}
-                  </TableCell>
-                  <TableCell className="py-3">{trace.device_model || "N/A"}</TableCell>
-                  <TableCell className="py-3">{formatDuration(trace.duration_ms)}</TableCell>
-                  <TableCell className="py-3">{formatDate(trace.uploaded_at)}</TableCell>
-                  <TableCell className="text-right pr-6 py-3">
-                    <div onClick={(e) => e.stopPropagation()} className="inline-block">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the trace{' '}
-                              <strong>{trace.scenario || `ID: ${trace.id.substring(0, 7)}`}</strong>{' '}
-                              and all associated data.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteMutation.mutate(trace.id)}
-                              disabled={deleteMutation.isPending}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {traces.map((trace: TraceMetadata) => {
+                const ownerName = trace.owner?.username || `${trace.owner?.first_name || ''} ${trace.owner?.last_name || ''}`.trim() || "Unknown Owner";
+                const ownerInitials = ownerName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+
+                return (
+                  <TableRow 
+                    key={trace.id} 
+                    onClick={() => navigate(`/traces/${trace.id}`)} 
+                    className="cursor-pointer hover:bg-muted/50"
+                  >
+                    <TableCell className="font-medium pl-6 py-3">{trace.scenario || "N/A"}</TableCell>
+                    <TableCell className="py-3">{trace.branch || "N/A"}</TableCell>
+                    <TableCell className="font-mono text-xs py-3">
+                      {trace.commit_sha ? trace.commit_sha.substring(0, 7) : "N/A"}
+                    </TableCell>
+                    <TableCell className="py-3">{trace.device_model || "N/A"}</TableCell>
+                    <TableCell className="py-3">
+                       <div className="flex items-center space-x-2">
+                         <Avatar className="h-6 w-6">
+                           <AvatarImage src={trace.owner?.avatar_url ?? undefined} alt={ownerName} />
+                           <AvatarFallback>{ownerInitials}</AvatarFallback>
+                         </Avatar>
+                         <span className="text-sm truncate">{ownerName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3">{formatDuration(trace.duration_ms)}</TableCell>
+                    <TableCell className="py-3">{formatDate(trace.uploaded_at)}</TableCell>
+                    <TableCell className="text-right pr-6 py-3">
+                      <div onClick={(e) => e.stopPropagation()} className="inline-block">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the trace{' '}
+                                <strong>{trace.scenario || `ID: ${trace.id.substring(0, 7)}`}</strong>{' '}
+                                and all associated data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteMutation.mutate(trace.id)}
+                                disabled={deleteMutation.isPending}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
