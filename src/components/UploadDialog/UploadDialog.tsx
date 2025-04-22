@@ -240,7 +240,6 @@ export function UploadDialog() {
                       <Input
                         type="file"
                         className="sr-only"
-                        accept=".json,.txt,.perf,application/json,text/plain"
                         onChange={handleFileChange}
                         disabled={isProcessing}
                       />
