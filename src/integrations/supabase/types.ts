@@ -52,6 +52,13 @@ export type Database = {
             referencedRelation: "traces"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "trace_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       traces: {
@@ -64,6 +71,7 @@ export type Database = {
           file_size_bytes: number | null
           id: string
           notes: string | null
+          profile_type: string | null
           scenario: string | null
           uploaded_at: string
           user_id: string
@@ -77,6 +85,7 @@ export type Database = {
           file_size_bytes?: number | null
           id?: string
           notes?: string | null
+          profile_type?: string | null
           scenario?: string | null
           uploaded_at?: string
           user_id: string
@@ -90,6 +99,7 @@ export type Database = {
           file_size_bytes?: number | null
           id?: string
           notes?: string | null
+          profile_type?: string | null
           scenario?: string | null
           uploaded_at?: string
           user_id?: string
