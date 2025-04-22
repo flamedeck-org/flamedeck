@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Coding Conventions
+
+- Always memoize by default (use `useMemo` and `useCallback` to ensure stable dependencies)
+  - Also wrap exported components in `memo`
+- Abstract large new pieces of functionality into separate hooks / components - component files should not be huge
+- Always export components as named exports. You should never use default exports
+- Always use named function declarations for components. E.g. `function MyComponent() {` not `const MyComponent: React.FC = () => {`
