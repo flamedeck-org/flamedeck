@@ -31,7 +31,7 @@ export function exportProfileGroup(profileGroup: ProfileGroup): FileFormat.File 
   }
 
   const file: FileFormat.File = {
-    exporter: 'speedscope@1.22.2',
+    exporter: 'trace-view-pilot',
     name: profileGroup.name,
     activeProfileIndex: profileGroup.indexToView,
     $schema: 'https://www.speedscope.app/file-format-schema.json',
