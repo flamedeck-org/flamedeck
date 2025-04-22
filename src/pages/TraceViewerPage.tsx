@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
-import SpeedscopeViewer from "@/components/SpeedscopeViewer";
+import SpeedscopeViewer, { SpeedscopeViewType } from "@/components/SpeedscopeViewer";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getTraceBlob } from "@/lib/storage";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft } from 'lucide-react';
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -23,6 +25,7 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 const TraceViewerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const [selectedView, setSelectedView] = useState<SpeedscopeViewType>('time_ordered');
 
   const blobPath = location.state?.blobPath as string | undefined;
 
@@ -62,17 +65,39 @@ const TraceViewerPage: React.FC = () => {
         )}
 
         {!isLoadingBlob && !blobError && traceBlobData && (
-            <ErrorBoundary
-              FallbackComponent={ErrorFallback}
-              onReset={() => {
-                console.log("Attempting to reset Speedscope viewer boundary...");
-              }}
-            >
-              <SpeedscopeViewer 
-                traceData={traceBlobData.data}
-                fileName={traceBlobData.fileName}
-              />
-            </ErrorBoundary>
+          <div className="h-full w-full flex flex-col">
+            <div className="flex justify-between items-center flex-shrink-0 border-b z-10 bg-background px-4">
+              <Tabs value={selectedView} onValueChange={(value) => setSelectedView(value as SpeedscopeViewType)} className="inline-block">
+                <TabsList className="inline-flex rounded-none bg-transparent text-foreground p-0 border-none">
+                  <TabsTrigger value="time_ordered" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Time Ordered</TabsTrigger>
+                  <TabsTrigger value="left_heavy" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Left Heavy</TabsTrigger>
+                  <TabsTrigger value="sandwich" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Sandwich</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              {id && (
+                <Link to={`/traces/${id}`}>
+                  <Button variant="ghost" size="sm">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Details
+                  </Button>
+                </Link>
+              )}
+            </div>
+            <div className="flex-grow overflow-hidden relative">
+              <ErrorBoundary
+                FallbackComponent={ErrorFallback}
+                onReset={() => {
+                  console.log("Attempting to reset Speedscope viewer boundary...");
+                }}
+              >
+                <SpeedscopeViewer 
+                  traceData={traceBlobData.data}
+                  fileName={traceBlobData.fileName}
+                  view={selectedView}
+                />
+              </ErrorBoundary>
+            </div>
+          </div>
         )}
 
         {!isLoadingBlob && !blobError && !traceBlobData && (
