@@ -1,6 +1,6 @@
 import { TraceMetadata, TraceUpload, ApiResponse, TraceComment } from "@/types";
 import { Database } from "@/integrations/supabase/types";
-import { uploadJson, listUserTraces, downloadJson } from "./storage";
+import { uploadJson, listUserTraces } from "./storage";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 
@@ -13,6 +13,12 @@ export interface TraceCommentWithAuthor extends TraceComment {
 }
 
 export type NewTraceComment = Omit<TraceComment, 'id' | 'created_at' | 'user_id'>;
+
+// Define a type for the paginated response structure
+export interface PaginatedTracesResponse {
+  traces: TraceMetadata[];
+  totalCount: number;
+}
 
 // --- Helper Functions ---
 
@@ -44,10 +50,13 @@ export const traceApi = {
   getTraces: async (
     page: number = 0,
     limit: number = 20
-  ): Promise<ApiResponse<TraceMetadata[]>> => {
+  ): Promise<ApiResponse<PaginatedTracesResponse>> => {
     try {
-      const traces = await listUserTraces();
-      return { data: traces, error: null };
+      // Call the updated listUserTraces which now handles pagination and returns count
+      const { data: traces, count } = await listUserTraces(page, limit);
+      // Ensure count is a number, defaulting to 0 if null/undefined
+      const totalCount = count ?? 0;
+      return { data: { traces, totalCount }, error: null };
     } catch (error) {
       return { data: null, error: (error as Error).message };
     }
@@ -86,22 +95,22 @@ export const traceApi = {
 
         // 2. Generate unique storage path
         const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "/");
-        const fileName = `${uuidv4()}.json.gz`; // Append .gz for clarity
+        const fileName = file.name.endsWith('.gz') ? file.name : `${file.name}.gz`; // Ensure .gz
         filePathInBucket = `${timestamp}/${fileName}`;
 
         // 3. Read and Parse File Content
-        let jsonObject: unknown;
+        let jsonObjectToUpload: unknown;
         try {
             const fileContent = await file.text();
-            jsonObject = JSON.parse(fileContent);
+            jsonObjectToUpload = JSON.parse(fileContent);
         } catch (parseError) {
-            console.error("Error reading or parsing input file:", parseError);
-            throw new Error("Invalid JSON file provided.");
+            console.error("Error reading or parsing processed file for uploadJson:", parseError);
+            throw new Error("Invalid JSON content in processed file.");
         }
 
         // 4. Upload Compressed JSON via uploadJson
         console.log(`Attempting compressed upload to bucket: ${bucket}, path: ${filePathInBucket}`);
-        const uploadResult = await uploadJson(bucket, filePathInBucket, jsonObject);
+        const uploadResult = await uploadJson(bucket, filePathInBucket, jsonObjectToUpload);
 
         // Handle upload failure - does not require cleanup as nothing was stored yet
         if ('error' in uploadResult) {
@@ -124,8 +133,9 @@ export const traceApi = {
                 scenario: metadata.scenario,
                 device_model: metadata.device_model,
                 duration_ms: Math.round(metadata.duration_ms),
-                blob_path: storagePath, // Full path including bucket
-                file_size_bytes: file.size, // Original uncompressed size
+                blob_path: storagePath,
+                file_size_bytes: file.size, // Size of the *processed* (but uncompressed) file
+                profile_type: metadata.profile_type,
                 notes: metadata.notes,
                 uploaded_at: new Date().toISOString()
             })

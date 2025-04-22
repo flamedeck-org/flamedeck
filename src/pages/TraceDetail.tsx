@@ -28,6 +28,36 @@ import CommentForm from "@/components/CommentForm";
 import CommentList from "@/components/CommentList";
 import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
+import { ProfileType } from "@/lib/speedscope-import"; // Import ProfileType
+
+// Function to get human-readable profile type name
+const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
+  if (!profileType) return "Unknown";
+
+  const typeMap: Record<ProfileType | string, string> = {
+    'speedscope': 'Speedscope',
+    'pprof': 'pprof (Go/Protobuf)',
+    'chrome-timeline': 'Chrome Timeline',
+    'chrome-cpuprofile': 'Chrome CPU Profile',
+    'chrome-cpuprofile-old': 'Chrome CPU Profile (Old)',
+    'chrome-heap-profile': 'Chrome Heap Profile',
+    'stackprof': 'Stackprof (Ruby)',
+    'instruments-deepcopy': 'Instruments Deep Copy (macOS)',
+    'instruments-trace': 'Instruments Trace (macOS)',
+    'linux-perf': 'Linux Perf',
+    'collapsed-stack': 'Collapsed Stack',
+    'v8-prof-log': 'V8 Log',
+    'firefox': 'Firefox Profile',
+    'safari': 'Safari Profile',
+    'haskell': 'Haskell GHC Profile',
+    'trace-event': 'Trace Event',
+    'callgrind': 'Callgrind',
+    'papyrus': 'Papyrus (Skyrim)',
+    'unknown': 'Unknown',
+  };
+
+  return typeMap[profileType] || profileType; // Return mapped name or the original string if not in map
+};
 
 const TraceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -204,12 +234,26 @@ const TraceDetail: React.FC = () => {
             actions={headerActions}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-sm text-muted-foreground">Scenario</div>
+                <div className="text-lg font-medium truncate" title={trace?.scenario}>
+                  {trace?.scenario || 'N/A'}
+                </div>
+                {trace?.device_model && (
+                  <div className="text-sm text-muted-foreground mt-1 truncate" title={trace.device_model}>
+                    {trace.device_model}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground">Uploaded</div>
                 <div className="text-lg font-medium">
-                  {formatDate(trace.uploaded_at)}
+                  {formatDate(trace?.uploaded_at)}
                 </div>
               </CardContent>
             </Card>
@@ -217,22 +261,14 @@ const TraceDetail: React.FC = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground">Commit</div>
-                <div className="text-lg font-medium font-mono">
-                  {trace.commit_sha}
+                <div className="text-lg font-medium font-mono truncate" title={trace?.commit_sha}>
+                  {trace?.commit_sha || 'N/A'}
                 </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {trace.branch}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground">Scenario</div>
-                <div className="text-lg font-medium">{trace.scenario}</div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {trace.device_model}
-                </div>
+                {trace?.branch && (
+                  <div className="text-sm text-muted-foreground mt-1 truncate" title={trace.branch}>
+                    {trace.branch}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -240,7 +276,16 @@ const TraceDetail: React.FC = () => {
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground">Duration</div>
                 <div className="text-lg font-medium text-primary">
-                  {formatDuration(trace.duration_ms)}
+                  {formatDuration(trace?.duration_ms)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-sm text-muted-foreground">Profile Format</div>
+                <div className="text-lg font-medium">
+                  {getProfileTypeName(trace?.profile_type)}
                 </div>
               </CardContent>
             </Card>

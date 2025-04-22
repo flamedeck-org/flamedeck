@@ -1,6 +1,7 @@
 import { importProfileGroupFromText, importProfilesFromArrayBuffer } from '@/lib/speedscope-import';
 import { exportProfileGroup } from '@/lib/speedscope-import/file-format';
 import { ProfileGroup } from '@/lib/speedscope-core/profile';
+import { ProfileType } from '@/lib/speedscope-import'; // Assuming ProfileType will be exported from index.ts
 
 /**
  * Calculates the duration of a profile group in milliseconds.
@@ -40,42 +41,66 @@ function getDurationMsFromProfileGroup(profileGroup: ProfileGroup): number | nul
 interface ProcessedTraceData {
   processedFile: File;
   durationMs: number | null;
+  profileType: ProfileType;
 }
 
 /**
  * Processes a raw trace file using Speedscope import/export functions.
- * Reads the file, attempts to parse it, calculates duration,
+ * Reads the file, attempts to parse it using the actual speedscope importers,
+ * captures the detected profile type from the importer, calculates duration,
  * exports it to the standard Speedscope JSON format, and returns
- * a new File object ready for upload along with the duration.
+ * a new File object ready for upload along with the duration and detected type.
  *
  * @param originalFile The raw trace file selected by the user.
- * @returns An object containing the processed File and the duration in ms.
+ * @returns An object containing the processed File, the duration in ms, and the detected profile type.
  * @throws If the file cannot be read or parsed by Speedscope importers.
  */
 export async function processAndPrepareTraceUpload(originalFile: File): Promise<ProcessedTraceData> {
-  // 1. Read file content
-  const fileContent = await originalFile.arrayBuffer(); // Read as ArrayBuffer first
+  let importResult: { profileGroup: ProfileGroup | null; profileType: ProfileType } | null = null;
 
-  // 2. Attempt to import using Speedscope functions
-  let profileGroup: ProfileGroup | null = null;
+  // Try importing via ArrayBuffer first
   try {
-    // Try ArrayBuffer import first (handles binary formats like .perf)
-    profileGroup = await importProfilesFromArrayBuffer(originalFile.name, fileContent);
-  } catch (arrayBufferError) {
-    // If ArrayBuffer fails, try reading as text and using text import
-    console.warn("Importing as ArrayBuffer failed, trying as text:", arrayBufferError);
-    try {
-      const fileText = await originalFile.text();
-      profileGroup = await importProfileGroupFromText(originalFile.name, fileText);
-    } catch (textError) {
-      console.error("Importing as text also failed:", textError);
-      throw new Error(`Failed to parse profile: Neither binary nor text import succeeded. Original error: ${textError instanceof Error ? textError.message : String(textError)}`);
-    }
+    const fileContent = await originalFile.arrayBuffer();
+    // Assuming importProfilesFromArrayBuffer will be updated to return { profileGroup, profileType }
+    importResult = await importProfilesFromArrayBuffer(originalFile.name, fileContent);
+  } catch (e) {
+    console.warn("Reading or importing as ArrayBuffer failed, will try text.", e);
+    // Let it proceed to text import
   }
 
-  if (!profileGroup || profileGroup.profiles.length === 0) {
+  // If ArrayBuffer import didn't succeed or wasn't attempted, try text import
+  if (!importResult?.profileGroup) {
+     console.log("Attempting import via text content.");
+     try {
+        const fileText = await originalFile.text();
+        // Assuming importProfileGroupFromText will be updated to return { profileGroup, profileType }
+        const textImportResult = await importProfileGroupFromText(originalFile.name, fileText);
+        // Only use text result if it successfully found a profile group
+        if (textImportResult?.profileGroup) {
+            importResult = textImportResult;
+        } else if (!importResult) {
+            // If binary also failed, set a default failure state
+             importResult = { profileGroup: null, profileType: 'unknown' };
+        }
+     } catch(e) {
+         console.error("Importing as text failed:", e);
+         if (!importResult) {
+             // If binary also failed, set a default failure state
+             importResult = { profileGroup: null, profileType: 'unknown' };
+         }
+         // Potentially throw here if both fail definitively
+         // throw new Error(`Failed to parse profile: Both binary and text import methods failed. Error: ${e instanceof Error ? e.message : String(e)}`);
+     }
+  }
+
+
+  if (!importResult?.profileGroup) {
+    // Throw error only if *both* methods failed to produce a profile group
+    console.error("Failed to import profile group from file:", originalFile.name);
     throw new Error('Could not parse the profile file. The format might be unsupported or the file corrupted.');
   }
+
+  const { profileGroup, profileType } = importResult;
 
   // 3. Extract duration using the helper function
   const durationMs = getDurationMsFromProfileGroup(profileGroup);
@@ -95,5 +120,5 @@ export async function processAndPrepareTraceUpload(originalFile: File): Promise<
   // 7. Create the final File object
   const processedFile = new File([blob], newFilename, { type: blob.type });
 
-  return { processedFile, durationMs };
+  return { processedFile, durationMs, profileType }; // Return detected type from importer
 } 

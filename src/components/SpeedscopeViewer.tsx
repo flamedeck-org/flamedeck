@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   importProfilesFromArrayBuffer,
   importProfileGroupFromText 
 } from '@/lib/speedscope-import';
-import { profileGroupAtom, glCanvasAtom } from '@/lib/speedscope-core/app-state'; 
+import { profileGroupAtom, glCanvasAtom, flattenRecursionAtom } from '@/lib/speedscope-core/app-state';
 import { ActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state'; 
 import { useAtom } from '@/lib/speedscope-core/atom'; 
 import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
@@ -24,6 +24,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
+  const flattenRecursion = useAtom(flattenRecursionAtom);
 
   useEffect(() => {
     let isCancelled = false;
@@ -65,6 +66,24 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
       isCancelled = true;
     };
   }, [traceData, fileName]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (event.key === 'r') {
+        flattenRecursionAtom.set(!flattenRecursion);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [flattenRecursion]);
 
   const activeProfileState: ActiveProfileState | null = useMemo(() => {
     return profileGroup
