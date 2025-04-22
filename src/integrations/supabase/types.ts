@@ -61,6 +61,48 @@ export type Database = {
           },
         ]
       }
+      trace_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["trace_role"]
+          trace_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["trace_role"]
+          trace_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["trace_role"]
+          trace_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trace_permissions_trace_id_fkey"
+            columns: ["trace_id"]
+            isOneToOne: false
+            referencedRelation: "traces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trace_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       traces: {
         Row: {
           blob_path: string
@@ -138,10 +180,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_trace_permission: {
+        Args: {
+          p_trace_id: string
+          p_user_id: string
+          min_role: Database["public"]["Enums"]["trace_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      trace_role: "viewer" | "editor" | "owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -256,6 +305,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      trace_role: ["viewer", "editor", "owner"],
+    },
   },
 } as const

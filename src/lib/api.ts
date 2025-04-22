@@ -12,6 +12,14 @@ export interface TraceCommentWithAuthor extends TraceComment {
   author: Pick<UserProfileType, 'id' | 'username' | 'avatar_url' | 'first_name' | 'last_name'> | null;
 }
 
+// Define types for permission data
+export type TracePermissionRow = Database['public']['Tables']['trace_permissions']['Row'];
+export type TraceRole = Database['public']['Enums']['trace_role'];
+
+export interface TracePermissionWithUser extends Omit<TracePermissionRow, 'user_id'> {
+  user: Pick<UserProfileType, 'id' | 'username' | 'avatar_url' | 'first_name' | 'last_name'> | null; // User details (null for public)
+}
+
 export type NewTraceComment = Omit<TraceComment, 'id' | 'created_at' | 'user_id'>;
 
 // Define a type for the paginated response structure
@@ -270,5 +278,146 @@ export const traceApi = {
       console.error('Error creating trace comment:', error);
       return { data: null, error: (error as Error).message };
     }
-  }
+  },
+
+  // --- Permission Management ---
+
+  // Get permissions for a trace (including user info)
+  getTracePermissions: async (traceId: string): Promise<ApiResponse<TracePermissionWithUser[]>> => {
+    try {
+      const { data, error } = await supabase
+        .from('trace_permissions')
+        .select(`
+          id,
+          trace_id,
+          role,
+          created_at,
+          updated_at,
+          user: user_profiles ( id, username, avatar_url, first_name, last_name )
+        `)
+        .eq('trace_id', traceId);
+
+      if (error) throw error;
+
+      // Type assertion might be needed depending on how Supabase returns the joined data
+      const permissions = data as unknown as TracePermissionWithUser[];
+      return { data: permissions, error: null };
+    } catch (error) {
+      console.error(`Error fetching permissions for trace ${traceId}:`, error);
+      return { data: null, error: (error as Error).message };
+    }
+  },
+
+  // Add a permission for a specific user
+  addTracePermission: async (
+    traceId: string,
+    userId: string,
+    role: TraceRole
+  ): Promise<ApiResponse<TracePermissionRow>> => {
+    try {
+      const { data, error } = await supabase
+        .from('trace_permissions')
+        .insert({ trace_id: traceId, user_id: userId, role: role })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data: data as TracePermissionRow, error: null };
+    } catch (error) {
+      console.error(`Error adding permission for user ${userId} to trace ${traceId}:`, error);
+      return { data: null, error: (error as Error).message };
+    }
+  },
+
+  // Update an existing permission's role
+  updateTracePermission: async (
+    permissionId: string,
+    role: TraceRole
+  ): Promise<ApiResponse<TracePermissionRow>> => {
+    try {
+      const { data, error } = await supabase
+        .from('trace_permissions')
+        .update({ role: role, updated_at: new Date().toISOString() })
+        .eq('id', permissionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data: data as TracePermissionRow, error: null };
+    } catch (error) {
+      console.error(`Error updating permission ${permissionId}:`, error);
+      return { data: null, error: (error as Error).message };
+    }
+  },
+
+  // Remove a specific permission (by permission ID)
+  removeTracePermission: async (permissionId: string): Promise<ApiResponse<void>> => {
+    try {
+      const { error } = await supabase
+        .from('trace_permissions')
+        .delete()
+        .eq('id', permissionId);
+
+      if (error) throw error;
+      return { data: null, error: null };
+    } catch (error) {
+      console.error(`Error removing permission ${permissionId}:`, error);
+      return { data: null, error: (error as Error).message };
+    }
+  },
+
+  // Set public access (upsert: create or update)
+  setPublicTraceAccess: async (
+    traceId: string,
+    role: TraceRole | null // null to remove public access
+  ): Promise<ApiResponse<TracePermissionRow | null>> => {
+    try {
+      if (role) {
+        // Upsert public viewer permission
+        const { data, error } = await supabase
+          .from('trace_permissions')
+          .upsert(
+            { trace_id: traceId, user_id: null, role: role },
+            { onConflict: 'trace_id, user_id' } // Specify conflict target
+          )
+          .select()
+          .single();
+        if (error) throw error;
+        return { data: data as TracePermissionRow, error: null };
+      } else {
+        // Delete public permission if role is null
+        const { error } = await supabase
+          .from('trace_permissions')
+          .delete()
+          .eq('trace_id', traceId)
+          .is('user_id', null); // Ensure we only delete the public one
+        if (error) throw error;
+        return { data: null, error: null };
+      }
+    } catch (error) {
+      console.error(`Error setting public access for trace ${traceId}:`, error);
+      return { data: null, error: (error as Error).message };
+    }
+  },
+
+  // Search for users (simple example)
+  searchUsers: async (query: string): Promise<ApiResponse<UserProfileType[]>> => {
+    try {
+      if (!query || query.trim().length < 2) {
+        // Avoid searching for very short/empty strings
+        return { data: [], error: null };
+      }
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id, username, avatar_url, first_name, last_name')
+        .or(`username.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`) // Basic search
+        .limit(10);
+
+      if (error) throw error;
+      return { data: data as UserProfileType[], error: null };
+    } catch (error) {
+      console.error('Error searching users:', error);
+      return { data: null, error: (error as Error).message };
+    }
+  },
 };

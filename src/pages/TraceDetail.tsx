@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { TraceMetadata } from "@/types";
 import { traceApi } from "@/lib/api";
-import { ArrowLeft, Trash2, Eye } from "lucide-react";
+import { ArrowLeft, Trash2, Eye, Share2 } from "lucide-react";
 import PageLayout from "@/components/PageLayout";
 import PageHeader from "@/components/PageHeader";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,6 +29,7 @@ import CommentList from "@/components/CommentList";
 import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
 import { ProfileType } from "@/lib/speedscope-import"; // Import ProfileType
+import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -67,6 +68,7 @@ const TraceDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { openModal } = useSharingModal(); // Added hook usage
 
   useEffect(() => {
     const fetchTrace = async () => {
@@ -138,6 +140,15 @@ const TraceDetail: React.FC = () => {
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
+  const handleShareClick = () => { // Added handler
+    if (id) {
+      openModal(id);
+    } else {
+      console.error("Trace ID is undefined, cannot open sharing modal.");
+      // TODO: Optionally show an error to the user
+    }
+  };
+
   const headerActions = (
     <div className="flex items-center space-x-2">
       <Link
@@ -147,6 +158,10 @@ const TraceDetail: React.FC = () => {
       >
         <Eye className="mr-2 h-4 w-4" /> Explore Trace
       </Link>
+
+      <Button variant="default" size="sm" onClick={handleShareClick}>
+         <Share2 className="mr-2 h-4 w-4" /> Share
+      </Button>
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
