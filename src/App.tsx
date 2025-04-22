@@ -18,6 +18,8 @@ import { glCanvasAtom } from "./lib/speedscope-core/app-state";
 import { useMemo } from "react";
 import { getCanvasContext } from "./lib/speedscope-core/app-state/getters";
 import { GLCanvas } from "./components/speedscope-ui/application";
+import { SharingModalProvider } from '@/hooks/useSharingModal';
+import { SharingModal } from '@/components/sharing/SharingModal';
 
 const queryClient = new QueryClient();
 
@@ -51,16 +53,19 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <div className="h-full w-full flex flex-col speedscope-app-container relative">
-            <GLCanvas theme={theme} setGLCanvas={glCanvasAtom.set} canvasContext={canvasContext} />
-            <AppRoutes />
-          </div>
-        </BrowserRouter>
-      </TooltipProvider>
+        <SharingModalProvider>
+          <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="h-full w-full flex flex-col speedscope-app-container relative">
+              <GLCanvas theme={theme} setGLCanvas={glCanvasAtom.set} canvasContext={canvasContext} />
+              <AppRoutes />
+            </div>
+          </BrowserRouter>
+          <SharingModal />
+        </TooltipProvider>
+      </SharingModalProvider>
     </AuthProvider>
   </QueryClientProvider>
   )
