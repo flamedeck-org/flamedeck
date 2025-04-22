@@ -30,6 +30,7 @@ import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
 import { ProfileType } from "@/lib/speedscope-import"; // Import ProfileType
 import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
+import { useTraceDetails } from '@/hooks/useTraceDetails'; // Import the hook
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -64,41 +65,15 @@ const TraceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [trace, setTrace] = useState<TraceMetadata | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { openModal } = useSharingModal(); // Added hook usage
+  const { openModal } = useSharingModal();
 
-  useEffect(() => {
-    const fetchTrace = async () => {
-      if (!id) return;
-
-      try {
-        setLoading(true);
-        const response = await traceApi.getTrace(id);
-
-        if (response.error) {
-          throw new Error(response.error);
-        }
-
-        if (response.data) {
-          setTrace(response.data);
-        }
-      } catch (error) {
-        setError((error as Error).message);
-        toast({
-          title: "Failed to load trace",
-          description: (error as Error).message,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTrace();
-  }, [id, toast]);
+  // Use the custom hook to fetch trace details
+  const {
+    data: trace, // Rename data to trace for consistency
+    isLoading, // Use isLoading from the hook
+    error, // Use error from the hook
+  } = useTraceDetails(id);
 
   const deleteMutation = useMutation({
     mutationFn: (traceId: string) => traceApi.deleteTrace(traceId),
@@ -204,7 +179,7 @@ const TraceDetail: React.FC = () => {
 
   const traceId = trace?.id;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <AuthGuard>
         <Layout>
@@ -230,7 +205,7 @@ const TraceDetail: React.FC = () => {
       <AuthGuard>
         <Layout>
           <div className="text-center py-12 space-y-6">
-            <p className="text-destructive">{error || "Trace not found"}</p>
+            <p className="text-destructive">{error?.message || "Trace not found"}</p>
             <Link to="/traces">
               <Button>Back to Traces</Button>
             </Link>
