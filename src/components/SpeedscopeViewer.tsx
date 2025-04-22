@@ -16,10 +16,10 @@ import { getCanvasContext } from '@/lib/speedscope-core/app-state/getters';
 interface SpeedscopeViewerProps {
   traceData: string | ArrayBuffer; 
   fileName: string;
-  view: 'sandwich' | 'time_ordered' | 'left_heavy';
+  view?: 'sandwich' | 'time_ordered' | 'left_heavy';
 }
 
-const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName, view = 'left_heavy' }) => {
+const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName, view = 'sandwich' }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   

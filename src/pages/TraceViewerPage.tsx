@@ -46,7 +46,7 @@ const TraceViewerPage: React.FC = () => {
 
   return (
     <AuthGuard>
-      <Layout noPadding={true}>
+      <Layout noPadding isProfileView>
         {isLoadingBlob && (
           <div className="flex items-center justify-center h-full w-full">
             <p>Loading trace data...</p>
