@@ -8,15 +8,12 @@ import { ActiveProfileState } from '@/lib/speedscope-core/app-state/active-profi
 import { useAtom } from '@/lib/speedscope-core/atom'; 
 import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
-import { useTheme } from './speedscope-ui/themes/theme';
-import { LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
-import { FlamechartID } from '@/lib/speedscope-core/app-state/profile-group';
-import { getCanvasContext } from '@/lib/speedscope-core/app-state/getters';
+import { ChronoFlamechartView, LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
 
 interface SpeedscopeViewerProps {
   traceData: string | ArrayBuffer; 
   fileName: string;
-  view?: 'sandwich' | 'time_ordered' | 'left_heavy';
+  view: 'sandwich' | 'time_ordered' | 'left_heavy';
 }
 
 const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName, view = 'time_ordered' }) => {
@@ -25,12 +22,6 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
-  const theme = useTheme()
-
-  const canvasContext = useMemo(
-    () => (glCanvas ? getCanvasContext({theme, canvas: glCanvas}) : null),
-    [theme, glCanvas],
-  )
 
   useEffect(() => {
     let isCancelled = false;
@@ -115,22 +106,13 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
             glCanvas={glCanvas}
           />
         )}
-        {/* {view === 'time_ordered' && (
-          <TimeOrderedViewContainer 
-            activeProfileState={activeProfileState} 
-            glCanvas={glCanvas}
-          />
-        )} */}
+        {view === 'time_ordered' && (
+          <ChronoFlamechartView activeProfileState={activeProfileState} glCanvas={glCanvas} />
+        )}
         {view === 'left_heavy' && (
           <LeftHeavyFlamechartView
-            flamechart={activeProfileState.profile.getGroupedCalltreeRoot()}
-            flamechartRenderer={activeProfileState.leftHeavyRenderer}
-            canvasContext={canvasContext}
-            theme={theme}
             activeProfileState={activeProfileState}
-            flamechartID={FlamechartID.LEFT_HEAVY}
-            flamechartViewState={activeProfileState.leftHeavyViewState}
-            // updateFlamechartViewState={this.props.setFlamechartViewState!}
+            glCanvas={glCanvas}
           />
         )}
       </ProfileSearchContextProvider>
