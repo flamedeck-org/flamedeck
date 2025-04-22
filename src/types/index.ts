@@ -1,3 +1,5 @@
+import { ProfileType } from "@/lib/speedscope-import";
+
 export interface TraceMetadata {
   id: string;
   user_id: string;
@@ -10,6 +12,7 @@ export interface TraceMetadata {
   blob_path: string;
   file_size_bytes: number;
   notes?: string;
+  profile_type?: ProfileType | string;
 }
 
 export interface TraceUpload {
@@ -19,6 +22,7 @@ export interface TraceUpload {
   device_model: string;
   blob_path: string;
   duration_ms: number;
+  profile_type: ProfileType | string;
   notes?: string;
 }
 

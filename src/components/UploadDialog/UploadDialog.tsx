@@ -15,7 +15,11 @@ import { useTraceProcessor } from "./hooks/useTraceProcessor";
 import { cn } from "@/lib/utils";
 
 // Define the shape of our form data
-type FormFields = Omit<TraceUpload, "blob_path" | "duration_ms" | "id" | "created_at" | "user_id" | "file_name">;
+type FormFields = Omit<
+    TraceUpload,
+    'blob_path' | 'duration_ms' | 'profile_type' |
+    'id' | 'created_at' | 'user_id' | 'file_name'
+>;
 
 export function UploadDialog() {
   const [file, setFile] = useState<File | null>(null);
@@ -46,7 +50,8 @@ export function UploadDialog() {
     isProcessing,
     processingError,
     processedFile,
-    processedDurationMs
+    processedDurationMs,
+    profileType
   } = useTraceProcessor({ file });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,13 +132,13 @@ export function UploadDialog() {
          return;
     }
 
-    if (!processedFile || processedDurationMs === null) {
+    if (!processedFile || processedDurationMs === null || !profileType) {
          toast({
            title: "Processing Not Complete",
            description: "File processing is not yet complete or failed silently. Please try re-selecting the file.",
            variant: "destructive",
          });
-         console.error("Submit called but processedFile or processedDurationMs is missing", { processedFile, processedDurationMs });
+         console.error("Submit called but processedFile, processedDurationMs, or profileType is missing", { processedFile, processedDurationMs, profileType });
          return;
     }
 
@@ -144,9 +149,10 @@ export function UploadDialog() {
       const finalMetadata: Omit<TraceUpload, 'blob_path'> = {
         ...formData,
         duration_ms: processedDurationMs,
+        profile_type: profileType,
       };
 
-      const fileToUpload = new File([processedFile], file.name, { type: processedFile.type });
+      const fileToUpload = new File([processedFile], `${file.name}.speedscope.json`, { type: processedFile.type });
       const response = await traceApi.uploadTrace(fileToUpload, finalMetadata);
 
       if (response.error) {
@@ -182,7 +188,7 @@ export function UploadDialog() {
     }
   };
 
-  const isSubmitDisabled = isUploading || isProcessing || !file || !!processingError || !processedFile || !!errors.scenario;
+  const isSubmitDisabled = isUploading || isProcessing || !file || !!processingError || !processedFile || !profileType || !!errors.scenario;
 
   return (
     <Card className="w-full max-w-2xl mx-auto">

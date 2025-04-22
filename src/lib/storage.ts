@@ -125,28 +125,39 @@ export const getTraceBlob = async (path: string): Promise<{ data: ArrayBuffer; f
     }
 };
 
-// List all traces for the current user
-export const listUserTraces = async (): Promise<TraceMetadata[]> => {
+// List paginated traces for the current user
+export const listUserTraces = async (
+    page: number,
+    limit: number
+): Promise<{ data: TraceMetadata[]; count: number | null }> => {
     try {
         const session = await supabase.auth.getSession();
         if (!session.data.session) {
             throw new Error('Authentication required to list traces');
         }
-        
-        const { data, error } = await supabase
+
+        const from = page * limit;
+        const to = from + limit - 1;
+
+        // Fetch the paginated data AND the total count
+        const { data, error, count } = await supabase
             .from('traces')
-            .select('*')
-            .order('uploaded_at', { ascending: false });
-        
+            .select('*', { count: 'exact' }) // Request total count
+            .order('uploaded_at', { ascending: false })
+            .range(from, to); // Apply pagination range
+
         if (error) {
             console.error("Error listing traces:", error);
             throw new Error(`Failed to list traces: ${error.message}`);
         }
+
+        // Ensure data is not null before casting
+        const traces = (data || []) as TraceMetadata[];
         
-        return data as TraceMetadata[];
+        return { data: traces, count }; // Return both data slice and total count
     } catch (error) {
         console.error("Error in listUserTraces:", error);
-        throw error;
+        throw error; // Re-throw to be handled by the caller
     }
 };
 

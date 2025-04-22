@@ -13,7 +13,7 @@ import {
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Link, useNavigate } from "react-router-dom";
 import { formatBytes, formatDate } from "@/lib/utils";
-import { traceApi } from "@/lib/api";
+import { traceApi, PaginatedTracesResponse } from "@/lib/api";
 import { TraceMetadata } from "@/types";
 import { FileJson, UploadCloud, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,16 +32,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const TRACE_LIST_PAGE_SIZE = 10;
+
 const TraceList = () => {
   const [page, setPage] = useState(0);
-  const pageSize = 10;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { data: traces, isLoading, error } = useQuery({
+  const { data: queryData, isLoading, error } = useQuery<PaginatedTracesResponse, Error>({
     queryKey: ["traces", page],
     queryFn: async () => {
-      const response = await traceApi.getTraces(page, pageSize);
+      const response = await traceApi.getTraces(page, TRACE_LIST_PAGE_SIZE);
       if (response.error) {
         toast({
           title: "Error loading traces",
@@ -50,9 +51,12 @@ const TraceList = () => {
         });
         throw new Error(response.error);
       }
-      return response.data || [];
+      return response.data || { traces: [], totalCount: 0 };
     },
   });
+
+  const traces = queryData?.traces || [];
+  const totalCount = queryData?.totalCount || 0;
 
   const deleteMutation = useMutation({
     mutationFn: (traceId: string) => traceApi.deleteTrace(traceId),
@@ -106,9 +110,9 @@ const TraceList = () => {
     );
   }
 
-  const totalPages = Math.ceil((traces?.length || 0) / pageSize);
+  const totalPages = Math.ceil(totalCount / TRACE_LIST_PAGE_SIZE);
 
-  if (!traces || traces.length === 0) {
+  if (!isLoading && totalCount === 0 && !error) {
     return (
       <PageLayout>
         <PageHeader title="Performance Traces" actions={uploadAction} />

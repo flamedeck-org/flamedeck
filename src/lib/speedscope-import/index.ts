@@ -24,49 +24,77 @@ import {isTraceEventFormatted, importTraceEvents} from './trace-event'
 import {importFromCallgrind} from './callgrind'
 import {importFromPapyrus} from './papyrus'
 
+// Define the possible profile types - based on the import functions available
+export type ProfileType =
+  | 'speedscope'
+  | 'pprof' // Protocol buffer format
+  | 'chrome-timeline' // Includes "chrome.json" and "Trace-..." named files
+  | 'chrome-cpuprofile' // nodes, samples, timeDeltas
+  | 'chrome-cpuprofile-old' // head, samples, timestamps
+  | 'chrome-heap-profile' // .heapprofile, head.selfSize
+  | 'stackprof' // .stackprof.json
+  | 'instruments-deepcopy' // .instruments.txt
+  | 'instruments-trace' // Directory import
+  | 'linux-perf' // perf script output
+  | 'collapsed-stack' // .collapsedstack.txt, specific format
+  | 'v8-prof-log' // .v8log.json
+  | 'firefox' // Firefox profile format
+  | 'safari' // Safari profile format
+  | 'haskell' // Haskell GHC JSON profile
+  | 'trace-event' // Generic trace event format
+  | 'callgrind' // callgrind format
+  | 'papyrus' // Papyrus log format
+  | 'unknown'; // Default/fallback
+
+// Interface for the return type of import functions
+interface ImportResult {
+  profileGroup: ProfileGroup | null;
+  profileType: ProfileType;
+}
+
 export async function importProfileGroupFromText(
   fileName: string,
   contents: string,
-): Promise<ProfileGroup | null> {
+): Promise<ImportResult | null> {
   return await importProfileGroup(new TextProfileDataSource(fileName, contents))
 }
 
 export async function importProfileGroupFromBase64(
   fileName: string,
   b64contents: string,
-): Promise<ProfileGroup | null> {
+): Promise<ImportResult | null> {
   return await importProfileGroup(
     MaybeCompressedDataReader.fromArrayBuffer(fileName, decodeBase64(b64contents).buffer),
   )
 }
 
-export async function importProfilesFromFile(file: File): Promise<ProfileGroup | null> {
+export async function importProfilesFromFile(file: File): Promise<ImportResult | null> {
   return importProfileGroup(MaybeCompressedDataReader.fromFile(file))
 }
 
 export async function importProfilesFromArrayBuffer(
   fileName: string,
   buffer: ArrayBuffer,
-): Promise<ProfileGroup | null> {
+): Promise<ImportResult | null> {
   return importProfileGroup(MaybeCompressedDataReader.fromArrayBuffer(fileName, buffer))
 }
 
-async function importProfileGroup(dataSource: ProfileDataSource): Promise<ProfileGroup | null> {
+async function importProfileGroup(dataSource: ProfileDataSource): Promise<ImportResult | null> {
   const fileName = await dataSource.name()
 
-  const profileGroup = await _importProfileGroup(dataSource)
-  if (profileGroup) {
-    if (!profileGroup.name) {
-      profileGroup.name = fileName
+  const result = await _importProfileGroup(dataSource)
+  if (result && result.profileGroup) {
+    if (!result.profileGroup.name) {
+      result.profileGroup.name = fileName
     }
-    for (const profile of profileGroup.profiles) {
+    for (const profile of result.profileGroup.profiles) {
       if (profile && !profile.getName()) {
         profile.setName(fileName)
       }
     }
-    return profileGroup
+    return result
   }
-  return null
+  return { profileGroup: null, profileType: result?.profileType ?? 'unknown' }
 }
 
 function toGroup(profile: Profile | null): ProfileGroup | null {
@@ -74,142 +102,184 @@ function toGroup(profile: Profile | null): ProfileGroup | null {
   return {name: profile.getName(), indexToView: 0, profiles: [profile]}
 }
 
-async function _importProfileGroup(dataSource: ProfileDataSource): Promise<ProfileGroup | null> {
+async function _importProfileGroup(dataSource: ProfileDataSource): Promise<ImportResult> {
   const fileName = await dataSource.name()
+  let profileGroup: ProfileGroup | null = null
+  let profileType: ProfileType = 'unknown'
 
-  const buffer = await dataSource.readAsArrayBuffer()
-
-  {
-    const profile = importAsPprofProfile(buffer)
-    if (profile) {
+  // Try binary formats first
+  try {
+    const buffer = await dataSource.readAsArrayBuffer()
+    const pprofProfile = importAsPprofProfile(buffer)
+    if (pprofProfile) {
       console.log('Importing as protobuf encoded pprof file')
-      return toGroup(profile)
+      profileGroup = toGroup(pprofProfile)
+      profileType = 'pprof'
+      return { profileGroup, profileType }
     }
+  } catch (e) {
+    console.warn("Failed to read or parse as binary (pprof):", e)
   }
 
-  const contents = await dataSource.readAsText()
+  let contents: any
+  try {
+    contents = await dataSource.readAsText()
+  } catch (e) {
+    console.error("Failed to read data source as text:", e)
+    return { profileGroup: null, profileType: 'unknown' }
+  }
+  const firstChunk = contents.firstChunk ? contents.firstChunk() : contents.substring(0, 1024)
 
   // First pass: Check known file format names to infer the file type
   if (fileName.endsWith('.speedscope.json')) {
-    console.log('Importing as speedscope json file')
-    return importSpeedscopeProfiles(contents.parseAsJSON())
+    profileType = 'speedscope'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = importSpeedscopeProfiles(contents.parseAsJSON()) } catch (e) { console.error(e) }
   } else if (/Trace-\d{8}T\d{6}/.exec(fileName)) {
-    console.log('Importing as Chrome Timeline Object')
-    return importFromChromeTimeline(contents.parseAsJSON().traceEvents, fileName)
+    profileType = 'chrome-timeline'
+    console.log(`Importing as ${profileType} (Object)`)
+    try { profileGroup = importFromChromeTimeline(contents.parseAsJSON().traceEvents, fileName) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.chrome.json') || /Profile-\d{8}T\d{6}/.exec(fileName)) {
-    console.log('Importing as Chrome Timeline')
-    return importFromChromeTimeline(contents.parseAsJSON(), fileName)
+    profileType = 'chrome-timeline'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = importFromChromeTimeline(contents.parseAsJSON(), fileName) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.stackprof.json')) {
-    console.log('Importing as stackprof profile')
-    return toGroup(importFromStackprof(contents.parseAsJSON()))
+    profileType = 'stackprof'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = toGroup(importFromStackprof(contents.parseAsJSON())) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.instruments.txt')) {
-    console.log('Importing as Instruments.app deep copy')
-    return toGroup(importFromInstrumentsDeepCopy(contents))
+    profileType = 'instruments-deepcopy'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = toGroup(importFromInstrumentsDeepCopy(contents)) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.linux-perf.txt')) {
-    console.log('Importing as output of linux perf script')
-    return importFromLinuxPerf(contents)
-  } else if (fileName.endsWith('.collapsedstack.txt')) {
-    console.log('Importing as collapsed stack format')
-    return toGroup(importFromBGFlameGraph(contents))
+    profileType = 'linux-perf'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = importFromLinuxPerf(contents) } catch (e) { console.error(e) }
+  } else if (fileName.endsWith('.collapsedstack.txt') || fileName.endsWith('.folded')) {
+    profileType = 'collapsed-stack'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = toGroup(importFromBGFlameGraph(contents)) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.v8log.json')) {
-    console.log('Importing as --prof-process v8 log')
-    return toGroup(importFromV8ProfLog(contents.parseAsJSON()))
+    profileType = 'v8-prof-log'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = toGroup(importFromV8ProfLog(contents.parseAsJSON())) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.heapprofile')) {
-    console.log('Importing as Chrome Heap Profile')
-    return toGroup(importFromChromeHeapProfile(contents.parseAsJSON()))
+    profileType = 'chrome-heap-profile'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = toGroup(importFromChromeHeapProfile(contents.parseAsJSON())) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('-recording.json')) {
-    console.log('Importing as Safari profile')
-    return toGroup(importFromSafari(contents.parseAsJSON()))
+    profileType = 'safari'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = toGroup(importFromSafari(contents.parseAsJSON())) } catch (e) { console.error(e) }
   } else if (fileName.startsWith('callgrind.')) {
-    console.log('Importing as Callgrind profile')
-    return importFromCallgrind(contents, fileName)
+    profileType = 'callgrind'
+    console.log(`Importing as ${profileType}`)
+    try { profileGroup = importFromCallgrind(contents, fileName) } catch (e) { console.error(e) }
   }
+
+  // If found by filename, return
+  if (profileGroup) return { profileGroup, profileType }
 
   // Second pass: Try to guess what file format it is based on structure
   let parsed: any
   try {
     parsed = contents.parseAsJSON()
   } catch (e) {}
+
   if (parsed) {
     if (parsed['$schema'] === 'https://www.speedscope.app/file-format-schema.json') {
-      console.log('Importing as speedscope json file')
-      return importSpeedscopeProfiles(parsed)
+      profileType = 'speedscope'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = importSpeedscopeProfiles(parsed)
     } else if (parsed['systemHost'] && parsed['systemHost']['name'] == 'Firefox') {
-      console.log('Importing as Firefox profile')
-      return toGroup(importFromFirefox(parsed))
+      profileType = 'firefox'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = toGroup(importFromFirefox(parsed))
     } else if (isChromeTimeline(parsed)) {
-      console.log('Importing as Chrome Timeline')
-      return importFromChromeTimeline(parsed, fileName)
+      profileType = 'chrome-timeline'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = importFromChromeTimeline(parsed, fileName)
     } else if (isChromeTimelineObject(parsed)) {
-      console.log('Importing as Chrome Timeline Object')
-      return importFromChromeTimeline(parsed.traceEvents, fileName)
+      profileType = 'chrome-timeline'
+      console.log(`Importing as ${profileType} (Object)`)
+      profileGroup = importFromChromeTimeline(parsed.traceEvents, fileName)
     } else if ('nodes' in parsed && 'samples' in parsed && 'timeDeltas' in parsed) {
-      console.log('Importing as Chrome CPU Profile')
-      return toGroup(importFromChromeCPUProfile(parsed))
+      profileType = 'chrome-cpuprofile'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = toGroup(importFromChromeCPUProfile(parsed))
     } else if (isTraceEventFormatted(parsed)) {
-      console.log('Importing as Trace Event Format profile')
-      return importTraceEvents(parsed)
+      profileType = 'trace-event'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = importTraceEvents(parsed)
     } else if ('head' in parsed && 'samples' in parsed && 'timestamps' in parsed) {
-      console.log('Importing as Chrome CPU Profile (old format)')
-      return toGroup(importFromOldV8CPUProfile(parsed))
+      profileType = 'chrome-cpuprofile-old'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = toGroup(importFromOldV8CPUProfile(parsed))
     } else if ('mode' in parsed && 'frames' in parsed && 'raw_timestamp_deltas' in parsed) {
-      console.log('Importing as stackprof profile')
-      return toGroup(importFromStackprof(parsed))
+      profileType = 'stackprof'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = toGroup(importFromStackprof(parsed))
     } else if ('code' in parsed && 'functions' in parsed && 'ticks' in parsed) {
-      console.log('Importing as --prof-process v8 log')
-      return toGroup(importFromV8ProfLog(parsed))
+      profileType = 'v8-prof-log'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = toGroup(importFromV8ProfLog(parsed))
     } else if ('head' in parsed && 'selfSize' in parsed['head']) {
-      console.log('Importing as Chrome Heap Profile')
-      return toGroup(importFromChromeHeapProfile(parsed))
+      profileType = 'chrome-heap-profile'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = toGroup(importFromChromeHeapProfile(parsed))
     } else if ('rts_arguments' in parsed && 'initial_capabilities' in parsed) {
-      console.log('Importing as Haskell GHC JSON Profile')
-      return importFromHaskell(parsed)
+      profileType = 'haskell'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = importFromHaskell(parsed)
     } else if ('recording' in parsed && 'sampleStackTraces' in parsed.recording) {
-      console.log('Importing as Safari profile')
-      return toGroup(importFromSafari(parsed))
+      profileType = 'safari'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = toGroup(importFromSafari(parsed))
     }
   } else {
-    // Format is not JSON
+    // Format is not JSON, check text formats
 
-    // If the first line is "# callgrind format", it's probably in Callgrind
-    // Profile Format.
     if (
-      /^# callgrind format/.exec(contents.firstChunk()) ||
-      (/^events:/m.exec(contents.firstChunk()) && /^fn=/m.exec(contents.firstChunk()))
+      /^# callgrind format/.exec(firstChunk) ||
+      (/^events:/m.exec(firstChunk) && /^fn=/m.exec(firstChunk))
     ) {
-      console.log('Importing as Callgrind profile')
-      return importFromCallgrind(contents, fileName)
-    }
-
-    // If the first line contains "Symbol Name", preceded by a tab, it's probably
-    // a deep copy from OS X Instruments.app
-    if (/^[\w \t\(\)]*\tSymbol Name/.exec(contents.firstChunk())) {
-      console.log('Importing as Instruments.app deep copy')
-      return toGroup(importFromInstrumentsDeepCopy(contents))
-    }
-
-    if (/^(Stack_|Script_|Obj_)\S+ log opened \(PC\)\n/.exec(contents.firstChunk())) {
-      console.log('Importing as Papyrus profile')
-      return toGroup(importFromPapyrus(contents))
-    }
-
-    const fromLinuxPerf = importFromLinuxPerf(contents)
-    if (fromLinuxPerf) {
-      console.log('Importing from linux perf script output')
-      return fromLinuxPerf
-    }
-
-    const fromBGFlameGraph = importFromBGFlameGraph(contents)
-    if (fromBGFlameGraph) {
-      console.log('Importing as collapsed stack format')
-      return toGroup(fromBGFlameGraph)
+      profileType = 'callgrind'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = importFromCallgrind(contents, fileName)
+    } else if (/^[\w \t\(\)]*\tSymbol Name/.exec(firstChunk)) {
+      profileType = 'instruments-deepcopy'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = toGroup(importFromInstrumentsDeepCopy(contents))
+    } else if (/^(Stack_|Script_|Obj_)\S+ log opened \(PC\)\n/.exec(firstChunk)) {
+      profileType = 'papyrus'
+      console.log(`Importing as ${profileType}`)
+      profileGroup = toGroup(importFromPapyrus(contents))
+    } else {
+      const fromLinuxPerfGroup = importFromLinuxPerf(contents)
+      if (fromLinuxPerfGroup) {
+        profileType = 'linux-perf'
+        console.log(`Importing as ${profileType}`)
+        profileGroup = fromLinuxPerfGroup
+      } else {
+        const fromBGFlameGraphProfile = importFromBGFlameGraph(contents)
+        if (fromBGFlameGraphProfile) {
+          profileType = 'collapsed-stack'
+          console.log(`Importing as ${profileType}`)
+          profileGroup = toGroup(fromBGFlameGraphProfile)
+        }
+      }
     }
   }
 
-  // Unrecognized format
-  return null
+  // If still not identified, profileType remains 'unknown'
+  if (!profileGroup) {
+    console.warn(`Failed to identify profile format for ${fileName}`)
+  }
+
+  return { profileGroup, profileType }
 }
 
 export async function importFromFileSystemDirectoryEntry(entry: FileSystemDirectoryEntry) {
+  console.log("Importing as Instruments Trace Directory")
   return importFromInstrumentsTrace(entry)
 }
