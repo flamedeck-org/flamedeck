@@ -1,18 +1,27 @@
 import { ProfileType } from "@/lib/speedscope-import";
 
+export interface UserProfile {
+  id: string; // uuid
+  username: string | null;
+  avatar_url: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+}
+
 export interface TraceMetadata {
   id: string;
   user_id: string;
   uploaded_at: string;
-  commit_sha: string;
-  branch: string;
-  scenario: string;
-  device_model: string;
-  duration_ms: number;
+  commit_sha: string | null;
+  branch: string | null;
+  scenario: string | null;
+  device_model: string | null;
+  duration_ms: number | null;
   blob_path: string;
-  file_size_bytes: number;
-  notes?: string;
-  profile_type?: ProfileType | string;
+  file_size_bytes: number | null;
+  notes?: string | null;
+  profile_type?: ProfileType | string | null;
+  owner?: UserProfile | null;
 }
 
 export interface TraceUpload {
@@ -29,13 +38,6 @@ export interface TraceUpload {
 export interface ApiResponse<T> {
   data: T | null;
   error: string | null;
-}
-
-// Add or ensure this UserProfile type is exported
-export interface UserProfile {
-  id: string; // uuid
-  username: string | null;
-  avatar_url: string | null;
 }
 
 // Type for the trace_comments table row
