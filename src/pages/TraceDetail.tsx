@@ -27,6 +27,7 @@ import {
 import CommentForm from "@/components/CommentForm";
 import CommentList from "@/components/CommentList";
 import { Separator } from "@/components/ui/separator";
+import { buttonVariants } from "@/components/ui/button";
 
 const TraceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -109,25 +110,13 @@ const TraceDetail: React.FC = () => {
 
   const headerActions = (
     <div className="flex items-center space-x-2">
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={() => {
-          if (trace?.blob_path) {
-            navigate(`/traces/${id}/view`, { state: { blobPath: trace.blob_path } });
-          } else {
-            toast({
-              title: "Cannot view trace",
-              description: "Trace data path is missing.",
-              variant: "destructive",
-            });
-          }
-        }}
-        disabled={!trace || !trace.blob_path}
+      <Link
+        to={`/traces/${id}/view`}
+        state={{ blobPath: trace?.blob_path }}
+        className={buttonVariants({ variant: "default", size: "sm" })}
       >
-        <Eye className="h-4 w-4 mr-2" />
-        View Trace Data
-      </Button>
+        <Eye className="mr-2 h-4 w-4" /> Explore Trace
+      </Link>
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
@@ -158,11 +147,12 @@ const TraceDetail: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Link to="/traces">
-        <Button variant="outline" size="sm">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
+      <Link 
+        to="/traces"
+        className={buttonVariants({ variant: "outline", size: "sm" })}
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back
       </Link>
     </div>
   );

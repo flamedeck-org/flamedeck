@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import type { TraceMetadata } from "@/types";
+import { gzipCompress, gzipDecompress } from "./util/compress"; // Import compression utilities
 
 // Upload a trace file to Supabase storage
 export const uploadTraceFile = async (file: File): Promise<{ path: string; size: number }> => {
@@ -148,3 +149,111 @@ export const listUserTraces = async (): Promise<TraceMetadata[]> => {
         throw error;
     }
 };
+
+/**
+ * Serializes, compresses (gzip), and uploads a JSON object to Supabase Storage.
+ * Uses native CompressionStream if available, falls back to pako.
+ *
+ * @param bucket The Supabase Storage bucket name.
+ * @param path The path within the bucket to store the file.
+ * @param obj The JavaScript object to upload.
+ * @returns A promise that resolves when the upload is complete, or rejects on error.
+ */
+export async function uploadJson(
+    bucket: string,
+    path: string,
+    obj: unknown
+): Promise<{ path: string } | { error: Error }> {
+    try {
+        // 1. Serialize to JSON string
+        const jsonString = JSON.stringify(obj);
+
+        // 2. Encode string to Uint8Array
+        const encoder = new TextEncoder();
+        const uint8Array = encoder.encode(jsonString);
+
+        // 3. Compress the data
+        const compressedBuffer = await gzipCompress(uint8Array.buffer);
+
+        // 4. Create a Blob from the compressed data, matching the contentType option
+        const blob = new Blob([compressedBuffer], { type: "application/json" });
+
+        // 5. Upload the Blob
+        const { data, error: uploadError } = await supabase.storage
+            .from(bucket)
+            .upload(path, blob, {
+                contentType: "application/json", // Blob type implies gzip, but content type is underlying data
+                cacheControl: "public,max-age=31536000", // Cache immutable data
+                upsert: true, // Overwrite if exists
+                // Pass custom headers like Content-Encoding here
+                headers: {
+                    'Content-Encoding': 'gzip' // Use standard HTTP header format
+                }
+            });
+
+        if (uploadError) {
+            console.error("Error uploading compressed JSON:", uploadError);
+            throw new Error(
+                `Failed to upload compressed JSON: ${uploadError.message}`
+            );
+        }
+
+        console.log("Compressed JSON uploaded successfully:", data);
+        return { path: data.path };
+    } catch (error) {
+        console.error("Error in uploadJson:", error);
+        return { error: error instanceof Error ? error : new Error(String(error)) };
+    }
+}
+
+/**
+ * Downloads a gzipped JSON file from Supabase Storage, decompresses it, and parses it.
+ * Uses native DecompressionStream if available, falls back to pako.
+ *
+ * @param bucket The Supabase Storage bucket name.
+ * @param path The path within the bucket to the gzipped file.
+ * @returns A promise that resolves with the parsed JavaScript object, or rejects on error.
+ */
+export async function downloadJson<T = unknown>(
+    bucket: string,
+    path: string
+): Promise<{ data: T | null; error: Error | null }> {
+    try {
+        // 1. Download the file blob
+        const { data: blob, error: downloadError } = await supabase.storage
+            .from(bucket)
+            .download(path);
+
+        if (downloadError) {
+            console.error("Error downloading gzipped JSON:", downloadError);
+            throw new Error(
+                `Failed to download gzipped JSON: ${downloadError.message}`
+            );
+        }
+
+        if (!blob) {
+            throw new Error("Downloaded file blob is null.");
+        }
+
+        // 2. Get ArrayBuffer from Blob
+        const compressedBuffer = await blob.arrayBuffer();
+
+        // 3. Decompress the data
+        const decompressedBuffer = await gzipDecompress(compressedBuffer);
+
+        // 4. Decode Uint8Array back to string
+        const decoder = new TextDecoder();
+        const jsonString = decoder.decode(new Uint8Array(decompressedBuffer));
+
+        // 5. Parse JSON string
+        const data = JSON.parse(jsonString) as T;
+
+        return { data, error: null };
+    } catch (error) {
+        console.error("Error in downloadJson:", error);
+        return {
+            data: null,
+            error: error instanceof Error ? error : new Error(String(error)),
+        };
+    }
+}
