@@ -424,7 +424,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
   }
 
   render() {
-    const containerClasses = "relative w-full h-full overflow-hidden";
+    const containerClasses = "relative w-full flex flex-col overflow-hidden h-[100px] border-b-2";
     const canvasClasses = "absolute top-0 left-0 w-full h-full";
 
     return (
