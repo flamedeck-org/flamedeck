@@ -19,7 +19,7 @@ interface SpeedscopeViewerProps {
   view?: 'sandwich' | 'time_ordered' | 'left_heavy';
 }
 
-const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName, view = 'sandwich' }) => {
+const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName, view = 'time_ordered' }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
