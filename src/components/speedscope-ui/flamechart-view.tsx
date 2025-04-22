@@ -1,18 +1,17 @@
-import React, { Fragment, Component } from 'react';
+import { Fragment, Component } from 'react';
 
-import {CallTreeNode, Frame} from '../../lib/speedscope-core/profile';
+import {CallTreeNode } from '../../lib/speedscope-core/profile';
 import {Rect, Vec2, AffineTransform} from '../../lib/speedscope-core/math';
 import {formatPercent} from '../../lib/speedscope-core/lib-utils';
 import {FlamechartMinimapView} from './flamechart-minimap-view'
 
-import {Sizes, commonStyle} from './style'
+import {Sizes } from './style'
 import {FlamechartDetailView} from './flamechart-detail-view'
 import {FlamechartPanZoomView} from './flamechart-pan-zoom-view'
 import {Hovertip} from './hovertip'
 import {FlamechartViewProps} from './flamechart-view-container'
 import {ProfileSearchContext} from './search-view'
 import {FlamechartSearchView} from './flamechart-search-view'
-import { Theme } from './themes/theme'
 
 export class FlamechartView extends Component<FlamechartViewProps> {
   private configSpaceSize() {
@@ -96,7 +95,7 @@ export class FlamechartView extends Component<FlamechartViewProps> {
 
   render() {
     return (
-      <div className="fill-placeholder vbox-placeholder" ref={this.containerRef}>
+      <div className="w-full h-full flex flex-col left-0 top-0 relative overflow-hidden" ref={this.containerRef}>
         <FlamechartMinimapView
           theme={this.props.theme}
           configSpaceViewportRect={this.props.configSpaceViewportRect}

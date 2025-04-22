@@ -7,23 +7,30 @@ import { profileGroupAtom, glCanvasAtom } from '@/lib/speedscope-core/app-state'
 import { ActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state'; 
 import { useAtom } from '@/lib/speedscope-core/atom'; 
 import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
-import { GLCanvas } from './speedscope-ui/application';
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
 import { useTheme } from './speedscope-ui/themes/theme';
+import { LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
+import { FlamechartID } from '@/lib/speedscope-core/app-state/profile-group';
 import { getCanvasContext } from '@/lib/speedscope-core/app-state/getters';
 
 interface SpeedscopeViewerProps {
   traceData: string | ArrayBuffer; 
   fileName: string;
+  view: 'sandwich' | 'time_ordered' | 'left_heavy';
 }
 
-const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName }) => {
+const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName, view = 'left_heavy' }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
   const theme = useTheme()
+
+  const canvasContext = useMemo(
+    () => (glCanvas ? getCanvasContext({theme, canvas: glCanvas}) : null),
+    [theme, glCanvas],
+  )
 
   useEffect(() => {
     let isCancelled = false;
@@ -102,10 +109,30 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   return (
     <div className="h-full flex">
       <ProfileSearchContextProvider>
-        <SandwichViewContainer 
-          activeProfileState={activeProfileState} 
-          glCanvas={glCanvas}
-        />
+        {view === 'sandwich' && (
+          <SandwichViewContainer 
+            activeProfileState={activeProfileState} 
+            glCanvas={glCanvas}
+          />
+        )}
+        {/* {view === 'time_ordered' && (
+          <TimeOrderedViewContainer 
+            activeProfileState={activeProfileState} 
+            glCanvas={glCanvas}
+          />
+        )} */}
+        {view === 'left_heavy' && (
+          <LeftHeavyFlamechartView
+            flamechart={activeProfileState.profile.getGroupedCalltreeRoot()}
+            flamechartRenderer={activeProfileState.leftHeavyRenderer}
+            canvasContext={canvasContext}
+            theme={theme}
+            activeProfileState={activeProfileState}
+            flamechartID={FlamechartID.LEFT_HEAVY}
+            flamechartViewState={activeProfileState.leftHeavyViewState}
+            // updateFlamechartViewState={this.props.setFlamechartViewState!}
+          />
+        )}
       </ProfileSearchContextProvider>
     </div>
   );
