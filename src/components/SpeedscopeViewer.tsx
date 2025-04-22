@@ -10,13 +10,15 @@ import { SandwichViewContainer } from './speedscope-ui/sandwich-view';
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
 import { ChronoFlamechartView, LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
 
+export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
+
 interface SpeedscopeViewerProps {
   traceData: string | ArrayBuffer; 
   fileName: string;
-  view: 'sandwich' | 'time_ordered' | 'left_heavy';
+  view: SpeedscopeViewType;
 }
 
-const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName, view = 'time_ordered' }) => {
+const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName, view }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
