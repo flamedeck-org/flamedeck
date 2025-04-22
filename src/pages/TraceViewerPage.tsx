@@ -23,7 +23,6 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 const TraceViewerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
-  const { toast } = useToast();
 
   const blobPath = location.state?.blobPath as string | undefined;
 
