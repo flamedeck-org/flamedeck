@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          frame_key: string | null
           id: string
           parent_comment_id: string | null
           trace_id: string
@@ -22,6 +23,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          frame_key?: string | null
           id?: string
           parent_comment_id?: string | null
           trace_id: string
@@ -31,6 +33,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          frame_key?: string | null
           id?: string
           parent_comment_id?: string | null
           trace_id?: string

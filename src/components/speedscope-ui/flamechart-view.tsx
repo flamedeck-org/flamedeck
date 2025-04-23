@@ -57,6 +57,13 @@ export class FlamechartView extends Component<FlamechartViewProps> {
     this.props.setSelectedNode(node)
   }
 
+  // Handler for when user wants to comment on a frame
+  onFrameComment = (key: string | number | null) => {
+    if (this.props.onFrameSelectForComment) {
+      this.props.onFrameSelectForComment(key)
+    }
+  }
+
   formatValue(weight: number) {
     const totalWeight = this.props.flamechart.getTotalWeight()
     const percent = (100 * weight) / totalWeight
@@ -116,6 +123,7 @@ export class FlamechartView extends Component<FlamechartViewProps> {
                 renderInverted={false}
                 onNodeHover={this.onNodeHover as any}
                 onNodeSelect={this.onNodeClick}
+                onFrameSelectForComment={this.onFrameComment}
                 selectedNode={this.props.selectedNode}
                 transformViewport={this.transformViewport}
                 configSpaceViewportRect={this.props.configSpaceViewportRect}
@@ -123,6 +131,7 @@ export class FlamechartView extends Component<FlamechartViewProps> {
                 logicalSpaceViewportSize={this.props.logicalSpaceViewportSize}
                 setLogicalSpaceViewportSize={this.setLogicalSpaceViewportSize}
                 searchResults={searchResults}
+                commentedFrameKeys={this.props.commentedFrameKeys}
               />
               <FlamechartSearchView />
             </Fragment>

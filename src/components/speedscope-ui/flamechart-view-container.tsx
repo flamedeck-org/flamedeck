@@ -106,11 +106,13 @@ const getChronoViewFlamechartRenderer = createMemoizedFlamechartRenderer()
 
 export interface FlamechartViewContainerProps {
   activeProfileState: ActiveProfileState
-  glCanvas: HTMLCanvasElement
+  glCanvas: HTMLCanvasElement | null
+  onFrameSelectForComment?: (key: string | number | null) => void
+  commentedFrameKeys?: (string | number)[]
 }
 
 export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) => {
-  const {activeProfileState, glCanvas} = props
+  const {activeProfileState, glCanvas, onFrameSelectForComment, commentedFrameKeys} = props
   const {profile, chronoViewState} = activeProfileState
 
   const theme = useTheme()
@@ -145,6 +147,8 @@ export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) =
         getCSSColorForFrame={getCSSColorForFrame}
         {...chronoViewState}
         {...setters}
+        onFrameSelectForComment={onFrameSelectForComment}
+        commentedFrameKeys={commentedFrameKeys}
       />
     </FlamechartSearchContextProvider>
   )
@@ -170,7 +174,7 @@ export const getLeftHeavyFlamechart = memoizeByShallowEquality(
 const getLeftHeavyFlamechartRenderer = createMemoizedFlamechartRenderer()
 
 export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerProps) => {
-  const {activeProfileState, glCanvas} = ownProps
+  const {activeProfileState, glCanvas, onFrameSelectForComment, commentedFrameKeys} = ownProps
 
   const {profile, leftHeavyViewState} = activeProfileState
 
@@ -209,6 +213,8 @@ export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerPr
         getCSSColorForFrame={getCSSColorForFrame}
         {...leftHeavyViewState}
         {...setters}
+        onFrameSelectForComment={onFrameSelectForComment}
+        commentedFrameKeys={commentedFrameKeys}
       />
     </FlamechartSearchContextProvider>
   )
