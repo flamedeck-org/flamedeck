@@ -383,7 +383,8 @@ export class FlamechartPanZoomView extends Component<
     matchedFrameBatch.fill(ctx, theme.searchMatchPrimaryColor)
     matchedTextHighlightBatch.fill(ctx, theme.searchMatchSecondaryColor)
     commentedFrameBatch.stroke(ctx, '#36a3ff', frameOutlineWidth * 1.5)
-    fadedLabelBatch.fill(
+    fadedLabelBatch.fill(ctx, theme.fgSecondaryColor)
+    labelBatch.fill(
       ctx,
       this.props.searchResults != null ? theme.searchMatchTextColor : theme.fgPrimaryColor,
     )
