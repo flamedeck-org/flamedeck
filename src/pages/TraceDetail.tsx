@@ -2,12 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
-// import TraceViewer from "@/components/TraceViewer"; // Removed TraceViewer import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
-import { TraceMetadata } from "@/types";
 import { traceApi } from "@/lib/api";
 import { ArrowLeft, Trash2, Eye, Share2 } from "lucide-react";
 import PageLayout from "@/components/PageLayout";
@@ -31,6 +29,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { ProfileType } from "@/lib/speedscope-import"; // Import ProfileType
 import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
 import { useTraceDetails } from '@/hooks/useTraceDetails'; // Import the hook
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar imports
+import { useAuth } from "@/contexts/AuthContext"; // Added Auth context import
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -67,6 +67,7 @@ const TraceDetail: React.FC = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { openModal } = useSharingModal();
+  const { user: currentUser } = useAuth(); // Get current user
 
   // Use the custom hook to fetch trace details
   const {
@@ -177,6 +178,28 @@ const TraceDetail: React.FC = () => {
   );
 
   const traceId = trace?.id;
+  const owner = trace?.owner; // Assuming owner data is available on trace object
+
+  // Determine owner name and initials
+  const isOwnerCurrentUser = currentUser && owner?.id === currentUser.id;
+  const ownerName = isOwnerCurrentUser 
+    ? "me" 
+    : owner?.username || `${owner?.first_name || ''} ${owner?.last_name || ''}`.trim() || "Unknown Owner";
+  const ownerInitials = ownerName === 'me' 
+    ? currentUser?.email?.[0].toUpperCase() ?? '?' 
+    : ownerName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+
+  // Construct subtitle node
+  const ownerSubtitle = owner ? (
+    <div className="flex items-center space-x-1.5">
+      <span>Owned by</span>
+      <Avatar className="h-5 w-5"> {/* Smaller avatar for subtitle */}
+        <AvatarImage src={isOwnerCurrentUser ? currentUser?.user_metadata?.avatar_url : owner?.avatar_url ?? undefined} alt={ownerName} />
+        <AvatarFallback className="text-xs">{ownerInitials}</AvatarFallback> {/* Smaller text */} 
+      </Avatar>
+      <span className="font-medium">{ownerName}</span>
+    </div>
+  ) : null;
 
   if (isLoading) {
     return (
@@ -220,10 +243,11 @@ const TraceDetail: React.FC = () => {
         <PageLayout>
           <PageHeader 
             title={trace.scenario || "Trace Details"} 
+            subtitle={ownerSubtitle}
             actions={headerActions}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground">Scenario</div>
@@ -302,7 +326,6 @@ const TraceDetail: React.FC = () => {
             </div>
           )}
 
-          {/* <TraceViewer traceUrl={`/api/traces/${trace.id}/data`} /> */} {/* Removed TraceViewer component rendering */}
         </PageLayout>
       </Layout>
     </AuthGuard>

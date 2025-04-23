@@ -75,14 +75,30 @@ export const traceApi = {
     try {
       const { data, error } = await supabase
         .from('traces')
-        .select('*')
+        // Select all trace fields and join user_profiles (renamed to owner) via the user_id foreign key
+        .select(`
+          *,
+          owner: user_profiles!user_id ( id, username, avatar_url, first_name, last_name )
+        `)
         .eq('id', id)
-        .single();
-        
-      if (error) throw error;
-      return { data: data as TraceMetadata, error: null };
+        .single(); // Use single() as we expect only one trace
+
+      if (error) {
+          // Check for specific error if user_profile doesn't exist for the user_id, which might be okay
+          if (error.code === 'PGRST116' && error.details.includes('user_profiles')) {
+             console.warn(`Owner profile not found for trace ${id}, proceeding without owner info.`);
+             // If owner is optional and not found is okay, potentially return data with owner as null
+             // For now, let's re-throw unless specifically handled
+             // return { data: { ...data, owner: null } as TraceMetadata, error: null }; 
+          } 
+          throw error;
+      }
+
+      // Type assertion should be safer now, assuming the select fetches owner correctly or handles its absence
+      return { data: data as TraceMetadata, error: null }; 
     } catch (error) {
-      return { data: null, error: (error as Error).message };
+        console.error(`Error fetching trace details for ${id}:`, error);
+        return { data: null, error: (error as Error).message };
     }
   },
 
