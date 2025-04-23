@@ -146,7 +146,15 @@ export type Database = {
           uploaded_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "traces_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {
@@ -188,12 +196,34 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_user_accessible_traces: {
+        Args: { p_user_id: string; p_offset: number; p_limit: number }
+        Returns: Database["public"]["CompositeTypes"]["trace_with_owner"][]
+      }
+      get_user_accessible_traces_count: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
     }
     Enums: {
       trace_role: "viewer" | "editor" | "owner"
     }
     CompositeTypes: {
-      [_ in never]: never
+      trace_with_owner: {
+        id: string | null
+        user_id: string | null
+        uploaded_at: string | null
+        commit_sha: string | null
+        branch: string | null
+        scenario: string | null
+        device_model: string | null
+        duration_ms: number | null
+        blob_path: string | null
+        file_size_bytes: number | null
+        notes: string | null
+        profile_type: string | null
+        owner: Json | null
+      }
     }
   }
 }
