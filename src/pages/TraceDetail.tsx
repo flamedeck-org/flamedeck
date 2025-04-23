@@ -71,10 +71,18 @@ const TraceDetail: React.FC = () => {
 
   // Use the custom hook to fetch trace details
   const {
-    data: trace, // Rename data to trace for consistency
-    isLoading, // Use isLoading from the hook
-    error, // Use error from the hook
+    data: trace,
+    isLoading,
+    error, // Error is now potentially of type ApiError
   } = useTraceDetails(id);
+
+  // Handle navigation for not found/permission error
+  useEffect(() => {
+    if (error?.code === 'PGRST116') {
+      console.log("Trace not found or permission denied (PGRST116), navigating to /404");
+      navigate('/404', { replace: true }); // Use replace to avoid back button to error state
+    }
+  }, [error, navigate]);
 
   const deleteMutation = useMutation({
     mutationFn: (traceId: string) => traceApi.deleteTrace(traceId),
@@ -172,7 +180,7 @@ const TraceDetail: React.FC = () => {
         className={buttonVariants({ variant: "outline", size: "sm" })}
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back
+        Back to Traces
       </Link>
     </div>
   );
@@ -201,6 +209,7 @@ const TraceDetail: React.FC = () => {
     </div>
   ) : null;
 
+  // Render loading state first
   if (isLoading) {
     return (
       <AuthGuard>
@@ -215,19 +224,24 @@ const TraceDetail: React.FC = () => {
                 <Skeleton key={i} className="h-28" />
               ))}
             </div>
-            <Skeleton className="h-[60vh]" />
+             {/* Don't render comment skeleton if trace might not exist */}
+            {/* <Skeleton className="h-[60vh]" /> */}
           </PageLayout>
         </Layout>
       </AuthGuard>
     );
   }
 
+  // Specific check for PGRST116 is handled by useEffect navigation
+  // This block now handles other errors OR the case where data is null after loading
   if (error || !trace) {
+    // If navigation didn't happen, it means it's some other error
+    console.error("Failed to load trace details:", error);
     return (
       <AuthGuard>
         <Layout>
           <div className="text-center py-12 space-y-6">
-            <p className="text-destructive">{error?.message || "Trace not found"}</p>
+            <p className="text-destructive">{error?.message || "Trace data could not be loaded."}</p>
             <Link to="/traces">
               <Button>Back to Traces</Button>
             </Link>

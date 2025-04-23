@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const Navbar: React.FC = () => {
   return (
@@ -22,6 +23,7 @@ const Navbar: React.FC = () => {
             <span className="text-xl font-semibold">Professo</span>
           </Link>
         </div>
+        <ThemeToggle />
       </div>
     </header>
   );
