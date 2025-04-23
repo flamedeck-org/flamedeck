@@ -273,10 +273,10 @@ function SharingModalImpl() {
     const userPermissions = permissions.filter(p => p.user !== null);
 
     return (
-      <div className="space-y-4">
+      <>
         {/* Top Input Section - Now with Combobox */}
         {canManagePermissions && (
-          <div className="px-4">
+          <div>
             <Popover open={invitePopoverOpen} onOpenChange={setInvitePopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -334,19 +334,7 @@ function SharingModalImpl() {
         )}
 
         {/* People with Access Section */}
-        <div className="px-4">
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="font-medium text-sm">People with access</h4>
-            <div className="flex space-x-2">
-               {/* TODO: Add functionality to these buttons */}
-               <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <CopyIconInternal className="h-4 w-4" />
-               </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Mail className="h-4 w-4" />
-                </Button>
-            </div>
-          </div>
+        <div>
           <ul className="space-y-3"> {/* Increased spacing */}
             {userPermissions.map((perm) => {
               if (!perm.user) return null; // Should not happen with filtering, but safeguard
@@ -414,7 +402,7 @@ function SharingModalImpl() {
 
         {/* General Access Section */}
         {canManagePermissions && (
-             <div className="px-4 pt-2">
+             <div>
                <h4 className="font-medium text-sm mb-2">General access</h4>
                <div className="flex items-start space-x-3">
                  <div className="mt-1">
@@ -453,7 +441,7 @@ function SharingModalImpl() {
                </div>
              </div>
          )}
-      </div>
+      </>
     );
   };
 
@@ -470,15 +458,14 @@ function SharingModalImpl() {
              }
           </DialogTitle>
         </DialogHeader>
-        {/* Removed py-4 space-y-4 from wrapper div */}
-        <div className="pt-2 pb-4">
+        <div className="space-y-6">
           {renderContent()}
         </div>
-        <DialogFooter className="sm:justify-between px-4 pb-4 pt-0"> {/* Added padding */}
+        <DialogFooter className="sm:justify-between pt-2">
           <Button type="button" variant="outline" onClick={handleCopyLink}>
              <LinkIcon className="mr-2 h-4 w-4" /> Copy link
            </Button>
-          <Button type="button" onClick={closeModal}>Done</Button> {/* Changed from Close */}
+          <Button type="button" onClick={closeModal} className="px-6">Done</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

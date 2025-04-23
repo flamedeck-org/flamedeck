@@ -14,7 +14,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Link, useNavigate } from "react-router-dom";
 import { formatBytes, formatDate } from "@/lib/utils";
 import { traceApi, PaginatedTracesResponse } from "@/lib/api";
-import { TraceMetadata } from "@/types";
+import { TraceMetadata, UserProfile } from "@/types";
 import { FileJson, UploadCloud, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +32,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TRACE_LIST_PAGE_SIZE = 10;
 
@@ -39,6 +40,7 @@ const TraceList = () => {
   const [page, setPage] = useState(0);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
 
   const { data: queryData, isLoading, error } = useQuery<PaginatedTracesResponse, Error>({
     queryKey: ["traces", page],
@@ -142,10 +144,10 @@ const TraceList = () => {
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead>Scenario</TableHead>
+                <TableHead>Owner</TableHead>
                 <TableHead>Branch</TableHead>
                 <TableHead>Commit</TableHead>
                 <TableHead>Device</TableHead>
-                <TableHead>Owner</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right pr-6">Actions</TableHead>
@@ -153,7 +155,10 @@ const TraceList = () => {
             </TableHeader>
             <TableBody>
               {traces.map((trace: TraceMetadata) => {
-                const ownerName = trace.owner?.username || `${trace.owner?.first_name || ''} ${trace.owner?.last_name || ''}`.trim() || "Unknown Owner";
+                const isOwnerCurrentUser = currentUser && trace.owner?.id === currentUser.id;
+                const ownerName = isOwnerCurrentUser 
+                  ? "me" 
+                  : trace.owner?.username || `${trace.owner?.first_name || ''} ${trace.owner?.last_name || ''}`.trim() || "Unknown Owner";
                 const ownerInitials = ownerName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
 
                 return (
@@ -163,11 +168,6 @@ const TraceList = () => {
                     className="cursor-pointer hover:bg-muted/50"
                   >
                     <TableCell className="font-medium pl-6 py-3">{trace.scenario || "N/A"}</TableCell>
-                    <TableCell className="py-3">{trace.branch || "N/A"}</TableCell>
-                    <TableCell className="font-mono text-xs py-3">
-                      {trace.commit_sha ? trace.commit_sha.substring(0, 7) : "N/A"}
-                    </TableCell>
-                    <TableCell className="py-3">{trace.device_model || "N/A"}</TableCell>
                     <TableCell className="py-3">
                        <div className="flex items-center space-x-2">
                          <Avatar className="h-6 w-6">
@@ -177,6 +177,11 @@ const TraceList = () => {
                          <span className="text-sm truncate">{ownerName}</span>
                       </div>
                     </TableCell>
+                    <TableCell className="py-3">{trace.branch || "N/A"}</TableCell>
+                    <TableCell className="font-mono text-xs py-3">
+                      {trace.commit_sha ? trace.commit_sha.substring(0, 7) : "N/A"}
+                    </TableCell>
+                    <TableCell className="py-3">{trace.device_model || "N/A"}</TableCell>
                     <TableCell className="py-3">{formatDuration(trace.duration_ms)}</TableCell>
                     <TableCell className="py-3">{formatDate(trace.uploaded_at)}</TableCell>
                     <TableCell className="text-right pr-6 py-3">
