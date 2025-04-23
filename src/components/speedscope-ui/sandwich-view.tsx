@@ -19,6 +19,8 @@ interface SandwichViewProps {
   activeProfileState: ActiveProfileState
   setSelectedFrame: (selectedFrame: Frame | null) => void
   glCanvas: HTMLCanvasElement
+  onFrameSelectForComment?: (key: string | number | null) => void
+  commentedFrameKeys?: (string | number)[]
 }
 
 class SandwichView extends Component<SandwichViewProps> {
@@ -57,6 +59,7 @@ class SandwichView extends Component<SandwichViewProps> {
               <InvertedCallerFlamegraphView
                 glCanvas={this.props.glCanvas}
                 activeProfileState={this.props.activeProfileState}
+                onFrameSelectForComment={this.props.onFrameSelectForComment}
               />
             </div>
             <div className="h-0.5 bg-border" />
@@ -67,6 +70,7 @@ class SandwichView extends Component<SandwichViewProps> {
               <CalleeFlamegraphView
                 glCanvas={this.props.glCanvas}
                 activeProfileState={this.props.activeProfileState}
+                onFrameSelectForComment={this.props.onFrameSelectForComment}
               />
             </div>
           </div>
@@ -79,6 +83,8 @@ class SandwichView extends Component<SandwichViewProps> {
 interface SandwichViewContainerProps {
   activeProfileState: ActiveProfileState
   glCanvas: HTMLCanvasElement
+  onFrameSelectForComment?: (key: string | number | null) => void
+  commentedFrameKeys?: (string | number)[]
 }
 
 interface SandwichViewContextData {
@@ -92,7 +98,7 @@ interface SandwichViewContextData {
 export const SandwichViewContext = createContext<SandwichViewContextData | null>(null)
 
 export const SandwichViewContainer = memo((ownProps: SandwichViewContainerProps) => {
-  const {activeProfileState, glCanvas} = ownProps
+  const {activeProfileState, glCanvas, onFrameSelectForComment, commentedFrameKeys} = ownProps
   const {sandwichViewState, index} = activeProfileState
   const {callerCallee} = sandwichViewState
 
@@ -173,6 +179,8 @@ export const SandwichViewContainer = memo((ownProps: SandwichViewContainerProps)
         setSelectedFrame={setSelectedFrame}
         selectedFrame={selectedFrame}
         profileIndex={index}
+        onFrameSelectForComment={onFrameSelectForComment}
+        commentedFrameKeys={commentedFrameKeys}
       />
     </SandwichViewContext.Provider>
   )

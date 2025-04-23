@@ -90,7 +90,8 @@ const TraceViewerPage: React.FC = () => {
                   console.log("Attempting to reset Speedscope viewer boundary...");
                 }}
               >
-                <SpeedscopeViewer 
+                <SpeedscopeViewer
+                  traceId={id}
                   traceData={traceBlobData.data}
                   fileName={traceBlobData.fileName}
                   view={selectedView}

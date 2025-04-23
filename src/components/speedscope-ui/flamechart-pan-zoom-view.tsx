@@ -11,10 +11,13 @@ import {
   remapRangesToTrimmedText,
 } from '../../lib/speedscope-core/text-utils'
 import React, {Component, MouseEvent as ReactMouseEvent, WheelEvent as ReactWheelEvent} from 'react'
+import ReactDOM from 'react-dom'
 import {ProfileSearchResults} from '../../lib/speedscope-core/profile-search'
 import {BatchCanvasTextRenderer, BatchCanvasRectRenderer} from '../../lib/speedscope-core/canvas-2d-batch-renderers'
 import {Color} from '../../lib/speedscope-core/color'
 import {Theme} from './themes/theme'
+import { ContextMenu, ContextMenuItem, ContextMenuDivider } from '@/components/ui/context-menu'
+import { MessageSquare } from 'lucide-react'
 
 interface FlamechartFrameLabel {
   configSpaceBounds: Rect
@@ -49,6 +52,7 @@ export interface FlamechartPanZoomViewProps {
 
   onNodeHover: (hover: {node: CallTreeNode; event: ReactMouseEvent<HTMLDivElement>} | null) => void
   onNodeSelect: (node: CallTreeNode | null) => void
+  onFrameSelectForComment?: (key: string | number | null) => void
 
   configSpaceViewportRect: Rect
   transformViewport: (transform: AffineTransform) => void
@@ -58,12 +62,33 @@ export interface FlamechartPanZoomViewProps {
   setLogicalSpaceViewportSize: (size: Vec2) => void
 
   searchResults: ProfileSearchResults | null
+  commentedFrameKeys?: (string | number)[]
 }
 
 export class FlamechartPanZoomView extends Component<
   FlamechartPanZoomViewProps,
   Record<string, never> // Use Record<string, never> for empty state
 > {
+  // Track context menu state in instance variables instead of React state
+  private contextMenuState = {
+    visible: false,
+    x: 0,
+    y: 0,
+    frameKey: null as string | number | null,
+    frameName: null as string | null,
+    filePath: undefined as string | undefined,
+    lineNumber: undefined as number | undefined,
+    weight: undefined as number | undefined,
+    selfWeight: undefined as number | undefined
+  };
+
+  // Create a portal element for the context menu
+  private contextMenuPortal: HTMLDivElement | null = null;
+  
+  constructor(props: FlamechartPanZoomViewProps) {
+    super(props);
+  }
+
   private container: Element | null = null
   private containerRef = (element: Element | null) => {
     this.container = element || null
@@ -192,6 +217,7 @@ export class FlamechartPanZoomView extends Component<
     const directlySelectedOutlineBatch = new BatchCanvasRectRenderer()
     const indirectlySelectedOutlineBatch = new BatchCanvasRectRenderer()
     const matchedFrameBatch = new BatchCanvasRectRenderer()
+    const commentedFrameBatch = new BatchCanvasRectRenderer()
 
     const renderFrameLabelAndChildren = (frame: FlamechartFrame, depth = 0) => {
       const width = frame.end - frame.start
@@ -290,7 +316,7 @@ export class FlamechartPanZoomView extends Component<
     ).x
 
     const renderSpecialFrameOutlines = (frame: FlamechartFrame, depth = 0) => {
-      if (!this.props.selectedNode && this.props.searchResults == null) return
+      if (!this.props.selectedNode && this.props.searchResults == null && !this.props.commentedFrameKeys?.length) return
       const width = frame.end - frame.start
       const y = this.props.renderInverted ? this.configSpaceSize().y - 1 - depth : depth
       const configSpaceBounds = new Rect(new Vec2(frame.start, y), new Vec2(width, 1))
@@ -301,6 +327,19 @@ export class FlamechartPanZoomView extends Component<
       if (configSpaceBounds.top() > this.props.configSpaceViewportRect.bottom()) return
 
       if (configSpaceBounds.hasIntersectionWith(this.props.configSpaceViewportRect)) {
+        // Check if this frame has comments
+        const frameHasComments = this.props.commentedFrameKeys?.includes(frame.node.frame.key);
+
+        if (frameHasComments) {
+          const physicalRectBounds = configToPhysical.transformRect(configSpaceBounds);
+          commentedFrameBatch.rect({
+            x: Math.round(physicalRectBounds.left() + frameOutlineWidth / 2),
+            y: Math.round(physicalRectBounds.top() + frameOutlineWidth / 2),
+            w: Math.round(Math.max(0, physicalRectBounds.width() - frameOutlineWidth)),
+            h: Math.round(Math.max(0, physicalRectBounds.height() - frameOutlineWidth)),
+          });
+        }
+
         if (this.props.searchResults?.getMatchForFrame(frame.node.frame)) {
           const physicalRectBounds = configToPhysical.transformRect(configSpaceBounds)
           matchedFrameBatch.rect({
@@ -343,8 +382,8 @@ export class FlamechartPanZoomView extends Component<
 
     matchedFrameBatch.fill(ctx, theme.searchMatchPrimaryColor)
     matchedTextHighlightBatch.fill(ctx, theme.searchMatchSecondaryColor)
-    fadedLabelBatch.fill(ctx, theme.fgSecondaryColor)
-    labelBatch.fill(
+    commentedFrameBatch.stroke(ctx, '#36a3ff', frameOutlineWidth * 1.5)
+    fadedLabelBatch.fill(
       ctx,
       this.props.searchResults != null ? theme.searchMatchTextColor : theme.fgPrimaryColor,
     )
@@ -596,6 +635,16 @@ export class FlamechartPanZoomView extends Component<
       return
     }
 
+    // Check if Alt key is pressed for commenting
+    if (ev.altKey && this.hoveredLabel && this.props.onFrameSelectForComment) {
+      // Get the key from the frame
+      const frameKey = this.hoveredLabel.node.frame.key;
+      console.log('Alt+Click on frame with key:', frameKey);
+      // Call the onFrameSelectForComment callback with the frame key
+      this.props.onFrameSelectForComment(frameKey);
+      return;
+    }
+
     if (this.hoveredLabel) {
       this.props.onNodeSelect(this.hoveredLabel.node)
       this.renderCanvas()
@@ -802,6 +851,8 @@ export class FlamechartPanZoomView extends Component<
     this.props.canvasContext.addBeforeFrameHandler(this.onBeforeFrame)
     window.addEventListener('resize', this.onWindowResize)
     window.addEventListener('keydown', this.onWindowKeyPress)
+    // Close context menu on escape key
+    window.addEventListener('keydown', this.handleKeyDown)
     // Manually add wheel listener with passive: false
     if (this.container) {
       this.container.addEventListener('wheel', this.onWheel, {passive: false})
@@ -811,11 +862,139 @@ export class FlamechartPanZoomView extends Component<
     this.props.canvasContext.removeBeforeFrameHandler(this.onBeforeFrame)
     window.removeEventListener('resize', this.onWindowResize)
     window.removeEventListener('keydown', this.onWindowKeyPress)
+    window.removeEventListener('keydown', this.handleKeyDown)
+    // Remove context menu
+    this.removeContextMenu();
+    if (this.contextMenuPortal) {
+      if (this.contextMenuPortal.parentNode) {
+        this.contextMenuPortal.parentNode.removeChild(this.contextMenuPortal);
+      }
+      this.contextMenuPortal = null;
+    }
     // Remove manually added wheel listener
     if (this.container) {
       this.container.removeEventListener('wheel', this.onWheel)
     }
   }
+
+  // Add context menu handling
+  private handleContextMenu = (ev: ReactMouseEvent<HTMLDivElement>) => {
+    ev.preventDefault();
+    
+    // Hide any existing context menu
+    this.hideContextMenu();
+    
+    // If we have a hovered frame label, show the context menu
+    if (this.hoveredLabel) {
+      const frame = this.hoveredLabel.node.frame;
+      
+      // Update context menu state
+      this.contextMenuState = {
+        visible: true,
+        x: ev.clientX,
+        y: ev.clientY,
+        frameKey: frame.key,
+        frameName: frame.name,
+        filePath: frame.file,
+        lineNumber: frame.line,
+        weight: this.hoveredLabel.node.getTotalWeight(),
+        selfWeight: this.hoveredLabel.node.getSelfWeight()
+      };
+      
+      this.renderContextMenu();
+      
+      console.log('Right-clicked on frame:', {
+        key: frame.key,
+        name: frame.name,
+        file: frame.file,
+        line: frame.line
+      });
+    }
+  };
+  
+  private hideContextMenu = () => {
+    if (this.contextMenuState.visible) {
+      this.contextMenuState.visible = false;
+      this.removeContextMenu();
+    }
+  };
+  
+  private handleAddComment = () => {
+    const { frameKey } = this.contextMenuState;
+    if (frameKey && this.props.onFrameSelectForComment) {
+      this.props.onFrameSelectForComment(frameKey);
+      this.hideContextMenu();
+    }
+  };
+  
+  private renderContextMenu() {
+    // Remove any existing context menu first
+    this.removeContextMenu();
+    
+    // Create portal container if needed
+    if (!this.contextMenuPortal) {
+      this.contextMenuPortal = document.createElement('div');
+      document.body.appendChild(this.contextMenuPortal);
+    }
+    
+    // Render the context menu into the portal
+    const menu = this.contextMenuState;
+    
+    if (this.contextMenuPortal && menu.visible) {
+      ReactDOM.render(
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          onClose={this.hideContextMenu}
+          frameKey={menu.frameKey}
+        >
+          {menu.frameName && (
+            <>
+              <div className="px-3 py-1.5">
+                <div className="font-medium truncate max-w-[300px]">
+                  {menu.frameName}
+                </div>
+                {menu.filePath && (
+                  <div className="text-xs text-muted-foreground truncate mt-0.5">
+                    {menu.filePath}
+                    {menu.lineNumber && `:${menu.lineNumber}`}
+                  </div>
+                )}
+                {menu.weight !== undefined && (
+                  <div className="text-xs flex justify-between mt-1">
+                    <span>Total: {this.props.flamechart.formatValue(menu.weight)}</span>
+                    <span>Self: {this.props.flamechart.formatValue(menu.selfWeight || 0)}</span>
+                  </div>
+                )}
+              </div>
+              <ContextMenuDivider />
+            </>
+          )}
+          
+          <ContextMenuItem
+            onClick={this.handleAddComment}
+            icon={<MessageSquare className="h-4 w-4" />}
+          >
+            Add Comment
+          </ContextMenuItem>
+        </ContextMenu>,
+        this.contextMenuPortal
+      );
+    }
+  }
+  
+  private removeContextMenu() {
+    if (this.contextMenuPortal) {
+      ReactDOM.unmountComponentAtNode(this.contextMenuPortal);
+    }
+  }
+  
+  // Add handler for escape key to close context menu
+  private handleKeyDown = (ev: KeyboardEvent) => {
+    if (ev.key === 'Escape' && this.contextMenuState.visible) {
+      this.hideContextMenu();
+    }
+  };
 
   render() {
     return (
@@ -826,6 +1005,7 @@ export class FlamechartPanZoomView extends Component<
         onMouseLeave={this.onMouseLeave}
         onClick={this.onClick}
         onDoubleClick={this.onDblClick}
+        onContextMenu={this.handleContextMenu}
         ref={this.containerRef}
       >
         <canvas width={1} height={1} ref={this.overlayCanvasRef} className="w-full h-full absolute top-0 left-0" />

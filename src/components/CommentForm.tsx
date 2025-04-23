@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 interface CommentFormProps {
   traceId: string;
   parentId?: string | null; // Optional: for replies
+  frameKey?: string | number | null; // Optional: Identifier for the frame being commented on
   onCommentPosted?: () => void; // Optional: callback after success
   placeholder?: string;
   autoFocus?: boolean;
@@ -18,6 +19,7 @@ interface CommentFormProps {
 const CommentForm: React.FC<CommentFormProps> = ({
   traceId,
   parentId = null,
+  frameKey = null, // Default to null
   onCommentPosted,
   placeholder = "Add a comment...",
   autoFocus = false,
@@ -53,6 +55,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
       content: content.trim(),
       parent_comment_id: parentId,
       trace_timestamp_ms: null, // TODO: Add ability to link timestamp
+      frame_key: frameKey, // Pass the frameKey here
     });
   };
 

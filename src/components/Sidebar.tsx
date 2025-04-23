@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                 <TooltipTrigger asChild>
                   <ListTree className={LIST_ICON_SIZE} />
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={20}>
+                <TooltipContent side="right" sideOffset={4}>
                   <p>Traces</p>
                 </TooltipContent>
               </Tooltip>
@@ -129,7 +129,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                 </Link>
               </TooltipTrigger>
               {minimized && (
-                <TooltipContent side="right">
+                <TooltipContent side="right" sideOffset={4}>
                   <p>Upload Trace</p>
                 </TooltipContent>
               )}
@@ -170,7 +170,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
                 {minimized && (
-                  <TooltipContent side="right">
+                  <TooltipContent side="right" sideOffset={4}>
                     <p>{displayName}</p>
                   </TooltipContent>
                 )}

@@ -9,23 +9,39 @@ import { useAtom } from '@/lib/speedscope-core/atom';
 import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
 import { ChronoFlamechartView, LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
+import CommentForm from './CommentForm';
+import { useTraceComments } from '@/hooks/useTraceComments';
 
 export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
 
 interface SpeedscopeViewerProps {
+  traceId?: string;
   traceData: string | ArrayBuffer; 
   fileName: string;
   view: SpeedscopeViewType;
 }
 
-const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName, view }) => {
+const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData, fileName, view }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFrameKeyForComment, setSelectedFrameKeyForComment] = useState<string | number | null>(null);
   
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
   const flattenRecursion = useAtom(flattenRecursionAtom);
   const activeProfileState = useActiveProfileState();
+
+  // Fetch trace comments to identify frames that have comments
+  const { commentedFrameKeys } = useTraceComments(traceId);
+
+  const handleFrameSelectForComment = useCallback((key: string | number | null) => {
+    console.log("Frame selected for comment:", key);
+    setSelectedFrameKeyForComment(key);
+  }, []);
+
+  const handleCommentPosted = useCallback(() => {
+    setSelectedFrameKeyForComment(null);
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
@@ -111,24 +127,57 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   }
 
   return (
-    <div className="h-full flex">
-      <ProfileSearchContextProvider>
-        {view === 'sandwich' && (
-          <SandwichViewContainer 
-            activeProfileState={activeProfileState} 
-            glCanvas={glCanvas}
+    <div className="h-full flex flex-col">
+      <div className="flex-grow relative overflow-hidden">
+        <ProfileSearchContextProvider>
+          {view === 'sandwich' && (
+            <SandwichViewContainer
+              onFrameSelectForComment={handleFrameSelectForComment}
+              activeProfileState={activeProfileState}
+              glCanvas={glCanvas}
+              commentedFrameKeys={commentedFrameKeys}
+            />
+          )}
+          {view === 'time_ordered' && (
+            <ChronoFlamechartView
+              onFrameSelectForComment={handleFrameSelectForComment}
+              activeProfileState={activeProfileState}
+              glCanvas={glCanvas}
+              commentedFrameKeys={commentedFrameKeys}
+            />
+          )}
+          {view === 'left_heavy' && (
+            <LeftHeavyFlamechartView
+              onFrameSelectForComment={handleFrameSelectForComment}
+              activeProfileState={activeProfileState}
+              glCanvas={glCanvas}
+              commentedFrameKeys={commentedFrameKeys}
+            />
+          )}
+        </ProfileSearchContextProvider>
+      </div>
+
+      {selectedFrameKeyForComment !== null && traceId && (
+        <div className="flex-shrink-0 p-4 border-t bg-background">
+          <h3 className="text-sm font-medium mb-2">
+            Commenting on frame: {String(selectedFrameKeyForComment)}
+            <button
+              onClick={() => handleFrameSelectForComment(null)}
+              className="ml-2 text-xs text-muted-foreground hover:text-foreground"
+              title="Cancel comment"
+            >
+              (Cancel)
+            </button>
+          </h3>
+          <CommentForm
+            traceId={traceId}
+            frameKey={selectedFrameKeyForComment}
+            onCommentPosted={handleCommentPosted}
+            placeholder="Add comment to selected frame..."
+            autoFocus
           />
-        )}
-        {view === 'time_ordered' && (
-          <ChronoFlamechartView activeProfileState={activeProfileState} glCanvas={glCanvas} />
-        )}
-        {view === 'left_heavy' && (
-          <LeftHeavyFlamechartView
-            activeProfileState={activeProfileState}
-            glCanvas={glCanvas}
-          />
-        )}
-      </ProfileSearchContextProvider>
+        </div>
+      )}
     </div>
   );
 };
