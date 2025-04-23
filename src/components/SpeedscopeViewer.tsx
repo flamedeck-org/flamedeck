@@ -4,7 +4,7 @@ import {
   importProfileGroupFromText 
 } from '@/lib/speedscope-import';
 import { profileGroupAtom, glCanvasAtom, flattenRecursionAtom } from '@/lib/speedscope-core/app-state';
-import { ActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state'; 
+import { ActiveProfileState, useActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state'; 
 import { useAtom } from '@/lib/speedscope-core/atom'; 
 import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
@@ -25,6 +25,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
   const flattenRecursion = useAtom(flattenRecursionAtom);
+  const activeProfileState = useActiveProfileState();
 
   useEffect(() => {
     let isCancelled = false;
@@ -84,15 +85,6 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [flattenRecursion]);
-
-  const activeProfileState: ActiveProfileState | null = useMemo(() => {
-    return profileGroup
-      ? {
-          ...profileGroup.profiles[profileGroup.indexToView],
-          index: profileGroup.indexToView,
-        }
-      : null;
-  }, [profileGroup]);
 
   if (isLoading) {
     return (
