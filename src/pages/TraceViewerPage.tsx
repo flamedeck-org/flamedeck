@@ -66,7 +66,7 @@ const TraceViewerPage: React.FC = () => {
 
         {!isLoadingBlob && !blobError && traceBlobData && (
           <div className="h-full w-full flex flex-col">
-            <div className="flex justify-between items-center flex-shrink-0 border-b z-10 bg-background px-4">
+            <div className="flex justify-between items-center flex-shrink-0 border-b z-[1] bg-background px-4">
               <Tabs value={selectedView} onValueChange={(value) => setSelectedView(value as SpeedscopeViewType)} className="inline-block">
                 <TabsList className="inline-flex rounded-none bg-transparent text-foreground p-0 border-none">
                   <TabsTrigger value="time_ordered" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Time Ordered</TabsTrigger>
