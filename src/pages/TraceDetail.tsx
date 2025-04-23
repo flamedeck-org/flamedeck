@@ -134,15 +134,14 @@ const TraceDetail: React.FC = () => {
         <Eye className="mr-2 h-4 w-4" /> Explore Trace
       </Link>
 
-      <Button variant="default" size="sm" onClick={handleShareClick}>
-         <Share2 className="mr-2 h-4 w-4" /> Share
+      <Button variant="default" size="sm" onClick={handleShareClick} aria-label="Share Trace">
+         <Share2 className="h-4 w-4" />
       </Button>
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
+          <Button variant="destructive" size="sm" disabled={deleteMutation.isPending} aria-label="Delete Trace">
+            <Trash2 className="h-4 w-4" />
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
