@@ -23,7 +23,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNav = false, noPadding = 
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {!hideNav && <Navbar />}
       <div className={`flex-1 flex ${isLoggedIn ? 'flex-row' : 'flex-col'} overflow-hidden mt-[var(--navbar-height)]`}>
-        {isLoggedIn && <Sidebar />}
+        {isLoggedIn && <Sidebar minimized={isProfileView} />}
         <main className={`flex-1 h-full overflow-y-auto bg-secondary dark:bg-background ${mainPaddingClasses} ${conditionalElevation}`}>
           {children}
         </main>
