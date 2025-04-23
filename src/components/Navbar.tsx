@@ -23,7 +23,9 @@ const Navbar: React.FC = () => {
             <span className="text-xl font-semibold">Professo</span>
           </Link>
         </div>
-        <ThemeToggle />
+        <div className="pr-2">
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );
