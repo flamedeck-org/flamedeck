@@ -21,7 +21,9 @@ export interface TracePermissionWithUser extends Omit<TracePermissionRow, 'user_
   user: Pick<UserProfileType, 'id' | 'username' | 'avatar_url' | 'first_name' | 'last_name'> | null; // User details (null for public)
 }
 
-export type NewTraceComment = Omit<TraceComment, 'id' | 'created_at' | 'user_id'>;
+export type NewTraceComment = Omit<TraceComment, 'id' | 'created_at' | 'user_id'> & {
+  frame_key?: string | number | null; // Optional: Identifier for the specific frame
+};
 
 // Define a type for the paginated response structure
 export interface PaginatedTracesResponse {
@@ -320,7 +322,11 @@ export const traceApi = {
       const { data, error } = await supabase
         .from('trace_comments')
         .insert({
-          ...commentData,
+          trace_id: commentData.trace_id,
+          content: commentData.content,
+          parent_comment_id: commentData.parent_comment_id,
+          trace_timestamp_ms: commentData.trace_timestamp_ms,
+          frame_key: commentData.frame_key !== null ? String(commentData.frame_key) : null,
           user_id: user.id,
         })
         .select('*')

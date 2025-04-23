@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { traceApi, TraceCommentWithAuthor } from '@/lib/api';
 import CommentItem from './CommentItem';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, MessageSquare } from 'lucide-react';
 
 // Type for structured comment including potentially nested replies
 type StructuredComment = TraceCommentWithAuthor & { replies: StructuredComment[] };
@@ -30,8 +30,44 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
     }
   });
 
-  // Optional: Sorting can happen here if needed, API sorts initially
+  // Sort root comments: frame comments first, grouped by frame, then general comments
+  rootComments.sort((a, b) => {
+    // If both have frame_key or both don't, sort by date (newest first)
+    if ((a.frame_key && b.frame_key) || (!a.frame_key && !b.frame_key)) {
+      // If they have the same frame_key, sort by date
+      if (a.frame_key === b.frame_key) {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      // If they have different frame_keys, group by frame_key
+      return a.frame_key && b.frame_key 
+        ? String(a.frame_key).localeCompare(String(b.frame_key)) 
+        : 0;
+    }
+    // Frame comments come before general comments
+    return a.frame_key ? -1 : 1;
+  });
+
   return rootComments;
+};
+
+// Function to group comments by frame_key
+const groupCommentsByFrame = (comments: StructuredComment[]) => {
+  const frameGroups: Record<string, StructuredComment[]> = {};
+  const generalComments: StructuredComment[] = [];
+
+  comments.forEach(comment => {
+    if (comment.frame_key) {
+      const key = String(comment.frame_key);
+      if (!frameGroups[key]) {
+        frameGroups[key] = [];
+      }
+      frameGroups[key].push(comment);
+    } else {
+      generalComments.push(comment);
+    }
+  });
+
+  return { frameGroups, generalComments };
 };
 
 const CommentList: React.FC<CommentListProps> = ({ traceId }) => {
@@ -39,7 +75,7 @@ const CommentList: React.FC<CommentListProps> = ({ traceId }) => {
     queryKey: ['traceComments', traceId],
     queryFn: async () => {
       const response = await traceApi.getTraceComments(traceId);
-      if (response.error) throw new Error(response.error);
+      if (response.error) throw new Error(response.error.message);
       return response.data || [];
     },
     enabled: !!traceId, // Only run query if traceId is available
@@ -75,17 +111,49 @@ const CommentList: React.FC<CommentListProps> = ({ traceId }) => {
   }
 
   const threadedComments = structureComments(comments);
+  const { frameGroups, generalComments } = groupCommentsByFrame(threadedComments);
 
   return (
-    <div className="space-y-0 pt-4">
-      {threadedComments.map(comment => (
-        <CommentItem
-          key={comment.id}
-          comment={comment}
-          traceId={traceId}
-          currentDepth={0}
-        />
+    <div className="space-y-6 pt-4">
+      {/* Frame-specific comments */}
+      {Object.entries(frameGroups).map(([frameKey, frameComments]) => (
+        <div key={`frame-${frameKey}`} className="mb-6">
+          <div className="flex items-center space-x-2 mb-2 text-sm font-medium bg-muted p-2 rounded">
+            <MessageSquare className="h-4 w-4" />
+            <span>Comments on Frame: {frameKey}</span>
+            <span className="text-muted-foreground">({frameComments.length})</span>
+          </div>
+          <div className="ml-4">
+            {frameComments.map(comment => (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                traceId={traceId}
+                currentDepth={0}
+              />
+            ))}
+          </div>
+        </div>
       ))}
+
+      {/* General comments */}
+      {generalComments.length > 0 && (
+        <div>
+          {Object.keys(frameGroups).length > 0 && (
+            <div className="flex items-center space-x-2 mb-2 text-sm font-medium">
+              <span>General Comments</span>
+            </div>
+          )}
+          {generalComments.map(comment => (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              traceId={traceId}
+              currentDepth={0}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
