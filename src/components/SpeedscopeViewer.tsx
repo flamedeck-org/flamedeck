@@ -39,12 +39,12 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceData, fileName
           : importProfileGroupFromText(fileName, traceData);
 
       importerPromise
-        .then(loadedProfileGroup => {
+        .then(({ profileGroup }) => {
           if (isCancelled) return;
-          if (loadedProfileGroup && loadedProfileGroup.profiles.length > 0) {
-            profileGroupAtom.setProfileGroup(loadedProfileGroup);
+          if (profileGroup && profileGroup.profiles.length > 0) {
+            profileGroupAtom.setProfileGroup(profileGroup);
             setError(null);
-          } else if (loadedProfileGroup) {
+          } else if (profileGroup) {
              setError('Could not parse the profile file. The format might be unsupported or the file corrupted.');
              profileGroupAtom.set(null); 
           } else {

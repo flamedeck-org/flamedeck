@@ -1,8 +1,9 @@
-import { TraceMetadata, TraceUpload, ApiResponse, TraceComment } from "@/types";
+import { TraceMetadata, TraceUpload, ApiResponse, TraceComment, ApiError } from "@/types";
 import { Database } from "@/integrations/supabase/types";
 import { uploadJson, listUserTraces } from "./storage";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { PostgrestError } from '@supabase/supabase-js';
 
 // Define the profile type using the generated table type
 type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
@@ -66,7 +67,16 @@ export const traceApi = {
       const totalCount = count ?? 0;
       return { data: { traces, totalCount }, error: null };
     } catch (error) {
-      return { data: null, error: (error as Error).message };
+       console.error("Error fetching traces:", error);
+       // Return structured error
+       const apiError: ApiError = {
+           message: error instanceof Error ? error.message : "Failed to fetch traces",
+           // Add code/details if available, otherwise undefined
+           code: (error as PostgrestError)?.code,
+           details: (error as PostgrestError)?.details,
+           hint: (error as PostgrestError)?.hint,
+       };
+       return { data: null, error: apiError };
     }
   },
 
@@ -84,21 +94,33 @@ export const traceApi = {
         .single(); // Use single() as we expect only one trace
 
       if (error) {
-          // Check for specific error if user_profile doesn't exist for the user_id, which might be okay
-          if (error.code === 'PGRST116' && error.details.includes('user_profiles')) {
-             console.warn(`Owner profile not found for trace ${id}, proceeding without owner info.`);
-             // If owner is optional and not found is okay, potentially return data with owner as null
-             // For now, let's re-throw unless specifically handled
-             // return { data: { ...data, owner: null } as TraceMetadata, error: null }; 
-          } 
-          throw error;
+        // Don't automatically throw if owner profile is missing (PGRST116 on join)
+        // Let the main catch block handle it, but log the warning
+        if (error.code === 'PGRST116' && error.details?.includes('user_profiles')) {
+           console.warn(`Owner profile not found for trace ${id}, proceeding without owner info.`);
+           // If owner profile is missing, the main query might still succeed but return owner: null
+           // If the *main* query fails with PGRST116, the catch block will handle it.
+        } else {
+           // For other errors from the query, throw them to be caught below
+           throw error; 
+        } 
       }
 
-      // Type assertion should be safer now, assuming the select fetches owner correctly or handles its absence
-      return { data: data as TraceMetadata, error: null }; 
+      // If data is null *without* an error being thrown above (e.g., owner profile missing but trace exists)
+      // or if data exists, return it.
+      // The explicit type cast might still be needed depending on how Supabase handles the null owner join
+      return { data: data as TraceMetadata | null, error: null };
+
     } catch (error) {
         console.error(`Error fetching trace details for ${id}:`, error);
-        return { data: null, error: (error as Error).message };
+        // Check if it's a PostgrestError to extract details
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : "Failed to fetch trace details",
+            code: (error as PostgrestError)?.code,
+            details: (error as PostgrestError)?.details,
+            hint: (error as PostgrestError)?.hint,
+        };
+        return { data: null, error: apiError };
     }
   },
 
@@ -108,73 +130,72 @@ export const traceApi = {
     metadata: Omit<TraceUpload, "blob_path">
   ): Promise<ApiResponse<TraceMetadata>> => {
     const bucket = 'traces';
-    let filePathInBucket: string | null = null; // Path used for storage upload
-
+    let filePathInBucket: string | null = null;
     try {
-        // 1. Authenticate User
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-            throw new Error('Authentication required');
-        }
+      // 1. Authenticate User
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+          throw new Error('Authentication required');
+      }
 
-        // 2. Generate unique storage path
-        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "/");
-        const fileName = file.name.endsWith('.gz') ? file.name : `${file.name}.gz`; // Ensure .gz
-        filePathInBucket = `${timestamp}/${fileName}`;
+      // 2. Generate unique storage path
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "/");
+      const fileName = file.name.endsWith('.gz') ? file.name : `${file.name}.gz`; // Ensure .gz
+      filePathInBucket = `${timestamp}/${fileName}`;
 
-        // 3. Read and Parse File Content
-        let jsonObjectToUpload: unknown;
-        try {
-            const fileContent = await file.text();
-            jsonObjectToUpload = JSON.parse(fileContent);
-        } catch (parseError) {
-            console.error("Error reading or parsing processed file for uploadJson:", parseError);
-            throw new Error("Invalid JSON content in processed file.");
-        }
+      // 3. Read and Parse File Content
+      let jsonObjectToUpload: unknown;
+      try {
+          const fileContent = await file.text();
+          jsonObjectToUpload = JSON.parse(fileContent);
+      } catch (parseError) {
+          console.error("Error reading or parsing processed file for uploadJson:", parseError);
+          throw new Error("Invalid JSON content in processed file.");
+      }
 
-        // 4. Upload Compressed JSON via uploadJson
-        console.log(`Attempting compressed upload to bucket: ${bucket}, path: ${filePathInBucket}`);
-        const uploadResult = await uploadJson(bucket, filePathInBucket, jsonObjectToUpload);
+      // 4. Upload Compressed JSON via uploadJson
+      console.log(`Attempting compressed upload to bucket: ${bucket}, path: ${filePathInBucket}`);
+      const uploadResult = await uploadJson(bucket, filePathInBucket, jsonObjectToUpload);
 
-        // Handle upload failure - does not require cleanup as nothing was stored yet
-        if ('error' in uploadResult) {
-            throw uploadResult.error;
-        }
-        console.log(`Compressed upload successful. Path: ${uploadResult.path}`); // path is relative to bucket
+      // Handle upload failure - does not require cleanup as nothing was stored yet
+      if ('error' in uploadResult) {
+          throw uploadResult.error;
+      }
+      console.log(`Compressed upload successful. Path: ${uploadResult.path}`); // path is relative to bucket
 
-        // ---- Upload successful, proceed to DB insert ----
+      // ---- Upload successful, proceed to DB insert ----
 
-        // 5. Construct full storage path for DB record
-        const storagePath = `${bucket}/${uploadResult.path}`; 
+      // 5. Construct full storage path for DB record
+      const storagePath = `${bucket}/${uploadResult.path}`; 
 
-        // 6. Insert Trace Metadata into Database
-        const { data: dbData, error: dbError } = await supabase
-            .from('traces')
-            .insert({
-                user_id: user.id,
-                commit_sha: metadata.commit_sha,
-                branch: metadata.branch,
-                scenario: metadata.scenario,
-                device_model: metadata.device_model,
-                duration_ms: Math.round(metadata.duration_ms),
-                blob_path: storagePath,
-                file_size_bytes: file.size, // Size of the *processed* (but uncompressed) file
-                profile_type: metadata.profile_type,
-                notes: metadata.notes,
-                uploaded_at: new Date().toISOString()
-            })
-            .select()
-            .single();
+      // 6. Insert Trace Metadata into Database
+      const { data: dbData, error: dbError } = await supabase
+          .from('traces')
+          .insert({
+              user_id: user.id,
+              commit_sha: metadata.commit_sha,
+              branch: metadata.branch,
+              scenario: metadata.scenario,
+              device_model: metadata.device_model,
+              duration_ms: Math.round(metadata.duration_ms),
+              blob_path: storagePath,
+              file_size_bytes: file.size, // Size of the *processed* (but uncompressed) file
+              profile_type: metadata.profile_type,
+              notes: metadata.notes,
+              uploaded_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
-        // Handle DB insert failure - Requires cleanup of the uploaded storage object
-        if (dbError) {
-            console.error("Database insert failed after successful storage upload:", dbError);
-            // Throw a new error to be caught by the outer catch block for cleanup
-            throw new Error(`Database insert failed: ${dbError.message}`);
-        }
+      // Handle DB insert failure - Requires cleanup of the uploaded storage object
+      if (dbError) {
+          console.error("Database insert failed after successful storage upload:", dbError);
+          // Throw a new error to be caught by the outer catch block for cleanup
+          throw new Error(`Database insert failed: ${dbError.message}`);
+      }
 
-        // Success!
-        return { data: dbData as TraceMetadata, error: null };
+      // Success!
+      return { data: dbData as TraceMetadata, error: null };
 
     } catch (error) {
         console.error("Upload trace failed:", error);
@@ -189,8 +210,14 @@ export const traceApi = {
             console.log("Upload failed early, no storage object cleanup needed.");
         }
 
-        // Return error response
-        return { data: null, error: (error as Error).message };
+        // Return structured error
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : "Failed to upload trace",
+            code: (error as PostgrestError)?.code,
+            details: (error as PostgrestError)?.details,
+            hint: (error as PostgrestError)?.hint,
+        };
+        return { data: null, error: apiError };
     }
   },
 
@@ -244,7 +271,14 @@ export const traceApi = {
 
     } catch (error) {
         console.error(`Failed to complete deletion for trace ${id}:`, error);
-        return { data: null, error: (error as Error).message };
+        // Return structured error
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : "Failed to delete trace",
+            code: (error as PostgrestError)?.code,
+            details: (error as PostgrestError)?.details,
+            hint: (error as PostgrestError)?.hint,
+        };
+        return { data: null, error: apiError };
     }
   },
 
@@ -267,7 +301,13 @@ export const traceApi = {
       return { data: commentsWithAuthor, error: null };
     } catch (error) {
       console.error(`Error fetching comments for trace ${traceId}:`, error);
-      return { data: null, error: (error as Error).message };
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to fetch comments",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
     }
   },
 
@@ -292,7 +332,13 @@ export const traceApi = {
       return { data: data as TraceComment, error: null };
     } catch (error) {
       console.error('Error creating trace comment:', error);
-      return { data: null, error: (error as Error).message };
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to create comment",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
     }
   },
 
@@ -320,7 +366,13 @@ export const traceApi = {
       return { data: permissions, error: null };
     } catch (error) {
       console.error(`Error fetching permissions for trace ${traceId}:`, error);
-      return { data: null, error: (error as Error).message };
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to fetch permissions",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
     }
   },
 
@@ -341,7 +393,13 @@ export const traceApi = {
       return { data: data as TracePermissionRow, error: null };
     } catch (error) {
       console.error(`Error adding permission for user ${userId} to trace ${traceId}:`, error);
-      return { data: null, error: (error as Error).message };
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to add permission",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
     }
   },
 
@@ -362,7 +420,13 @@ export const traceApi = {
       return { data: data as TracePermissionRow, error: null };
     } catch (error) {
       console.error(`Error updating permission ${permissionId}:`, error);
-      return { data: null, error: (error as Error).message };
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to update permission",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
     }
   },
 
@@ -378,7 +442,13 @@ export const traceApi = {
       return { data: null, error: null };
     } catch (error) {
       console.error(`Error removing permission ${permissionId}:`, error);
-      return { data: null, error: (error as Error).message };
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to remove permission",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
     }
   },
 
@@ -412,7 +482,13 @@ export const traceApi = {
       }
     } catch (error) {
       console.error(`Error setting public access for trace ${traceId}:`, error);
-      return { data: null, error: (error as Error).message };
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to set public access",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
     }
   },
 
@@ -433,7 +509,13 @@ export const traceApi = {
       return { data: data as UserProfileType[], error: null };
     } catch (error) {
       console.error('Error searching users:', error);
-      return { data: null, error: (error as Error).message };
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to search users",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
     }
   },
 };

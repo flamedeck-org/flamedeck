@@ -35,9 +35,18 @@ export interface TraceUpload {
   notes?: string;
 }
 
+// Define a structure for API errors
+export interface ApiError {
+  message: string;
+  code?: string; // e.g., Supabase error code like PGRST116
+  details?: string; // e.g., Supabase error details
+  hint?: string; // e.g., Supabase error hint
+  // Add other relevant fields if needed
+}
+
 export interface ApiResponse<T> {
   data: T | null;
-  error: string | null;
+  error: ApiError | null; // Use the structured error type
 }
 
 // Type for the trace_comments table row
