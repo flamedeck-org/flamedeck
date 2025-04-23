@@ -122,12 +122,12 @@ const ProfileTableRowView = ({
     // Selected rows use accent colors
     specificClasses = ["bg-accent text-accent-foreground"];
   } else {
-    // Non-selected rows get alternating background + hover
-    // Use more distinct standard colors for alternation
+    // Non-selected rows get alternating background + hover using theme colors
+    // Use bg-muted for odd rows for a more subtle stripe
     const bgClass = index % 2 === 0
-      ? "bg-gray-50 dark:bg-gray-800/50" // Lighter gray / Slightly lighter dark gray
-      : "bg-white dark:bg-gray-900";      // White / Near-black
-    specificClasses = [bgClass, "hover:bg-muted/50 dark:hover:bg-muted/50"];
+      ? "bg-background dark:bg-background"
+      : "bg-muted dark:bg-muted"; // Use muted instead of secondary
+    specificClasses = [bgClass, "hover:bg-accent/20 dark:hover:bg-accent/20"]; // Use accent for hover for better visibility
   }
 
   // Combine base and specific classes

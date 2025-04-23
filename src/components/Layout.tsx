@@ -24,7 +24,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNav = false, noPadding = 
       {!hideNav && <Navbar />}
       <div className={`flex-1 flex ${isLoggedIn ? 'flex-row' : 'flex-col'} overflow-hidden mt-[var(--navbar-height)]`}>
         {isLoggedIn && <Sidebar />}
-        <main className={`flex-1 h-full overflow-y-auto bg-background ${mainPaddingClasses} ${conditionalElevation}`}>
+        <main className={`flex-1 h-full overflow-y-auto bg-secondary dark:bg-background ${mainPaddingClasses} ${conditionalElevation}`}>
           {children}
         </main>
       </div>

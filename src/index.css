@@ -4,41 +4,74 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 100%; /* Light mode background */
+    --foreground: 222.2 84% 4.9%; /* Light mode foreground */
 
-    --card: 222 47% 13%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 222 47% 13%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 196 100% 50%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 196 100% 40%; /* Darker blue (Lightness from 50% to 40%) */
+    --primary-foreground: 210 40% 98%; /* Lighter foreground for darker blue */
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 98%; /* Slightly darker than white (background 100%) */
+    --muted-foreground: 215.4 16.3% 46.9%; /* Keep foreground as is or adjust if needed */
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 62.8% 40.6%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 196 100% 50%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
 
-    --trace: 196 100% 50%;
-    --trace-foreground: 222 47% 11%;
+    --trace: 222.2 47.4% 11.2%; /* Adjust trace colors if needed for light mode */
+    --trace-foreground: 210 40% 98%;
 
     --radius: 0.5rem;
     
     /* Define Navbar Height */
     --navbar-height: 4rem; /* Corresponds to h-16 */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%; /* Dark mode background */
+    --foreground: 210 40% 98%; /* Dark mode foreground */
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 196 100% 50%; /* Keep primary blue */
+    --primary-foreground: 222 47% 11%; /* Adjust foreground for blue */
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 37% 10%; /* User specified subtle dark color */
+    --muted-foreground: 215 20.2% 65.1%; /* Keep foreground as is or adjust if needed */
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --trace: 210 40% 98%; /* Adjust trace colors if needed for dark mode */
+    --trace-foreground: 222.2 47.4% 11.2%;
   }
 }
 
