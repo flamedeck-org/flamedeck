@@ -622,63 +622,77 @@ export const traceApi = {
           if (authError || !user) throw new Error("Authentication required");
 
            // --- Fetch Path (Breadcrumbs) ---
-           // Fetch path first, so if the target folder doesn't exist/isn't accessible, we fail early
+           // Fetch path regardless of search, to show context where search was initiated
            const path: Folder[] = folderId ? await getFolderPath(folderId) : [];
-           // If folderId is provided but path is empty AND folderId isn't root, it means the folder wasn't found or accessible
+           // Check if the initial folderId was valid if one was provided
            if (folderId && path.length === 0) {
-                // Or check if path[0].id === folderId ?
                 throw new Error(`Folder not found or not accessible: ${folderId}`);
            }
 
-          // --- Fetch Folders within the current directory ---
-          let folderQuery = supabase
-              .from('folders')
-              .select('*')
-              // RLS should handle user_id check, but explicit check adds safety layer
-              .eq('user_id', user.id);
+          // --- Conditional Fetching based on Search Query ---
+          let foldersData: Folder[] = [];
+          let tracesData: TraceMetadata[] = [];
+          let tracesCount: number | null = 0;
 
-          if (folderId) {
-              folderQuery = folderQuery.eq('parent_folder_id', folderId);
+          if (searchQuery && searchQuery.trim().length > 0) {
+              // *** SEARCH ACTIVE ***
+              // Fetch ONLY traces, globally (folderId = null)
+              console.log(`[API] Searching globally for traces: '${searchQuery}'`);
+              const traceResult = await listUserTraces(
+                  page,
+                  limit,
+                  searchQuery,
+                  null // Pass null for folderId to search globally
+              );
+              // listUserTraces handles its own errors/returns structured response
+              tracesData = traceResult.data || [];
+              tracesCount = traceResult.count;
+              // Do NOT fetch folders when searching globally
+              foldersData = [];
+
           } else {
-              folderQuery = folderQuery.is('parent_folder_id', null); // Root level folders
+              // *** NO SEARCH ACTIVE ***
+              // Fetch folders within the current directory
+              console.log(`[API] Listing contents for folder: ${folderId || 'root'}`);
+              let folderQuery = supabase
+                  .from('folders')
+                  .select('*')
+                  .eq('user_id', user.id);
+
+              if (folderId) {
+                  folderQuery = folderQuery.eq('parent_folder_id', folderId);
+              } else {
+                  folderQuery = folderQuery.is('parent_folder_id', null); // Root level folders
+              }
+              // No search query applied to folders when listing directory contents
+              folderQuery = folderQuery.order('name', { ascending: true });
+
+              const { data: fetchedFolders, error: foldersError } = await folderQuery;
+              if (foldersError) {
+                console.error("Error fetching folders:", foldersError);
+                throw foldersError;
+              }
+              foldersData = fetchedFolders || [];
+
+              // Fetch traces within the current directory
+              const traceResult = await listUserTraces(
+                  page,
+                  limit,
+                  null, // No search query for traces when just listing
+                  folderId // Pass current folderId to scope trace listing
+              );
+              tracesData = traceResult.data || [];
+              tracesCount = traceResult.count;
           }
-          // Apply search *only* to folders if needed (simple name search)
-          if (searchQuery) {
-              folderQuery = folderQuery.ilike('name', `%${searchQuery}%`);
-          }
-          // Apply ordering
-          folderQuery = folderQuery.order('name', { ascending: true });
 
-          // Normally folders aren't paginated, fetch all matching folders in the dir
-          const { data: foldersData, error: foldersError } = await folderQuery;
-          if (foldersError) {
-            console.error("Error fetching folders:", foldersError);
-            throw foldersError; // Throw to be caught by the main catch block
-          }
-
-
-          // --- Fetch Traces within the current directory ---
-          // Assume listUserTraces in storage.ts has been updated or uses a DB function
-          // that accepts folderId and searchQuery for traces.
-          // If not, this needs adjustment.
-          // IMPORTANT: listUserTraces needs modification to filter by folder_id
-          const { data: tracesData, count: tracesCount } = await listUserTraces(
-              page,
-              limit,
-              searchQuery,
-              folderId // Pass folderId to filter traces
-          );
-          // listUserTraces should ideally handle its own errors or return them structured
-
-
-          // Combine results
-          const totalTraceCount = tracesCount ?? 0; // Count only applies to traces for pagination
+          // --- Combine results ---
+          const totalTraceCount = tracesCount ?? 0;
 
           return {
               data: {
-                  folders: foldersData || [],
-                  traces: tracesData || [], // Use data from listUserTraces directly
-                  path: path,
+                  folders: foldersData, // Will be empty if searchQuery is active
+                  traces: tracesData,
+                  path: path, // Always return the path of the viewed folder
                   totalCount: totalTraceCount
               },
               error: null
