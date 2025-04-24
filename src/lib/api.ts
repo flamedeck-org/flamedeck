@@ -734,6 +734,45 @@ export const traceApi = {
       }
   },
 
+  // --- NEW: Get single folder details ---
+  getFolder: async (folderId: string): Promise<ApiResponse<Folder>> => {
+    try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) throw new Error("Authentication required");
+
+        // RLS policy on the 'folders' table should ensure the user has access.
+        const { data, error } = await supabase
+            .from('folders')
+            .select('*')
+            .eq('id', folderId)
+            .eq('user_id', user.id) // Explicit check for safety, RLS is primary
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') { // Not found
+                throw new Error(`Folder not found or access denied: ${folderId}`);
+            }
+            console.error(`Database error fetching folder ${folderId}:`, error);
+            throw error;
+        }
+
+        if (!data) { // Should be caught by single(), but good practice
+            throw new Error(`Folder not found: ${folderId}`);
+        }
+
+        return { data: data as Folder, error: null };
+    } catch (error) {
+        console.error(`Error fetching folder ${folderId}:`, error);
+        const apiError: ApiError = {
+            message: error instanceof Error ? error.message : "Failed to fetch folder details",
+            code: (error as PostgrestError)?.code,
+            details: (error as PostgrestError)?.details,
+            hint: (error as PostgrestError)?.hint,
+        };
+        return { data: null, error: apiError };
+    }
+  },
+
   // Placeholder for updating folder (e.g., rename)
   // updateFolder: async (folderId: string, updates: Partial<Pick<Folder, 'name' | 'parent_folder_id'>>): Promise<ApiResponse<Folder>> => { ... }
 
