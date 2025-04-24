@@ -22,6 +22,8 @@ import { MessageSquare } from 'lucide-react'
 interface FlamechartFrameLabel {
   configSpaceBounds: Rect
   node: CallTreeNode
+  frameStart: number
+  depth: number
 }
 
 /**
@@ -52,7 +54,7 @@ export interface FlamechartPanZoomViewProps {
 
   onNodeHover: (hover: {node: CallTreeNode; event: ReactMouseEvent<HTMLDivElement>} | null) => void
   onNodeSelect: (node: CallTreeNode | null) => void
-  onFrameSelectForComment?: (key: string | number | null) => void
+  onCellSelectForComment?: (identifier: string | null, type: string) => void
 
   configSpaceViewportRect: Rect
   transformViewport: (transform: AffineTransform) => void
@@ -62,7 +64,7 @@ export interface FlamechartPanZoomViewProps {
   setLogicalSpaceViewportSize: (size: Vec2) => void
 
   searchResults: ProfileSearchResults | null
-  commentedFrameKeys?: (string | number)[]
+  commentedCellIds?: string[]
 }
 
 export class FlamechartPanZoomView extends Component<
@@ -74,7 +76,8 @@ export class FlamechartPanZoomView extends Component<
     visible: false,
     x: 0,
     y: 0,
-    frameKey: null as string | number | null,
+    cellIdentifier: null as string | null,
+    commentType: 'chrono' as string,
     frameName: null as string | null,
     filePath: undefined as string | undefined,
     lineNumber: undefined as number | undefined,
@@ -316,7 +319,7 @@ export class FlamechartPanZoomView extends Component<
     ).x
 
     const renderSpecialFrameOutlines = (frame: FlamechartFrame, depth = 0) => {
-      if (!this.props.selectedNode && this.props.searchResults == null && !this.props.commentedFrameKeys?.length) return
+      if (!this.props.selectedNode && this.props.searchResults == null && !this.props.commentedCellIds?.length) return
       const width = frame.end - frame.start
       const y = this.props.renderInverted ? this.configSpaceSize().y - 1 - depth : depth
       const configSpaceBounds = new Rect(new Vec2(frame.start, y), new Vec2(width, 1))
@@ -327,8 +330,8 @@ export class FlamechartPanZoomView extends Component<
       if (configSpaceBounds.top() > this.props.configSpaceViewportRect.bottom()) return
 
       if (configSpaceBounds.hasIntersectionWith(this.props.configSpaceViewportRect)) {
-        // Check if this frame has comments
-        const frameHasComments = this.props.commentedFrameKeys?.includes(frame.node.frame.key);
+        const cellId = `${frame.node.frame.key}_${depth}_${frame.start.toFixed(3)}`;
+        const frameHasComments = this.props.commentedCellIds?.includes(cellId);
 
         if (frameHasComments) {
           const physicalRectBounds = configToPhysical.transformRect(configSpaceBounds);
@@ -382,7 +385,7 @@ export class FlamechartPanZoomView extends Component<
 
     matchedFrameBatch.fill(ctx, theme.searchMatchPrimaryColor)
     matchedTextHighlightBatch.fill(ctx, theme.searchMatchSecondaryColor)
-    commentedFrameBatch.stroke(ctx, '#36a3ff', frameOutlineWidth * 1.5)
+    commentedFrameBatch.stroke(ctx, '#FFD700', frameOutlineWidth * 1.5)
     fadedLabelBatch.fill(ctx, theme.fgSecondaryColor)
     labelBatch.fill(
       ctx,
@@ -636,13 +639,14 @@ export class FlamechartPanZoomView extends Component<
       return
     }
 
-    // Check if Alt key is pressed for commenting
-    if (ev.altKey && this.hoveredLabel && this.props.onFrameSelectForComment) {
-      // Get the key from the frame
-      const frameKey = this.hoveredLabel.node.frame.key;
-      console.log('Alt+Click on frame with key:', frameKey);
-      // Call the onFrameSelectForComment callback with the frame key
-      this.props.onFrameSelectForComment(frameKey);
+    if (ev.altKey && this.hoveredLabel && this.props.onCellSelectForComment) {
+      const frame = this.hoveredLabel.node.frame;
+      const frameStart = this.hoveredLabel.frameStart;
+      const depth = this.hoveredLabel.depth;
+      // Generate the specific cell identifier including depth
+      const cellId = `${frame.key}_${depth}_${frameStart.toFixed(3)}`;
+      console.log('Alt+Click on cellId:', cellId);
+      this.props.onCellSelectForComment(cellId, 'chrono');
       return;
     }
 
@@ -702,6 +706,8 @@ export class FlamechartPanZoomView extends Component<
         this.hoveredLabel = {
           configSpaceBounds,
           node: frame.node,
+          frameStart: frame.start,
+          depth: depth
         }
       }
 
@@ -791,6 +797,11 @@ export class FlamechartPanZoomView extends Component<
   }
 
   onWindowKeyPress = (ev: KeyboardEvent) => {
+    // Add check for input/textarea focus
+    if (ev.target instanceof HTMLInputElement || ev.target instanceof HTMLTextAreaElement) {
+      return; // Ignore key presses within inputs
+    }
+
     if (!this.container) return
     const {width, height} = this.container.getBoundingClientRect()
 
@@ -802,7 +813,8 @@ export class FlamechartPanZoomView extends Component<
       ev.preventDefault()
     }
 
-    if (ev.ctrlKey || ev.shiftKey || ev.metaKey) return
+    // This check should now happen *after* the input focus check
+    if (ev.ctrlKey || ev.shiftKey || ev.metaKey) return 
 
     // NOTE: We intentionally use ev.code rather than ev.key for
     // WASD in order to have the keys retain the same layout even
@@ -820,7 +832,8 @@ export class FlamechartPanZoomView extends Component<
     } else if (ev.key === 'ArrowDown' || ev.code === 'KeyS') {
       this.pan(new Vec2(0, 100))
     } else if (ev.key === 'Escape') {
-      this.props.onNodeSelect(null)
+      // Keep escape for deselecting node, as the comment form handles its own escape
+      this.props.onNodeSelect(null) 
       this.renderCanvas()
     }
   }
@@ -885,16 +898,19 @@ export class FlamechartPanZoomView extends Component<
     // Hide any existing context menu
     this.hideContextMenu();
     
-    // If we have a hovered frame label, show the context menu
     if (this.hoveredLabel) {
       const frame = this.hoveredLabel.node.frame;
+      const frameStart = this.hoveredLabel.frameStart;
+      const depth = this.hoveredLabel.depth;
+      // Generate the specific cell identifier including depth
+      const cellId = `${frame.key}_${depth}_${frameStart.toFixed(3)}`;
       
-      // Update context menu state
       this.contextMenuState = {
         visible: true,
         x: ev.clientX,
         y: ev.clientY,
-        frameKey: frame.key,
+        cellIdentifier: cellId,
+        commentType: 'chrono',
         frameName: frame.name,
         filePath: frame.file,
         lineNumber: frame.line,
@@ -903,13 +919,7 @@ export class FlamechartPanZoomView extends Component<
       };
       
       this.renderContextMenu();
-      
-      console.log('Right-clicked on frame:', {
-        key: frame.key,
-        name: frame.name,
-        file: frame.file,
-        line: frame.line
-      });
+      console.log('Right-clicked on cellId:', cellId);
     }
   };
   
@@ -921,9 +931,9 @@ export class FlamechartPanZoomView extends Component<
   };
   
   private handleAddComment = () => {
-    const { frameKey } = this.contextMenuState;
-    if (frameKey && this.props.onFrameSelectForComment) {
-      this.props.onFrameSelectForComment(frameKey);
+    const { cellIdentifier, commentType } = this.contextMenuState;
+    if (cellIdentifier && commentType && this.props.onCellSelectForComment) {
+      this.props.onCellSelectForComment(cellIdentifier, commentType);
       this.hideContextMenu();
     }
   };
@@ -947,7 +957,7 @@ export class FlamechartPanZoomView extends Component<
           x={menu.x}
           y={menu.y}
           onClose={this.hideContextMenu}
-          frameKey={menu.frameKey}
+          frameKey={menu.cellIdentifier}
         >
           {menu.frameName && (
             <>

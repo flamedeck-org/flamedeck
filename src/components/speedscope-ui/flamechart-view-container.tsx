@@ -107,12 +107,12 @@ const getChronoViewFlamechartRenderer = createMemoizedFlamechartRenderer()
 export interface FlamechartViewContainerProps {
   activeProfileState: ActiveProfileState
   glCanvas: HTMLCanvasElement | null
-  onFrameSelectForComment?: (key: string | number | null) => void
-  commentedFrameKeys?: (string | number)[]
+  onCellSelectForComment?: (identifier: string | null, type: string) => void
+  commentedCellIds?: string[]
 }
 
 export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) => {
-  const {activeProfileState, glCanvas, onFrameSelectForComment, commentedFrameKeys} = props
+  const {activeProfileState, glCanvas, onCellSelectForComment, commentedCellIds} = props
   const {profile, chronoViewState} = activeProfileState
 
   const theme = useTheme()
@@ -147,8 +147,8 @@ export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) =
         getCSSColorForFrame={getCSSColorForFrame}
         {...chronoViewState}
         {...setters}
-        onFrameSelectForComment={onFrameSelectForComment}
-        commentedFrameKeys={commentedFrameKeys}
+        onCellSelectForComment={onCellSelectForComment}
+        commentedCellIds={commentedCellIds}
       />
     </FlamechartSearchContextProvider>
   )
@@ -174,7 +174,7 @@ export const getLeftHeavyFlamechart = memoizeByShallowEquality(
 const getLeftHeavyFlamechartRenderer = createMemoizedFlamechartRenderer()
 
 export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerProps) => {
-  const {activeProfileState, glCanvas, onFrameSelectForComment, commentedFrameKeys} = ownProps
+  const {activeProfileState, glCanvas, onCellSelectForComment, commentedCellIds} = ownProps
 
   const {profile, leftHeavyViewState} = activeProfileState
 
@@ -213,8 +213,8 @@ export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerPr
         getCSSColorForFrame={getCSSColorForFrame}
         {...leftHeavyViewState}
         {...setters}
-        onFrameSelectForComment={onFrameSelectForComment}
-        commentedFrameKeys={commentedFrameKeys}
+        onCellSelectForComment={onCellSelectForComment}
+        commentedCellIds={commentedCellIds}
       />
     </FlamechartSearchContextProvider>
   )

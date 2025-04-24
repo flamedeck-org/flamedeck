@@ -9,7 +9,7 @@ import { useAtom } from '@/lib/speedscope-core/atom';
 import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
 import { ChronoFlamechartView, LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
-import CommentForm from './CommentForm';
+import ProfileCommentForm from './ProfileCommentForm';
 import { useTraceComments } from '@/hooks/useTraceComments';
 
 export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
@@ -24,23 +24,22 @@ interface SpeedscopeViewerProps {
 const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData, fileName, view }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFrameKeyForComment, setSelectedFrameKeyForComment] = useState<string | number | null>(null);
+  const [selectedCommentTarget, setSelectedCommentTarget] = useState<{identifier: string | null, type: string | null}>({ identifier: null, type: null });
   
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
   const flattenRecursion = useAtom(flattenRecursionAtom);
   const activeProfileState = useActiveProfileState();
 
-  // Fetch trace comments to identify frames that have comments
-  const { commentedFrameKeys } = useTraceComments(traceId);
+  const { allComments, commentedChronoCellIds, overviewComments, isLoading: commentsLoading, error: commentsError } = useTraceComments(traceId);
 
-  const handleFrameSelectForComment = useCallback((key: string | number | null) => {
-    console.log("Frame selected for comment:", key);
-    setSelectedFrameKeyForComment(key);
+  const handleSelectCommentTarget = useCallback((identifier: string | null, type: string | null) => {
+    console.log("Target selected for comment:", { identifier, type });
+    setSelectedCommentTarget({ identifier, type });
   }, []);
 
   const handleCommentPosted = useCallback(() => {
-    setSelectedFrameKeyForComment(null);
+    setSelectedCommentTarget({ identifier: null, type: null });
   }, []);
 
   useEffect(() => {
@@ -93,6 +92,10 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
       if (event.key === 'r') {
         flattenRecursionAtom.set(!flattenRecursion);
       }
+
+      if (event.key === 'Escape' && selectedCommentTarget.identifier !== null) {
+        handleSelectCommentTarget(null, null);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -100,7 +103,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [flattenRecursion]);
+  }, [flattenRecursion, selectedCommentTarget, handleSelectCommentTarget]);
 
   if (isLoading) {
     return (
@@ -132,52 +135,47 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
         <ProfileSearchContextProvider>
           {view === 'sandwich' && (
             <SandwichViewContainer
-              onFrameSelectForComment={handleFrameSelectForComment}
+              onFrameSelectForComment={() => {}}
               activeProfileState={activeProfileState}
               glCanvas={glCanvas}
-              commentedFrameKeys={commentedFrameKeys}
+              commentedCellIds={[]}
             />
           )}
           {view === 'time_ordered' && (
             <ChronoFlamechartView
-              onFrameSelectForComment={handleFrameSelectForComment}
+              onCellSelectForComment={handleSelectCommentTarget}
               activeProfileState={activeProfileState}
               glCanvas={glCanvas}
-              commentedFrameKeys={commentedFrameKeys}
+              commentedCellIds={commentedChronoCellIds}
             />
           )}
           {view === 'left_heavy' && (
             <LeftHeavyFlamechartView
-              onFrameSelectForComment={handleFrameSelectForComment}
+              onFrameSelectForComment={() => {}}
               activeProfileState={activeProfileState}
               glCanvas={glCanvas}
-              commentedFrameKeys={commentedFrameKeys}
+              commentedCellIds={[]}
             />
           )}
         </ProfileSearchContextProvider>
-      </div>
 
-      {selectedFrameKeyForComment !== null && traceId && (
-        <div className="flex-shrink-0 p-4 border-t bg-background">
-          <h3 className="text-sm font-medium mb-2">
-            Commenting on frame: {String(selectedFrameKeyForComment)}
-            <button
-              onClick={() => handleFrameSelectForComment(null)}
-              className="ml-2 text-xs text-muted-foreground hover:text-foreground"
-              title="Cancel comment"
-            >
-              (Cancel)
-            </button>
-          </h3>
-          <CommentForm
-            traceId={traceId}
-            frameKey={selectedFrameKeyForComment}
-            onCommentPosted={handleCommentPosted}
-            placeholder="Add comment to selected frame..."
-            autoFocus
-          />
-        </div>
-      )}
+        {selectedCommentTarget.identifier !== null && selectedCommentTarget.type && traceId && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background z-10">
+            <h3 className="text-sm font-medium mb-2 flex justify-between items-center">
+              <span>Commenting on {selectedCommentTarget.type} target: <span className="font-mono">{String(selectedCommentTarget.identifier)}</span></span>
+            </h3>
+            <ProfileCommentForm 
+              traceId={traceId}
+              commentType={selectedCommentTarget.type}
+              commentIdentifier={selectedCommentTarget.identifier}
+              onCommentPosted={handleCommentPosted}
+              onCancel={() => handleSelectCommentTarget(null, null)}
+              placeholder="Add comment..."
+              autoFocus
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

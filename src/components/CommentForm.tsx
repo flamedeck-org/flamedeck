@@ -1,28 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import TextareaAutosize from 'react-textarea-autosize';
 import { useToast } from '@/components/ui/use-toast';
 import { traceApi, NewTraceComment } from '@/lib/api';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Send, Paperclip } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from "@/lib/utils";
 
 interface CommentFormProps {
   traceId: string;
   parentId?: string | null; // Optional: for replies
-  frameKey?: string | number | null; // Optional: Identifier for the frame being commented on
+  commentType: string; // Type of comment (e.g., 'trace', 'frame')
+  commentIdentifier?: string | null; // Identifier for the specific item (e.g., frame key), null for general
   onCommentPosted?: () => void; // Optional: callback after success
   placeholder?: string;
   autoFocus?: boolean;
+  className?: string; // Allow passing additional classes
 }
 
 const CommentForm: React.FC<CommentFormProps> = ({
   traceId,
   parentId = null,
-  frameKey = null, // Default to null
+  commentType,
+  commentIdentifier = null,
   onCommentPosted,
-  placeholder = "Add a comment...",
+  placeholder = "Leave a comment...",
   autoFocus = false,
+  className,
 }) => {
   const [content, setContent] = useState('');
   const queryClient = useQueryClient();
@@ -32,10 +37,9 @@ const CommentForm: React.FC<CommentFormProps> = ({
   const commentMutation = useMutation({
     mutationFn: (newComment: NewTraceComment & { trace_id: string }) => traceApi.createTraceComment(newComment),
     onSuccess: () => {
-      setContent(''); // Clear form
+      setContent('');
       queryClient.invalidateQueries({ queryKey: ['traceComments', traceId] });
-      toast({ title: 'Comment posted!' });
-      onCommentPosted?.(); // Call callback if provided
+      onCommentPosted?.();
     },
     onError: (error) => {
       toast({
@@ -46,46 +50,70 @@ const CommentForm: React.FC<CommentFormProps> = ({
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim() || !user) return;
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!content.trim() || !user || commentMutation.isPending) return;
 
     commentMutation.mutate({
       trace_id: traceId,
       content: content.trim(),
       parent_comment_id: parentId,
-      trace_timestamp_ms: null, // TODO: Add ability to link timestamp
-      frame_key: frameKey, // Pass the frameKey here
+      trace_timestamp_ms: null,
+      comment_type: commentType,
+      comment_identifier: commentIdentifier,
     });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
   if (!user) {
     return <p className="text-sm text-muted-foreground">Please log in to comment.</p>;
   }
 
+  const canSubmit = content.trim().length > 0 && !commentMutation.isPending;
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
-      <Textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder={placeholder}
-        disabled={commentMutation.isPending}
-        rows={parentId ? 2 : 3} // Smaller for replies
-        autoFocus={autoFocus}
-        required
-        className="resize-none"
-      />
-      <div className="flex justify-end">
-        <Button type="submit" disabled={commentMutation.isPending || !content.trim()} size="sm">
-          {commentMutation.isPending ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Posting...</>
-          ) : (
-            'Post Comment'
-          )}
-        </Button>
+    <form onSubmit={handleSubmit} className={cn("relative", className)}>
+      <div className="flex items-end space-x-2 rounded-md border border-input bg-transparent pr-10 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+        <TextareaAutosize
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={commentMutation.isPending}
+          minRows={parentId ? 2 : 3}
+          maxRows={10}
+          autoFocus={autoFocus}
+          required
+          className="flex-grow resize-none appearance-none bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <div className="absolute bottom-1 right-1 flex items-center">
+          <Button
+            type="submit"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-8 w-8 rounded-full",
+              canSubmit ? "text-foreground bg-primary/10 hover:bg-primary/20" : "text-muted-foreground"
+            )}
+            disabled={!canSubmit}
+            aria-label="Post comment"
+          >
+            {commentMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </div>
     </form>
   );
 };
 
-export default CommentForm; 
+export default React.memo(CommentForm); 
