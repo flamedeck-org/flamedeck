@@ -34,6 +34,31 @@ export interface PaginatedTracesResponse {
   totalCount: number;
 }
 
+// --- NEW: Folder Types ---
+type FolderRow = Database['public']['Tables']['folders']['Row'];
+
+// Interface for a folder
+export interface Folder extends FolderRow {}
+
+// Interface for items listed within a folder (could be a folder or a trace)
+export interface DirectoryItem {
+    type: 'folder' | 'trace';
+    id: string;
+    name: string; // Use trace scenario or folder name
+    updated_at: string; // Or created_at
+    // Add other common fields if needed, e.g., owner info for traces
+    data: Folder | TraceMetadata; // Hold the actual data object
+}
+
+// Response type for listing folder contents
+export interface DirectoryListingResponse {
+   folders: Folder[];
+   traces: TraceMetadata[];
+   path: Folder[]; // Breadcrumb path from root to current folder
+   totalCount: number | null; // Count of traces within the current folder/view
+ }
+// --- END NEW ---
+
 // --- Helper Functions ---
 
 /**
@@ -57,17 +82,60 @@ async function deleteStorageObject(bucket: string, path: string): Promise<void> 
     }
 }
 
+// Helper function to get breadcrumb path (iterative approach)
+async function getFolderPath(startFolderId: string): Promise<Folder[]> {
+    const path: Folder[] = [];
+    let currentId: string | null = startFolderId;
+    const MAX_DEPTH = 10; // Prevent infinite loops
+    let depth = 0;
+
+    while (currentId && depth < MAX_DEPTH) {
+        try {
+            const { data: folder, error } = await supabase
+                .from('folders')
+                .select('*')
+                .eq('id', currentId)
+                .maybeSingle(); // Use maybeSingle to handle potential nulls/errors gracefully
+
+            if (error) {
+                console.error(`Error fetching folder path segment (ID: ${currentId}):`, error);
+                // Depending on requirements, you might want to return the partial path or throw
+                break; // Stop if there's an error
+            }
+            if (!folder) {
+                 console.warn(`Folder not found during path construction: ${currentId}`);
+                // This could happen if a folder was deleted while iterating
+                break; // Stop if a folder in the path isn't found
+            }
+
+            // Type assertion needed because Supabase types might not perfectly infer FolderRow here
+            path.unshift(folder as Folder);
+            currentId = folder.parent_folder_id;
+            depth++;
+        } catch (iterError) {
+             console.error(`Unexpected error fetching path segment (ID: ${currentId}):`, iterError);
+            break;
+        }
+    }
+     if (depth === MAX_DEPTH) {
+       console.warn(`Reached max depth (${MAX_DEPTH}) fetching folder path starting from ${startFolderId}. Path might be incomplete.`);
+     }
+
+    return path;
+ }
+
 // --- Trace API --- 
 
 export const traceApi = {
   // Get paginated list of traces
   getTraces: async (
     page: number = 0,
-    limit: number = 20
+    limit: number = 20,
+    searchQuery?: string | null
   ): Promise<ApiResponse<PaginatedTracesResponse>> => {
     try {
       // Call the updated listUserTraces which now handles pagination and returns count
-      const { data: traces, count } = await listUserTraces(page, limit);
+      const { data: traces, count } = await listUserTraces(page, limit, searchQuery);
       // Ensure count is a number, defaulting to 0 if null/undefined
       const totalCount = count ?? 0;
       return { data: { traces, totalCount }, error: null };
@@ -132,7 +200,8 @@ export const traceApi = {
   // Upload a new trace
   uploadTrace: async (
     file: File,
-    metadata: Omit<TraceUpload, "blob_path">
+    metadata: Omit<TraceUpload, "blob_path">,
+    folderId: string | null = null // <-- Add folderId parameter
   ): Promise<ApiResponse<TraceMetadata>> => {
     const bucket = 'traces';
     let filePathInBucket: string | null = null;
@@ -187,7 +256,8 @@ export const traceApi = {
               file_size_bytes: file.size, // Size of the *processed* (but uncompressed) file
               profile_type: metadata.profile_type,
               notes: metadata.notes,
-              uploaded_at: new Date().toISOString()
+              uploaded_at: new Date().toISOString(),
+              folder_id: folderId // <-- Set the folder_id
           })
           .select()
           .single();
@@ -537,4 +607,238 @@ export const traceApi = {
       return { data: null, error: apiError };
     }
   },
+
+  // --- NEW: Folder Management ---
+
+  // Fetch contents of a specific folder (or root)
+  getDirectoryListing: async (
+      folderId: string | null = null, // null for root
+      page: number = 0,
+      limit: number = 50,
+      searchQuery?: string | null
+  ): Promise<ApiResponse<DirectoryListingResponse>> => {
+      try {
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
+          if (authError || !user) throw new Error("Authentication required");
+
+           // --- Fetch Path (Breadcrumbs) ---
+           // Fetch path first, so if the target folder doesn't exist/isn't accessible, we fail early
+           const path: Folder[] = folderId ? await getFolderPath(folderId) : [];
+           // If folderId is provided but path is empty AND folderId isn't root, it means the folder wasn't found or accessible
+           if (folderId && path.length === 0) {
+                // Or check if path[0].id === folderId ?
+                throw new Error(`Folder not found or not accessible: ${folderId}`);
+           }
+
+          // --- Fetch Folders within the current directory ---
+          let folderQuery = supabase
+              .from('folders')
+              .select('*')
+              // RLS should handle user_id check, but explicit check adds safety layer
+              .eq('user_id', user.id);
+
+          if (folderId) {
+              folderQuery = folderQuery.eq('parent_folder_id', folderId);
+          } else {
+              folderQuery = folderQuery.is('parent_folder_id', null); // Root level folders
+          }
+          // Apply search *only* to folders if needed (simple name search)
+          if (searchQuery) {
+              folderQuery = folderQuery.ilike('name', `%${searchQuery}%`);
+          }
+          // Apply ordering
+          folderQuery = folderQuery.order('name', { ascending: true });
+
+          // Normally folders aren't paginated, fetch all matching folders in the dir
+          const { data: foldersData, error: foldersError } = await folderQuery;
+          if (foldersError) {
+            console.error("Error fetching folders:", foldersError);
+            throw foldersError; // Throw to be caught by the main catch block
+          }
+
+
+          // --- Fetch Traces within the current directory ---
+          // Assume listUserTraces in storage.ts has been updated or uses a DB function
+          // that accepts folderId and searchQuery for traces.
+          // If not, this needs adjustment.
+          // IMPORTANT: listUserTraces needs modification to filter by folder_id
+          const { data: tracesData, count: tracesCount } = await listUserTraces(
+              page,
+              limit,
+              searchQuery,
+              folderId // Pass folderId to filter traces
+          );
+          // listUserTraces should ideally handle its own errors or return them structured
+
+
+          // Combine results
+          const totalTraceCount = tracesCount ?? 0; // Count only applies to traces for pagination
+
+          return {
+              data: {
+                  folders: foldersData || [],
+                  traces: tracesData || [], // Use data from listUserTraces directly
+                  path: path,
+                  totalCount: totalTraceCount
+              },
+              error: null
+          };
+      } catch (error) {
+          console.error("Error fetching directory listing:", error);
+          const apiError: ApiError = {
+                message: error instanceof Error ? error.message : "Failed to fetch directory contents",
+                code: (error as PostgrestError)?.code,
+                details: (error as PostgrestError)?.details,
+                hint: (error as PostgrestError)?.hint,
+          };
+          return { data: null, error: apiError };
+      }
+  },
+
+  createFolder: async (name: string, parentFolderId: string | null = null): Promise<ApiResponse<Folder>> => {
+      try {
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
+          if (authError || !user) throw new Error("Authentication required");
+
+          // Basic validation
+          if (!name || name.trim().length === 0 || name.length > 255) {
+            throw new Error("Invalid folder name.");
+          }
+
+          const { data, error } = await supabase
+              .from('folders')
+              .insert({
+                  name: name.trim(),
+                  user_id: user.id, // RLS policy should also enforce this
+                  parent_folder_id: parentFolderId
+              })
+              .select()
+              .single();
+
+          if (error) {
+             // Check for unique constraint violation or other specific errors if needed
+             console.error("Database error creating folder:", error);
+             throw error;
+          }
+          // Explicit type assertion might be necessary if Supabase return type isn't specific enough
+          return { data: data as Folder, error: null };
+      } catch (error) {
+           console.error("Error creating folder:", error);
+           const apiError: ApiError = {
+                message: error instanceof Error ? error.message : "Failed to create folder",
+                code: (error as PostgrestError)?.code,
+                details: (error as PostgrestError)?.details,
+                hint: (error as PostgrestError)?.hint,
+            };
+          return { data: null, error: apiError };
+      }
+  },
+
+  // Placeholder for updating folder (e.g., rename)
+  // updateFolder: async (folderId: string, updates: Partial<Pick<Folder, 'name' | 'parent_folder_id'>>): Promise<ApiResponse<Folder>> => { ... }
+
+  // Placeholder for deleting folder
+  // deleteFolder: async (folderId: string): Promise<ApiResponse<void>> => { ... }
+
+
+  // Move traces and/or folders to a different folder
+  moveItems: async (
+      itemIds: { traces: string[], folders: string[] },
+      targetFolderId: string | null = null // null means move to root
+    ): Promise<ApiResponse<void>> => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) throw new Error("Authentication required");
+
+        // --- Input Validation ---
+        if (!itemIds || (!itemIds.traces?.length && !itemIds.folders?.length)) {
+            console.log("No items specified to move.");
+            return { data: null, error: null }; // Nothing to do
+        }
+        const allFolderIds = [...(itemIds.folders || [])];
+        if (targetFolderId) {
+            allFolderIds.push(targetFolderId);
+        }
+
+        // Basic check: Prevent moving a folder into itself
+        if (targetFolderId && itemIds.folders?.includes(targetFolderId)) {
+            throw new Error("Cannot move a folder into itself.");
+        }
+
+        // Advanced check: Prevent moving a folder into one of its own descendants
+        // Requires fetching paths or using a recursive DB query. Skipping for brevity,
+        // but crucial for production to prevent cycles. Consider adding later.
+        // console.warn("Skipping descendant check for move operation.");
+
+
+        // Fetch involved folders to verify ownership/existence before proceeding
+        // Optional but safer: verify user owns all items being moved and the target folder
+        // if (allFolderIds.length > 0) {
+        //     const { data: foldersToVerify, error: verifyError } = await supabase
+        //         .from('folders')
+        //         .select('id, user_id')
+        //         .in('id', allFolderIds)
+        //         .eq('user_id', user.id); // Verify ownership via user_id
+        //     if (verifyError) throw verifyError;
+        //     // Check if all expected folders were found and belong to the user
+        //     if (foldersToVerify?.length !== allFolderIds.length) {
+        //        throw new Error("One or more folders not found or access denied.");
+        //     }
+        // }
+
+
+        // --- Perform Updates ---
+        // Use PromiseLike as the Supabase builder is 'thenable' but not strictly a Promise
+        const updates: PromiseLike<{ error: PostgrestError | null }>[] = [];
+        const now = new Date().toISOString();
+
+        // Update traces
+        if (itemIds.traces?.length > 0) {
+          updates.push(
+            supabase
+              .from('traces')
+              .update({ folder_id: targetFolderId, updated_at: now }) // Use updated_at if available/relevant for traces
+              .in('id', itemIds.traces)
+              // RLS on traces should enforce ownership, but explicit check is safer
+              .eq('user_id', user.id)
+          );
+        }
+
+        // Update folders (parent_folder_id)
+        if (itemIds.folders?.length > 0) {
+          updates.push(
+            supabase
+              .from('folders')
+              .update({ parent_folder_id: targetFolderId, updated_at: now })
+              .in('id', itemIds.folders)
+              // RLS on folders enforces ownership
+              .eq('user_id', user.id)
+          );
+        }
+
+        const results = await Promise.all(updates);
+
+        // Check for errors in results
+        const errors = results.map(r => r.error).filter(e => e !== null);
+        if (errors.length > 0) {
+           // Combine error messages or handle specific errors
+           console.error("Errors during move operation:", errors);
+           throw new Error(`Failed to move one or more items: ${errors.map(e => e?.message).join(', ')}`);
+        }
+
+        return { data: null, error: null };
+      } catch (error) {
+        console.error("Error moving items:", error);
+         const apiError: ApiError = {
+            message: error instanceof Error ? error.message : "Failed to move items",
+            code: (error as PostgrestError)?.code,
+            details: (error as PostgrestError)?.details,
+            hint: (error as PostgrestError)?.hint,
+         };
+         return { data: null, error: apiError };
+      }
+    },
+
+
+  // --- END NEW FOLDER MANAGEMENT ---
 };

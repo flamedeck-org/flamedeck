@@ -10,3 +10,20 @@ alwaysApply: true
   - Also wrap exported components in `memo`
 - Abstract large new pieces of functionality into separate hooks / components - component files should not be huge
 - Always use named function declarations for components. E.g. `function MyComponent() {` not `const MyComponent: React.FC = () => {`
+
+## Creating components
+
+- We want to avoid very large files - try to think about how to extract things in to reasonably sized components or hooks or utility functions. Generally we want one function per file
+- You should logically structure components around where they are used. For example if `components/TraceList.tsx` needs to render a `TraceListItem` component, you should create a folder called `components/TraceList` which looks like:
+
+```
+components/
+  TraceList/
+    TraceList.tsx
+    index.ts // exports TraceList and anything else needed
+    TraceListItem.tsx
+    hooks/
+      useTraces.ts // any hooks related to the component
+```
+
+Keeping a clean and organized file heirarchy is critical to the application being maintainable in the long run

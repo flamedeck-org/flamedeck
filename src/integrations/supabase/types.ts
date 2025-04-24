@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      folders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          parent_folder_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          parent_folder_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          parent_folder_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folders_parent_folder_id_fkey"
+            columns: ["parent_folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trace_comments: {
         Row: {
           comment_identifier: string | null
@@ -120,6 +162,7 @@ export type Database = {
           device_model: string | null
           duration_ms: number | null
           file_size_bytes: number | null
+          folder_id: string | null
           id: string
           notes: string | null
           profile_type: string | null
@@ -134,6 +177,7 @@ export type Database = {
           device_model?: string | null
           duration_ms?: number | null
           file_size_bytes?: number | null
+          folder_id?: string | null
           id?: string
           notes?: string | null
           profile_type?: string | null
@@ -148,6 +192,7 @@ export type Database = {
           device_model?: string | null
           duration_ms?: number | null
           file_size_bytes?: number | null
+          folder_id?: string | null
           id?: string
           notes?: string | null
           profile_type?: string | null
@@ -156,6 +201,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "traces_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "traces_user_id_fkey"
             columns: ["user_id"]
@@ -206,12 +258,54 @@ export type Database = {
         Returns: boolean
       }
       get_user_accessible_traces: {
-        Args: { p_user_id: string; p_offset: number; p_limit: number }
+        Args:
+          | { p_user_id: string; p_offset: number; p_limit: number }
+          | {
+              p_user_id: string
+              p_offset: number
+              p_limit: number
+              p_search_query?: string
+              p_folder_id?: string
+            }
         Returns: Database["public"]["CompositeTypes"]["trace_with_owner"][]
       }
       get_user_accessible_traces_count: {
-        Args: { p_user_id: string }
+        Args:
+          | { p_user_id: string }
+          | { p_user_id: string; p_search_query?: string; p_folder_id?: string }
         Returns: number
+      }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
       }
     }
     Enums: {
@@ -232,6 +326,7 @@ export type Database = {
         notes: string | null
         profile_type: string | null
         owner: Json | null
+        folder_id: string | null
       }
     }
   }

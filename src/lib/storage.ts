@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
-import type { TraceMetadata } from "@/types";
+import type { TraceMetadata, UserProfile } from "@/types";
 import { gzipCompress, gzipDecompress } from "./util/compress"; // Import compression utilities
 import { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
 
@@ -129,7 +129,9 @@ export const getTraceBlob = async (path: string): Promise<{ data: ArrayBuffer; f
 // List paginated traces for the current user, excluding those only accessible via public link
 export const listUserTraces = async (
     page: number,
-    limit: number
+    limit: number,
+    searchQuery?: string | null, // Add optional searchQuery parameter
+    folderId?: string | null // NEW: Add optional folderId parameter
 ): Promise<{ data: TraceMetadata[]; count: number | null }> => {
     try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -143,76 +145,43 @@ export const listUserTraces = async (
         const to = from + limit - 1;
 
         // Base query: Fetch traces with owner info
-        let query = supabase
-            .from('traces')
-            .select(`
-              id,
-              user_id,
-              uploaded_at,
-              commit_sha,
-              branch,
-              scenario,
-              device_model,
-              duration_ms,
-              blob_path,
-              file_size_bytes,
-              notes,
-              profile_type,
-              owner:user_profiles ( id, username, avatar_url, first_name, last_name )
-            `, { count: 'exact' }); // Request total count
+        // NOTE: The original query using select().or() with join hint is removed
+        // as we rely solely on the RPC function now.
 
-        // Add filtering logic:
-        // 1. Traces owned by the user OR
-        // 2. Traces where the user has an explicit permission (non-public row in trace_permissions)
-        query = query.or(`user_id.eq.${userId},trace_permissions.user_id.eq.${userId}`);
-        // Need to join trace_permissions to make the above filter work
-        // Supabase JS client doesn't directly support arbitrary joins like this in select/filter.
-        // We need to use an RPC call or a database VIEW that handles this logic.
+        // ---- Use RPC functions that accept folderId ----
+        // IMPORTANT: Assumes RPC functions `get_user_accessible_traces` and
+        // `get_user_accessible_traces_count` have been updated in Supabase SQL
+        // to accept `p_folder_id UUID` and filter accordingly.
+        // Example SQL change (add to WHERE clause in both functions):
+        // AND (
+        //    (p_folder_id IS NULL AND t.folder_id IS NULL) OR
+        //    (p_folder_id IS NOT NULL AND t.folder_id = p_folder_id)
+        // )
 
-        // ---- Let's use an RPC function `get_user_accessible_traces` ----
-        // This assumes an RPC function exists in Supabase:
-        // FUNCTION get_user_accessible_traces(p_user_id UUID, p_offset INT, p_limit INT)
-        // RETURNS TABLE (...) -- columns matching TraceMetadata + owner
-        // BEGIN
-        //   RETURN QUERY
-        //   SELECT t.*, row_to_json(up.*) as owner -- Select necessary fields
-        //   FROM traces t
-        //   LEFT JOIN user_profiles up ON t.user_id = up.id
-        //   WHERE t.user_id = p_user_id OR EXISTS (
-        //      SELECT 1 FROM trace_permissions tp 
-        //      WHERE tp.trace_id = t.id AND tp.user_id = p_user_id
-        //   )
-        //   ORDER BY t.uploaded_at DESC
-        //   OFFSET p_offset
-        //   LIMIT p_limit;
-        // END;
-        //
-        // Also need a function to get the count:
-        // FUNCTION get_user_accessible_traces_count(p_user_id UUID)
-        // RETURNS INT
-        // BEGIN
-        //   RETURN (SELECT count(*)
-        //           FROM traces t
-        //           WHERE t.user_id = p_user_id OR EXISTS (
-        //             SELECT 1 FROM trace_permissions tp 
-        //             WHERE tp.trace_id = t.id AND tp.user_id = p_user_id
-        //           ));
-        // END;
-
-        console.log(`Calling RPC get_user_accessible_traces for user ${userId}, page ${page}, limit ${limit}`);
+        console.log(`Calling RPCs for user ${userId}, page ${page}, limit ${limit}, search: '${searchQuery || ''}', folder: '${folderId || 'root'}'`);
 
         // Call the RPC function for data
+        const rpcParamsData = {
+            p_user_id: userId,
+            p_offset: from,
+            p_limit: limit,
+            p_search_query: searchQuery || '',
+            p_folder_id: folderId // <-- Pass folderId
+        };
+        console.log("RPC params (data):", rpcParamsData);
         const { data: rpcData, error: rpcError } = await supabase
-            .rpc('get_user_accessible_traces', { 
-                p_user_id: userId, 
-                p_offset: from, 
-                p_limit: limit 
-            });
+            .rpc('get_user_accessible_traces', rpcParamsData);
 
         // Call the RPC function for count
+        const rpcParamsCount = {
+            p_user_id: userId,
+            p_search_query: searchQuery || '',
+            p_folder_id: folderId // <-- Pass folderId
+        };
+         console.log("RPC params (count):", rpcParamsCount);
         const { data: countData, error: countError } = await supabase
-             .rpc('get_user_accessible_traces_count', { p_user_id: userId })
-             .single(); // Expect a single number
+            .rpc('get_user_accessible_traces_count', rpcParamsCount)
+            .single(); // Expect a single number
 
         if (rpcError) {
             console.error("Error calling get_user_accessible_traces RPC:", rpcError);
@@ -225,19 +194,33 @@ export const listUserTraces = async (
         }
 
         // Process results - RPC might return owner as JSON string or object
-        const traces = (rpcData || []).map((item: any) => {
-            // Ensure owner is parsed if returned as JSON string
-            if (item.owner && typeof item.owner === 'string') {
+        // Define an expected structure for items returned by the RPC
+        type RpcTraceItem = Omit<TraceMetadata, 'owner'> & { owner: string | UserProfile | null };
+
+        const traces = (rpcData as RpcTraceItem[] || []).map((item) => {
+            const processedItem = { ...item }; // Use const as it's not reassigned directly
+            // Ensure owner is parsed if returned as JSON string and is not null
+            if (processedItem.owner && typeof processedItem.owner === 'string') {
                 try {
-                    item.owner = JSON.parse(item.owner);
+                    // Use UserProfile to match the imported type
+                    const parsedOwner = JSON.parse(processedItem.owner) as UserProfile;
+                    // Assign properties to the const object (this is allowed)
+                    processedItem.owner = parsedOwner;
                 } catch (e) {
-                    console.error("Failed to parse owner JSON from RPC", e);
-                    item.owner = null; // Set to null if parsing fails
+                    console.error("Failed to parse owner JSON from RPC for trace:", processedItem.id, e);
+                    // Assign null to the property on the const object
+                    processedItem.owner = null;
                 }
+            } else if (processedItem.owner && typeof processedItem.owner !== 'object') {
+                 // Handle cases where owner might be something unexpected after the join/CASE
+                 console.warn("Unexpected owner type from RPC for trace:", processedItem.id, typeof processedItem.owner);
+                 // Assign null to the property on the const object
+                 processedItem.owner = null;
             }
-            return item;
-        }) as TraceMetadata[];
-        
+            // Ensure owner is UserProfile | null after processing
+            return processedItem as TraceMetadata;
+        });
+
         // Ensure count is a number, default to 0 if null/undefined or invalid
         const totalCount = (typeof countData === 'number' && !isNaN(countData)) ? countData : 0;
 
@@ -249,11 +232,10 @@ export const listUserTraces = async (
         // Ensure we throw an actual Error object
         const err = error instanceof Error ? error : new Error(String(error));
         // Optionally check for specific PostgrestError details if needed
-        if ((error as PostgrestError)?.message?.includes('relation "get_user_accessible_traces" does not exist')) {
-            console.error("RPC function 'get_user_accessible_traces' not found in Supabase. Please create it.");
-            // Provide a more specific error message to the client?
+        if ((error as PostgrestError)?.message?.includes('function get_user_accessible_traces(p_user_id => uuid, p_offset => integer, p_limit => integer, p_search_query => text) does not exist')) {
+            console.error("RPC function signature mismatch or function not found. Ensure 'get_user_accessible_traces' and 'get_user_accessible_traces_count' accept 'p_folder_id uuid' in Supabase.");
         }
-        throw err; 
+        throw err;
     }
 };
 
