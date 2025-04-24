@@ -23,12 +23,14 @@ import { TracePagination } from './TracePagination';
 import { useDebounce } from "@/hooks/useDebounce";
 import { Folder } from '@/lib/api';
 import { Breadcrumbs } from './Breadcrumbs';
+import { CreateFolderDialog } from './CreateFolderDialog';
 
 function TraceListComponent() {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
+  const [isCreateFolderDialogOpen, setIsCreateFolderDialogOpen] = useState(false);
 
   const {
     folders,
@@ -64,13 +66,19 @@ function TraceListComponent() {
     handleNavigate(folderId);
   }, [handleNavigate]);
 
-  const handleCreateFolder = useCallback(() => {
-    const name = prompt("Enter new folder name:");
-    if (name && name.trim().length > 0) {
-      createFolder({ name: name.trim(), parentFolderId: currentFolderId });
-    } else if (name !== null) {
-      alert("Folder name cannot be empty.");
-    }
+  const handleOpenCreateFolderDialog = useCallback(() => {
+    setIsCreateFolderDialogOpen(true);
+  }, []);
+
+  const handleDialogSubmit = useCallback((folderName: string) => {
+    createFolder(
+      { name: folderName, parentFolderId: currentFolderId }, 
+      {
+        onSuccess: () => {
+          setIsCreateFolderDialogOpen(false);
+        },
+      }
+    );
   }, [createFolder, currentFolderId]);
 
   useEffect(() => {
@@ -88,17 +96,27 @@ function TraceListComponent() {
       }
   }, [setSearchQuery, setPage, page]);
 
+  const createFolderButton = (
+    <Button 
+      size="sm" 
+      variant="outline" 
+      onClick={handleOpenCreateFolderDialog} 
+      disabled={isCreatingFolder}
+    >
+      <FolderPlus className="mr-2 h-4 w-4" /> New Folder
+    </Button>
+  );
+
   const primaryActions = (
     <div className="flex items-center gap-2">
-       <Button 
-        size="sm" 
-        variant="outline" 
-        onClick={handleCreateFolder} 
-        disabled={isCreatingFolder}
-       >
-        <FolderPlus className="mr-2 h-4 w-4" /> {isCreatingFolder ? 'Creating...' : 'New Folder'}
-      </Button>
-      <Link to="/upload"> 
+      <CreateFolderDialog
+          isOpen={isCreateFolderDialogOpen}
+          setIsOpen={setIsCreateFolderDialogOpen}
+          onSubmit={handleDialogSubmit}
+          isPending={isCreatingFolder}
+          triggerElement={createFolderButton}
+      />
+      <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
         <Button size="sm">
           <UploadCloud className="mr-2 h-4 w-4" /> Upload New Trace
         </Button>
@@ -226,15 +244,14 @@ function TraceListComponent() {
               <Button onClick={handleClearSearch} variant="outline" size="sm">Clear Search</Button>
             ) : (
               <div className="flex justify-center gap-2">
-                <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={handleCreateFolder} 
-                    disabled={isCreatingFolder}
-                >
-                    <FolderPlus className="mr-2 h-4 w-4" /> {isCreatingFolder ? 'Creating...' : 'New Folder'}
-                </Button>
-                <Link to="/upload">
+                <CreateFolderDialog
+                    isOpen={isCreateFolderDialogOpen}
+                    setIsOpen={setIsCreateFolderDialogOpen}
+                    onSubmit={handleDialogSubmit}
+                    isPending={isCreatingFolder}
+                    triggerElement={createFolderButton}
+                />
+                <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
                     <Button size="sm"><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
                 </Link>
               </div>

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, SubmitHandler } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { traceApi } from "@/lib/api";
+import { traceApi, Folder, ApiError } from "@/lib/api";
 import { TraceUpload } from "@/types";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useTraceProcessor } from "./hooks/useTraceProcessor";
@@ -21,13 +22,53 @@ type FormFields = Omit<
     'id' | 'created_at' | 'user_id' | 'file_name'
 >;
 
-export function UploadDialog() {
+// Define component props
+interface UploadDialogProps {
+  initialFolderId?: string | null; 
+}
+
+export function UploadDialog({ initialFolderId }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // --- Fetch Folder Details --- 
+  const { 
+    data: folderData, 
+    isLoading: isLoadingFolder, 
+    error: folderError 
+  } = useQuery<Folder, ApiError>({
+      queryKey: ['folder', initialFolderId], 
+      queryFn: async () => {
+          if (!initialFolderId) return null; // Should not happen based on enabled flag
+          const response = await traceApi.getFolder(initialFolderId);
+          if (response.error) throw response.error; // Throw error for React Query
+          if (!response.data) throw new Error("Folder data not found after successful fetch.");
+          return response.data;
+      },
+      enabled: !!initialFolderId, // Only run query if initialFolderId is truthy
+      staleTime: 5 * 60 * 1000, // Cache folder name for 5 minutes
+      gcTime: 10 * 60 * 1000, // Garbage collect after 10 minutes
+      retry: 1, // Retry once on error
+  });
+
+  // Determine display text based on query state (memoized)
+  const targetFolderInfo = useMemo(() => {
+    if (!initialFolderId) return "My Traces (Root)";
+    if (isLoadingFolder) return "Loading folder name...";
+    if (folderError) return `Error loading folder: ${folderError.message}`;
+    if (folderData) return folderData.name;
+    return "Unknown Folder";
+  }, [initialFolderId, isLoadingFolder, folderError, folderData]);
+
+  // Determine if target folder has an error (memoized)
+  const isTargetFolderError = useMemo(() => 
+    !initialFolderId ? false : isLoadingFolder || !!folderError || !folderData,
+    [initialFolderId, isLoadingFolder, folderError, folderData]
+  );
 
   // Initialize react-hook-form
   const {
@@ -54,7 +95,8 @@ export function UploadDialog() {
     profileType
   } = useTraceProcessor({ file });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // --- File Handling (Callbacks) --- 
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     setUploadError(null);
 
@@ -72,13 +114,15 @@ export function UploadDialog() {
     } else {
        setFile(null);
     }
-  };
+  }, [toast]); // Added toast dependency
 
-  const clearFile = () => {
+  const clearFile = useCallback(() => {
     setFile(null);
-  };
+    // Also clear potential processing errors related to the old file
+    setUploadError(null); 
+  }, []);
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
     setUploadError(null);
@@ -97,49 +141,37 @@ export function UploadDialog() {
     } else {
        setFile(null);
     }
-  };
+  }, [toast]); // Added toast dependency
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-  };
+  }, []);
 
-  // This function now receives the validated form data
-  const onSubmit: SubmitHandler<FormFields> = async (formData) => {
+  // --- Form Submission (Callback) --- 
+  const onSubmit: SubmitHandler<FormFields> = useCallback(async (formData) => {
+    // Add file null check inside callback
     if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select a trace file",
-        variant: "destructive",
-      });
+      toast({ title: "No file selected", /*...*/ variant: "destructive" });
       return;
     }
-
-     if (isProcessing) {
-      toast({
-        title: "Processing in progress",
-        description: "Please wait for the trace file to finish processing before uploading.",
-        variant: "default",
-      });
+    // Add processing checks inside callback
+    if (isProcessing) {
+      toast({ title: "Processing in progress", /*...*/ });
       return;
     }
-
     if (processingError) {
-         toast({
-           title: "Cannot Upload",
-           description: `The selected file failed processing: ${processingError}. Please select a different file.`,
-           variant: "destructive",
-         });
-         return;
+      toast({ title: "Cannot Upload", description: `The selected file failed processing: ${processingError}. Please select a different file.`, variant: "destructive" });
+      return;
     }
-
     if (!processedFile || processedDurationMs === null || !profileType) {
-         toast({
-           title: "Processing Not Complete",
-           description: "File processing is not yet complete or failed silently. Please try re-selecting the file.",
-           variant: "destructive",
-         });
-         console.error("Submit called but processedFile, processedDurationMs, or profileType is missing", { processedFile, processedDurationMs, profileType });
-         return;
+       toast({ title: "Processing Not Complete", /*...*/ variant: "destructive" });
+       console.error("Submit called but processedFile, processedDurationMs, or profileType is missing", { processedFile, processedDurationMs, profileType });
+       return;
+    }
+    // Add check for folder loading error inside callback
+    if (isTargetFolderError && initialFolderId) {
+        toast({ title: "Cannot Upload", description: "Target folder details could not be loaded. Please go back and try again.", variant: "destructive" });
+        return;
     }
 
     setIsUploading(true);
@@ -153,20 +185,13 @@ export function UploadDialog() {
       };
 
       const fileToUpload = new File([processedFile], `${file.name}.speedscope.json`, { type: processedFile.type });
-      const response = await traceApi.uploadTrace(fileToUpload, finalMetadata);
+      const response = await traceApi.uploadTrace(fileToUpload, finalMetadata, initialFolderId);
 
       if (response.error) {
-        setUploadError(response.error);
-        toast({
-          title: "Upload failed",
-          description: response.error,
-          variant: "destructive",
-        });
+        setUploadError(response.error.message);
+        toast({ title: "Upload failed", description: response.error.message, variant: "destructive" });
       } else {
-        toast({
-          title: "Trace saved",
-          description: "Your trace file has been processed and uploaded successfully",
-        });
+        toast({ title: "Trace saved", description: "Your trace file has been processed and uploaded successfully" });
         if (response.data?.id) {
           navigate(`/traces/${response.data.id}`);
         } else {
@@ -174,21 +199,31 @@ export function UploadDialog() {
           navigate("/traces");
         }
       }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during upload.";
       setUploadError(errorMessage);
-      toast({
-        title: "Upload failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Upload failed", description: errorMessage, variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [ // Add dependencies for onSubmit
+      file, 
+      isProcessing, 
+      processingError, 
+      processedFile, 
+      processedDurationMs, 
+      profileType, 
+      isTargetFolderError, 
+      initialFolderId, 
+      toast, 
+      navigate
+  ]);
 
-  const isSubmitDisabled = isUploading || isProcessing || !file || !!processingError || !processedFile || !profileType || !!errors.scenario;
+  // --- Submit Disabled State (Memoized) --- 
+  const isSubmitDisabled = useMemo(() => 
+    isUploading || isProcessing || !file || !!processingError || !processedFile || !profileType || !!errors.scenario || isTargetFolderError,
+    [isUploading, isProcessing, file, processingError, processedFile, profileType, errors.scenario, isTargetFolderError]
+  );
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -212,6 +247,14 @@ export function UploadDialog() {
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Display target folder info (dynamic now) */}
+        <div className={cn(
+            "text-sm mb-4 p-3 rounded-md",
+            isTargetFolderError && initialFolderId ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+        )}>
+            Uploading to: <span className="font-medium text-foreground">{targetFolderInfo}</span>
+        </div>
 
         <form onSubmit={handleRHFSubmit(onSubmit)} className="space-y-6">
           <div
