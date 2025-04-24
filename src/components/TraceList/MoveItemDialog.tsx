@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { DIRECTORY_LISTING_QUERY_KEY } from './hooks/useTraces'; // Import the exported key
 import { ApiResponse } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MoveItemDialogProps {
   isOpen: boolean;
@@ -27,13 +28,14 @@ function MoveItemDialogComponent({
   const queryClient = useQueryClient();
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const { mutate: moveItems, isPending: isMoving } = useMutation<
     ApiResponse<void>,
     ApiError,
     string | null
   >({
-    mutationFn: (targetFolderId: string | null) => traceApi.moveItems(itemsToMove, targetFolderId),
+    mutationFn: (targetFolderId: string | null) => traceApi.moveItems(itemsToMove, user?.id, targetFolderId),
     onSuccess: (_, targetFolderId) => {
       toast.success(`Successfully moved ${itemNames.length} item(s) to "${selectedFolderName || 'Root'}".`);
       // Invalidate queries to refetch data in the source and potentially destination folders

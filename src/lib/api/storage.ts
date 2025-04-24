@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import type { TraceMetadata, UserProfile } from "@/types";
-import { gzipCompress, gzipDecompress } from "./util/compress"; // Import compression utilities
+import { gzipCompress, gzipDecompress } from "../util/compress"; // Import compression utilities
 import { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
 
 // Upload a trace file to Supabase storage

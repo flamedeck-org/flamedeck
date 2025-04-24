@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { traceApi, Folder, ApiError } from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UseFolderNavigationResult {
   currentFolderId: string | null;
@@ -20,10 +21,10 @@ interface UseFolderNavigationResult {
 const FOLDER_QUERY_KEY = 'folderListing';
 
 export function useFolderNavigation(initialFolderId: string | null = null): UseFolderNavigationResult {
-  const queryClient = useQueryClient();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId);
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
+  const { user } = useAuth();
 
   const { data, isLoading, isFetching, error, refetch } = useQuery<
     { folders: Folder[], path: Folder[], currentFolder: Folder | null }, // Success data type
@@ -35,6 +36,7 @@ export function useFolderNavigation(initialFolderId: string | null = null): UseF
       const response = await traceApi.getDirectoryListing(currentFolderId, {
         searchQuery: debouncedSearchQuery || null,
         itemTypeFilter: 'folder',
+        userId: user?.id,
       });
       if (response.error) {
         console.error("[useFolderNavigation Query] API Error:", response.error);

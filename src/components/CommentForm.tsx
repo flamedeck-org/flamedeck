@@ -35,7 +35,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
   const { user } = useAuth();
 
   const commentMutation = useMutation({
-    mutationFn: (newComment: NewTraceComment & { trace_id: string }) => traceApi.createTraceComment(newComment),
+    mutationFn: (newComment: NewTraceComment & { trace_id: string }) => traceApi.createTraceComment(newComment, user.id),
     onSuccess: () => {
       setContent('');
       queryClient.invalidateQueries({ queryKey: ['traceComments', traceId] });
