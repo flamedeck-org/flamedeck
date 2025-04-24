@@ -1,45 +1,82 @@
-import { memo } from 'react';
-import { Folder as FolderIcon } from 'lucide-react';
+import React, { memo, useState } from 'react';
+import { Folder as FolderIcon, Trash2, Edit, Move } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Folder } from '@/lib/api'; // Assuming Folder type is exported from api.ts
+import { formatDistanceToNow } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger, 
+  DropdownMenuSeparator 
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
+import { MoveItemDialog } from './MoveItemDialog';
 
 interface FolderItemProps {
   folder: Folder;
-  onDoubleClick: (folderId: string) => void;
+  onClick: () => void;
 }
 
-function FolderItemComponent({ folder, onDoubleClick }: FolderItemProps) {
-  const handleRowDoubleClick = () => {
-    onDoubleClick(folder.id);
+function FolderItemComponent({ folder, onClick }: FolderItemProps) {
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+
+  const handleDropdownSelect = (event: Event) => {
+    event.stopPropagation();
   };
 
-  // TODO: Adapt TableCell structure to match TraceListItem or desired layout
   return (
-    <TableRow
-      onDoubleClick={handleRowDoubleClick}
-      className="cursor-pointer hover:bg-muted/50 transition-colors"
-      aria-label={`Folder ${folder.name}`}
-    >
-      <TableCell className="pl-6 font-medium py-5">
-        <div className="flex items-center gap-2">
-          <FolderIcon className="h-4 w-4 text-sky-500 flex-shrink-0" />
-          <span className="truncate">{folder.name}</span>
-        </div>
-      </TableCell>
-      {/* Placeholder cells to match TraceListItem columns - adjust as needed */}
-      <TableCell className="text-muted-foreground py-3">Folder</TableCell> {/* Type/Owner */} 
-      <TableCell className="py-3"></TableCell> {/* Branch */} 
-      <TableCell className="py-3"></TableCell> {/* Commit */} 
-      <TableCell className="py-3"></TableCell> {/* Device */} 
-      <TableCell className="py-3"></TableCell> {/* Duration */} 
-      <TableCell className="text-muted-foreground py-3">
-        {/* Display folder updated_at date */} 
-        {new Date(folder.updated_at).toLocaleDateString(undefined, {
-            year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-        })}
-      </TableCell>
-      <TableCell className="text-right pr-6 py-3">{/* Actions? Maybe move/delete icons */}</TableCell>
-    </TableRow>
+    <>
+      <TableRow
+        className="cursor-pointer hover:bg-muted/50 transition-colors group"
+        onClick={onClick}
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
+      >
+        <TableCell className="pl-6 font-medium">
+          <div className="flex items-center">
+            <FolderIcon className="h-5 w-5 mr-3 text-blue-500 flex-shrink-0" />
+            <span className="truncate" title={folder.name}>{folder.name}</span>
+          </div>
+        </TableCell>
+        <TableCell className="text-muted-foreground">Folder</TableCell>
+        <TableCell></TableCell>
+        <TableCell></TableCell>
+        <TableCell></TableCell>
+        <TableCell></TableCell>
+        <TableCell className="text-muted-foreground">
+          {formatDistanceToNow(new Date(folder.updated_at || folder.created_at), { addSuffix: true })}
+        </TableCell>
+        <TableCell className="text-right pr-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={handleDropdownSelect}>
+              <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Folder Actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onSelect={handleDropdownSelect}>
+              <DropdownMenuItem onClick={(e) => {e.stopPropagation(); onClick()}}>Open</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsMoveDialogOpen(true)}>
+                <Move className="mr-2 h-4 w-4" /> Move
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+
+      {isMoveDialogOpen && (
+        <MoveItemDialog
+          isOpen={isMoveDialogOpen}
+          setIsOpen={setIsMoveDialogOpen}
+          itemsToMove={{ traces: [], folders: [folder.id] }}
+          itemNames={[folder.name]}
+          initialFolderId={folder.parent_folder_id}
+        />
+      )}
+    </>
   );
 }
 

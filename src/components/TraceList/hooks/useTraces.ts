@@ -2,9 +2,10 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
-import { traceApi, DirectoryListingResponse, ApiError, Folder } from "@/lib/api";
+import { traceApi, DirectoryListingResponse, ApiError } from "@/lib/api";
 
 const TRACE_LIST_PAGE_SIZE = 10;
+export const DIRECTORY_LISTING_QUERY_KEY = "directoryListing";
 
 export function useTraces() {
   const [page, setPage] = useState(0);
@@ -16,14 +17,17 @@ export function useTraces() {
   const currentFolderId = useMemo(() => folderIdFromParams || null, [folderIdFromParams]);
 
   const { data: queryData, isLoading, error } = useQuery<DirectoryListingResponse, ApiError>({
-    queryKey: ["directoryListing", currentFolderId, page, searchQuery],
+    queryKey: [DIRECTORY_LISTING_QUERY_KEY, currentFolderId, page, searchQuery],
     queryFn: async () => {
       console.log(`Fetching listing for folder: ${currentFolderId || 'root'}, page: ${page}, search: ${searchQuery}`);
       const response = await traceApi.getDirectoryListing(
           currentFolderId,
-          page, 
-          TRACE_LIST_PAGE_SIZE, 
-          searchQuery
+          {
+            page: page,
+            limit: TRACE_LIST_PAGE_SIZE,
+            searchQuery: searchQuery,
+            itemTypeFilter: 'all'
+          }
       );
       if (response.error) {
         toast({
@@ -33,7 +37,7 @@ export function useTraces() {
         });
         throw response.error;
       }
-      return response.data || { folders: [], traces: [], path: [], totalCount: 0 };
+      return response.data || { folders: [], traces: [], path: [], totalCount: 0, currentFolder: null };
     },
     placeholderData: (previousData) => previousData,
   });
@@ -44,7 +48,7 @@ export function useTraces() {
       toast({
         title: "Trace deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['directoryListing', currentFolderId] });
+      queryClient.invalidateQueries({ queryKey: [DIRECTORY_LISTING_QUERY_KEY, currentFolderId] });
     },
     onError: (error: ApiError, traceId) => {
       toast({
@@ -62,7 +66,7 @@ export function useTraces() {
       toast({
         title: `Folder "${variables.name}" created successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['directoryListing', variables.parentFolderId] });
+      queryClient.invalidateQueries({ queryKey: [DIRECTORY_LISTING_QUERY_KEY, variables.parentFolderId] });
     },
     onError: (error: ApiError, variables) => {
       toast({
