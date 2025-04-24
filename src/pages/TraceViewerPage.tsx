@@ -6,7 +6,7 @@ import SpeedscopeViewer, { SpeedscopeViewType } from "@/components/SpeedscopeVie
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { getTraceBlob } from "@/lib/storage";
+import { getTraceBlob } from "@/lib/api/storage";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, MessageSquare } from 'lucide-react';

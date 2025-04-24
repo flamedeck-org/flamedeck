@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
 import { traceApi, DirectoryListingResponse, ApiError } from "@/lib/api";
+import { useAuth } from '@/contexts/AuthContext';
 
 const TRACE_LIST_PAGE_SIZE = 10;
 export const DIRECTORY_LISTING_QUERY_KEY = "directoryListing";
@@ -16,6 +17,7 @@ export function useTraces() {
 
   const currentFolderId = useMemo(() => folderIdFromParams || null, [folderIdFromParams]);
 
+  const { user } = useAuth();
   const { data: queryData, isLoading, error } = useQuery<DirectoryListingResponse, ApiError>({
     queryKey: [DIRECTORY_LISTING_QUERY_KEY, currentFolderId, page, searchQuery],
     queryFn: async () => {
@@ -23,6 +25,7 @@ export function useTraces() {
       const response = await traceApi.getDirectoryListing(
           currentFolderId,
           {
+            userId: user?.id,
             page: page,
             limit: TRACE_LIST_PAGE_SIZE,
             searchQuery: searchQuery,
@@ -61,7 +64,7 @@ export function useTraces() {
 
   const createFolderMutation = useMutation({
     mutationFn: ({ name, parentFolderId }: { name: string; parentFolderId: string | null }) => 
-      traceApi.createFolder(name, parentFolderId),
+      traceApi.createFolder(name, user?.id, parentFolderId),
     onSuccess: (data, variables) => {
       toast({
         title: `Folder "${variables.name}" created successfully`,
