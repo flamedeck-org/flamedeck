@@ -73,6 +73,13 @@
     --trace: 210 40% 98%; /* Adjust trace colors if needed for dark mode */
     --trace-foreground: 222.2 47.4% 11.2%;
   }
+
+  /* Hide browser's default clear button for search inputs */
+  .hide-native-search-cancel-button::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+  }
 }
 
 @layer base {

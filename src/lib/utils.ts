@@ -40,3 +40,12 @@ export function getInitials(name: string | null | undefined): string {
   
   return (firstInitial + secondInitial).toUpperCase();
 }
+
+/**
+ * Formats a duration in milliseconds to a readable string (e.g., "120ms", "1.23s").
+ */
+export const formatDuration = (ms: number | undefined): string => {
+  if (ms === undefined) return "Unknown";
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+};

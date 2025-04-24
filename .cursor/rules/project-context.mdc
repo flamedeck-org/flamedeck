@@ -28,8 +28,16 @@ This application is a web-based tool designed to view and collaborate on perform
 
 *   `src/`: Main application source code.
     *   `components/`: Reusable UI components. This is where the speedscope UI lives
+    *   `hooks/`: Reusable hooks
     *   `pages/`: Top-level page components.
-    *   `lib/`: Utility functions - this is where the speedscope core logic lives.
+    *   `lib/`: Utility functions - this is where the speedscope core logic lives. Contains:
+        *   `api.ts`: Functions for interacting with the backend API (Supabase).
+        *   `utils.ts`: General-purpose utility functions used across the application.
+        *   `storage.ts`: Logic related to trace file storage and retrieval (Supabase Storage).
+        *   `speedscope-core/`: Core logic adapted from Speedscope for trace data processing.
+        *   `speedscope-gl/`: WebGL rendering logic adapted from Speedscope for visualizations.
+        *   `speedscope-import/`: Logic for importing various trace file formats.
+        *   `util/`: More specific utility functions
     *   `types/`: TypeScript definitions.
     *   `hooks/`: Custom React hooks.
     *   `integrations/`: Third-party service integrations (e.g., Supabase).
@@ -38,6 +46,7 @@ This application is a web-based tool designed to view and collaborate on perform
     *   `main.tsx`: Application entry point.
 *   `public/`: Static assets.
 *   `supabase/`: Supabase configuration/migration files.
+    * `types.ts`: The current structure of the supabase database
 *   `speedscope/`: Contains a reference implementation of the Speedscope profiler viewer. Note that parts of this code have been copied and adapted within the `src/` directory for use in the application.
 
 ## Configuration Files

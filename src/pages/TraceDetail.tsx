@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
@@ -31,6 +31,7 @@ import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
 import { useTraceDetails } from '@/hooks/useTraceDetails'; // Import the hook
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar imports
 import { useAuth } from "@/contexts/AuthContext"; // Added Auth context import
+import { formatDuration } from "@/lib/utils"; // Import formatDuration
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -116,12 +117,6 @@ const TraceDetail: React.FC = () => {
       hour12: true
     };
     return `${date.toLocaleDateString(undefined, dateOptions)} ${date.toLocaleTimeString(undefined, timeOptions)}`;
-  };
-
-  const formatDuration = (ms: number | undefined) => {
-    if (ms === undefined) return "Unknown";
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
   };
 
   const handleShareClick = () => { // Added handler
