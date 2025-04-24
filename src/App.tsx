@@ -34,6 +34,7 @@ const AppRoutes = () => {
       <Route path="/" element={user ? <Navigate to="/traces" replace /> : <Index />} />
       <Route path="/login" element={<Login />} />
       <Route path="/traces" element={<Traces />} />
+      <Route path="/traces/folder/:folderId" element={<Traces />} />
       <Route path="/traces/:id" element={<TraceDetail />} />
       <Route path="/traces/:id/view" element={<TraceViewerPage />} />
       <Route path="/upload" element={<Upload />} />
