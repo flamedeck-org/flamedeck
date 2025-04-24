@@ -5,18 +5,18 @@ import { Folder } from '@/lib/api'; // Assuming Folder type is exported from api
 
 interface FolderItemProps {
   folder: Folder;
-  onClick: (folderId: string) => void;
+  onDoubleClick: (folderId: string) => void;
 }
 
-function FolderItemComponent({ folder, onClick }: FolderItemProps) {
-  const handleRowClick = () => {
-    onClick(folder.id);
+function FolderItemComponent({ folder, onDoubleClick }: FolderItemProps) {
+  const handleRowDoubleClick = () => {
+    onDoubleClick(folder.id);
   };
 
   // TODO: Adapt TableCell structure to match TraceListItem or desired layout
   return (
     <TableRow
-      onClick={handleRowClick}
+      onDoubleClick={handleRowDoubleClick}
       className="cursor-pointer hover:bg-muted/50 transition-colors"
       aria-label={`Folder ${folder.name}`}
     >
