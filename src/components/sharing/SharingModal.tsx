@@ -88,7 +88,7 @@ function SharingModalImpl() {
   const isLoading = isLoadingDetails || isLoadingPermissions;
   const fetchError = detailsError?.message || permissionsFetchError;
 
-  const permissions: TracePermissionWithUser[] = permissionsData ?? [];
+  const permissions: TracePermissionWithUser[] = useMemo(() => permissionsData ?? [], [permissionsData]);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -199,40 +199,44 @@ function SharingModalImpl() {
   const currentUserPermission = useMemo(() => permissions.find(p => p.user?.id === currentUser?.id), [permissions, currentUser]);
   const canManagePermissions = currentUserPermission?.role === 'editor' || currentUserPermission?.role === 'owner';
 
-  // --- Debounced Search Function (Adapted for topInput) ---
-  useEffect(() => {
-    const performSearch = async (query: string) => {
-      if (query.trim().length < 2) {
-        setSearchResults([]);
-        setIsSearching(false);
-        setInvitePopoverOpen(false);
-        return;
-      }
-      setIsSearching(true);
-      try {
-        const response = await traceApi.searchUsers(query);
-        if (response.data) {
-          const existingUserIds = new Set(permissions.map(p => p.user?.id).filter(Boolean));
-          const filteredResults = response.data.filter(u => u.id !== currentUser?.id && !existingUserIds.has(u.id));
-          setSearchResults(filteredResults);
-          setInvitePopoverOpen(true);
-        } else {
-          setSearchResults([]);
-          setInvitePopoverOpen(true);
-          console.error("Search API error:", response.error);
+  // --- Search Function (Memoized) ---
+  const performSearch = useCallback(async (query: string) => {
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      setInvitePopoverOpen(false);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const response = await traceApi.searchUsers(query);
+      if (response.data) {
+        const existingUserIds = new Set(permissions.map(p => p.user?.id).filter(Boolean));
+        const filteredResults = response.data.filter(u => u.id !== currentUser?.id && !existingUserIds.has(u.id));
+        setSearchResults(filteredResults);
+        // Only open popover if there are results or if it's not already open
+        // This helps prevent unnecessary state updates if the popover is already open
+        if (filteredResults.length > 0) {
+             setInvitePopoverOpen(prev => !prev ? true : prev);
         }
-      } catch (err) {
-        console.error("Search function failed:", err);
+      } else {
         setSearchResults([]);
-        setInvitePopoverOpen(true);
-      } finally {
-        setIsSearching(false);
+        setInvitePopoverOpen(prev => !prev ? true : prev); // Keep open to show "No users found"
+        console.error("Search API error:", response.error);
       }
-    };
+    } catch (err) {
+      console.error("Search function failed:", err);
+      setSearchResults([]);
+      setInvitePopoverOpen(prev => !prev ? true : prev); // Keep open to show error state?
+    } finally {
+      setIsSearching(false);
+    }
+  }, [permissions, currentUser?.id, setInvitePopoverOpen, setSearchResults, setIsSearching]); // Added state setters as dependencies
 
+  // --- Effect to run search on debounced query change ---
+  useEffect(() => {
     performSearch(debouncedSearchQuery);
-
-  }, [debouncedSearchQuery, permissions, currentUser?.id]);
+  }, [debouncedSearchQuery, performSearch]); // Depend on debounced query and the memoized search function
 
   // Handler when selecting user from search results (triggers invite)
   const handleUserSelectAndInvite = (user: UserProfileSearchResult) => {
