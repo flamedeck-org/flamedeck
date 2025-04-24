@@ -37,8 +37,8 @@ export interface PaginatedTracesResponse {
 // --- NEW: Folder Types ---
 type FolderRow = Database['public']['Tables']['folders']['Row'];
 
-// Interface for a folder
-export interface Folder extends FolderRow {}
+// Use type alias instead of interface extending directly
+export type Folder = FolderRow;
 
 // Interface for items listed within a folder (could be a folder or a trace)
 export interface DirectoryItem {
@@ -842,3 +842,5 @@ export const traceApi = {
 
   // --- END NEW FOLDER MANAGEMENT ---
 };
+
+export type { ApiError };
