@@ -290,7 +290,7 @@ function TraceListComponent() {
                 <FolderItem 
                   key={`folder-${folder.id}`} 
                   folder={folder} 
-                  onClick={handleFolderClick} 
+                  onDoubleClick={handleFolderClick}
                 />
               ))}
               {traces.map((trace) => (
@@ -300,7 +300,7 @@ function TraceListComponent() {
                   currentUser={currentUser}
                   onDelete={deleteTrace}
                   isDeleting={isDeleting}
-                  onClick={() => navigate(`/traces/${trace.id}`)}
+                  onDoubleClick={() => navigate(`/traces/${trace.id}`)}
                 />
               ))}
             </TableBody>

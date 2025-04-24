@@ -264,15 +264,30 @@ export type Database = {
               p_user_id: string
               p_offset: number
               p_limit: number
-              p_search_query?: string
+              p_search_query: string
               p_folder_id?: string
             }
-        Returns: Database["public"]["CompositeTypes"]["trace_with_owner"][]
+        Returns: {
+          id: string
+          user_id: string
+          uploaded_at: string
+          commit_sha: string
+          branch: string
+          scenario: string
+          device_model: string
+          duration_ms: number
+          blob_path: string
+          file_size_bytes: number
+          notes: string
+          profile_type: string
+          owner: Json
+          folder_id: string
+        }[]
       }
       get_user_accessible_traces_count: {
         Args:
           | { p_user_id: string }
-          | { p_user_id: string; p_search_query?: string; p_folder_id?: string }
+          | { p_user_id: string; p_search_query: string; p_folder_id?: string }
         Returns: number
       }
       gtrgm_compress: {
