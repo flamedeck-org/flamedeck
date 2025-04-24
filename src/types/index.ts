@@ -58,5 +58,7 @@ export interface TraceComment {
   content: string; // text
   trace_timestamp_ms: number | null; // integer or bigint
   created_at: string; // timestamptz
-  frame_key?: string | number | null; // identifier for a specific frame in the flamegraph
+  updated_at: string; // timestamptz - Added
+  comment_type: string; // Added
+  comment_identifier: string | null; // Added
 }

@@ -333,7 +333,11 @@ const TraceDetail: React.FC = () => {
               <Separator className="mb-4" />
               
               <div className="mb-6">
-                <CommentForm traceId={traceId} />
+                <CommentForm 
+                  traceId={traceId} 
+                  commentType="overview" // Use 'overview' for general trace-level comments
+                  commentIdentifier={null} // Identifier must be null for 'overview'
+                />
               </div>
 
               <CommentList traceId={traceId} />

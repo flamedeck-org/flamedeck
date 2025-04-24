@@ -2,7 +2,6 @@ import { TraceMetadata, TraceUpload, ApiResponse, TraceComment, ApiError } from 
 import { Database } from "@/integrations/supabase/types";
 import { uploadJson, listUserTraces } from "./storage";
 import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
 import { PostgrestError } from '@supabase/supabase-js';
 
 // Define the profile type using the generated table type
@@ -11,6 +10,9 @@ type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
 // Define types for comment data
 export interface TraceCommentWithAuthor extends TraceComment {
   author: Pick<UserProfileType, 'id' | 'username' | 'avatar_url' | 'first_name' | 'last_name'> | null;
+  comment_type: string;
+  comment_identifier: string | null;
+  updated_at: string;
 }
 
 // Define types for permission data
@@ -21,8 +23,9 @@ export interface TracePermissionWithUser extends Omit<TracePermissionRow, 'user_
   user: Pick<UserProfileType, 'id' | 'username' | 'avatar_url' | 'first_name' | 'last_name'> | null; // User details (null for public)
 }
 
-export type NewTraceComment = Omit<TraceComment, 'id' | 'created_at' | 'user_id'> & {
-  frame_key?: string | number | null; // Optional: Identifier for the specific frame
+export type NewTraceComment = Omit<TraceComment, 'id' | 'created_at' | 'user_id' | 'updated_at'> & {
+  comment_type: string;
+  comment_identifier: string | null;
 };
 
 // Define a type for the paginated response structure
@@ -290,7 +293,16 @@ export const traceApi = {
       const { data, error } = await supabase
         .from('trace_comments')
         .select<string, TraceCommentWithAuthor>(`
-          *,
+          id,
+          trace_id,
+          user_id,
+          content,
+          created_at,
+          updated_at,
+          parent_comment_id,
+          trace_timestamp_ms,
+          comment_type,
+          comment_identifier,
           author: user_profiles ( id, username, avatar_url, first_name, last_name )
         `)
         .eq('trace_id', traceId)
@@ -326,7 +338,8 @@ export const traceApi = {
           content: commentData.content,
           parent_comment_id: commentData.parent_comment_id,
           trace_timestamp_ms: commentData.trace_timestamp_ms,
-          frame_key: commentData.frame_key !== null ? String(commentData.frame_key) : null,
+          comment_type: commentData.comment_type,
+          comment_identifier: commentData.comment_identifier,
           user_id: user.id,
         })
         .select('*')

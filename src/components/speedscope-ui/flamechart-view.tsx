@@ -1,4 +1,4 @@
-import { Fragment, Component } from 'react';
+import { Fragment, Component, MouseEvent as ReactMouseEvent } from 'react';
 
 import {CallTreeNode } from '../../lib/speedscope-core/profile';
 import {Rect, Vec2, AffineTransform} from '../../lib/speedscope-core/math';
@@ -9,9 +9,17 @@ import {Sizes } from './style'
 import {FlamechartDetailView} from './flamechart-detail-view'
 import {FlamechartPanZoomView} from './flamechart-pan-zoom-view'
 import {Hovertip} from './hovertip'
-import {FlamechartViewProps} from './flamechart-view-container'
+import {FlamechartViewProps as FlamechartViewContainerProps} from './flamechart-view-container'
 import {ProfileSearchContext} from './search-view'
 import {FlamechartSearchView} from './flamechart-search-view'
+
+interface FlamechartViewProps extends FlamechartViewContainerProps {
+  // Add specific props needed by FlamechartView if any are missing 
+  // from FlamechartViewContainerProps after the rename
+  // Ensure types match what's passed down.
+  onCellSelectForComment?: (identifier: string | null, type: string) => void; 
+  commentedCellIds?: string[];
+}
 
 export class FlamechartView extends Component<FlamechartViewProps> {
   private configSpaceSize() {
@@ -49,18 +57,20 @@ export class FlamechartView extends Component<FlamechartViewProps> {
     this.setConfigSpaceViewportRect(transform.transformRect(this.props.configSpaceViewportRect))
   }
 
-  private onNodeHover = (hover: {node: CallTreeNode; event: MouseEvent} | null) => {
-    this.props.setNodeHover(hover)
+  private onNodeHover = (hover: {node: CallTreeNode; event: ReactMouseEvent} | null) => {
+    this.props.setNodeHover(hover as any)
   }
 
   onNodeClick = (node: CallTreeNode | null) => {
     this.props.setSelectedNode(node)
   }
 
-  // Handler for when user wants to comment on a frame
-  onFrameComment = (key: string | number | null) => {
-    if (this.props.onFrameSelectForComment) {
-      this.props.onFrameSelectForComment(key)
+  // Rename handler and update signature to match prop
+  onCellComment = (identifier: string | null) => {
+    // Assuming 'chrono' type for now, this might need adjustment
+    // if FlamechartView is used for other view types directly
+    if (this.props.onCellSelectForComment) {
+      this.props.onCellSelectForComment(identifier, 'chrono'); 
     }
   }
 
@@ -121,9 +131,9 @@ export class FlamechartView extends Component<FlamechartViewProps> {
                 flamechart={this.props.flamechart}
                 flamechartRenderer={this.props.flamechartRenderer}
                 renderInverted={false}
-                onNodeHover={this.onNodeHover as any}
+                onNodeHover={this.onNodeHover}
                 onNodeSelect={this.onNodeClick}
-                onFrameSelectForComment={this.onFrameComment}
+                onCellSelectForComment={this.onCellComment} 
                 selectedNode={this.props.selectedNode}
                 transformViewport={this.transformViewport}
                 configSpaceViewportRect={this.props.configSpaceViewportRect}
@@ -131,7 +141,7 @@ export class FlamechartView extends Component<FlamechartViewProps> {
                 logicalSpaceViewportSize={this.props.logicalSpaceViewportSize}
                 setLogicalSpaceViewportSize={this.setLogicalSpaceViewportSize}
                 searchResults={searchResults}
-                commentedFrameKeys={this.props.commentedFrameKeys}
+                commentedCellIds={this.props.commentedCellIds} 
               />
               <FlamechartSearchView />
             </Fragment>
