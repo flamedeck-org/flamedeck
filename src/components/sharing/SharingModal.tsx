@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useCallback } from 'react';
+import { memo, useMemo, useState, useCallback, useEffect } from 'react';
 import { useSharingModal } from '@/hooks/useSharingModal';
 import {
   Dialog,
@@ -33,10 +33,10 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList, CommandInput } from "@/components/ui/command";
-import { debounce } from 'lodash-es';
 import { Database } from '@/integrations/supabase/types';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTraceDetails } from '@/hooks/useTraceDetails';
+import { useDebounce } from '@/hooks/useDebounce';
 
 // Type for user profile needed for search
 type UserProfileSearchResult = Database['public']['Tables']['user_profiles']['Row'];
@@ -53,6 +53,8 @@ function SharingModalImpl() {
   const [searchResults, setSearchResults] = useState<UserProfileSearchResult[]>([]);
   const [invitePopoverOpen, setInvitePopoverOpen] = useState(false);
   const [selectedInviteRole, setSelectedInviteRole] = useState<TraceRole>('viewer');
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
 
   // Fetch trace details using the new hook
   const { 
@@ -198,8 +200,8 @@ function SharingModalImpl() {
   const canManagePermissions = currentUserPermission?.role === 'editor' || currentUserPermission?.role === 'owner';
 
   // --- Debounced Search Function (Adapted for topInput) ---
-  const debouncedSearch = useCallback(
-    debounce(async (query: string) => {
+  useEffect(() => {
+    const performSearch = async (query: string) => {
       if (query.trim().length < 2) {
         setSearchResults([]);
         setIsSearching(false);
@@ -213,19 +215,24 @@ function SharingModalImpl() {
           const existingUserIds = new Set(permissions.map(p => p.user?.id).filter(Boolean));
           const filteredResults = response.data.filter(u => u.id !== currentUser?.id && !existingUserIds.has(u.id));
           setSearchResults(filteredResults);
+          setInvitePopoverOpen(true);
         } else {
           setSearchResults([]);
+          setInvitePopoverOpen(true);
           console.error("Search API error:", response.error);
         }
       } catch (err) {
         console.error("Search function failed:", err);
         setSearchResults([]);
+        setInvitePopoverOpen(true);
       } finally {
         setIsSearching(false);
       }
-    }, 300),
-    [permissions, currentUser]
-  );
+    };
+
+    performSearch(debouncedSearchQuery);
+
+  }, [debouncedSearchQuery, permissions, currentUser?.id]);
 
   // Handler when selecting user from search results (triggers invite)
   const handleUserSelectAndInvite = (user: UserProfileSearchResult) => {
@@ -293,7 +300,8 @@ function SharingModalImpl() {
                 <Command filter={(value, search) => 1}>
                   <CommandInput
                     placeholder="Search users..."
-                    onValueChange={(search) => debouncedSearch(search)}
+                    value={localSearchQuery}
+                    onValueChange={setLocalSearchQuery}
                     disabled={isSearching}
                   />
                   <CommandList>
