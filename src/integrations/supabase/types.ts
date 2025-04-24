@@ -11,33 +11,39 @@ export type Database = {
     Tables: {
       trace_comments: {
         Row: {
+          comment_identifier: string | null
+          comment_type: string
           content: string
           created_at: string
-          frame_key: string | null
           id: string
           parent_comment_id: string | null
           trace_id: string
           trace_timestamp_ms: number | null
+          updated_at: string
           user_id: string
         }
         Insert: {
+          comment_identifier?: string | null
+          comment_type: string
           content: string
           created_at?: string
-          frame_key?: string | null
           id?: string
           parent_comment_id?: string | null
           trace_id: string
           trace_timestamp_ms?: number | null
+          updated_at?: string
           user_id: string
         }
         Update: {
+          comment_identifier?: string | null
+          comment_type?: string
           content?: string
           created_at?: string
-          frame_key?: string | null
           id?: string
           parent_comment_id?: string | null
           trace_id?: string
           trace_timestamp_ms?: number | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: [

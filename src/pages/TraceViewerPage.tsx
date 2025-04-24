@@ -9,7 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getTraceBlob } from "@/lib/storage";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MessageSquare } from 'lucide-react';
+import { TraceViewerCommentSidebar } from '@/components/TraceViewerCommentList/TraceViewerCommentSidebar';
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -64,9 +65,9 @@ const TraceViewerPage: React.FC = () => {
           </div>
         )}
 
-        {!isLoadingBlob && !blobError && traceBlobData && (
+        {!isLoadingBlob && !blobError && traceBlobData && id && (
           <div className="h-full w-full flex flex-col">
-            <div className="flex justify-between items-center flex-shrink-0 border-b z-[1] bg-background px-4">
+            <div className="flex justify-between items-center flex-shrink-0 border-b z-[1] bg-background px-4 gap-4">
               <Tabs value={selectedView} onValueChange={(value) => setSelectedView(value as SpeedscopeViewType)} className="inline-block">
                 <TabsList className="inline-flex rounded-none bg-transparent text-foreground p-0 border-none">
                   <TabsTrigger value="time_ordered" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Time Ordered</TabsTrigger>
@@ -74,14 +75,15 @@ const TraceViewerPage: React.FC = () => {
                   <TabsTrigger value="sandwich" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Sandwich</TabsTrigger>
                 </TabsList>
               </Tabs>
-              {id && (
+              <div className="flex items-center gap-2">
+                <TraceViewerCommentSidebar traceId={id} activeView={selectedView} />
                 <Link to={`/traces/${id}`}>
                   <Button variant="ghost" size="sm">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Details
                   </Button>
                 </Link>
-              )}
+              </div>
             </div>
             <div className="flex-grow overflow-hidden relative">
               <ErrorBoundary
@@ -101,9 +103,9 @@ const TraceViewerPage: React.FC = () => {
           </div>
         )}
 
-        {!isLoadingBlob && !blobError && !traceBlobData && (
+        {!isLoadingBlob && !blobError && (!traceBlobData || !id) && (
            <div className="flex items-center justify-center h-full w-full">
-              <p>Trace data could not be loaded (missing path or data).</p>
+              <p>Trace data could not be loaded (missing path, data, or ID).</p>
            </div>
         )}
       </Layout>

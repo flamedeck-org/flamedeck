@@ -67,7 +67,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </div>
           {/* Add Edit/Delete buttons later if needed */}
         </div>
-        <p className="text-sm pb-0.5">{comment.content}</p>
+        <p className="text-sm pb-0.5 whitespace-pre-wrap">{comment.content}</p>
         <div className="flex items-center pt-0">
           {canReply && (
             <Button

@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -24,4 +23,20 @@ export function formatDate(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+/**
+ * Generates initials from a name string.
+ * Tries to take the first letter of the first two words.
+ */
+export function getInitials(name: string | null | undefined): string {
+  if (!name) return '?';
+  
+  const words = name.trim().split(/\s+/);
+  if (words.length === 0) return '?';
+  
+  const firstInitial = words[0][0] || '?';
+  const secondInitial = words.length > 1 ? (words[1][0] || '') : '';
+  
+  return (firstInitial + secondInitial).toUpperCase();
 }
