@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { traceApi, NewTraceComment } from '@/lib/api';
+import { traceApi, NewTraceComment, ApiError } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -38,7 +38,7 @@ const ProfileCommentForm: React.FC<ProfileCommentFormProps> = ({
   }, [commentIdentifier, commentType]);
 
   const commentMutation = useMutation({
-    mutationFn: (newComment: NewTraceComment & { trace_id: string }) => traceApi.createTraceComment(newComment),
+    mutationFn: (newComment: NewTraceComment & { trace_id: string }) => traceApi.createTraceComment(newComment, user.id),
     onSuccess: () => {
       setContent('');
       queryClient.invalidateQueries({ queryKey: ['traceComments', traceId] });

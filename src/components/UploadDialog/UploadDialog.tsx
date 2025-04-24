@@ -14,6 +14,7 @@ import { TraceUpload } from "@/types";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useTraceProcessor } from "./hooks/useTraceProcessor";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Define the shape of our form data
 type FormFields = Omit<
@@ -31,6 +32,7 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -185,7 +187,7 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
       };
 
       const fileToUpload = new File([processedFile], `${file.name}.speedscope.json`, { type: processedFile.type });
-      const response = await traceApi.uploadTrace(fileToUpload, finalMetadata, initialFolderId);
+      const response = await traceApi.uploadTrace(fileToUpload, finalMetadata, user.id, initialFolderId);
 
       if (response.error) {
         setUploadError(response.error.message);
@@ -206,7 +208,7 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
     } finally {
       setIsUploading(false);
     }
-  }, [ // Add dependencies for onSubmit
+  }, [ 
       file, 
       isProcessing, 
       processingError, 
@@ -216,7 +218,8 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
       isTargetFolderError, 
       initialFolderId, 
       toast, 
-      navigate
+      navigate,
+      user
   ]);
 
   // --- Submit Disabled State (Memoized) --- 
