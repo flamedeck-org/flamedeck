@@ -6,10 +6,8 @@ import { Folder, traceApi } from "@/lib/api";
 import { TraceMetadata } from "@/types";
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
 import { PostgrestError } from '@supabase/supabase-js';
 
-type FolderViewData = Database['public']['Functions']['get_folder_view_data']['Returns'];
 type ExplicitFolderViewData = {
   path: Pick<Folder, 'id' | 'name'>[];
   currentFolder: Folder | null;
@@ -19,6 +17,10 @@ type ExplicitFolderViewData = {
 
 const TRACE_LIST_PAGE_SIZE = 10;
 export const FOLDER_VIEW_QUERY_KEY = "folderView";
+
+export function getFolderViewQueryKey(folderId: string | null, searchQuery: string) {
+  return [FOLDER_VIEW_QUERY_KEY, folderId || 'root', searchQuery];
+}
 
 export function useTraces() {
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -43,7 +45,7 @@ export function useTraces() {
       string[],
       number
     >({
-    queryKey: [FOLDER_VIEW_QUERY_KEY, currentFolderId || 'root', searchQuery],
+    queryKey: getFolderViewQueryKey(currentFolderId, searchQuery),
     queryFn: async ({ pageParam = 0 }) => {
         if (!user?.id) throw new Error("User not authenticated");
 

@@ -7,9 +7,7 @@ const Traces: React.FC = () => {
   return (
     <AuthGuard>
       <Layout>
-        <div>
-          <TraceList />
-        </div>
+        <TraceList />
       </Layout>
     </AuthGuard>
   );
