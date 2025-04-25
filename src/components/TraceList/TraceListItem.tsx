@@ -28,6 +28,7 @@ import { formatRelativeDate, formatDuration, getInitials } from "@/lib/utils";
 import { User } from '@supabase/supabase-js'; // Import User type if needed
 import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
 import { MoveItemDialog } from './MoveItemDialog'; // Import the new dialog
+import { RenameTraceDialog } from './RenameTraceDialog'; // Import the new dialog
 import { ProfileType } from '@/lib/speedscope-import'; // Import ProfileType
 import { cn } from '@/lib/utils';
 
@@ -62,10 +63,11 @@ const getIconForProfileType = (profileType?: ProfileType | string | null): React
 
 interface TraceListItemProps {
   trace: TraceMetadata;
-  currentUser: User | null; // Use appropriate User type from your auth context or Supabase
+  currentUser: User | null;
   onDelete: (traceId: string) => void;
   isDeleting: boolean;
   onClick: () => void;
+  currentFolderId: string | null;
 }
 
 const TraceListItemComponent: React.FC<TraceListItemProps> = ({
@@ -74,13 +76,15 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
   onDelete,
   isDeleting,
   onClick,
+  currentFolderId,
 }) => {
   const navigate = useNavigate();
-  const { openModal: openShareModal } = useSharingModal(); // Get the modal function
+  const { openModal: openShareModal } = useSharingModal();
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false); // State for Move dialog
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
 
   const isOwnerCurrentUser = useMemo(() => 
     currentUser && trace.owner?.id === currentUser.id, 
@@ -94,7 +98,6 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
     [isOwnerCurrentUser, trace.owner?.username, trace.owner?.first_name, trace.owner?.last_name]
   );
   
-  // Assuming getInitials exists in utils, otherwise adapt/import
   const ownerInitials = useMemo(() => 
     getInitials(ownerName === "me" ? currentUser?.email : ownerName), 
     [ownerName, currentUser?.email]
@@ -114,7 +117,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
   const handleOpenContextMenuFromButton = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation(); // Prevent row click
     const rect = event.currentTarget.getBoundingClientRect();
-    openContextMenuAtPosition(rect.left - 135, rect.bottom + 5); // Open below the button
+    openContextMenuAtPosition(rect.left - 135, rect.bottom + 5);
   }, [openContextMenuAtPosition]);
 
   const handleNavigateToViewer = useCallback((e?: React.MouseEvent) => {
@@ -132,22 +135,22 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
   const handleOpenDeleteDialog = useCallback(() => {
     setIsDeleteDialogOpen(true);
     setContextMenu(null);
-  }, [setContextMenu]);
+  }, []);
 
   const handleShare = useCallback(() => {
     openShareModal(trace.id);
     setContextMenu(null);
   }, [openShareModal, trace.id]);
 
-  const handleRenameStub = useCallback(() => {
-    console.log("Rename action triggered for trace:", trace.id);
+  const handleOpenRenameDialog = useCallback(() => {
+    setIsRenameDialogOpen(true);
     setContextMenu(null);
-  }, [trace.id]);
+  }, []);
 
   const handleOpenMoveDialog = useCallback(() => {
     setIsMoveDialogOpen(true);
     setContextMenu(null);
-  }, [setContextMenu]);
+  }, []);
 
   const handleStopPropagation = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -190,7 +193,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         </TableCell>
         <TableCell className="py-4">{trace.device_model || "N/A"}</TableCell>
         <TableCell className="py-4">{formatDuration(trace.duration_ms)}</TableCell>
-        <TableCell className="py-4 text-muted-foreground text-sm">{formatRelativeDate(trace.uploaded_at)}</TableCell>
+        <TableCell className="py-4 text-muted-foreground text-sm">{formatRelativeDate(trace.updated_at || trace.uploaded_at)}</TableCell>
         <TableCell className="text-right pr-6 py-4">
           <div onClick={handleStopPropagation} className="inline-flex items-center gap-1">
             {/* Restored Buttons */}
@@ -249,10 +252,12 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
           </ContextMenuItem>
           <ContextMenuDivider />
           <ContextMenuItem 
-            onClick={handleRenameStub} 
+            onClick={isOwnerCurrentUser ? handleOpenRenameDialog : undefined} 
             icon={<Edit className="h-4 w-4" />}
           >
-            Rename
+            <span className={!isOwnerCurrentUser ? "opacity-50 cursor-not-allowed" : ""}>
+              Rename
+            </span>
           </ContextMenuItem>
           <div 
             onClick={isOwnerCurrentUser ? handleOpenMoveDialog : undefined} 
@@ -274,10 +279,12 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
           </ContextMenuItem>
           <ContextMenuDivider />
           <ContextMenuItem 
-            onClick={handleOpenDeleteDialog} 
+            onClick={isOwnerCurrentUser ? handleOpenDeleteDialog : undefined} 
             icon={<Trash2 className="h-4 w-4 text-destructive" />}
           >
-            <span className="text-destructive">Delete</span>
+            <span className={!isOwnerCurrentUser ? "opacity-50 cursor-not-allowed text-destructive" : "text-destructive"}>
+              <span className="text-destructive">Delete</span>
+            </span>
           </ContextMenuItem>
         </ContextMenu>
       )}
@@ -305,15 +312,24 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         </AlertDialogContent>
       </AlertDialog>
 
-
-       {/* Move Item Dialog (conditionally rendered) */}
+       {/* Move Item Dialog */}
        {isMoveDialogOpen && (
          <MoveItemDialog
            isOpen={isMoveDialogOpen}
            setIsOpen={setIsMoveDialogOpen}
-           itemsToMove={{ traces: [trace.id], folders: [] }} // Moving a single trace
-           itemNames={[trace.scenario || `Trace ${trace.id.substring(0, 6)}`]} // Display name
-           initialFolderId={null} // Assuming traces are always in root for now
+           itemsToMove={{ traces: [trace.id], folders: [] }}
+           itemNames={[trace.scenario || `Trace ${trace.id.substring(0, 6)}`]}
+           initialFolderId={currentFolderId}
+         />
+       )}
+
+       {/* Rename Trace Dialog */}
+       {isRenameDialogOpen && (
+         <RenameTraceDialog
+           isOpen={isRenameDialogOpen}
+           setIsOpen={setIsRenameDialogOpen}
+           traceId={trace.id}
+           currentScenario={trace.scenario || ''}
          />
        )}
     </>

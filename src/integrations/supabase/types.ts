@@ -167,6 +167,7 @@ export type Database = {
           notes: string | null
           profile_type: string | null
           scenario: string | null
+          updated_at: string | null
           uploaded_at: string
           user_id: string
         }
@@ -182,6 +183,7 @@ export type Database = {
           notes?: string | null
           profile_type?: string | null
           scenario?: string | null
+          updated_at?: string | null
           uploaded_at?: string
           user_id: string
         }
@@ -197,6 +199,7 @@ export type Database = {
           notes?: string | null
           profile_type?: string | null
           scenario?: string | null
+          updated_at?: string | null
           uploaded_at?: string
           user_id?: string
         }

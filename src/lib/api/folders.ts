@@ -173,3 +173,55 @@ export async function createFolder(
     }
   }
 
+  // --- NEW: Rename Folder ---
+  export async function renameFolder(
+    folderId: string,
+    newName: string,
+    userId: string
+  ): Promise<ApiResponse<Folder>> {
+    try {
+      // Basic validation
+      if (!newName || newName.trim().length === 0 || newName.length > 255) {
+        throw new Error("Invalid new folder name.");
+      }
+      if (!folderId) {
+         throw new Error("Folder ID is required for renaming.");
+      }
+       if (!userId) {
+          throw new Error("User ID is required for renaming.");
+       }
+
+      const trimmedName = newName.trim();
+      const now = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from('folders')
+        .update({ name: trimmedName, updated_at: now })
+        .eq('id', folderId)
+        .eq('user_id', userId) // Ensure user owns the folder
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Database error renaming folder ${folderId}:`, error);
+        // Check for specific errors like duplicate names if constraints exist
+        throw error;
+      }
+
+       if (!data) {
+          throw new Error(`Folder not found (${folderId}) or user (${userId}) does not have permission to rename.`);
+       }
+
+      return { data: data as Folder, error: null };
+    } catch (error) {
+      console.error(`Error renaming folder ${folderId}:`, error);
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to rename folder",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
+    }
+  }
+
