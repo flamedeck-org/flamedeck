@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { formatDistanceToNow } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -23,6 +24,21 @@ export function formatDate(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+export function formatRelativeDate(dateInput: string | Date | null | undefined): string {
+  if (!dateInput) return 'Unknown date';
+  try {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch (error) {
+    console.error("Error formatting relative date:", error);
+    return 'Invalid date';
+  }
 }
 
 /**

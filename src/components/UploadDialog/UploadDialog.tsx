@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { traceApi, Folder, ApiError } from "@/lib/api";
-import { TraceUpload } from "@/types";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { traceApi, Folder } from "@/lib/api";
+import { TraceUpload, ApiError } from "@/types";
+import { AlertCircle, Loader2, Edit } from "lucide-react";
 import { useTraceProcessor } from "./hooks/useTraceProcessor";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { FolderSelectDialog } from "@/components/FolderSelectDialog";
 
 // Define the shape of our form data
 type FormFields = Omit<
@@ -33,49 +34,52 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const { user } = useAuth();
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(initialFolderId || null);
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // --- Fetch Folder Details --- 
   const { 
-    data: folderData, 
-    isLoading: isLoadingFolder, 
-    error: folderError 
-  } = useQuery<Folder, ApiError>({
-      queryKey: ['folder', initialFolderId], 
+    data: selectedFolderData, 
+    isLoading: isLoadingSelectedFolder, 
+    error: selectedFolderError 
+  } = useQuery<Folder | null, ApiError>({
+      queryKey: ['folder', selectedFolderId],
       queryFn: async () => {
-          if (!initialFolderId) return null; // Should not happen based on enabled flag
-          const response = await traceApi.getFolder(initialFolderId);
-          if (response.error) throw response.error; // Throw error for React Query
-          if (!response.data) throw new Error("Folder data not found after successful fetch.");
-          return response.data;
+          if (!selectedFolderId) return null;
+          const response = await traceApi.getFolder(selectedFolderId);
+          if (response.error) throw response.error;
+          return response.data ?? null;
       },
-      enabled: !!initialFolderId, // Only run query if initialFolderId is truthy
-      staleTime: 5 * 60 * 1000, // Cache folder name for 5 minutes
-      gcTime: 10 * 60 * 1000, // Garbage collect after 10 minutes
-      retry: 1, // Retry once on error
+      enabled: !!selectedFolderId,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      retry: 1,
   });
 
   // Determine display text based on query state (memoized)
   const targetFolderInfo = useMemo(() => {
-    if (!initialFolderId) return "My Traces (Root)";
-    if (isLoadingFolder) return "Loading folder name...";
-    if (folderError) return `Error loading folder: ${folderError.message}`;
-    if (folderData) return folderData.name;
+    if (selectedFolderId === null) return "My Traces (Root)";
+    if (isLoadingSelectedFolder) return "Loading folder name...";
+    if (selectedFolderError) return `Error: ${selectedFolderError.message}`;
+    if (selectedFolderData) return selectedFolderData.name;
     return "Unknown Folder";
-  }, [initialFolderId, isLoadingFolder, folderError, folderData]);
+  }, [selectedFolderId, isLoadingSelectedFolder, selectedFolderError, selectedFolderData]);
 
   // Determine if target folder has an error (memoized)
   const isTargetFolderError = useMemo(() => 
-    !initialFolderId ? false : isLoadingFolder || !!folderError || !folderData,
-    [initialFolderId, isLoadingFolder, folderError, folderData]
+    selectedFolderId === null ? false : isLoadingSelectedFolder || !!selectedFolderError,
+    [selectedFolderId, isLoadingSelectedFolder, selectedFolderError]
   );
 
   // Initialize react-hook-form
   const {
     register,
     handleSubmit: handleRHFSubmit,
+    setValue,
     formState: { errors, dirtyFields },
   } = useForm<FormFields>({
     defaultValues: {
@@ -110,19 +114,24 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
           variant: "destructive",
         });
          setFile(null);
+         setValue("scenario", "");
         return;
       }
       setFile(selectedFile);
+      const fileNameWithoutExt = selectedFile.name.split('.').slice(0, -1).join('.');
+      setValue("scenario", fileNameWithoutExt, { shouldDirty: true });
     } else {
        setFile(null);
+       setValue("scenario", "");
     }
-  }, [toast]); // Added toast dependency
+  }, [toast, setValue]);
 
   const clearFile = useCallback(() => {
     setFile(null);
     // Also clear potential processing errors related to the old file
-    setUploadError(null); 
-  }, []);
+    setUploadError(null);
+    setValue("scenario", "");
+  }, [setValue]);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -137,17 +146,30 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
           variant: "destructive",
         });
         setFile(null);
+        setValue("scenario", "");
         return;
       }
        setFile(droppedFile);
+      const fileNameWithoutExt = droppedFile.name.split('.').slice(0, -1).join('.');
+      setValue("scenario", fileNameWithoutExt, { shouldDirty: true });
     } else {
        setFile(null);
+       setValue("scenario", "");
     }
-  }, [toast]); // Added toast dependency
+  }, [toast, setValue]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   }, []);
+
+  // --- Folder Selection Handling ---
+  const handleSelectFolder = useCallback((folderId: string | null) => {
+    setSelectedFolderId(folderId);
+    if (folderId) {
+      queryClient.invalidateQueries({ queryKey: ['folder', folderId] });
+    }
+    setIsMoveDialogOpen(false);
+  }, [queryClient]);
 
   // --- Form Submission (Callback) --- 
   const onSubmit: SubmitHandler<FormFields> = useCallback(async (formData) => {
@@ -171,7 +193,7 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
        return;
     }
     // Add check for folder loading error inside callback
-    if (isTargetFolderError && initialFolderId) {
+    if (isTargetFolderError && selectedFolderId) {
         toast({ title: "Cannot Upload", description: "Target folder details could not be loaded. Please go back and try again.", variant: "destructive" });
         return;
     }
@@ -187,7 +209,7 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
       };
 
       const fileToUpload = new File([processedFile], `${file.name}.speedscope.json`, { type: processedFile.type });
-      const response = await traceApi.uploadTrace(fileToUpload, finalMetadata, user.id, initialFolderId);
+      const response = await traceApi.uploadTrace(fileToUpload, finalMetadata, user.id, selectedFolderId);
 
       if (response.error) {
         setUploadError(response.error.message);
@@ -216,10 +238,10 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
       processedDurationMs, 
       profileType, 
       isTargetFolderError, 
-      initialFolderId, 
+      selectedFolderId, 
       toast, 
       navigate,
-      user
+      user,
   ]);
 
   // --- Submit Disabled State (Memoized) --- 
@@ -251,12 +273,23 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
           </Alert>
         )}
 
-        {/* Display target folder info (dynamic now) */}
-        <div className={cn(
-            "text-sm mb-4 p-3 rounded-md",
-            isTargetFolderError && initialFolderId ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
-        )}>
-            Uploading to: <span className="font-medium text-foreground">{targetFolderInfo}</span>
+        {/* Container for Upload Target Info + Change Button */}
+        <div className="flex items-center justify-between mb-4">
+            <div className={cn(
+                "text-sm p-3 rounded-md flex-grow mr-2",
+                 isTargetFolderError ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+            )}>
+                Uploading to: <span className="font-medium text-foreground">{targetFolderInfo}</span>
+            </div>
+            <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsMoveDialogOpen(true)}
+                disabled={isUploading || isProcessing}
+            >
+                <Edit className="h-4 w-4 mr-2" /> Change
+            </Button>
         </div>
 
         <form onSubmit={handleRHFSubmit(onSubmit)} className="space-y-6">
@@ -417,6 +450,17 @@ export function UploadDialog({ initialFolderId }: UploadDialogProps) {
           </div>
         </form>
       </CardContent>
+
+      {/* Folder Select Dialog (Controlled by state) */}
+      <FolderSelectDialog
+        isOpen={isMoveDialogOpen}
+        setIsOpen={setIsMoveDialogOpen}
+        onFolderSelected={handleSelectFolder}
+        initialFolderId={selectedFolderId}
+        title="Select Upload Folder"
+        description="Choose the folder where you want to upload the trace."
+        // The trigger is the 'Change' button handled by onClick={setIsMoveDialogOpen(true)}
+      />
     </Card>
   );
 }

@@ -2,7 +2,7 @@ import React, { memo, useState } from 'react';
 import { Folder as FolderIcon, Trash2, Edit, Move } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Folder } from '@/lib/api'; // Assuming Folder type is exported from api.ts
-import { formatDistanceToNow } from 'date-fns';
+import { formatRelativeDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, 
@@ -46,7 +46,7 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
         <TableCell></TableCell>
         <TableCell></TableCell>
         <TableCell className="text-muted-foreground">
-          {formatDistanceToNow(new Date(folder.updated_at || folder.created_at), { addSuffix: true })}
+          {formatRelativeDate(folder.updated_at || folder.created_at)}
         </TableCell>
         <TableCell className="text-right pr-4">
           <DropdownMenu>
