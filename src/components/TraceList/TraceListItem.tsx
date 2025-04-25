@@ -13,7 +13,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trash2, Eye, Share2, Edit, Move, Flame, Info } from "lucide-react";
+import { 
+  Trash2, Eye, Share2, Edit, Move, Flame, Info,
+  Chrome, 
+} from "lucide-react";
 import { 
   ContextMenu, 
   ContextMenuItem, 
@@ -25,6 +28,36 @@ import { User } from '@supabase/supabase-js'; // Import User type if needed
 import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
 import { formatDistanceToNow } from 'date-fns';
 import { MoveItemDialog } from './MoveItemDialog'; // Import the new dialog
+import { ProfileType } from '@/lib/speedscope-import'; // Import ProfileType
+
+// Helper to get icon based on profile type
+const getIconForProfileType = (profileType?: ProfileType | string | null): React.ReactNode => {
+  const IconComponent = (
+    {
+      'speedscope': Flame,
+      'pprof': Flame,
+      'chrome-timeline': Chrome,
+      'chrome-cpuprofile': Chrome,
+      'chrome-cpuprofile-old': Chrome,
+      'chrome-heap-profile': Chrome,
+      'stackprof': Flame,
+      'instruments-deepcopy': Flame,
+      'instruments-trace': Flame,
+      'linux-perf': Flame,
+      'collapsed-stack': Flame,
+      'v8-prof-log': Flame,
+      'firefox': Flame,
+      'safari': Flame,
+      'haskell': Flame,
+      'trace-event': Flame,
+      'callgrind': Flame,
+      'papyrus': Flame,
+      'unknown': Flame,
+    }[profileType || 'unknown'] || Flame // Default to Flame if type is somehow missing
+  );
+  // Render the Flame icon with consistent styling
+  return <IconComponent className="mr-2 h-4 w-4 inline-block text-orange-500" />;
+};
 
 interface TraceListItemProps {
   trace: TraceMetadata;
@@ -130,7 +163,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         className="cursor-pointer hover:bg-muted/50"
       >
         <TableCell className="font-medium pl-6 py-3">
-           <Flame className="mr-2 h-4 w-4 inline-block text-orange-500" />
+           {getIconForProfileType(trace.profile_type)}
            {trace.scenario || "N/A"}
         </TableCell>
         <TableCell className="py-3">
