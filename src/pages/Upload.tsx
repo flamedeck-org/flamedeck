@@ -4,6 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import AuthGuard from "@/components/AuthGuard";
 import { UploadDialog } from "@/components/UploadDialog";
 import { useLocation } from 'react-router-dom'; // <-- Import useLocation
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // <-- Import Card components
 
 const Upload: React.FC = () => {
   // Get location state
@@ -12,9 +13,17 @@ const Upload: React.FC = () => {
 
   return (
     <AuthGuard>
-      <Layout> 
+      <Layout>
         <PageHeader title="Upload Trace" />
-        <UploadDialog initialFolderId={targetFolderId} />
+        {/* Wrap UploadDialog in Card for proper layout on this page */}
+        <Card className="w-full max-w-2xl mx-auto mt-6"> 
+          {/* <CardHeader> - Optional: Can add title back here if desired */}
+          {/*   <CardTitle className="text-2xl">Upload Performance Trace</CardTitle> */}
+          {/* </CardHeader> */}
+          <CardContent className="pt-6"> {/* Add padding */} 
+            <UploadDialog initialFolderId={targetFolderId} />
+          </CardContent>
+        </Card>
       </Layout>
     </AuthGuard>
   );

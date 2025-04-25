@@ -23,6 +23,15 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Breadcrumbs } from './Breadcrumbs';
 import { CreateFolderDialog } from './CreateFolderDialog';
 import { useInView } from 'react-intersection-observer';
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { UploadDialog } from "@/components/UploadDialog";
+import { DraggableArea } from "@/components/DraggableArea";
 
 function TraceListComponent() {
   const navigate = useNavigate();
@@ -30,6 +39,12 @@ function TraceListComponent() {
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
   const [isCreateFolderDialogOpen, setIsCreateFolderDialogOpen] = useState(false);
+
+  // State for drag-and-drop upload modal
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [droppedFile, setDroppedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const { toast } = useToast();
 
   const {
     folders,
@@ -99,6 +114,46 @@ function TraceListComponent() {
       setLocalSearchQuery("");
       setSearchQuery("");
   }, [setSearchQuery]);
+
+  // --- Drag and Drop Handlers ---
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.size > 100 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Maximum file size is 100MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setDroppedFile(file);
+      setIsUploadModalOpen(true);
+    }
+  }, [toast]);
+
+  const handleCloseUploadModal = useCallback(() => {
+      setIsUploadModalOpen(false);
+      setDroppedFile(null);
+  }, []);
 
   const createFolderButton = (
     <Button 
@@ -224,6 +279,29 @@ function TraceListComponent() {
   }
 
   const isEmpty = !isLoading && !isFetchingNextPage && folders.length === 0 && traces.length === 0;
+
+  // --- Define Upload Dialog JSX --- 
+  const uploadDialog = (
+    <Dialog open={isUploadModalOpen} onOpenChange={(open) => {
+        if (!open) {
+            handleCloseUploadModal();
+        }
+    }}>
+        <DialogContent className="sm:max-w-[625px]">
+            <DialogHeader>
+                <DialogTitle>Upload Dropped Trace</DialogTitle>
+            </DialogHeader>
+            {droppedFile && (
+              <UploadDialog
+                initialFolderId={currentFolderId}
+                initialFile={droppedFile}
+                onClose={handleCloseUploadModal}
+              />
+            )}
+        </DialogContent>
+    </Dialog>
+  );
+
   if (isEmpty) {
     const isSearching = !!searchQuery;
     return (
@@ -233,98 +311,123 @@ function TraceListComponent() {
           title="Performance Traces" 
           actions={primaryActions} 
         />
-        <div className="mb-4">{searchInput}</div>
         <Card>
-          <CardContent className="pt-12 pb-12 text-center">
-            {currentFolderId ? 
-              <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" /> : 
-              <FileJson className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-            }
-            <h3 className="text-xl font-medium mb-2">
-              {isSearching ? "No Results Found" : (currentFolderId ? "Folder is Empty" : "No Items Yet")}
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              {isSearching
-                ? `Your search for "${searchQuery}" did not match any items.`
-                : (currentFolderId ? "This folder doesn't contain any traces or subfolders." : "Create a folder or upload your first trace.")
+          {/* Wrap empty state content in DraggableArea */}
+          <DraggableArea
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            isDragging={isDragging}
+            draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
+            baseClassName="p-1" // Ensure consistent padding
+            className="pt-12 pb-12 text-center flex flex-col justify-center items-center"
+          >
+            <CardContent className="p-0"> {/* Remove padding from CardContent itself */}
+              {currentFolderId ?
+                <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" /> :
+                <FileJson className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               }
-            </p>
-            {isSearching ? (
-              <Button onClick={handleClearSearch} variant="outline" size="sm">Clear Search</Button>
-            ) : (
-              <div className="flex justify-center gap-2">
-                <CreateFolderDialog
-                    isOpen={isCreateFolderDialogOpen}
-                    setIsOpen={setIsCreateFolderDialogOpen}
-                    onSubmit={handleDialogSubmit}
-                    isPending={isCreatingFolder}
-                    triggerElement={createFolderButton}
-                />
-                <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-                    <Button size="sm" disabled={isLoading}><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
-                </Link>
-              </div>
-            )}
-          </CardContent>
+              <h3 className="text-xl font-medium mb-2">
+                {isSearching ? "No Results Found" : (currentFolderId ? "Folder is Empty" : "No Items Yet")}
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                {isSearching
+                  ? `Your search for "${searchQuery}" did not match any items.`
+                  : (currentFolderId ? "This folder doesn't contain any traces or subfolders." : "Create a folder or upload your first trace.")
+                }
+              </p>
+              {isSearching ? (
+                <Button onClick={handleClearSearch} variant="outline" size="sm">Clear Search</Button>
+              ) : (
+                <div className="flex justify-center gap-2">
+                  <CreateFolderDialog
+                      isOpen={isCreateFolderDialogOpen}
+                      setIsOpen={setIsCreateFolderDialogOpen}
+                      onSubmit={handleDialogSubmit}
+                      isPending={isCreatingFolder}
+                      triggerElement={createFolderButton}
+                  />
+                  <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
+                      <Button size="sm" disabled={isLoading}><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </DraggableArea>
         </Card>
+        {/* Render extracted upload dialog */} 
+        {uploadDialog}
       </PageLayout>
     );
   }
 
   return (
     <PageLayout>
-      <PageHeader 
+      <PageHeader
         subtitle={breadcrumbElement}
-        title="Performance Traces" 
-        actions={primaryActions} 
+        title="Performance Traces"
+        actions={primaryActions}
       />
-      <div className="mb-4">{searchInput}</div>
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead className="pl-6">Name</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Branch</TableHead>
-                <TableHead>Commit</TableHead>
-                <TableHead>Device</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right pr-6">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {folders.map((folder) => (
-                <FolderItem 
-                  key={`folder-${folder.id}`}
-                  folder={folder}
-                  onClick={() => handleFolderClick(folder.id)}
-                />
-              ))}
-              {traces.map((trace) => (
-                <TraceListItem
-                  key={`trace-${trace.id}`}
-                  trace={trace}
-                  currentUser={currentUser}
-                  onDelete={deleteTrace}
-                  isDeleting={isDeleting}
-                  onClick={() => navigate(`/traces/${trace.id}`)}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <DraggableArea
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        isDragging={isDragging}
+        draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
+        baseClassName="p-1"
+        className="flex flex-col flex-grow"
+      >
+        <div className="mb-4">{searchInput}</div>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="pl-6">Name</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Branch</TableHead>
+                  <TableHead>Commit</TableHead>
+                  <TableHead>Device</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right pr-6">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {folders.map((folder) => (
+                  <FolderItem
+                    key={`folder-${folder.id}`}
+                    folder={folder}
+                    onClick={() => handleFolderClick(folder.id)}
+                  />
+                ))}
+                {traces.map((trace) => (
+                  <TraceListItem
+                    key={`trace-${trace.id}`}
+                    trace={trace}
+                    currentUser={currentUser}
+                    onDelete={deleteTrace}
+                    isDeleting={isDeleting}
+                    onClick={() => navigate(`/traces/${trace.id}`)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
-      <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
-        {isFetchingNextPage && (
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        )}
-        {!hasNextPage && traces.length > 0 && (
-          <span className="text-sm text-muted-foreground">End of list</span>
-        )}
-      </div>
+        <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
+          {isFetchingNextPage && (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          )}
+          {!hasNextPage && traces.length > 0 && (
+            <span className="text-sm text-muted-foreground">End of list</span>
+          )}
+        </div>
+
+        {/* Render extracted upload dialog */} 
+        {uploadDialog}
+      </DraggableArea>
     </PageLayout>
   );
 }
