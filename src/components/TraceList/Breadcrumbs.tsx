@@ -1,10 +1,16 @@
 import { memo } from 'react';
-import { Folder } from '@/lib/api'; // Import Folder type
+// import { Folder } from '@/lib/api'; // No longer need full Folder type
 import { ChevronRight, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Use a simpler type for the path segments, matching what the RPC returns
+interface PathSegment {
+  id: string;
+  name: string;
+}
+
 interface BreadcrumbsProps {
-  path: Folder[]; // Array of folders representing the path from root
+  path: PathSegment[]; // Use the simpler type
   onNavigate: (folderId: string | null) => void; // Function to navigate to a specific folder ID (null for root)
 }
 

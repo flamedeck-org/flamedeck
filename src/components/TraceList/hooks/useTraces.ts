@@ -1,64 +1,101 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useInfiniteQuery, InfiniteData } from "@tanstack/react-query";
 import { useParams } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
-import { traceApi, DirectoryListingResponse, ApiError } from "@/lib/api";
+import { Folder, traceApi } from "@/lib/api";
+import { TraceMetadata } from "@/types";
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+import { PostgrestError } from '@supabase/supabase-js';
+
+type FolderViewData = Database['public']['Functions']['get_folder_view_data']['Returns'];
+type ExplicitFolderViewData = {
+  path: Pick<Folder, 'id' | 'name'>[];
+  currentFolder: Folder | null;
+  childFolders: Folder[];
+  childTraces: TraceMetadata[];
+}
 
 const TRACE_LIST_PAGE_SIZE = 10;
-export const DIRECTORY_LISTING_QUERY_KEY = "directoryListing";
+export const FOLDER_VIEW_QUERY_KEY = "folderView";
 
 export function useTraces() {
-  const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const queryClient = useQueryClient();
 
   const { folderId: folderIdFromParams } = useParams<{ folderId?: string }>();
-
   const currentFolderId = useMemo(() => folderIdFromParams || null, [folderIdFromParams]);
 
   const { user } = useAuth();
-  const { data: queryData, isLoading, error } = useQuery<DirectoryListingResponse, ApiError>({
-    queryKey: [DIRECTORY_LISTING_QUERY_KEY, currentFolderId, page, searchQuery],
-    queryFn: async () => {
-      console.log(`Fetching listing for folder: ${currentFolderId || 'root'}, page: ${page}, search: ${searchQuery}`);
-      const response = await traceApi.getDirectoryListing(
-          currentFolderId,
-          {
-            userId: user?.id,
-            page: page,
-            limit: TRACE_LIST_PAGE_SIZE,
-            searchQuery: searchQuery,
-            itemTypeFilter: 'all'
-          }
-      );
-      if (response.error) {
-        toast({
-          title: "Error loading folder contents",
-          description: response.error.message,
-          variant: "destructive",
+
+  const { 
+    data: infiniteData, 
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+  } = useInfiniteQuery<
+      ExplicitFolderViewData,
+      PostgrestError,
+      InfiniteData<ExplicitFolderViewData>,
+      string[],
+      number
+    >({
+    queryKey: [FOLDER_VIEW_QUERY_KEY, currentFolderId || 'root', searchQuery],
+    queryFn: async ({ pageParam = 0 }) => {
+        if (!user?.id) throw new Error("User not authenticated");
+
+        console.log(`[RPC] Fetching view for folder: ${currentFolderId || 'root'}, page: ${pageParam}, search: ${searchQuery}`);
+        
+        const { data, error } = await supabase.rpc('get_folder_view_data', {
+            p_user_id: user.id,
+            p_folder_id: currentFolderId,
+            p_page: pageParam,
+            p_limit: TRACE_LIST_PAGE_SIZE,
+            p_search_query: searchQuery || null
         });
-        throw response.error;
-      }
-      return response.data || { folders: [], traces: [], path: [], totalCount: 0, currentFolder: null };
+
+        if (error) {
+            console.error("Error fetching folder view data:", error);
+            toast({
+                title: "Error loading folder contents",
+                description: error.message,
+                variant: "destructive",
+            });
+            throw error;
+        }
+
+        const responseData = data as unknown as ExplicitFolderViewData;
+        return {
+            path: responseData?.path || [],
+            currentFolder: responseData?.currentFolder || null,
+            childFolders: responseData?.childFolders || [],
+            childTraces: responseData?.childTraces || [],
+        };
     },
-    placeholderData: (previousData) => previousData,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      const lastTraceCount = lastPage.childTraces.length;
+      if (lastTraceCount < TRACE_LIST_PAGE_SIZE) {
+        return undefined;
+      }
+      return allPages.length;
+    },
+    enabled: !!user,
   });
 
   const deleteTraceMutation = useMutation({
     mutationFn: (traceId: string) => traceApi.deleteTrace(traceId),
     onSuccess: (data, traceId) => {
-      toast({
-        title: "Trace deleted successfully",
+      toast({ title: "Trace deleted successfully" });
+      queryClient.invalidateQueries({ 
+        queryKey: [FOLDER_VIEW_QUERY_KEY, currentFolderId || 'root', searchQuery]
       });
-      queryClient.invalidateQueries({ queryKey: [DIRECTORY_LISTING_QUERY_KEY, currentFolderId] });
     },
-    onError: (error: ApiError, traceId) => {
-      toast({
-        title: "Error deleting trace",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: PostgrestError, traceId) => {
+      toast({ title: "Error deleting trace", description: error.message, variant: "destructive" });
     },
   });
 
@@ -66,43 +103,42 @@ export function useTraces() {
     mutationFn: ({ name, parentFolderId }: { name: string; parentFolderId: string | null }) => 
       traceApi.createFolder(name, user?.id, parentFolderId),
     onSuccess: (data, variables) => {
-      toast({
-        title: `Folder "${variables.name}" created successfully`,
+      toast({ title: `Folder "${variables.name}" created successfully` });
+      queryClient.invalidateQueries({ 
+        queryKey: [FOLDER_VIEW_QUERY_KEY, variables.parentFolderId || 'root', searchQuery]
       });
-      queryClient.invalidateQueries({ queryKey: [DIRECTORY_LISTING_QUERY_KEY, variables.parentFolderId] });
     },
-    onError: (error: ApiError, variables) => {
-      toast({
-        title: "Error creating folder",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: PostgrestError, variables) => {
+      toast({ title: "Error creating folder", description: error.message, variant: "destructive" });
     },
   });
 
-  const folders = queryData?.folders || [];
-  const traces = queryData?.traces || [];
-  const path = queryData?.path || [];
-  const totalCount = queryData?.totalCount || 0;
-  const totalPages = Math.ceil(totalCount / TRACE_LIST_PAGE_SIZE);
+  const allPagesData = useMemo(() => infiniteData?.pages || [], [infiniteData]);
+
+  const path = useMemo(() => (allPagesData[0]?.path || []).slice().reverse(), [allPagesData]);
+  const currentFolder = useMemo(() => allPagesData[0]?.currentFolder || null, [allPagesData]);
+
+  const folders = useMemo(() => allPagesData[0]?.childFolders || [], [allPagesData]);
+
+  const traces = useMemo(() => allPagesData.flatMap(page => page.childTraces), [allPagesData]);
 
   return {
     folders,
     traces,
     path,
+    currentFolder,
     currentFolderId,
-    totalCount,
-    totalPages,
-    page,
-    setPage,
+    TRACE_LIST_PAGE_SIZE,
+    fetchNextPage,
+    hasNextPage,
+    isLoading: status === 'pending',
+    isFetchingNextPage,
     searchQuery,
     setSearchQuery,
-    isLoading,
     error,
     deleteTrace: deleteTraceMutation.mutate,
     isDeleting: deleteTraceMutation.isPending,
     createFolder: createFolderMutation.mutate,
     isCreatingFolder: createFolderMutation.isPending,
-    TRACE_LIST_PAGE_SIZE,
   };
 } 

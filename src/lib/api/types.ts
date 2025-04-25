@@ -56,6 +56,19 @@ export interface DirectoryListingResponse {
    currentFolder: Folder | null; // Add current folder details
  }
 
+// --- NEW: Response type for fetching folder context (path and current folder) ---
+export interface FolderContextResponse {
+  path: Folder[];
+  currentFolder: Folder | null;
+}
+
+// --- NEW: Response type for fetching ONLY the contents of a directory ---
+export interface DirectoryListingContentsResponse {
+  folders: Folder[];
+  traces: TraceMetadata[];
+  totalCount: number; // Primarily for trace pagination
+}
+
 // --- Options for getDirectoryListing ---
 export interface DirectoryListingOptions {
    userId: string;
