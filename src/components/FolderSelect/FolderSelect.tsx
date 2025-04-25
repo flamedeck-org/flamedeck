@@ -9,18 +9,15 @@ import { cn } from '@/lib/utils';
 
 interface FolderSelectProps {
   initialFolderId?: string | null;
-  onConfirmSelection: (folderId: string | null, folderName: string | null) => void;
+  onSelectFolder: (folderId: string | null, folderName: string | null) => void;
   // Add a prop to control the visibility or trigger of the parent (e.g., Dialog close)
   onCancel?: () => void;
-  // Prop to disable selecting the current folder (useful for move operation)
-  currentLocationFolderId?: string | null;
 }
 
 function FolderSelectComponent({
   initialFolderId = null,
-  onConfirmSelection,
+  onSelectFolder,
   onCancel,
-  currentLocationFolderId
 }: FolderSelectProps) {
   const {
     currentFolderId,
@@ -54,11 +51,7 @@ function FolderSelectComponent({
       const selectedName = selectedFolderId === null
         ? "Root"
         : (Array.isArray(folders) ? folders.find(f => f.id === selectedFolderId)?.name : null) || currentFolder?.name;
-      onConfirmSelection(selectedFolderId, selectedName || null);
-  };
-
-  const isFolderDisabled = (folderId: string | null) => {
-     return currentLocationFolderId !== undefined && folderId === currentLocationFolderId;
+      onSelectFolder(selectedFolderId, selectedName || null);
   };
 
   const renderBreadcrumbs = () => (
@@ -67,10 +60,9 @@ function FolderSelectComponent({
         onClick={() => handleBreadcrumbClick(null)}
         className={cn(
           "hover:underline flex items-center",
-          isFolderDisabled(null) ? 'text-gray-400 cursor-not-allowed' : 'hover:text-primary',
-          selectedFolderId === null && !isFolderDisabled(null) && 'text-primary font-medium'
+          'hover:text-primary',
+          selectedFolderId === null && 'text-primary font-medium'
         )}
-        disabled={isFolderDisabled(null)}
         aria-current={selectedFolderId === null ? "page" : undefined}
       >
         <Home className="h-4 w-4 mr-1.5 flex-shrink-0" />
@@ -84,10 +76,9 @@ function FolderSelectComponent({
             onClick={() => handleBreadcrumbClick(folder.id)}
             className={cn(
               "hover:underline truncate",
-              isFolderDisabled(folder.id) ? 'text-gray-400 cursor-not-allowed' : 'hover:text-primary',
-              selectedFolderId === folder.id && !isFolderDisabled(folder.id) && 'text-primary font-medium',
+              'hover:text-primary',
+              selectedFolderId === folder.id && 'text-primary font-medium',
             )}
-            disabled={isFolderDisabled(folder.id)}
             aria-current={selectedFolderId === folder.id ? "page" : undefined}
             title={folder.name}
           >
@@ -147,15 +138,13 @@ function FolderSelectComponent({
               className={cn(
                 "w-full text-left flex items-center p-2 rounded-md hover:bg-accent",
                 selectedFolderId === folder.id && "bg-accent text-accent-foreground",
-                isFolderDisabled(folder.id) && "text-muted-foreground opacity-50 cursor-not-allowed hover:bg-transparent"
               )}
               onClick={() => handleFolderClick(folder.id)}
-              disabled={isFolderDisabled(folder.id)}
-              title={isFolderDisabled(folder.id) ? `${folder.name} (Current Location)` : folder.name}
+              title={folder.name}
             >
               <Folder className="h-5 w-5 mr-3 flex-shrink-0" />
               <span className="flex-grow truncate">{folder.name}</span>
-              {!isFolderDisabled(folder.id) && <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />} 
+              <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
             </button>
           </li>
         ))}
@@ -202,7 +191,7 @@ function FolderSelectComponent({
         {onCancel && (
             <Button variant="outline" onClick={onCancel}>Cancel</Button>
         )}
-        <Button onClick={handleSelect} disabled={isLoading || isFolderDisabled(selectedFolderId)}>
+        <Button onClick={handleSelect} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {/* Safely access path */}
             Select "{selectedFolderId === null ? 'Root' : (Array.isArray(path) ? path.find(p => p.id === selectedFolderId)?.name : null) || currentFolder?.name || '...'}"

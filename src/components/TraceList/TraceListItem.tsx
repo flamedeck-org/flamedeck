@@ -23,13 +23,13 @@ import {
   ContextMenuItem, 
   ContextMenuDivider 
 } from '@/components/ui/context-menu';
-import { TraceMetadata, UserProfile } from "@/types";
-import { formatDate, formatDuration, getInitials } from "@/lib/utils"; // Assuming getInitials is in utils
+import { TraceMetadata } from "@/types";
+import { formatRelativeDate, formatDuration, getInitials } from "@/lib/utils";
 import { User } from '@supabase/supabase-js'; // Import User type if needed
 import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
-import { formatDistanceToNow } from 'date-fns';
 import { MoveItemDialog } from './MoveItemDialog'; // Import the new dialog
 import { ProfileType } from '@/lib/speedscope-import'; // Import ProfileType
+import { cn } from '@/lib/utils';
 
 // Helper to get icon based on profile type
 const getIconForProfileType = (profileType?: ProfileType | string | null): React.ReactNode => {
@@ -190,7 +190,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         </TableCell>
         <TableCell className="py-4">{trace.device_model || "N/A"}</TableCell>
         <TableCell className="py-4">{formatDuration(trace.duration_ms)}</TableCell>
-        <TableCell className="py-4">{formatDate(trace.uploaded_at)}</TableCell>
+        <TableCell className="py-4 text-muted-foreground text-sm">{formatRelativeDate(trace.uploaded_at)}</TableCell>
         <TableCell className="text-right pr-6 py-4">
           <div onClick={handleStopPropagation} className="inline-flex items-center gap-1">
             {/* Restored Buttons */}
@@ -254,13 +254,18 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
           >
             Rename
           </ContextMenuItem>
-          <ContextMenuItem 
-            onClick={handleOpenMoveDialog}
-            icon={<Move className="h-4 w-4" />}
-            disabled={!isOwnerCurrentUser}
+          <div 
+            onClick={isOwnerCurrentUser ? handleOpenMoveDialog : undefined} 
+            className={cn(
+              "px-3 py-1.5 flex items-center gap-2",
+              isOwnerCurrentUser 
+                ? "cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                : "opacity-50 cursor-not-allowed"
+            )}
           >
+            <span className="w-4 h-4"><Move className="h-4 w-4" /></span>
             Move
-          </ContextMenuItem>
+          </div>
           <ContextMenuItem 
             onClick={handleShare} 
             icon={<Share2 className="h-4 w-4" />}
@@ -308,6 +313,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
            setIsOpen={setIsMoveDialogOpen}
            itemsToMove={{ traces: [trace.id], folders: [] }} // Moving a single trace
            itemNames={[trace.scenario || `Trace ${trace.id.substring(0, 6)}`]} // Display name
+           initialFolderId={null} // Assuming traces are always in root for now
          />
        )}
     </>
