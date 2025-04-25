@@ -150,6 +150,64 @@ import { uploadJson } from "./storage";
     }
   }
 
+  // --- NEW: Rename Trace ---
+  export async function renameTrace(
+    traceId: string,
+    newScenario: string,
+    userId: string
+  ): Promise<ApiResponse<TraceMetadata>> {
+    try {
+      // Basic validation
+      if (!newScenario || newScenario.trim().length === 0 || newScenario.length > 255) {
+        throw new Error("Invalid new scenario name.");
+      }
+      if (!traceId) {
+         throw new Error("Trace ID is required for renaming.");
+      }
+       if (!userId) {
+          throw new Error("User ID is required for renaming.");
+       }
+
+      const trimmedScenario = newScenario.trim();
+
+      // Update the scenario field ONLY. RLS should handle ownership check.
+      const { data, error } = await supabase
+        .from('traces')
+        // Remove updated_at from the update payload
+        .update({ scenario: trimmedScenario })
+        .eq('id', traceId)
+        .eq('user_id', userId) // Explicit ownership check for safety
+        // Fetch owner details along with the updated trace
+        .select(`*, owner:user_profiles!user_id ( id, username, avatar_url, first_name, last_name )`)
+        .single();
+
+      if (error) {
+        console.error(`Database error renaming trace ${traceId}:`, error);
+        throw error;
+      }
+
+       if (!data) {
+          // This could mean trace not found OR user doesn't own it
+          throw new Error(`Trace not found (${traceId}) or user (${userId}) does not have permission to rename.`);
+       }
+
+      // We need to potentially re-process the owner field similar to listUserTraces
+      const traceData = data as TraceMetadata;
+
+      return { data: traceData, error: null };
+
+    } catch (error) {
+      console.error(`Error renaming trace ${traceId}:`, error);
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to rename trace",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
+    }
+  }
+
   // Delete a trace by ID
   export async function deleteTrace(id: string): Promise<ApiResponse<void>> {
     try {
