@@ -21,7 +21,7 @@ import { TraceListItem } from "./TraceListItem";
 import { FolderItem } from "./FolderItem";
 import { TracePagination } from './TracePagination';
 import { useDebounce } from "@/hooks/useDebounce";
-import { Folder } from '@/lib/api';
+import { Folder } from '@/lib/api/types';
 import { Breadcrumbs } from './Breadcrumbs';
 import { CreateFolderDialog } from './CreateFolderDialog';
 
