@@ -22,6 +22,7 @@ export interface TraceMetadata {
   notes?: string | null;
   profile_type?: ProfileType | string | null;
   owner?: UserProfile | null;
+  updated_at?: string | null;
 }
 
 export interface TraceUpload {

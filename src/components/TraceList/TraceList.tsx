@@ -32,6 +32,9 @@ import {
 } from "@/components/ui/dialog";
 import { UploadDialog } from "@/components/UploadDialog";
 import { DraggableArea } from "@/components/DraggableArea";
+import type { Folder } from "@/lib/api/types";
+import { PostgrestError } from '@supabase/supabase-js';
+import { ApiResponse } from "@/types";
 
 function TraceListComponent() {
   const navigate = useNavigate();
@@ -95,14 +98,27 @@ function TraceListComponent() {
 
   const handleDialogSubmit = useCallback((folderName: string) => {
     createFolder(
-      { name: folderName, parentFolderId: currentFolderId }, 
+      { name: folderName, parentFolderId: currentFolderId },
       {
-        onSuccess: () => {
+        onSuccess: (response: ApiResponse<Folder>) => {
           setIsCreateFolderDialogOpen(false);
+          if (response.data) {
+            handleNavigate(response.data.id);
+          } else {
+            console.warn("Folder creation succeeded but no data returned.");
+          }
         },
+        onError: (error: PostgrestError) => {
+          console.error("Error creating folder:", error);
+          toast({
+            title: "Error creating folder",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       }
     );
-  }, [createFolder, currentFolderId]);
+  }, [createFolder, currentFolderId, handleNavigate, toast]);
 
   useEffect(() => {
     if (debouncedSearchQuery !== searchQuery) {
@@ -389,7 +405,7 @@ function TraceListComponent() {
                   <TableHead>Commit</TableHead>
                   <TableHead>Device</TableHead>
                   <TableHead>Duration</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Last Updated</TableHead>
                   <TableHead className="text-right pr-6">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -409,6 +425,7 @@ function TraceListComponent() {
                     onDelete={deleteTrace}
                     isDeleting={isDeleting}
                     onClick={() => navigate(`/traces/${trace.id}`)}
+                    currentFolderId={currentFolderId}
                   />
                 ))}
               </TableBody>
@@ -419,9 +436,6 @@ function TraceListComponent() {
         <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
           {isFetchingNextPage && (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          )}
-          {!hasNextPage && traces.length > 0 && (
-            <span className="text-sm text-muted-foreground">End of list</span>
           )}
         </div>
 
