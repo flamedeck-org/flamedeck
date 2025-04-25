@@ -1,6 +1,5 @@
 import React, { memo, useState, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { FolderSelect } from '@/components/FolderSelect/FolderSelect';
+import { FolderSelectDialog } from '@/components/FolderSelectDialog';
 import { traceApi } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -26,7 +25,6 @@ function MoveItemDialogComponent({
   triggerElement 
 }: MoveItemDialogProps) {
   const queryClient = useQueryClient();
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
   const { user } = useAuth();
 
@@ -43,10 +41,6 @@ function MoveItemDialogComponent({
     },
     onError: (error: ApiError) => {
       toast.error(`Failed to move items: ${error.message}`);
-    },
-    onSettled: () => {
-      setSelectedFolderId(null);
-      setSelectedFolderName(null);
     }
   });
 
@@ -57,38 +51,22 @@ function MoveItemDialogComponent({
     }
     setSelectedFolderName(folderName);
     moveItems(folderId);
-  }, [initialFolderId, moveItems]);
-
-  const handleCancel = useCallback(() => {
-    setIsOpen(false);
-    setSelectedFolderId(null);
-    setSelectedFolderName(null);
-  }, [setIsOpen]);
+  }, [initialFolderId, moveItems, setSelectedFolderName]);
 
   const itemsDisplay = itemNames.length === 1 
     ? `"${itemNames[0]}"` 
     : `${itemNames.length} items`;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      {triggerElement}
-      <DialogContent className="sm:max-w-[525px] h-[70vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Move {itemsDisplay}</DialogTitle>
-          <DialogDescription>
-            Select the destination folder. You cannot move items into their current location.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex-grow min-h-0 py-4">
-          <FolderSelect 
-            onConfirmSelection={handleConfirmMove}
-            onCancel={handleCancel} 
-            currentLocationFolderId={initialFolderId}
-            initialFolderId={initialFolderId}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <FolderSelectDialog
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
+      onFolderSelected={handleConfirmMove}
+      initialFolderId={initialFolderId}
+      title={`Move ${itemsDisplay}`}
+      description="Select the destination folder. Items cannot be moved to their current location."
+      triggerElement={triggerElement}
+    />
   );
 }
 
