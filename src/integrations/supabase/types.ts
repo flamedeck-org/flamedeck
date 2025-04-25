@@ -257,6 +257,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_folder_view_data: {
+        Args: {
+          p_user_id: string
+          p_folder_id?: string
+          p_page?: number
+          p_limit?: number
+          p_search_query?: string
+        }
+        Returns: Json
+      }
       get_user_accessible_traces: {
         Args:
           | { p_user_id: string; p_offset: number; p_limit: number }

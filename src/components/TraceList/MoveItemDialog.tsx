@@ -1,11 +1,11 @@
 import React, { memo, useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { FolderSelect } from '@/components/FolderSelect/FolderSelect';
-import { traceApi, ApiError } from '@/lib/api';
+import { traceApi } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { DIRECTORY_LISTING_QUERY_KEY } from './hooks/useTraces'; // Import the exported key
-import { ApiResponse } from '@/types';
+import { FOLDER_VIEW_QUERY_KEY } from './hooks/useTraces';
+import { ApiError, ApiResponse } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface MoveItemDialogProps {
@@ -38,16 +38,13 @@ function MoveItemDialogComponent({
     mutationFn: (targetFolderId: string | null) => traceApi.moveItems(itemsToMove, user?.id, targetFolderId),
     onSuccess: (_, targetFolderId) => {
       toast.success(`Successfully moved ${itemNames.length} item(s) to "${selectedFolderName || 'Root'}".`);
-      // Invalidate queries to refetch data in the source and potentially destination folders
-      queryClient.invalidateQueries({ queryKey: [DIRECTORY_LISTING_QUERY_KEY, initialFolderId] });
-      queryClient.invalidateQueries({ queryKey: [DIRECTORY_LISTING_QUERY_KEY, targetFolderId] });
+      queryClient.invalidateQueries({ queryKey: [FOLDER_VIEW_QUERY_KEY] });
       setIsOpen(false);
     },
     onError: (error: ApiError) => {
       toast.error(`Failed to move items: ${error.message}`);
     },
     onSettled: () => {
-      // Reset selection state on settle
       setSelectedFolderId(null);
       setSelectedFolderName(null);
     }
@@ -64,12 +61,10 @@ function MoveItemDialogComponent({
 
   const handleCancel = useCallback(() => {
     setIsOpen(false);
-    // Reset state if needed when cancelling after selection
     setSelectedFolderId(null);
     setSelectedFolderName(null);
   }, [setIsOpen]);
 
-  // Determine the display name for the items being moved
   const itemsDisplay = itemNames.length === 1 
     ? `"${itemNames[0]}"` 
     : `${itemNames.length} items`;

@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback } from "react";
+import { memo, useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -9,7 +9,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Link, useNavigate } from "react-router-dom";
-import { FileJson, UploadCloud, Search, X, Folder as FolderIcon, FolderPlus } from "lucide-react";
+import { FileJson, UploadCloud, Search, X, Folder as FolderIcon, FolderPlus, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageLayout from "../PageLayout";
@@ -19,11 +19,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTraces } from "./hooks/useTraces";
 import { TraceListItem } from "./TraceListItem";
 import { FolderItem } from "./FolderItem";
-import { TracePagination } from './TracePagination';
 import { useDebounce } from "@/hooks/useDebounce";
-import { Folder } from '@/lib/api/types';
 import { Breadcrumbs } from './Breadcrumbs';
 import { CreateFolderDialog } from './CreateFolderDialog';
+import { useInView } from 'react-intersection-observer';
 
 function TraceListComponent() {
   const navigate = useNavigate();
@@ -37,30 +36,39 @@ function TraceListComponent() {
     traces,
     path,
     currentFolderId,
-    totalCount,
-    totalPages,
-    page,
-    setPage,
     searchQuery,
     setSearchQuery,
     isLoading,
     error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
     deleteTrace,
     isDeleting,
     createFolder,
     isCreatingFolder,
   } = useTraces();
 
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+  });
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   const handleNavigate = useCallback((folderId: string | null) => {
-      setPage(0);
       setLocalSearchQuery("");
       setSearchQuery("");
+      window.scrollTo(0, 0);
       if (folderId === null) {
           navigate('/traces');
       } else {
           navigate(`/traces/folder/${folderId}`);
       }
-  }, [navigate, setPage, setSearchQuery]);
+  }, [navigate, setSearchQuery]);
 
   const handleFolderClick = useCallback((folderId: string) => {
     handleNavigate(folderId);
@@ -84,24 +92,20 @@ function TraceListComponent() {
   useEffect(() => {
     if (debouncedSearchQuery !== searchQuery) {
         setSearchQuery(debouncedSearchQuery);
-        setPage(0);
     }
-  }, [debouncedSearchQuery, setSearchQuery, setPage, searchQuery]);
+  }, [debouncedSearchQuery, setSearchQuery, searchQuery]);
 
   const handleClearSearch = useCallback(() => {
       setLocalSearchQuery("");
       setSearchQuery("");
-      if (page !== 0) { 
-          setPage(0);
-      }
-  }, [setSearchQuery, setPage, page]);
+  }, [setSearchQuery]);
 
   const createFolderButton = (
     <Button 
       size="sm" 
       variant="outline" 
       onClick={handleOpenCreateFolderDialog} 
-      disabled={isCreatingFolder}
+      disabled={isCreatingFolder || isLoading || isFetchingNextPage}
     >
       <FolderPlus className="mr-2 h-4 w-4" /> New Folder
     </Button>
@@ -117,7 +121,7 @@ function TraceListComponent() {
           triggerElement={createFolderButton}
       />
       <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-        <Button size="sm">
+        <Button size="sm" disabled={isLoading}>
           <UploadCloud className="mr-2 h-4 w-4" /> Upload New Trace
         </Button>
       </Link>
@@ -134,6 +138,7 @@ function TraceListComponent() {
               onChange={(e) => setLocalSearchQuery(e.target.value)}
               className="pl-8 pr-8 w-full hide-native-search-cancel-button"
               aria-label="Search traces"
+              disabled={isLoading}
           />
           {localSearchQuery && (
               <Button
@@ -142,6 +147,7 @@ function TraceListComponent() {
                   className="absolute right-1.5 top-1.5 h-7 w-7"
                   onClick={handleClearSearch}
                   aria-label="Clear search"
+                  disabled={isLoading}
               >
                   <X className="h-4 w-4" />
               </Button>
@@ -149,14 +155,16 @@ function TraceListComponent() {
       </div>
   );
 
-  const breadcrumbElement = <Breadcrumbs path={path} onNavigate={handleNavigate} />;
+  const breadcrumbElement = isLoading ? 
+    <Skeleton className="h-5 w-64 mt-1" /> : 
+    <Breadcrumbs path={path} onNavigate={handleNavigate} />;
 
-  if (isLoading && folders.length === 0 && traces.length === 0) {
+  if (isLoading) {
     return (
       <PageLayout>
         <PageHeader 
           title={<Skeleton className="h-8 w-48" />} 
-          subtitle={<Skeleton className="h-4 w-64 mt-1" />}
+          subtitle={<Skeleton className="h-5 w-64 mt-1" />}
           actions={<div className="flex gap-2"><Skeleton className="h-9 w-28 rounded-md" /><Skeleton className="h-9 w-36 rounded-md" /></div>} 
         />
         <div className="mb-4">{searchInput}</div>
@@ -215,7 +223,8 @@ function TraceListComponent() {
     );
   }
 
-  if (!isLoading && folders.length === 0 && traces.length === 0) {
+  const isEmpty = !isLoading && !isFetchingNextPage && folders.length === 0 && traces.length === 0;
+  if (isEmpty) {
     const isSearching = !!searchQuery;
     return (
       <PageLayout>
@@ -236,7 +245,7 @@ function TraceListComponent() {
             </h3>
             <p className="text-muted-foreground mb-6">
               {isSearching
-                ? `Your search for "${searchQuery}" did not match any items in this folder.`
+                ? `Your search for "${searchQuery}" did not match any items.`
                 : (currentFolderId ? "This folder doesn't contain any traces or subfolders." : "Create a folder or upload your first trace.")
               }
             </p>
@@ -252,7 +261,7 @@ function TraceListComponent() {
                     triggerElement={createFolderButton}
                 />
                 <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-                    <Button size="sm"><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
+                    <Button size="sm" disabled={isLoading}><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
                 </Link>
               </div>
             )}
@@ -308,11 +317,14 @@ function TraceListComponent() {
         </CardContent>
       </Card>
 
-      <TracePagination 
-        currentPage={page} 
-        totalPages={totalPages} 
-        onPageChange={setPage} 
-      />
+      <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
+        {isFetchingNextPage && (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        )}
+        {!hasNextPage && traces.length > 0 && (
+          <span className="text-sm text-muted-foreground">End of list</span>
+        )}
+      </div>
     </PageLayout>
   );
 }
