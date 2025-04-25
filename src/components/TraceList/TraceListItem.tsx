@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Trash2, Eye, Share2, Edit, Move, Flame, Info,
   Chrome, 
+  MoreVertical
 } from "lucide-react";
 import { 
   ContextMenu, 
@@ -99,22 +100,30 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
     [ownerName, currentUser?.email]
   );
 
-  const handleContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    setContextMenu({ x: event.clientX, y: event.clientY });
+  // Function to open context menu at specific coordinates
+  const openContextMenuAtPosition = useCallback((x: number, y: number) => {
+    setContextMenu({ x, y });
   }, []);
 
-  const closeContextMenu = useCallback(() => {
-    setContextMenu(null);
-  }, []);
+  const handleContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    openContextMenuAtPosition(event.clientX, event.clientY);
+  }, [openContextMenuAtPosition]);
+
+  // Handler for the MoreVertical button click
+  const handleOpenContextMenuFromButton = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation(); // Prevent row click
+    const rect = event.currentTarget.getBoundingClientRect();
+    openContextMenuAtPosition(rect.left - 135, rect.bottom + 5); // Open below the button
+  }, [openContextMenuAtPosition]);
 
   const handleNavigateToViewer = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     navigate(`/traces/${trace.id}/view`, {
       state: { blobPath: trace.blob_path }
     });
-    closeContextMenu();
-  }, [navigate, trace.id, trace.blob_path, closeContextMenu]);
+    setContextMenu(null);
+  }, [navigate, trace.id, trace.blob_path]);
 
   const handleDeleteConfirm = useCallback(() => {
     onDelete(trace.id);
@@ -122,23 +131,23 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
 
   const handleOpenDeleteDialog = useCallback(() => {
     setIsDeleteDialogOpen(true);
-    closeContextMenu();
-  }, [closeContextMenu]);
+    setContextMenu(null);
+  }, [setContextMenu]);
 
   const handleShare = useCallback(() => {
     openShareModal(trace.id);
-    closeContextMenu();
-  }, [openShareModal, trace.id, closeContextMenu]);
+    setContextMenu(null);
+  }, [openShareModal, trace.id]);
 
   const handleRenameStub = useCallback(() => {
     console.log("Rename action triggered for trace:", trace.id);
-    closeContextMenu();
-  }, [trace.id, closeContextMenu]);
+    setContextMenu(null);
+  }, [trace.id]);
 
   const handleOpenMoveDialog = useCallback(() => {
     setIsMoveDialogOpen(true);
-    closeContextMenu();
-  }, [closeContextMenu]);
+    setContextMenu(null);
+  }, [setContextMenu]);
 
   const handleStopPropagation = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -166,7 +175,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
            {getIconForProfileType(trace.profile_type)}
            {trace.scenario || "N/A"}
         </TableCell>
-        <TableCell className="py-3">
+        <TableCell className="py-4">
            <div className="flex items-center space-x-2">
              <Avatar className="h-6 w-6">
                <AvatarImage src={trace.owner?.avatar_url ?? undefined} alt={ownerName} />
@@ -175,15 +184,16 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
              <span className="text-sm truncate">{ownerName}</span>
           </div>
         </TableCell>
-        <TableCell className="py-3">{trace.branch || "N/A"}</TableCell>
+        <TableCell className="py-4">{trace.branch || "N/A"}</TableCell>
         <TableCell className="font-mono text-xs py-3">
           {commitShortSha}
         </TableCell>
-        <TableCell className="py-3">{trace.device_model || "N/A"}</TableCell>
-        <TableCell className="py-3">{formatDuration(trace.duration_ms)}</TableCell>
-        <TableCell className="py-3">{formatDate(trace.uploaded_at)}</TableCell>
-        <TableCell className="text-right pr-6 py-3">
+        <TableCell className="py-4">{trace.device_model || "N/A"}</TableCell>
+        <TableCell className="py-4">{formatDuration(trace.duration_ms)}</TableCell>
+        <TableCell className="py-4">{formatDate(trace.uploaded_at)}</TableCell>
+        <TableCell className="text-right pr-6 py-4">
           <div onClick={handleStopPropagation} className="inline-flex items-center gap-1">
+            {/* Restored Buttons */}
             <Button
               variant="outline"
               size="sm"
@@ -193,7 +203,6 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
             >
               <Eye className="h-4 w-4" />
             </Button>
-            
             <Button
               variant="outline"
               size="sm"
@@ -202,10 +211,19 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
               aria-label={`Delete trace ${traceIdentifier}`}
               onClick={(e) => {
                 e.stopPropagation(); 
-                setIsDeleteDialogOpen(true);
+                handleOpenDeleteDialog(); // Use the existing handler
               }}
             >
               <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-0"
+              onClick={handleOpenContextMenuFromButton}
+              aria-label={`Actions for trace ${traceIdentifier}`}
+            >
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </div>
         </TableCell>
@@ -215,7 +233,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         <ContextMenu 
           x={contextMenu.x} 
           y={contextMenu.y} 
-          onClose={closeContextMenu}
+          onClose={() => setContextMenu(null)}
         >
           <ContextMenuItem 
             onClick={handleNavigateToViewer} 
@@ -282,16 +300,6 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Share Dialog (conditionally rendered) */}
-      {isShareDialogOpen && (
-        <ShareTraceDialog
-          isOpen={isShareDialogOpen}
-          setIsOpen={setIsShareDialogOpen}
-          traceId={trace.id}
-          traceName={trace.scenario || 'Unnamed Trace'}
-          isOwner={isOwnerCurrentUser}
-        />
-      )}
 
        {/* Move Item Dialog (conditionally rendered) */}
        {isMoveDialogOpen && (
@@ -300,7 +308,6 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
            setIsOpen={setIsMoveDialogOpen}
            itemsToMove={{ traces: [trace.id], folders: [] }} // Moving a single trace
            itemNames={[trace.scenario || `Trace ${trace.id.substring(0, 6)}`]} // Display name
-           initialFolderId={trace.folder_id} // Pass current folder location
          />
        )}
     </>
