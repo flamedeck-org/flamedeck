@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDuration } from "@/lib/utils";
 import { TraceCommentWithAuthor } from '@/lib/api';
+import { useCommentManagement } from '@/hooks/useCommentManagement';
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -137,8 +138,13 @@ const TraceDetail: React.FC = () => {
     error: commentsError 
   } = useTraceComments(id);
 
-  // State to track which comment is being replied to
-  const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
+  // Use the new hook
+  const { 
+    replyingToCommentId, 
+    handleStartReply, 
+    handleCancelReply, 
+    handleCommentUpdate 
+  } = useCommentManagement(id);
 
   // Structure the comments
   const structuredComments = useMemo(() => {
@@ -333,28 +339,6 @@ const TraceDetail: React.FC = () => {
       </AuthGuard>
     );
   }
-
-  // --- Callbacks for CommentItem --- 
-  const handleStartReply = (commentId: string) => {
-    setReplyingToCommentId(commentId);
-  };
-
-  const handleCancelReply = () => {
-    setReplyingToCommentId(null);
-  };
-
-  // --- Define the update handler --- 
-  const handleCommentUpdate = (updatedComment: TraceCommentWithAuthor) => {
-    queryClient.setQueryData<TraceCommentWithAuthor[]>(['traceComments', id], (oldData) => {
-      if (!oldData) return [];
-      // Update the specific comment in the flat array cache
-      return oldData.map(comment => 
-        comment.id === updatedComment.id ? updatedComment : comment
-      );
-    });
-    // Note: The structuring and grouping logic runs automatically on cache update 
-    // because it depends on the query data which just changed.
-  };
 
   if (!trace) { return <div>Trace data unavailable.</div>; }
   const traceIdForComments = trace.id;

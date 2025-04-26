@@ -136,9 +136,9 @@ const CommentForm: React.FC<CommentFormProps> = ({
               canSubmit ? "text-foreground bg-primary/10 hover:bg-primary/20" : "text-muted-foreground"
             )}
             disabled={!canSubmit}
-            aria-label="Post comment"
+            aria-label={submitButtonText}
           >
-            {commentMutation.isPending ? (
+            {mode === 'create' && commentMutation.isPending ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
               <Send className="h-3 w-3" />
@@ -158,14 +158,6 @@ const CommentForm: React.FC<CommentFormProps> = ({
           Cancel
         </Button>
       )}
-      <Button
-        type="submit"
-        variant="ghost"
-        disabled={!canSubmit}
-        size="sm"
-      >
-        {commentMutation.isPending && mode === 'create' ? 'Posting...' : submitButtonText}
-      </Button>
     </form>
   );
 };

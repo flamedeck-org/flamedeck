@@ -5,12 +5,14 @@ import AuthGuard from "@/components/AuthGuard";
 import SpeedscopeViewer, { SpeedscopeViewType } from "@/components/SpeedscopeViewer";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getTraceBlob } from "@/lib/api/storage";
+import { TraceCommentWithAuthor, traceApi } from "@/lib/api";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, MessageSquare } from 'lucide-react';
 import { TraceViewerCommentSidebar } from '@/components/TraceViewerCommentList/TraceViewerCommentSidebar';
+import { useCommentManagement } from '@/hooks/useCommentManagement';
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -24,14 +26,24 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 }
 
 const TraceViewerPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>();
   const location = useLocation();
+  const queryClient = useQueryClient();
   
   // Read initialView from location state, default to 'time_ordered'
   const initialViewFromState = location.state?.initialView as SpeedscopeViewType | undefined;
   const [selectedView, setSelectedView] = useState<SpeedscopeViewType>(initialViewFromState || 'time_ordered');
 
   const blobPath = location.state?.blobPath as string | undefined;
+
+  // --- Use the new hook --- 
+  const { 
+    replyingToCommentId, 
+    handleStartReply, 
+    handleCancelReply, 
+    handleCommentUpdate 
+  } = useCommentManagement(id);
+  // ------------------------
 
   const { 
     data: traceBlobData, 
@@ -105,12 +117,17 @@ const TraceViewerPage: React.FC = () => {
                 onReset={() => {
                   console.log("Attempting to reset Speedscope viewer boundary...");
                 }}
+                key={id}
               >
                 <SpeedscopeViewer
                   traceId={id}
                   traceData={traceBlobData.data}
                   fileName={traceBlobData.fileName}
                   view={selectedView}
+                  replyingToCommentId={replyingToCommentId}
+                  onStartReply={handleStartReply}
+                  onCancelReply={handleCancelReply}
+                  onCommentUpdated={handleCommentUpdate}
                 />
               </ErrorBoundary>
             </div>
