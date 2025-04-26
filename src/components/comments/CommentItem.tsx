@@ -103,7 +103,7 @@ export function CommentItem({
         {/* Render Replies Recursively */}
         {comment.replies && comment.replies.length > 0 && (
             // Container for replies with border and padding for visual structure
-            <div className="mt-4 ml-4 pl-4 border-l border-border/50 space-y-3"> 
+            <div className="mt-4 pl-4 border-l border-border/50 space-y-3"> 
                 {comment.replies.map(reply => (
                     <CommentItem
                         key={reply.id}

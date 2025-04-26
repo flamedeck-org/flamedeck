@@ -2,6 +2,17 @@ import { useQuery } from '@tanstack/react-query';
 import { traceApi, TraceCommentWithAuthor } from '@/lib/api';
 import { useMemo, useCallback } from 'react';
 
+// Helper function to extract unique commented cell IDs for a given type
+const getCommentedCellIdsByType = (comments: TraceCommentWithAuthor[] | undefined, type: string): string[] => {
+  if (!comments) return [];
+  return comments.reduce<string[]>((ids, comment) => {
+    if (comment.comment_type === type && comment.comment_identifier && !ids.includes(comment.comment_identifier)) {
+      ids.push(comment.comment_identifier);
+    }
+    return ids;
+  }, []);
+};
+
 /**
  * Custom hook to fetch trace comments and provide derived data
  */
@@ -21,14 +32,18 @@ export function useTraceComments(traceId?: string) {
     enabled: !!traceId,
   });
 
-  // Derive chrono-specific cell identifiers for highlighting
   const commentedChronoCellIds = useMemo(() => {
-    return comments?.reduce<string[]>((ids, comment) => {
-      if (comment.comment_type === 'chrono' && comment.comment_identifier && !ids.includes(comment.comment_identifier)) {
-        ids.push(comment.comment_identifier);
-      }
-      return ids;
-    }, []) || [];
+    return getCommentedCellIdsByType(comments, 'chrono');
+  }, [comments]);
+
+  // Derive left_heavy-specific cell identifiers for highlighting
+  const commentedLeftHeavyCellIds = useMemo(() => {
+    return getCommentedCellIdsByType(comments, 'left_heavy');
+  }, [comments]);
+  
+  // Derive sandwich-specific cell identifiers (if needed later)
+  const commentedSandwichCellIds = useMemo(() => {
+      return getCommentedCellIdsByType(comments, 'sandwich');
   }, [comments]);
 
   // Optional: Function to get all comments for a specific chrono cell
@@ -48,7 +63,18 @@ export function useTraceComments(traceId?: string) {
     isLoading,
     error,
     commentedChronoCellIds,
+    commentedLeftHeavyCellIds,
+    commentedSandwichCellIds,
     getCommentsForChronoCell,
     overviewComments,
-  }), [comments, isLoading, error, commentedChronoCellIds, getCommentsForChronoCell, overviewComments]);
+  }), [
+    comments, 
+    isLoading, 
+    error, 
+    commentedChronoCellIds, 
+    commentedLeftHeavyCellIds, 
+    commentedSandwichCellIds,
+    getCommentsForChronoCell, 
+    overviewComments
+  ]);
 } 

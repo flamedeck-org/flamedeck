@@ -177,7 +177,7 @@ export const getLeftHeavyFlamechart = memoizeByShallowEquality(
 const getLeftHeavyFlamechartRenderer = createMemoizedFlamechartRenderer()
 
 export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerProps) => {
-  const {activeProfileState, glCanvas, commentedCellIds} = ownProps
+  const {activeProfileState, glCanvas, commentedCellIds, onNodeSelect} = ownProps
 
   const {profile, leftHeavyViewState} = activeProfileState
 
@@ -197,7 +197,7 @@ export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerPr
     flamechart,
   })
 
-  const setters = useFlamechartSetters(FlamechartID.LEFT_HEAVY)
+  const setters = useFlamechartSetters(FlamechartID.LEFT_HEAVY, onNodeSelect)
 
   return (
     <FlamechartSearchContextProvider
