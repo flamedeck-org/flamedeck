@@ -425,61 +425,104 @@ const TraceDetail: React.FC = () => {
               <Separator className="mb-6" />
 
               {/* Grouped Comment Lists */}
-              {!commentsLoading && !commentsError && commentTypes.length > 0 && (
+              {/* Handle Loading State */}
+              {commentsLoading && (
+                <Skeleton className="h-20 w-full rounded-md" /> 
+              )}
+
+              {/* Handle Error State */}
+              {!commentsLoading && commentsError && (
+                 <div className="text-destructive p-4 border rounded-md">
+                   Error loading comments: {commentsError.message}
+                 </div>
+              )}
+
+              {/* Handle Success State (With Comments) */}
+              {!commentsLoading && !commentsError && (
                 <div className="space-y-6">
-                  {commentTypes.map(commentType => {
-                    const commentsInSection = groupedComments[commentType];
-                    const viewType = commentTypeToViewType(commentType);
-                    const sectionTitle = getCommentSectionTitle(commentType);
-                    
-                    if (!commentsInSection || commentsInSection.length === 0) return null;
-                    
-                    return (
-                      <div key={commentType}>
-                         {/* Section Header + Link */}
-                         <div className="flex justify-between items-center mb-3">
-                           <h3 className="text-md font-medium">{sectionTitle}</h3>
-                           {viewType && (
-                             <Link 
-                               to={`/traces/${id}/view`}
-                               state={{ 
-                                 initialView: viewType, 
-                                 blobPath: trace.blob_path
-                               }} 
-                               className={buttonVariants({ variant: "outline", size: "xs" }) + " flex items-center"}
-                             >
-                               View in Context <ExternalLink className="ml-1.5 h-3 w-3" />
-                             </Link>
-                           )}
-                         </div>
-                         {/* Comment Items */}
-                        <div className="border rounded-md px-4"> 
-                            {commentsInSection.map(comment => (
-                                <CommentItem 
-                                    key={comment.id} 
-                                    traceId={traceIdForComments}
-                                    comment={comment}
-                                    replyingToCommentId={replyingToCommentId}
-                                    onStartReply={handleStartReply}
-                                    onCancelReply={handleCancelReply}
-                                    onCommentUpdated={handleCommentUpdate}
-                                />
-                            ))}
-                            
-                            {/* Conditionally render General Comment Form *inside* overview items container */}
-                            {commentType === 'overview' && (
-                               <div className="py-4"> {/* Add padding around form */} 
-                                  <CommentForm 
-                                    traceId={traceIdForComments} 
-                                    commentType="overview"
-                                    commentIdentifier={null}
-                                    placeholder="Add a general comment..."
-                                  />
-                               </div>
-                            )}
+                  {/* --- Render Overview Section First --- */}
+                  <div key="overview">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-md font-medium">{getCommentSectionTitle('overview')}</h3>
+                      {/* No context link for overview */}
+                    </div>
+                    <div className="border rounded-md px-4">
+                      {/* Render existing overview comments or empty state */}
+                      {groupedComments['overview'] && groupedComments['overview'].length > 0 ? (
+                        groupedComments['overview'].map(comment => (
+                          <CommentItem
+                            key={comment.id}
+                            traceId={traceIdForComments}
+                            comment={comment}
+                            replyingToCommentId={replyingToCommentId}
+                            onStartReply={handleStartReply}
+                            onCancelReply={handleCancelReply}
+                            onCommentUpdated={handleCommentUpdate}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-muted-foreground italic py-4 text-sm">
+                          No comments yet. Be the first to add one!
                         </div>
+                      )}
+                      {/* Always render the form for overview */}
+                      <div className="py-4 border-t">
+                        <CommentForm
+                          traceId={traceIdForComments}
+                          commentType="overview"
+                          commentIdentifier={null}
+                          placeholder="Add a general comment..."
+                        />
                       </div>
-                    );
+                    </div>
+                  </div>
+
+                  {/* --- Render Other Comment Sections --- */}
+                  {commentTypes
+                    .filter(type => type !== 'overview') // Exclude overview as it's handled above
+                    .map(commentType => {
+                      const commentsInSection = groupedComments[commentType];
+                      const viewType = commentTypeToViewType(commentType);
+                      const sectionTitle = getCommentSectionTitle(commentType);
+
+                      // This check should now be redundant due to how commentTypes is derived, but safe to keep
+                      if (!commentsInSection || commentsInSection.length === 0) {
+                          return null;
+                      }
+
+                      return (
+                        <div key={commentType}>
+                          <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-md font-medium">{sectionTitle}</h3>
+                            {viewType && (
+                              <Link
+                                to={`/traces/${id}/view`}
+                                state={{
+                                  initialView: viewType,
+                                  blobPath: trace.blob_path
+                                }}
+                                className={buttonVariants({ variant: "outline", size: "xs" }) + " flex items-center"}
+                              >
+                                View in Context <ExternalLink className="ml-1.5 h-3 w-3" />
+                              </Link>
+                            )}
+                          </div>
+                          <div className="border rounded-md px-4">
+                            {commentsInSection.map(comment => (
+                              <CommentItem
+                                key={comment.id}
+                                traceId={traceIdForComments}
+                                comment={comment}
+                                replyingToCommentId={replyingToCommentId}
+                                onStartReply={handleStartReply}
+                                onCancelReply={handleCancelReply}
+                                onCommentUpdated={handleCommentUpdate}
+                              />
+                            ))}
+                            {/* No form needed for non-overview types here */}
+                          </div>
+                        </div>
+                      );
                   })}
                 </div>
               )}
