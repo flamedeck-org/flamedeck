@@ -1,22 +1,24 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import TextareaAutosize from 'react-textarea-autosize';
 import { useToast } from '@/components/ui/use-toast';
 import { traceApi, NewTraceComment } from '@/lib/api';
-import { Loader2, Send, Paperclip } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from "@/lib/utils";
 
 interface CommentFormProps {
   traceId: string;
-  parentId?: string | null; // Optional: for replies
-  commentType: string; // Type of comment (e.g., 'trace', 'frame')
-  commentIdentifier?: string | null; // Identifier for the specific item (e.g., frame key), null for general
-  onCommentPosted?: () => void; // Optional: callback after success
+  parentId?: string | null;
+  commentType: string;
+  commentIdentifier?: string | null;
+  onCommentPosted?: () => void;
+  onCancel?: () => void;
   placeholder?: string;
   autoFocus?: boolean;
-  className?: string; // Allow passing additional classes
+  className?: string;
+  initialContent?: string;
 }
 
 const CommentForm: React.FC<CommentFormProps> = ({
@@ -25,17 +27,23 @@ const CommentForm: React.FC<CommentFormProps> = ({
   commentType,
   commentIdentifier = null,
   onCommentPosted,
+  onCancel,
   placeholder = "Leave a comment...",
   autoFocus = false,
   className,
+  initialContent = '',
 }) => {
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(initialContent);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
+  useEffect(() => {
+    setContent(initialContent);
+  }, [initialContent]);
+
   const commentMutation = useMutation({
-    mutationFn: (newComment: NewTraceComment & { trace_id: string }) => traceApi.createTraceComment(newComment, user.id),
+    mutationFn: (newComment: NewTraceComment & { trace_id: string }) => traceApi.createTraceComment(newComment, user?.id || ''),
     onSuccess: () => {
       setContent('');
       queryClient.invalidateQueries({ queryKey: ['traceComments', traceId] });
@@ -64,54 +72,82 @@ const CommentForm: React.FC<CommentFormProps> = ({
     });
   };
 
+  const handleCancel = () => {
+    setContent('');
+    onCancel?.();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
       handleSubmit();
     }
+    if (e.key === 'Escape') {
+      handleCancel();
+    }
   };
 
   if (!user) {
-    return <p className="text-sm text-muted-foreground">Please log in to comment.</p>;
+    return null;
   }
 
   const canSubmit = content.trim().length > 0 && !commentMutation.isPending;
+  const isReply = parentId !== null;
 
   return (
     <form onSubmit={handleSubmit} className={cn("relative", className)}>
-      <div className="flex items-end space-x-2 rounded-md border border-input bg-transparent pr-10 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+      <div className={cn(
+          "flex items-end space-x-2 rounded-md border border-input bg-transparent ring-offset-background",
+          "focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+          isReply ? "pr-1" : "pr-10"
+      )}>
         <TextareaAutosize
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={commentMutation.isPending}
-          minRows={parentId ? 2 : 3}
+          minRows={isReply ? 1 : 2}
           maxRows={10}
           autoFocus={autoFocus}
           required
           className="flex-grow resize-none appearance-none bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
-        <div className="absolute bottom-1 right-1 flex items-center">
+        <div className={cn(
+            "absolute right-1 flex items-center", 
+            isReply ? "bottom-1.5" : "bottom-1"
+        )}>
           <Button
             type="submit"
             variant="ghost"
             size="icon"
             className={cn(
-              "h-8 w-8 rounded-full",
+              "h-7 w-7 rounded-full",
               canSubmit ? "text-foreground bg-primary/10 hover:bg-primary/20" : "text-muted-foreground"
             )}
             disabled={!canSubmit}
             aria-label="Post comment"
           >
             {commentMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-3 w-3" />
             )}
           </Button>
         </div>
       </div>
+      {isReply && (
+        <Button 
+          type="button" 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleCancel}
+          className="mt-1 text-xs text-muted-foreground h-auto px-2 py-0.5"
+          disabled={commentMutation.isPending}
+        >
+          Cancel
+        </Button>
+      )}
     </form>
   );
 };

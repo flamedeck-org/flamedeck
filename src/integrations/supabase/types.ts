@@ -260,6 +260,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      delete_folder_contents_by_ids: {
+        Args: {
+          p_folder_ids_to_delete: string[]
+          p_trace_ids_to_delete: string[]
+          p_original_folder_id: string
+        }
+        Returns: undefined
+      }
       get_folder_view_data: {
         Args: {
           p_user_id: string
@@ -268,6 +276,10 @@ export type Database = {
           p_limit?: number
           p_search_query?: string
         }
+        Returns: Json
+      }
+      get_recursive_folder_contents: {
+        Args: { folder_id_to_check: string }
         Returns: Json
       }
       get_user_accessible_traces: {

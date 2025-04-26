@@ -1,7 +1,9 @@
 import { ApiError, ApiResponse } from "@/types";
 import { Folder } from "./types";
 import { supabase } from "@/integrations/supabase/client";
-import { PostgrestError } from "@supabase/supabase-js";
+import { PostgrestError, PostgrestSingleResponse } from "@supabase/supabase-js";
+import { deleteStorageObject } from "./utils"; // Ensure this helper is available
+import { RecursiveFolderContents } from "@/types"; // Import the new type
 
 export async function createFolder(
     name: string,
@@ -222,6 +224,143 @@ export async function createFolder(
         hint: (error as PostgrestError)?.hint,
       };
       return { data: null, error: apiError };
+    }
+  }
+
+  // --- NEW: Function to get recursive contents (for delete confirmation) ---
+  export async function getRecursiveFolderContents(
+    folderId: string
+  ): Promise<ApiResponse<RecursiveFolderContents>> {
+     try {
+       if (!folderId) {
+         throw new Error("Folder ID is required.");
+       }
+       console.log(`[API] Fetching contents for folder confirmation: ${folderId}`);
+
+       // Call the first RPC function (simplified signature)
+       const { data, error } = await supabase.rpc(
+           'get_recursive_folder_contents',
+            {
+              folder_id_to_check: folderId
+            }
+       );
+
+       if (error) {
+         console.error(`Error fetching folder contents/permissions for ${folderId}:`, error);
+         if (error.message.includes("Permission denied")) {
+            throw new Error("Permission denied.");
+         } else if (error.message.includes("Folder not found")){
+             throw new Error("Folder not found.");
+         }
+         throw error; // Rethrow other errors
+       }
+
+       // Basic validation of the returned structure
+       if (!data || typeof data !== 'object' || !data.folder_ids || !data.trace_ids || !data.blob_paths) {
+           console.error("Invalid data structure received from get_recursive_folder_contents:", data);
+           throw new Error("Invalid data received from server.");
+       }
+
+       console.log(`[API] Found ${data.folder_ids.length} folders, ${data.trace_ids.length} traces.`);
+       // Explicitly cast to the defined type
+       return { data: data as RecursiveFolderContents, error: null };
+
+     } catch (error) {
+       console.error(`Error in getRecursiveFolderContents for ${folderId}:`, error);
+       const apiError: ApiError = {
+         message: error instanceof Error ? error.message : "Failed to fetch folder contents",
+         code: (error as PostgrestError)?.code,
+         details: (error as PostgrestError)?.details,
+         hint: (error as PostgrestError)?.hint,
+       };
+       return { data: null, error: apiError };
+     }
+  }
+
+  // --- NEW: Function to execute deletion of DB records AND storage objects ---
+  interface ConfirmDeleteParams {
+    folderIdsToDelete: string[];
+    traceIdsToDelete: string[];
+    originalFolderId: string;
+    blobPathsToDelete: string[];
+  }
+
+  export async function confirmAndDeleteFolderContents(
+    params: ConfirmDeleteParams
+  ): Promise<ApiResponse<void>> {
+    const { folderIdsToDelete, traceIdsToDelete, originalFolderId, blobPathsToDelete } = params;
+    const storageCleanupErrors: string[] = [];
+
+    try {
+        // Step 1: Delete Database Records using the second RPC
+        console.log(`[API Delete] Deleting DB records for original folder ${originalFolderId}...`);
+        const { error: deleteDbError } = await supabase.rpc(
+            'delete_folder_contents_by_ids',
+            {
+                p_folder_ids_to_delete: folderIdsToDelete,
+                p_trace_ids_to_delete: traceIdsToDelete,
+                p_original_folder_id: originalFolderId
+            }
+        ) as PostgrestSingleResponse<null>;
+
+        if (deleteDbError) {
+            console.error(`[API Delete] Error deleting DB records:`, deleteDbError);
+            // Re-check specific errors if needed (e.g., permission denied during the final check)
+            if (deleteDbError.message.includes("Permission denied")) {
+                throw new Error("Permission denied during final delete confirmation.");
+            }
+            throw new Error(`Failed to delete database records: ${deleteDbError.message}`);
+        }
+        console.log(`[API Delete] DB records deleted successfully.`);
+
+        // Step 2: Storage Cleanup (only if DB delete succeeded)
+        if (blobPathsToDelete.length > 0) {
+          console.log(`[API Delete] Attempting storage cleanup for ${blobPathsToDelete.length} objects...`);
+          const cleanupPromises = blobPathsToDelete.map(async (fullPath) => {
+            const pathParts = fullPath.split('/');
+            if (pathParts.length >= 2) {
+                const bucket = pathParts[0];
+                const pathWithinBucket = pathParts.slice(1).join('/');
+                try {
+                  await deleteStorageObject(bucket, pathWithinBucket);
+                } catch (storageError) {
+                    const errMsg = `Failed to delete ${fullPath}: ${storageError instanceof Error ? storageError.message : String(storageError)}`;
+                    console.error(errMsg);
+                    storageCleanupErrors.push(errMsg);
+                }
+            } else {
+                const errMsg = `Invalid path format skipped during cleanup: ${fullPath}`;
+                console.warn(errMsg);
+                storageCleanupErrors.push(errMsg);
+            }
+          });
+          await Promise.all(cleanupPromises);
+          console.log("[API Delete] Storage cleanup finished.");
+        }
+         else {
+            console.log("[API Delete] No storage objects to clean up.");
+        }
+
+        // Step 3: Final Result
+        if (storageCleanupErrors.length > 0) {
+           // Throw error indicating partial success (DB deleted, some storage failed)
+           throw new Error(`Folder deleted, but ${storageCleanupErrors.length} storage object(s) failed cleanup. Check logs.`);
+        }
+
+        // If we reach here, everything succeeded
+        console.log(`[API Delete] Folder ${originalFolderId} and contents fully deleted.`);
+        return { data: null, error: null };
+
+    } catch (error) {
+        // Catch errors from DB delete or storage cleanup
+        console.error(`[API Delete] Error during confirmed deletion for ${originalFolderId}:`, error);
+        const apiError: ApiError = {
+          message: error instanceof Error ? error.message : "Failed to complete folder deletion",
+          code: (error as PostgrestError)?.code,
+          details: (error as PostgrestError)?.details,
+          hint: (error as PostgrestError)?.hint,
+        };
+        return { data: null, error: apiError };
     }
   }
 

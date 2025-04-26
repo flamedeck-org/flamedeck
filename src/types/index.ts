@@ -1,4 +1,5 @@
 import { ProfileType } from "@/lib/speedscope-import";
+import { User } from "@supabase/supabase-js";
 
 export interface UserProfile {
   id: string; // uuid
@@ -62,4 +63,11 @@ export interface TraceComment {
   updated_at: string; // timestamptz - Added
   comment_type: string; // Added
   comment_identifier: string | null; // Added
+}
+
+// --- NEW: Type for folder contents returned by RPC ---
+export interface RecursiveFolderContents {
+  folder_ids: string[];
+  trace_ids: string[];
+  blob_paths: string[];
 }
