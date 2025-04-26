@@ -1,0 +1,22 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node", // Or "bundler" if using newer TS/Vite versions
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2020", // Target modern JS
+    "module": "ESNext",
+    "lib": ["ES2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@trace-view-pilot/shared-importer": ["packages/shared-importer/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+} 
