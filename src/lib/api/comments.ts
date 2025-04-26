@@ -27,6 +27,7 @@ import { PostgrestError } from "@supabase/supabase-js";
           comment_identifier,
           is_edited,
           last_edited_at,
+          is_deleted,
           author: user_profiles ( id, username, avatar_url, first_name, last_name )
         `)
         .eq('trace_id', traceId)
@@ -114,6 +115,34 @@ import { PostgrestError } from "@supabase/supabase-js";
       console.error(`Error updating comment ${commentId}:`, error);
       const apiError: ApiError = {
         message: error instanceof Error ? error.message : "Failed to update comment",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
+    }
+  }
+
+  // Mark a comment as deleted (soft delete)
+  export async function deleteTraceCommentLogically(
+    commentId: string
+  ): Promise<ApiResponse<null>> { // Return null on success
+    try {
+      const { error } = await supabase
+        .from('trace_comments')
+        .update({ 
+          is_deleted: true, 
+          content: '' // Set content to empty string
+        })
+        .eq('id', commentId);
+
+      if (error) throw error;
+
+      return { data: null, error: null }; // Indicate success
+    } catch (error) {
+      console.error(`Error marking comment ${commentId} as deleted:`, error);
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to delete comment",
         code: (error as PostgrestError)?.code,
         details: (error as PostgrestError)?.details,
         hint: (error as PostgrestError)?.hint,

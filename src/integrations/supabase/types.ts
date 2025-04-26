@@ -58,6 +58,9 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          is_deleted: boolean | null
+          is_edited: boolean | null
+          last_edited_at: string | null
           parent_comment_id: string | null
           trace_id: string
           trace_timestamp_ms: number | null
@@ -70,6 +73,9 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
+          is_edited?: boolean | null
+          last_edited_at?: string | null
           parent_comment_id?: string | null
           trace_id: string
           trace_timestamp_ms?: number | null
@@ -82,6 +88,9 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
+          is_edited?: boolean | null
+          last_edited_at?: string | null
           parent_comment_id?: string | null
           trace_id?: string
           trace_timestamp_ms?: number | null
