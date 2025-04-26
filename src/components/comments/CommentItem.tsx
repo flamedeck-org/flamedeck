@@ -16,15 +16,8 @@ import {
 import { toast } from 'sonner'; // Assuming you use sonner for toasts
 import { useAuth } from '@/contexts/AuthContext';
 
-// Define recursive type for structured comments
 export interface StructuredComment extends TraceCommentWithAuthor {
   replies: StructuredComment[];
-  onStartReply: (commentId: string) => void;
-  replyingToCommentId: string | null; // Pass the ID being replied to, not a boolean
-  onCancelReply: () => void;
-  onCommentUpdated: (updatedComment: TraceCommentWithAuthor) => void;
-  currentDepth?: number; // Add depth tracking for indentation
-  showReplyButton?: boolean; // New prop to control reply button visibility
 }
 
 interface CommentItemProps {
@@ -143,7 +136,9 @@ export function CommentItem({
                             variant="ghost"
                             size="xs" // Use a small text button size
                             className="h-auto px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground" // Adjusted padding/height for text
-                            onClick={() => onStartReply(comment.id)}
+                            onClick={() => {
+                              onStartReply(comment.id)
+                            }}
                             title="Reply"
                         >
                            Reply {/* Changed icon to text */}
@@ -195,6 +190,25 @@ export function CommentItem({
                 </p>
             )}
         </div>
+        
+        {/* Reply Form Area (Rendered if showReplyFormForThisComment is true) */}
+        {showReplyFormForThisComment && (
+          <div className="pt-2 pb-1">
+            {/* ------------------------------------ */}
+            <CommentForm 
+              traceId={traceId}
+              parentId={comment.id}
+              // Ensure correct props for REPLY form
+              commentType={comment.comment_type} 
+              commentIdentifier={comment.comment_identifier}
+              placeholder={`Replying to ${authorName}...`}
+              onCommentPosted={handleReplySuccess} // Should reset reply state
+              onCancel={onCancelReply} // Use the cancel reply handler
+              autoFocus
+              // mode defaults to 'create', which is correct here
+            />
+          </div>
+        )}
         
         {/* Render Replies Recursively */}
         {comment.replies && comment.replies.length > 0 && (
