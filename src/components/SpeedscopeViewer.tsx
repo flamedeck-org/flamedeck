@@ -12,8 +12,22 @@ import { ChronoFlamechartView, LeftHeavyFlamechartView } from './speedscope-ui/f
 import ProfileCommentForm from './ProfileCommentForm';
 import { useTraceComments } from '@/hooks/useTraceComments';
 import CommentSidebar from './CommentSidebar';
+import { TraceCommentWithAuthor } from '@/lib/api';
 
 export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
+
+// Type for storing selection state per view
+interface SelectedCommentState {
+  cellId: string | null;
+  nodeName: string | null;
+}
+
+// Helper map from Speedscope view type to comment_type used in DB/API
+const viewToCommentTypeMap: Record<SpeedscopeViewType, string> = {
+  time_ordered: 'chrono',
+  left_heavy: 'left_heavy',
+  sandwich: 'sandwich',
+};
 
 interface SpeedscopeViewerProps {
   traceId?: string;
@@ -25,24 +39,49 @@ interface SpeedscopeViewerProps {
 const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData, fileName, view }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCellIdForComments, setSelectedCellIdForComments] = useState<string | null>(null);
-  const [selectedNodeNameForComments, setSelectedNodeNameForComments] = useState<string | null>(null);
+  
+  // State to hold selection info per view
+  const [selectedCommentInfoByView, setSelectedCommentInfoByView] = useState<Record<SpeedscopeViewType, SelectedCommentState>>({
+    time_ordered: { cellId: null, nodeName: null },
+    left_heavy: { cellId: null, nodeName: null },
+    sandwich: { cellId: null, nodeName: null }, // Initialize for all views
+  });
   
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
   const flattenRecursion = useAtom(flattenRecursionAtom);
   const activeProfileState = useActiveProfileState();
 
-  const { allComments, commentedChronoCellIds, isLoading: commentsLoading, error: commentsError } = useTraceComments(traceId);
+  // Fetch all comments once
+  const { 
+    allComments, 
+    commentedChronoCellIds, 
+    commentedLeftHeavyCellIds,
+    isLoading: commentsLoading, 
+    error: commentsError 
+  } = useTraceComments(traceId);
 
-  const handleNodeSelect = useCallback((node: CallTreeNode | null, cellId?: string | null) => {
+  // Updated handler to accept the view type
+  const handleNodeSelect = useCallback((activeView: SpeedscopeViewType, node: CallTreeNode | null, cellId?: string | null) => {
+    console.log(`[handleNodeSelect] Called for view: ${activeView}, cellId: ${cellId}, node name: ${node?.frame.name}`); // Log arguments
     const nodeName = node?.frame.name ?? null;
-    setSelectedCellIdForComments(cellId ?? null);
-    setSelectedNodeNameForComments(nodeName);
-    if (!cellId) {
-        setSelectedNodeNameForComments(null);
-    }
+    setSelectedCommentInfoByView(prev => {
+      // Log previous and next state for this view
+      console.log(`[handleNodeSelect] Updating state for ${activeView}. Prev:`, prev[activeView], `Next: { cellId: ${cellId ?? null}, nodeName: ${nodeName} }`);
+      return {
+          ...prev,
+          [activeView]: { cellId: cellId ?? null, nodeName: nodeName }
+      }
+    });
   }, []);
+
+  // Simplified close handler - only closes for the currently active view
+  const handleCloseSidebar = useCallback(() => {
+    setSelectedCommentInfoByView(prev => ({
+      ...prev,
+      [view]: { cellId: null, nodeName: null } // Reset only the current view's state
+    }));
+  }, [view]); // Re-create if the active view changes
 
   useEffect(() => {
     let isCancelled = false;
@@ -90,26 +129,21 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
         return;
       }
-
-      if (event.key === 'r') {
-        flattenRecursionAtom.set(!flattenRecursion);
-      }
-
+      if (event.key === 'r') { flattenRecursionAtom.set(!flattenRecursion); }
       if (event.key === 'Escape') {
-        if (selectedCellIdForComments !== null) {
-          setSelectedCellIdForComments(null);
+        // Close sidebar for the current view if it's open
+        if (selectedCommentInfoByView[view].cellId !== null) {
+          handleCloseSidebar();
         } else {
+          // Fallback to deselecting node in speedscope core
           activeProfileState?.setSelectedNode(null);
         }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [flattenRecursion, selectedCellIdForComments, activeProfileState]);
+    return () => { window.removeEventListener('keydown', handleKeyDown); };
+    // Depend on the current view's selection state and the close handler
+  }, [selectedCommentInfoByView, view, activeProfileState, flattenRecursion, handleCloseSidebar]);
 
   if (isLoading) {
     return (
@@ -135,20 +169,24 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
     );
   }
 
+  // Determine current selection based on the active view
+  const currentSelection = selectedCommentInfoByView[view];
+  const commentTypeForView = viewToCommentTypeMap[view];
+
   return (
     <div className="h-full flex flex-row relative">
       <div className="flex-grow h-full relative overflow-hidden">
         <ProfileSearchContextProvider>
           {view === 'sandwich' && (
             <SandwichViewContainer
-              onFrameSelectForComment={() => {}}
+              onFrameSelectForComment={() => { /* Potentially call handleNodeSelect('sandwich', ...) */ }}
               activeProfileState={activeProfileState}
               glCanvas={glCanvas}
             />
           )}
           {view === 'time_ordered' && (
             <ChronoFlamechartView
-              onNodeSelect={handleNodeSelect}
+              onNodeSelect={(node, cellId) => handleNodeSelect('time_ordered', node, cellId)}
               activeProfileState={activeProfileState}
               glCanvas={glCanvas}
               commentedCellIds={commentedChronoCellIds || []}
@@ -156,28 +194,30 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
           )}
           {view === 'left_heavy' && (
             <LeftHeavyFlamechartView
-              onNodeSelect={handleNodeSelect}
+              onNodeSelect={(node, cellId) => {
+                // Log that the callback from LeftHeavyFlamechartView was triggered
+                console.log(`[LeftHeavyFlamechartView onNodeSelect] Triggered. cellId: ${cellId}, node name: ${node?.frame.name}`); 
+                handleNodeSelect('left_heavy', node, cellId)
+              }}
               activeProfileState={activeProfileState}
               glCanvas={glCanvas}
-              commentedCellIds={[]}
+              commentedCellIds={commentedLeftHeavyCellIds || []}
             />
           )}
         </ProfileSearchContextProvider>
       </div>
 
-      {selectedCellIdForComments && traceId && (
+      {/* Render sidebar based on current view's selection state */} 
+      {currentSelection.cellId && traceId && (
         <CommentSidebar
           traceId={traceId}
-          cellId={selectedCellIdForComments}
-          cellName={selectedNodeNameForComments}
-          commentType="chrono"
-          comments={allComments || []}
+          cellId={currentSelection.cellId}
+          cellName={currentSelection.nodeName}
+          commentType={commentTypeForView} // Use the mapped comment type
+          comments={allComments || []} 
           isLoading={commentsLoading}
           error={commentsError}
-          onClose={() => {
-              setSelectedCellIdForComments(null);
-              setSelectedNodeNameForComments(null);
-          }}
+          onClose={handleCloseSidebar} // Use the specific close handler
         />
       )}
     </div>
