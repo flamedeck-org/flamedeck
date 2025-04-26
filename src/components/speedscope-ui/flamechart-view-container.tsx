@@ -23,10 +23,10 @@ interface FlamechartSetters {
   setLogicalSpaceViewportSize: (logicalSpaceViewportSize: Vec2) => void
   setConfigSpaceViewportRect: (configSpaceViewportRect: Rect) => void
   setNodeHover: (hover: {node: CallTreeNode; event: MouseEvent} | null) => void
-  setSelectedNode: (node: CallTreeNode | null) => void
+  setSelectedNode: (node: CallTreeNode | null, cellId?: string | null) => void
 }
 
-export function useFlamechartSetters(id: FlamechartID): FlamechartSetters {
+export function useFlamechartSetters(id: FlamechartID, onNodeSelect: (node: CallTreeNode | null, cellId?: string | null) => void): FlamechartSetters {
   return {
     setNodeHover: useCallback(
       (hover: {node: CallTreeNode; event: MouseEvent} | null) => {
@@ -47,10 +47,11 @@ export function useFlamechartSetters(id: FlamechartID): FlamechartSetters {
       [id],
     ),
     setSelectedNode: useCallback(
-      (selectedNode: CallTreeNode | null) => {
-        profileGroupAtom.setSelectedNode(id, selectedNode)
+      (selectedNode: CallTreeNode | null, cellId?: string | null) => {
+        profileGroupAtom.setSelectedNode(id, selectedNode, cellId)
+        onNodeSelect(selectedNode, cellId)
       },
-      [id],
+      [id, onNodeSelect],
     ),
   }
 }
@@ -107,12 +108,12 @@ const getChronoViewFlamechartRenderer = createMemoizedFlamechartRenderer()
 export interface FlamechartViewContainerProps {
   activeProfileState: ActiveProfileState
   glCanvas: HTMLCanvasElement | null
-  onCellSelectForComment?: (identifier: string | null, type: string) => void
   commentedCellIds?: string[]
+  onNodeSelect: (node: CallTreeNode | null, cellId?: string | null) => void
 }
 
 export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) => {
-  const {activeProfileState, glCanvas, onCellSelectForComment, commentedCellIds} = props
+  const {activeProfileState, glCanvas, commentedCellIds} = props
   const {profile, chronoViewState} = activeProfileState
 
   const theme = useTheme()
@@ -128,7 +129,7 @@ export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) =
     flamechart,
   })
 
-  const setters = useFlamechartSetters(FlamechartID.CHRONO)
+  const setters = useFlamechartSetters(FlamechartID.CHRONO, props.onNodeSelect)
 
   return (
     <FlamechartSearchContextProvider
@@ -146,8 +147,10 @@ export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) =
         canvasContext={canvasContext}
         getCSSColorForFrame={getCSSColorForFrame}
         {...chronoViewState}
-        {...setters}
-        onCellSelectForComment={onCellSelectForComment}
+        setNodeHover={setters.setNodeHover}
+        setLogicalSpaceViewportSize={setters.setLogicalSpaceViewportSize}
+        setConfigSpaceViewportRect={setters.setConfigSpaceViewportRect}
+        setSelectedNode={setters.setSelectedNode}
         commentedCellIds={commentedCellIds}
       />
     </FlamechartSearchContextProvider>
@@ -174,7 +177,7 @@ export const getLeftHeavyFlamechart = memoizeByShallowEquality(
 const getLeftHeavyFlamechartRenderer = createMemoizedFlamechartRenderer()
 
 export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerProps) => {
-  const {activeProfileState, glCanvas, onCellSelectForComment, commentedCellIds} = ownProps
+  const {activeProfileState, glCanvas, commentedCellIds} = ownProps
 
   const {profile, leftHeavyViewState} = activeProfileState
 
@@ -212,8 +215,10 @@ export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerPr
         canvasContext={canvasContext}
         getCSSColorForFrame={getCSSColorForFrame}
         {...leftHeavyViewState}
-        {...setters}
-        onCellSelectForComment={onCellSelectForComment}
+        setNodeHover={setters.setNodeHover}
+        setLogicalSpaceViewportSize={setters.setLogicalSpaceViewportSize}
+        setConfigSpaceViewportRect={setters.setConfigSpaceViewportRect}
+        setSelectedNode={setters.setSelectedNode}
         commentedCellIds={commentedCellIds}
       />
     </FlamechartSearchContextProvider>

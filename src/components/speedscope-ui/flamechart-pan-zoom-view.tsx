@@ -53,8 +53,7 @@ export interface FlamechartPanZoomViewProps {
   theme: Theme
 
   onNodeHover: (hover: {node: CallTreeNode; event: ReactMouseEvent<HTMLDivElement>} | null) => void
-  onNodeSelect: (node: CallTreeNode | null) => void
-  onCellSelectForComment?: (identifier: string | null, type: string) => void
+  onNodeSelect: (node: CallTreeNode | null, cellId?: string | null) => void
 
   configSpaceViewportRect: Rect
   transformViewport: (transform: AffineTransform) => void
@@ -639,22 +638,15 @@ export class FlamechartPanZoomView extends Component<
       return
     }
 
-    if (ev.altKey && this.hoveredLabel && this.props.onCellSelectForComment) {
+    if (this.hoveredLabel) {
       const frame = this.hoveredLabel.node.frame;
       const frameStart = this.hoveredLabel.frameStart;
       const depth = this.hoveredLabel.depth;
-      // Generate the specific cell identifier including depth
       const cellId = `${frame.key}_${depth}_${frameStart.toFixed(3)}`;
-      console.log('Alt+Click on cellId:', cellId);
-      this.props.onCellSelectForComment(cellId, 'chrono');
-      return;
-    }
-
-    if (this.hoveredLabel) {
-      this.props.onNodeSelect(this.hoveredLabel.node)
+      this.props.onNodeSelect(this.hoveredLabel.node, cellId)
       this.renderCanvas()
     } else {
-      this.props.onNodeSelect(null)
+      this.props.onNodeSelect(null, null)
     }
   }
 
@@ -833,7 +825,7 @@ export class FlamechartPanZoomView extends Component<
       this.pan(new Vec2(0, 100))
     } else if (ev.key === 'Escape') {
       // Keep escape for deselecting node, as the comment form handles its own escape
-      this.props.onNodeSelect(null) 
+      this.props.onNodeSelect(null, null)
       this.renderCanvas()
     }
   }
@@ -930,14 +922,6 @@ export class FlamechartPanZoomView extends Component<
     }
   };
   
-  private handleAddComment = () => {
-    const { cellIdentifier, commentType } = this.contextMenuState;
-    if (cellIdentifier && commentType && this.props.onCellSelectForComment) {
-      this.props.onCellSelectForComment(cellIdentifier, commentType);
-      this.hideContextMenu();
-    }
-  };
-  
   private renderContextMenu() {
     // Remove any existing context menu first
     this.removeContextMenu();
@@ -981,13 +965,6 @@ export class FlamechartPanZoomView extends Component<
               <ContextMenuDivider />
             </>
           )}
-          
-          <ContextMenuItem
-            onClick={this.handleAddComment}
-            icon={<MessageSquare className="h-4 w-4" />}
-          >
-            Add Comment
-          </ContextMenuItem>
         </ContextMenu>,
         this.contextMenuPortal
       );

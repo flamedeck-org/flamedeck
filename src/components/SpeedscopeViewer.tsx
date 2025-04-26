@@ -4,13 +4,14 @@ import {
   importProfileGroupFromText 
 } from '@/lib/speedscope-import';
 import { profileGroupAtom, glCanvasAtom, flattenRecursionAtom } from '@/lib/speedscope-core/app-state';
-import { ActiveProfileState, useActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state'; 
+import { ActiveProfileState, useActiveProfileState, CallTreeNode } from '@/lib/speedscope-core/app-state/active-profile-state'; 
 import { useAtom } from '@/lib/speedscope-core/atom'; 
 import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
 import { ChronoFlamechartView, LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
 import ProfileCommentForm from './ProfileCommentForm';
 import { useTraceComments } from '@/hooks/useTraceComments';
+import CommentSidebar from './CommentSidebar';
 
 export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
 
@@ -24,22 +25,23 @@ interface SpeedscopeViewerProps {
 const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData, fileName, view }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCommentTarget, setSelectedCommentTarget] = useState<{identifier: string | null, type: string | null}>({ identifier: null, type: null });
+  const [selectedCellIdForComments, setSelectedCellIdForComments] = useState<string | null>(null);
+  const [selectedNodeNameForComments, setSelectedNodeNameForComments] = useState<string | null>(null);
   
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
   const flattenRecursion = useAtom(flattenRecursionAtom);
   const activeProfileState = useActiveProfileState();
 
-  const { allComments, commentedChronoCellIds, overviewComments, isLoading: commentsLoading, error: commentsError } = useTraceComments(traceId);
+  const { allComments, commentedChronoCellIds, isLoading: commentsLoading, error: commentsError } = useTraceComments(traceId);
 
-  const handleSelectCommentTarget = useCallback((identifier: string | null, type: string | null) => {
-    console.log("Target selected for comment:", { identifier, type });
-    setSelectedCommentTarget({ identifier, type });
-  }, []);
-
-  const handleCommentPosted = useCallback(() => {
-    setSelectedCommentTarget({ identifier: null, type: null });
+  const handleNodeSelect = useCallback((node: CallTreeNode | null, cellId?: string | null) => {
+    const nodeName = node?.frame.name ?? null;
+    setSelectedCellIdForComments(cellId ?? null);
+    setSelectedNodeNameForComments(nodeName);
+    if (!cellId) {
+        setSelectedNodeNameForComments(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -93,8 +95,12 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
         flattenRecursionAtom.set(!flattenRecursion);
       }
 
-      if (event.key === 'Escape' && selectedCommentTarget.identifier !== null) {
-        handleSelectCommentTarget(null, null);
+      if (event.key === 'Escape') {
+        if (selectedCellIdForComments !== null) {
+          setSelectedCellIdForComments(null);
+        } else {
+          activeProfileState?.setSelectedNode(null);
+        }
       }
     };
 
@@ -103,7 +109,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [flattenRecursion, selectedCommentTarget, handleSelectCommentTarget]);
+  }, [flattenRecursion, selectedCellIdForComments, activeProfileState]);
 
   if (isLoading) {
     return (
@@ -130,52 +136,50 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-grow relative overflow-hidden">
+    <div className="h-full flex flex-row relative">
+      <div className="flex-grow h-full relative overflow-hidden">
         <ProfileSearchContextProvider>
           {view === 'sandwich' && (
             <SandwichViewContainer
               onFrameSelectForComment={() => {}}
               activeProfileState={activeProfileState}
               glCanvas={glCanvas}
-              commentedCellIds={[]}
             />
           )}
           {view === 'time_ordered' && (
             <ChronoFlamechartView
-              onCellSelectForComment={handleSelectCommentTarget}
+              onNodeSelect={handleNodeSelect}
               activeProfileState={activeProfileState}
               glCanvas={glCanvas}
-              commentedCellIds={commentedChronoCellIds}
+              commentedCellIds={commentedChronoCellIds || []}
             />
           )}
           {view === 'left_heavy' && (
             <LeftHeavyFlamechartView
-              onFrameSelectForComment={() => {}}
+              onNodeSelect={handleNodeSelect}
               activeProfileState={activeProfileState}
               glCanvas={glCanvas}
               commentedCellIds={[]}
             />
           )}
         </ProfileSearchContextProvider>
-
-        {selectedCommentTarget.identifier !== null && selectedCommentTarget.type && traceId && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background z-10">
-            <h3 className="text-sm font-medium mb-2 flex justify-between items-center">
-              <span>Commenting on {selectedCommentTarget.type} target: <span className="font-mono">{String(selectedCommentTarget.identifier)}</span></span>
-            </h3>
-            <ProfileCommentForm 
-              traceId={traceId}
-              commentType={selectedCommentTarget.type}
-              commentIdentifier={selectedCommentTarget.identifier}
-              onCommentPosted={handleCommentPosted}
-              onCancel={() => handleSelectCommentTarget(null, null)}
-              placeholder="Add comment..."
-              autoFocus
-            />
-          </div>
-        )}
       </div>
+
+      {selectedCellIdForComments && traceId && (
+        <CommentSidebar
+          traceId={traceId}
+          cellId={selectedCellIdForComments}
+          cellName={selectedNodeNameForComments}
+          commentType="chrono"
+          comments={allComments || []}
+          isLoading={commentsLoading}
+          error={commentsError}
+          onClose={() => {
+              setSelectedCellIdForComments(null);
+              setSelectedNodeNameForComments(null);
+          }}
+        />
+      )}
     </div>
   );
 };

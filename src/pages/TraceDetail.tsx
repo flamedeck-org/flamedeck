@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { traceApi } from "@/lib/api";
-import { ArrowLeft, Trash2, Eye, Share2 } from "lucide-react";
+import { ArrowLeft, Trash2, Eye, Share2, ExternalLink } from "lucide-react";
 import PageLayout from "@/components/PageLayout";
 import PageHeader from "@/components/PageHeader";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,15 +23,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CommentForm from "@/components/CommentForm";
-import CommentList from "@/components/CommentList";
+import { CommentList, CommentItem, StructuredComment } from "@/components/comments";
 import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
-import { ProfileType } from "@/lib/speedscope-import"; // Import ProfileType
-import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
-import { useTraceDetails } from '@/hooks/useTraceDetails'; // Import the hook
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar imports
-import { useAuth } from "@/contexts/AuthContext"; // Added Auth context import
-import { formatDuration } from "@/lib/utils"; // Import formatDuration
+import { ProfileType } from "@/lib/speedscope-import";
+import { SpeedscopeViewType } from '@/components/SpeedscopeViewer';
+import { useSharingModal } from '@/hooks/useSharingModal';
+import { useTraceDetails } from '@/hooks/useTraceDetails';
+import { useTraceComments } from '@/hooks/useTraceComments';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { formatDuration } from "@/lib/utils";
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -62,28 +64,114 @@ const getProfileTypeName = (profileType: ProfileType | string | undefined): stri
   return typeMap[profileType] || profileType; // Return mapped name or the original string if not in map
 };
 
+// Helper to map comment type to SpeedscopeViewType
+const commentTypeToViewType = (commentType: string): SpeedscopeViewType | null => {
+  switch (commentType) {
+    case 'chrono': return 'time_ordered';
+    case 'left_heavy': return 'left_heavy';
+    case 'sandwich': return 'sandwich';
+    default: return null;
+  }
+};
+
+// Helper to get a display name for the comment type section
+const getCommentSectionTitle = (commentType: string): string => {
+  switch (commentType) {
+    case 'overview': return 'General Comments';
+    case 'chrono': return 'Timeline View Comments';
+    case 'left_heavy': return 'Left Heavy View Comments';
+    case 'sandwich': return 'Sandwich View Comments';
+    default: return `Comments (${commentType})`;
+  }
+};
+
+// --- Helper function to structure comments (moved here) --- 
+const structureComments = (comments: TraceCommentWithAuthor[]): StructuredComment[] => {
+  const commentMap: { [key: string]: StructuredComment } = {};
+  const rootComments: StructuredComment[] = [];
+
+  comments.forEach(comment => {
+    commentMap[comment.id] = { ...comment, replies: [] };
+  });
+
+  comments.forEach(comment => {
+    const mappedComment = commentMap[comment.id];
+    if (comment.parent_comment_id && commentMap[comment.parent_comment_id]) {
+      // Make sure parent exists and it's not the comment itself
+      if (comment.id !== comment.parent_comment_id) { 
+          commentMap[comment.parent_comment_id].replies.push(mappedComment);
+      }
+    } else {
+      rootComments.push(mappedComment);
+    }
+  });
+  
+  // Optional: Sort replies within each comment (e.g., oldest first)
+  Object.values(commentMap).forEach(comment => {
+      comment.replies.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  });
+
+  return rootComments;
+};
+// ---------------------------------------------------------
+
 const TraceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { openModal } = useSharingModal();
-  const { user: currentUser } = useAuth(); // Get current user
+  const { user: currentUser } = useAuth();
 
-  // Use the custom hook to fetch trace details
   const {
     data: trace,
-    isLoading,
-    error, // Error is now potentially of type ApiError
+    isLoading: traceLoading,
+    error: traceError,
   } = useTraceDetails(id);
 
-  // Handle navigation for not found/permission error
+  const { 
+    allComments, 
+    isLoading: commentsLoading, 
+    error: commentsError 
+  } = useTraceComments(id);
+
+  // State to track which comment is being replied to
+  const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
+
+  // Structure the comments
+  const structuredComments = useMemo(() => {
+      return allComments ? structureComments(allComments) : [];
+  }, [allComments]);
+
+  // Group structured root comments by type
+  const groupedComments = useMemo(() => {
+    if (!structuredComments) return {};
+    // Group only the ROOT comments
+    return structuredComments.reduce<Record<string, StructuredComment[]>>((acc, comment) => {
+      const type = comment.comment_type || 'unknown';
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(comment); // Add the whole structured comment object
+      return acc;
+    }, {});
+  }, [structuredComments]);
+
+  const commentTypes = useMemo(() => {
+      const types = Object.keys(groupedComments);
+      return types.sort((a, b) => {
+          if (a === 'overview') return -1;
+          if (b === 'overview') return 1;
+          return a.localeCompare(b);
+      });
+  }, [groupedComments]);
+
   useEffect(() => {
-    if (error?.code === 'PGRST116') {
+    if (traceError?.code === 'PGRST116') {
       console.log("Trace not found or permission denied (PGRST116), navigating to /404");
-      navigate('/404', { replace: true }); // Use replace to avoid back button to error state
+      navigate('/404', { replace: true });
     }
-  }, [error, navigate]);
+  }, [traceError, navigate]);
 
   const deleteMutation = useMutation({
     mutationFn: (traceId: string) => traceApi.deleteTrace(traceId),
@@ -119,12 +207,11 @@ const TraceDetail: React.FC = () => {
     return `${date.toLocaleDateString(undefined, dateOptions)} ${date.toLocaleTimeString(undefined, timeOptions)}`;
   };
 
-  const handleShareClick = () => { // Added handler
+  const handleShareClick = () => {
     if (id) {
       openModal(id);
     } else {
       console.error("Trace ID is undefined, cannot open sharing modal.");
-      // TODO: Optionally show an error to the user
     }
   };
 
@@ -181,30 +268,34 @@ const TraceDetail: React.FC = () => {
   );
 
   const traceId = trace?.id;
-  const owner = trace?.owner; // Assuming owner data is available on trace object
+  const owner = trace?.owner;
 
-  // Determine owner name and initials
-  const isOwnerCurrentUser = currentUser && owner?.id === currentUser.id;
-  const ownerName = isOwnerCurrentUser 
-    ? "me" 
-    : owner?.username || `${owner?.first_name || ''} ${owner?.last_name || ''}`.trim() || "Unknown Owner";
-  const ownerInitials = ownerName === 'me' 
-    ? currentUser?.email?.[0].toUpperCase() ?? '?' 
-    : ownerName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+  const ownerInfo = useMemo(() => {
+    if (!owner) return { name: "Unknown Owner", initials: "?" };
+    const isOwnerCurrentUser = currentUser && owner?.id === currentUser.id;
+    const name = isOwnerCurrentUser 
+      ? "me" 
+      : owner?.username || `${owner?.first_name || ''} ${owner?.last_name || ''}`.trim() || "Unknown Owner";
+    const initials = name === 'me' 
+      ? currentUser?.email?.[0].toUpperCase() ?? '?' 
+      : name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+    const avatarUrl = isOwnerCurrentUser ? currentUser?.user_metadata?.avatar_url : owner?.avatar_url ?? undefined;
+    return { name, initials, avatarUrl, isOwnerCurrentUser };
+  }, [owner, currentUser]);
 
-  // Construct subtitle node
   const ownerSubtitle = owner ? (
     <div className="flex items-center space-x-1.5">
       <span>Owned by</span>
-      <Avatar className="h-5 w-5"> {/* Smaller avatar for subtitle */}
-        <AvatarImage src={isOwnerCurrentUser ? currentUser?.user_metadata?.avatar_url : owner?.avatar_url ?? undefined} alt={ownerName} />
-        <AvatarFallback className="text-xs">{ownerInitials}</AvatarFallback> {/* Smaller text */} 
+      <Avatar className="h-5 w-5">
+        <AvatarImage src={ownerInfo.avatarUrl} alt={ownerInfo.name} />
+        <AvatarFallback className="text-xs">{ownerInfo.initials}</AvatarFallback>
       </Avatar>
-      <span className="font-medium">{ownerName}</span>
+      <span className="font-medium">{ownerInfo.name}</span>
     </div>
   ) : null;
 
-  // Render loading state first
+  const isLoading = traceLoading || commentsLoading;
+
   if (isLoading) {
     return (
       <AuthGuard>
@@ -219,24 +310,19 @@ const TraceDetail: React.FC = () => {
                 <Skeleton key={i} className="h-28" />
               ))}
             </div>
-             {/* Don't render comment skeleton if trace might not exist */}
-            {/* <Skeleton className="h-[60vh]" /> */}
           </PageLayout>
         </Layout>
       </AuthGuard>
     );
   }
 
-  // Specific check for PGRST116 is handled by useEffect navigation
-  // This block now handles other errors OR the case where data is null after loading
-  if (error || !trace) {
-    // If navigation didn't happen, it means it's some other error
-    console.error("Failed to load trace details:", error);
+  if (traceError || !trace) {
+    console.error("Failed to load trace details:", traceError);
     return (
       <AuthGuard>
         <Layout>
           <div className="text-center py-12 space-y-6">
-            <p className="text-destructive">{error?.message || "Trace data could not be loaded."}</p>
+            <p className="text-destructive">{traceError?.message || "Trace data could not be loaded."}</p>
             <Link to="/traces">
               <Button>Back to Traces</Button>
             </Link>
@@ -245,6 +331,19 @@ const TraceDetail: React.FC = () => {
       </AuthGuard>
     );
   }
+
+  // --- Callbacks for CommentItem --- 
+  const handleStartReply = (commentId: string) => {
+    setReplyingToCommentId(commentId);
+  };
+
+  const handleCancelReply = () => {
+    setReplyingToCommentId(null);
+  };
+  // --------------------------------
+
+  if (!trace) { return <div>Trace data unavailable.</div>; }
+  const traceIdForComments = trace.id;
 
   return (
     <AuthGuard>
@@ -322,20 +421,72 @@ const TraceDetail: React.FC = () => {
             </Card>
           )}
 
-          {traceId && (
+          {traceIdForComments && (
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-4">Comments</h2>
-              <Separator className="mb-4" />
-              
-              <div className="mb-6">
-                <CommentForm 
-                  traceId={traceId} 
-                  commentType="overview" // Use 'overview' for general trace-level comments
-                  commentIdentifier={null} // Identifier must be null for 'overview'
-                />
-              </div>
+              <Separator className="mb-6" />
 
-              <CommentList traceId={traceId} />
+              {/* Grouped Comment Lists */}
+              {!commentsLoading && !commentsError && commentTypes.length > 0 && (
+                <div className="space-y-6">
+                  {commentTypes.map(commentType => {
+                    const comments = groupedComments[commentType];
+                    const viewType = commentTypeToViewType(commentType);
+                    const sectionTitle = getCommentSectionTitle(commentType);
+                    
+                    if (!comments || comments.length === 0) return null;
+                    
+                    return (
+                      <div key={commentType}>
+                         {/* Section Header + Link */}
+                         <div className="flex justify-between items-center mb-3">
+                           <h3 className="text-md font-medium">{sectionTitle}</h3>
+                           {viewType && (
+                             <Link 
+                               to={`/traces/${id}/view`}
+                               state={{ 
+                                 initialView: viewType, 
+                                 blobPath: trace.blob_path
+                               }} 
+                               className={buttonVariants({ variant: "outline", size: "xs" }) + " flex items-center"}
+                             >
+                               View in Context <ExternalLink className="ml-1.5 h-3 w-3" />
+                             </Link>
+                           )}
+                         </div>
+                         {/* Comment Items */}
+                        <div className="border rounded-md px-4"> 
+                            {comments.map(comment => ( 
+                                <CommentItem 
+                                    key={comment.id} 
+                                    traceId={traceIdForComments}
+                                    comment={comment}
+                                    replyingToCommentId={replyingToCommentId}
+                                    onStartReply={handleStartReply}
+                                    onCancelReply={handleCancelReply}
+                                />
+                            ))}
+                            
+                            {/* Conditionally render General Comment Form *inside* overview items container */}
+                            {commentType === 'overview' && (
+                               <div className="py-4"> {/* Add padding around form */} 
+                                  <CommentForm 
+                                    traceId={traceIdForComments} 
+                                    commentType="overview"
+                                    commentIdentifier={null}
+                                    placeholder="Add a general comment..."
+                                  />
+                               </div>
+                            )}
+                        </div>
+                        
+                        {/* MOVED from here */}
+                        {/* {commentType === 'overview' && ( ... )} */}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

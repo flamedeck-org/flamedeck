@@ -12,6 +12,13 @@ import {
 import { MoveItemDialog } from './MoveItemDialog';
 import { RenameFolderDialog } from './RenameFolderDialog'; // Import the rename dialog
 import { cn } from '@/lib/utils'; // Import cn utility
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { traceApi } from '@/lib/api'; // Import Folder type too
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { FOLDER_VIEW_QUERY_KEY } from './hooks/useTraces';
+import { DeleteFolderDialog } from './DeleteFolderDialog';
+import { RecursiveFolderContents, ApiError, ApiResponse } from '@/types'; // Import needed types
 
 interface FolderItemProps {
   folder: Folder;
@@ -20,40 +27,69 @@ interface FolderItemProps {
 
 function FolderItemComponent({ folder, onClick }: FolderItemProps) {
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
-  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false); // State for rename dialog
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
-  // Add state for delete confirmation if needed later
-  // const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  // --- Stub Handlers for Context Menu Actions ---
+  // --- Delete Mutation - Updated --- 
+  const { mutate: deleteFolder, isPending: isDeleting } = useMutation<
+    ApiResponse<void>,
+    ApiError,
+    RecursiveFolderContents // Accepts the contents object
+  >({
+    mutationFn: (contents: RecursiveFolderContents) => {
+      if (!user) throw new Error("Authentication required.");
+      // Call the second-stage delete function
+      return traceApi.confirmAndDeleteFolderContents({
+        folderIdsToDelete: contents.folder_ids,
+        traceIdsToDelete: contents.trace_ids,
+        originalFolderId: folder.id, // Pass the original ID for the final check
+        blobPathsToDelete: contents.blob_paths
+      });
+    },
+    onSuccess: () => {
+      toast.success(`Folder "${folder.name}" and its contents deleted.`);
+      queryClient.invalidateQueries({ queryKey: [FOLDER_VIEW_QUERY_KEY] });
+      setIsDeleteDialogOpen(false); // Close dialog on success
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete folder: ${error.message}`);
+      // Optionally close dialog on error too, or leave open?
+      // setIsDeleteDialogOpen(false);
+    },
+  });
+
+  // --- Handlers --- 
   const handleOpenStub = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
-    console.log("Open action triggered for folder:", folder.id);
-    onClick(); // Use existing onClick for now
+    onClick();
     setContextMenu(null);
-  }, [onClick, folder.id]);
+  }, [onClick]);
 
   const handleRenameStub = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setIsRenameDialogOpen(true); // Open the rename dialog
+    setIsRenameDialogOpen(true);
     setContextMenu(null);
   }, []);
 
   const handleMoveStub = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
-    console.log("Move action triggered for folder:", folder.id);
-    setIsMoveDialogOpen(true); // Open the existing move dialog
+    setIsMoveDialogOpen(true);
     setContextMenu(null);
-  }, [folder.id]);
+  }, []);
 
-  const handleDeleteStub = useCallback((e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    console.log("Delete action triggered for folder:", folder.id);
-    // TODO: Implement delete logic (e.g., open a confirmation dialog)
-    // setIsDeleteDialogOpen(true);
+  const handleOpenDeleteDialog = useCallback(() => {
+    setIsDeleteDialogOpen(true);
     setContextMenu(null);
-  }, [folder.id]);
-  // --- End Stub Handlers ---
+  }, []);
+
+  // Updated handler passed to the DeleteFolderDialog
+  const handleConfirmDelete = useCallback((contents: RecursiveFolderContents) => {
+     // Trigger the mutation with the fetched contents
+     deleteFolder(contents);
+  }, [deleteFolder]);
 
   // Function to open context menu at specific coordinates
   const openContextMenuAtPosition = useCallback((x: number, y: number) => {
@@ -78,7 +114,6 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
    const handleStopPropagation = useCallback((e: React.MouseEvent) => {
       e.stopPropagation();
    }, []);
-
 
   return (
     <>
@@ -111,6 +146,7 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
                 className="focus:opacity-100 transition-opacity h-8 w-8 p-0"
                 onClick={handleOpenContextMenuFromButton}
                 aria-label={`Actions for folder ${folder.name}`}
+                disabled={isDeleting} // Disable actions button while delete mutation runs
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
@@ -126,35 +162,41 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
           onClose={() => setContextMenu(null)}
         >
           <ContextMenuItem
-            onClick={handleOpenStub}
-            icon={<FolderIcon className="h-4 w-4" />} // Use FolderIcon for open
+            onClick={!isDeleting ? handleOpenStub : undefined}
+            icon={<FolderIcon className="h-4 w-4" />}
           >
-            Open Folder
+             <span className={isDeleting ? "opacity-50 cursor-not-allowed" : ""}>
+                Open Folder
+             </span>
           </ContextMenuItem>
           <ContextMenuDivider />
           <ContextMenuItem
-            onClick={handleRenameStub}
-            icon={<Edit className="h-4 w-4" />}
+             onClick={!isDeleting ? handleRenameStub : undefined}
+             icon={<Edit className="h-4 w-4" />}
           >
-            Rename
+             <span className={isDeleting ? "opacity-50 cursor-not-allowed" : ""}>
+              Rename
+            </span>
           </ContextMenuItem>
-           {/* Keep MoveItemDialog logic but trigger via context menu */}
            <ContextMenuItem
-             onClick={handleMoveStub} // Use the stub which opens the dialog
+             onClick={!isDeleting ? handleMoveStub : undefined}
              icon={<Move className="h-4 w-4" />}
            >
-             Move
+             <span className={isDeleting ? "opacity-50 cursor-not-allowed" : ""}>
+               Move
+             </span>
            </ContextMenuItem>
           <ContextMenuDivider />
           <ContextMenuItem
-            onClick={handleDeleteStub}
+            onClick={!isDeleting ? handleOpenDeleteDialog : undefined}
             icon={<Trash2 className="h-4 w-4 text-destructive" />}
           >
-            <span className="text-destructive">Delete</span>
+             <span className={isDeleting ? "opacity-50 cursor-not-allowed text-destructive" : "text-destructive"}>
+               Delete
+             </span>
           </ContextMenuItem>
         </ContextMenu>
       )}
-
 
       {/* Keep MoveItemDialog, now opened via context menu */}
       {isMoveDialogOpen && (
@@ -177,8 +219,17 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
         />
       )}
 
-      {/* Placeholder for Delete Confirmation Dialog */}
-      {/* {isDeleteDialogOpen && ( ... AlertDialog ... )} */}
+      {/* Delete Confirmation Dialog - Updated props */}
+      {isDeleteDialogOpen && (
+        <DeleteFolderDialog
+          isOpen={isDeleteDialogOpen}
+          setIsOpen={setIsDeleteDialogOpen}
+          folderId={folder.id} // Pass folderId for the query
+          folderName={folder.name}
+          onConfirm={handleConfirmDelete} // Pass the updated handler
+          isPending={isDeleting} // Pass the mutation loading state
+        />
+      )}
     </>
   );
 }

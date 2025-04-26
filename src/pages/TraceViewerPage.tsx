@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
@@ -26,7 +26,10 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 const TraceViewerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
-  const [selectedView, setSelectedView] = useState<SpeedscopeViewType>('time_ordered');
+  
+  // Read initialView from location state, default to 'time_ordered'
+  const initialViewFromState = location.state?.initialView as SpeedscopeViewType | undefined;
+  const [selectedView, setSelectedView] = useState<SpeedscopeViewType>(initialViewFromState || 'time_ordered');
 
   const blobPath = location.state?.blobPath as string | undefined;
 
@@ -47,6 +50,17 @@ const TraceViewerPage: React.FC = () => {
     staleTime: Infinity,
     retry: false,
   });
+
+  // Effect to update selectedView if the state changes after initial render
+  // (e.g., navigating between detail page links with different initialViews)
+  useEffect(() => {
+    const newInitialView = location.state?.initialView as SpeedscopeViewType | undefined;
+    if (newInitialView && newInitialView !== selectedView) {
+      setSelectedView(newInitialView);
+    }
+    // Only run when location state changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps 
+  }, [location.state]);
 
   return (
     <AuthGuard>
