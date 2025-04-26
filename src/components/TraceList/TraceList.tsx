@@ -318,15 +318,17 @@ function TraceListComponent() {
     </Dialog>
   );
 
-  if (isEmpty) {
-    const isSearching = !!searchQuery;
-    return (
-      <PageLayout>
-        <PageHeader 
-          subtitle={breadcrumbElement}
-          title="Performance Traces" 
-          actions={primaryActions} 
-        />
+  return (
+    <PageLayout>
+      <PageHeader 
+        subtitle={breadcrumbElement}
+        title="Performance Traces" 
+        actions={primaryActions} 
+      />
+      <div className="mb-4">{searchInput}</div>
+
+      {isEmpty ? (
+        // Empty State Rendering
         <Card>
           {/* Wrap empty state content in DraggableArea */}
           <DraggableArea
@@ -344,15 +346,15 @@ function TraceListComponent() {
                 <FileJson className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               }
               <h3 className="text-xl font-medium mb-2">
-                {isSearching ? "No Results Found" : (currentFolderId ? "Folder is Empty" : "No Items Yet")}
+                {searchQuery ? "No Results Found" : (currentFolderId ? "Folder is Empty" : "No Items Yet")}
               </h3>
               <p className="text-muted-foreground mb-6">
-                {isSearching
+                {searchQuery
                   ? `Your search for "${searchQuery}" did not match any items.`
                   : (currentFolderId ? "This folder doesn't contain any traces or subfolders." : "Create a folder or upload your first trace.")
                 }
               </p>
-              {isSearching ? (
+              {searchQuery ? (
                 <Button onClick={handleClearSearch} variant="outline" size="sm">Clear Search</Button>
               ) : (
                 <div className="flex justify-center gap-2">
@@ -371,77 +373,66 @@ function TraceListComponent() {
             </CardContent>
           </DraggableArea>
         </Card>
-        {/* Render extracted upload dialog */} 
-        {uploadDialog}
-      </PageLayout>
-    );
-  }
+      ) : (
+        // List Rendering
+        <DraggableArea
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          isDragging={isDragging}
+          draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
+          baseClassName="p-1"
+          className="flex flex-col flex-grow"
+        >
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="pl-6">Name</TableHead>
+                    <TableHead>Owner</TableHead>
+                    <TableHead>Branch</TableHead>
+                    <TableHead>Commit</TableHead>
+                    <TableHead>Device</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Last Updated</TableHead>
+                    <TableHead className="text-right pr-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {folders.map((folder) => (
+                    <FolderItem
+                      key={`folder-${folder.id}`}
+                      folder={folder}
+                      onClick={() => handleFolderClick(folder.id)}
+                    />
+                  ))}
+                  {traces.map((trace) => (
+                    <TraceListItem
+                      key={`trace-${trace.id}`}
+                      trace={trace}
+                      currentUser={currentUser}
+                      onDelete={deleteTrace}
+                      isDeleting={isDeleting}
+                      onClick={() => navigate(`/traces/${trace.id}`)}
+                      currentFolderId={currentFolderId}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
-  return (
-    <PageLayout>
-      <PageHeader
-        subtitle={breadcrumbElement}
-        title="Performance Traces"
-        actions={primaryActions}
-      />
-      <DraggableArea
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        isDragging={isDragging}
-        draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
-        baseClassName="p-1"
-        className="flex flex-col flex-grow"
-      >
-        <div className="mb-4">{searchInput}</div>
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="pl-6">Name</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Branch</TableHead>
-                  <TableHead>Commit</TableHead>
-                  <TableHead>Device</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {folders.map((folder) => (
-                  <FolderItem
-                    key={`folder-${folder.id}`}
-                    folder={folder}
-                    onClick={() => handleFolderClick(folder.id)}
-                  />
-                ))}
-                {traces.map((trace) => (
-                  <TraceListItem
-                    key={`trace-${trace.id}`}
-                    trace={trace}
-                    currentUser={currentUser}
-                    onDelete={deleteTrace}
-                    isDeleting={isDeleting}
-                    onClick={() => navigate(`/traces/${trace.id}`)}
-                    currentFolderId={currentFolderId}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+          <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
+            {isFetchingNextPage && (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            )}
+          </div>
+        </DraggableArea>
+      )}
 
-        <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
-          {isFetchingNextPage && (
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          )}
-        </div>
-
-        {/* Render extracted upload dialog */} 
-        {uploadDialog}
-      </DraggableArea>
+      {/* Render extracted upload dialog */} 
+      {uploadDialog}
     </PageLayout>
   );
 }
