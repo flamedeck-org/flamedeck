@@ -11,6 +11,7 @@ export interface FlamechartViewState {
   selectedNode: CallTreeNode | null
   logicalSpaceViewportSize: Vec2
   configSpaceViewportRect: Rect
+  selectedCellId?: string | null
 }
 
 export interface CallerCalleeState {
@@ -51,6 +52,7 @@ const initialFlameChartViewState: FlamechartViewState = {
   selectedNode: null,
   configSpaceViewportRect: Rect.empty,
   logicalSpaceViewportSize: Vec2.zero,
+  selectedCellId: null,
 }
 
 export class ProfileGroupAtom extends Atom<ProfileGroupState> {
@@ -195,10 +197,11 @@ export class ProfileGroupAtom extends Atom<ProfileGroupState> {
     }))
   }
 
-  setSelectedNode(id: FlamechartID, selectedNode: CallTreeNode | null) {
+  setSelectedNode(id: FlamechartID, selectedNode: CallTreeNode | null, selectedCellId?: string | null) {
     this.updateFlamechartState(id, f => ({
       ...f,
       selectedNode,
+      selectedCellId: selectedCellId ?? null,
     }))
   }
 

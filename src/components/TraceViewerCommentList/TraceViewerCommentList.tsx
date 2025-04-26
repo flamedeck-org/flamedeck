@@ -1,9 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTraceComments } from '@/hooks/useTraceComments';
-import { TraceViewerCommentItem } from './TraceViewerCommentItem';
 import { SpeedscopeViewType } from '../SpeedscopeViewer'; // Assuming SpeedscopeViewType is exported
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CommentList } from '@/components/comments'; // Import the new CommentList
 
 interface TraceViewerCommentListProps {
   traceId: string;
@@ -38,33 +36,17 @@ export function TraceViewerCommentList({ traceId, activeView }: TraceViewerComme
 
   }, [allComments, targetCommentType]);
 
-  if (isLoading) {
-    return (
-      <div className="p-4 space-y-3">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <div className="p-4 text-sm text-destructive">Error loading comments: {error.message}</div>;
-  }
+  const emptyMessage = `No comments for the '${activeView.replace('_', ' ')}' view yet.`;
 
   return (
-    <ScrollArea className="h-[400px] w-full">
-      {filteredAndSortedComments.length === 0 ? (
-        <div className="p-4 text-sm text-muted-foreground text-center">
-          No comments for the '{activeView.replace('_', ' ')}' view yet.
-        </div>
-      ) : (
-        <div className="flex flex-col">
-          {filteredAndSortedComments.map((comment) => (
-            <TraceViewerCommentItem key={comment.id} comment={comment} />
-          ))}
-        </div>
-      )}
-    </ScrollArea>
+    <CommentList 
+      comments={filteredAndSortedComments}
+      isLoading={isLoading}
+      error={error}
+      emptyStateMessage={emptyMessage}
+      // Pass specific classes for this context if needed
+      // className="some-specific-layout"
+      scrollAreaClassName="h-[400px] w-full" // Maintain the scroll height
+    />
   );
 } 

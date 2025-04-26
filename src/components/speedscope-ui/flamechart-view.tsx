@@ -14,11 +14,8 @@ import {ProfileSearchContext} from './search-view'
 import {FlamechartSearchView} from './flamechart-search-view'
 
 interface FlamechartViewProps extends FlamechartViewContainerProps {
-  // Add specific props needed by FlamechartView if any are missing 
-  // from FlamechartViewContainerProps after the rename
-  // Ensure types match what's passed down.
-  onCellSelectForComment?: (identifier: string | null, type: string) => void; 
-  commentedCellIds?: string[];
+  // No longer needs commentedCellIds or onCellSelectForComment
+  // Actually, keep commentedCellIds since it's back in the container props
 }
 
 export class FlamechartView extends Component<FlamechartViewProps> {
@@ -61,17 +58,9 @@ export class FlamechartView extends Component<FlamechartViewProps> {
     this.props.setNodeHover(hover as any)
   }
 
-  onNodeClick = (node: CallTreeNode | null) => {
-    this.props.setSelectedNode(node)
-  }
-
-  // Rename handler and update signature to match prop
-  onCellComment = (identifier: string | null) => {
-    // Assuming 'chrono' type for now, this might need adjustment
-    // if FlamechartView is used for other view types directly
-    if (this.props.onCellSelectForComment) {
-      this.props.onCellSelectForComment(identifier, 'chrono'); 
-    }
+  // Updated: Accept cellId and pass it through
+  onNodeClick = (node: CallTreeNode | null, cellId?: string | null) => {
+    this.props.setSelectedNode(node, cellId)
   }
 
   formatValue(weight: number) {
@@ -133,7 +122,6 @@ export class FlamechartView extends Component<FlamechartViewProps> {
                 renderInverted={false}
                 onNodeHover={this.onNodeHover}
                 onNodeSelect={this.onNodeClick}
-                onCellSelectForComment={this.onCellComment} 
                 selectedNode={this.props.selectedNode}
                 transformViewport={this.transformViewport}
                 configSpaceViewportRect={this.props.configSpaceViewportRect}
@@ -141,7 +129,7 @@ export class FlamechartView extends Component<FlamechartViewProps> {
                 logicalSpaceViewportSize={this.props.logicalSpaceViewportSize}
                 setLogicalSpaceViewportSize={this.setLogicalSpaceViewportSize}
                 searchResults={searchResults}
-                commentedCellIds={this.props.commentedCellIds} 
+                commentedCellIds={this.props.commentedCellIds}
               />
               <FlamechartSearchView />
             </Fragment>
