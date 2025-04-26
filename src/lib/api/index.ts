@@ -7,6 +7,7 @@ import * as tracePermissionsApi from "./tracePermissions";
 import * as storageApi from "./storage";
 
 export * from "./types";
+export * from "./comments";
 
 export const traceApi = {
     ...tracesApi,
