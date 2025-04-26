@@ -29,14 +29,29 @@ const viewToCommentTypeMap: Record<SpeedscopeViewType, string> = {
   sandwich: 'sandwich',
 };
 
+// Add the new props required by CommentSidebar
 interface SpeedscopeViewerProps {
-  traceId?: string;
-  traceData: string | ArrayBuffer; 
-  fileName: string;
+  traceId: string;
+  traceData: ArrayBuffer | string;
+  fileName?: string;
   view: SpeedscopeViewType;
+  replyingToCommentId: string | null;
+  onStartReply: (commentId: string) => void;
+  onCancelReply: () => void;
+  onCommentUpdated: (updatedComment: TraceCommentWithAuthor) => void;
 }
 
-const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData, fileName, view }) => {
+const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ 
+  traceId, 
+  traceData, 
+  fileName, 
+  view, 
+  // Destructure new props
+  replyingToCommentId,
+  onStartReply,
+  onCancelReply,
+  onCommentUpdated,
+}) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -218,6 +233,10 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ traceId, traceData,
           isLoading={commentsLoading}
           error={commentsError}
           onClose={handleCloseSidebar} // Use the specific close handler
+          replyingToCommentId={replyingToCommentId}
+          onStartReply={onStartReply}
+          onCancelReply={onCancelReply}
+          onCommentUpdated={onCommentUpdated}
         />
       )}
     </div>

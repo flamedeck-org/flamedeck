@@ -7,8 +7,9 @@ import { X } from 'lucide-react';
 // Assuming the Comment type is exported from the hook or a types file
 // import { Comment } from '@/hooks/useTraceComments'; // This type might need adjustment
 import { TraceCommentWithAuthor } from '@/lib/api'; // Use the consistent type
-import { CommentList } from '@/components/comments'; // Import the new CommentList
+import { CommentItem, StructuredComment } from '@/components/comments'; // Import CommentItem
 import { cn } from "@/lib/utils";
+import { useState } from 'react'; // Import useState for reply state
 
 interface CommentSidebarProps {
   traceId: string;
@@ -19,6 +20,11 @@ interface CommentSidebarProps {
   isLoading: boolean;
   error: Error | null;
   onClose: () => void;
+  // Add props needed by CommentItem that CommentList previously managed
+  replyingToCommentId: string | null;
+  onStartReply: (commentId: string) => void;
+  onCancelReply: () => void;
+  onCommentUpdated: (updatedComment: TraceCommentWithAuthor) => void;
 }
 
 const CommentSidebar: React.FC<CommentSidebarProps> = ({
@@ -30,6 +36,11 @@ const CommentSidebar: React.FC<CommentSidebarProps> = ({
   isLoading,
   error,
   onClose,
+  // Receive new props
+  replyingToCommentId,
+  onStartReply,
+  onCancelReply,
+  onCommentUpdated,
 }) => {
   // Filter comments for the specific cellId and type
   // Assuming `comments` prop already contains potentially relevant comments
@@ -63,24 +74,42 @@ const CommentSidebar: React.FC<CommentSidebarProps> = ({
         </Button>
       </div>
 
-      {/* Comment List Area */}
-      <div className="flex-grow overflow-y-auto">
-        <CommentList
-          traceId={traceId} // Pass traceId for potential (but hidden) replies
-          comments={relevantComments} // Pass structured comments (assuming conversion if needed)
-          isLoading={isLoading}
-          error={error}
-          emptyStateMessage={emptyMessage}
-          // Need to manage reply state if CommentList needs it, 
-          // but since we hide the button, pass null/noop
-          replyingToCommentId={null}
-          onStartReply={() => {}} 
-          onCancelReply={() => {}}
-          showReplyButton={false} // Hide reply button in sidebar
-          scrollAreaClassName="h-full" 
-          className="px-4" // Add horizontal padding here
-        />
-      </div>
+      {/* Comment List Area - Now rendering CommentItem directly */}
+      <ScrollArea className="h-full">
+        <div className={cn("flex flex-col px-4 py-2", /* className might be needed here */)}> 
+          {isLoading ? (
+             <div className="space-y-3 py-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+          ) : error ? (
+            <div className="p-4 text-sm text-destructive">
+              Error loading comments: {error.message}
+            </div>
+          ) : relevantComments.length === 0 ? (
+            <div className="px-4 py-8 text-sm text-muted-foreground text-center">
+              {emptyMessage}
+            </div>
+          ) : (
+            relevantComments.map((comment) => (
+              <CommentItem 
+                // Pass necessary props directly to CommentItem
+                key={comment.id} 
+                // Cast comment - NOTE: This assumes no replies needed in sidebar context
+                // If replies ARE needed, structuring is required before this map
+                comment={comment} // Pass the plain comment data
+                traceId={traceId}
+                replyingToCommentId={replyingToCommentId}
+                onStartReply={onStartReply}
+                onCancelReply={onCancelReply}
+                onCommentUpdated={onCommentUpdated} // Pass the update handler
+                showReplyButton={false} // Explicitly hide reply button in sidebar view
+                currentDepth={0} // Top-level comments in this context
+              />
+            ))
+          )}
+        </div>
+      </ScrollArea>
 
       {/* Comment Form */}
       <div className="p-3 border-t flex-shrink-0 bg-background">
