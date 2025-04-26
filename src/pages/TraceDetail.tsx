@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AuthGuard from "@/components/AuthGuard";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import { useTraceComments } from '@/hooks/useTraceComments';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDuration } from "@/lib/utils";
+import { TraceCommentWithAuthor } from '@/lib/api';
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -116,8 +117,9 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
 // ---------------------------------------------------------
 
 const TraceDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { openModal } = useSharingModal();
@@ -340,7 +342,19 @@ const TraceDetail: React.FC = () => {
   const handleCancelReply = () => {
     setReplyingToCommentId(null);
   };
-  // --------------------------------
+
+  // --- Define the update handler --- 
+  const handleCommentUpdate = (updatedComment: TraceCommentWithAuthor) => {
+    queryClient.setQueryData<TraceCommentWithAuthor[]>(['traceComments', id], (oldData) => {
+      if (!oldData) return [];
+      // Update the specific comment in the flat array cache
+      return oldData.map(comment => 
+        comment.id === updatedComment.id ? updatedComment : comment
+      );
+    });
+    // Note: The structuring and grouping logic runs automatically on cache update 
+    // because it depends on the query data which just changed.
+  };
 
   if (!trace) { return <div>Trace data unavailable.</div>; }
   const traceIdForComments = trace.id;
@@ -430,11 +444,11 @@ const TraceDetail: React.FC = () => {
               {!commentsLoading && !commentsError && commentTypes.length > 0 && (
                 <div className="space-y-6">
                   {commentTypes.map(commentType => {
-                    const comments = groupedComments[commentType];
+                    const commentsInSection = groupedComments[commentType];
                     const viewType = commentTypeToViewType(commentType);
                     const sectionTitle = getCommentSectionTitle(commentType);
                     
-                    if (!comments || comments.length === 0) return null;
+                    if (!commentsInSection || commentsInSection.length === 0) return null;
                     
                     return (
                       <div key={commentType}>
@@ -456,7 +470,7 @@ const TraceDetail: React.FC = () => {
                          </div>
                          {/* Comment Items */}
                         <div className="border rounded-md px-4"> 
-                            {comments.map(comment => ( 
+                            {commentsInSection.map(comment => (
                                 <CommentItem 
                                     key={comment.id} 
                                     traceId={traceIdForComments}
@@ -464,6 +478,7 @@ const TraceDetail: React.FC = () => {
                                     replyingToCommentId={replyingToCommentId}
                                     onStartReply={handleStartReply}
                                     onCancelReply={handleCancelReply}
+                                    onCommentUpdated={handleCommentUpdate}
                                 />
                             ))}
                             
@@ -479,9 +494,6 @@ const TraceDetail: React.FC = () => {
                                </div>
                             )}
                         </div>
-                        
-                        {/* MOVED from here */}
-                        {/* {commentType === 'overview' && ( ... )} */}
                       </div>
                     );
                   })}
