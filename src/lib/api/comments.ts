@@ -25,6 +25,8 @@ import { PostgrestError } from "@supabase/supabase-js";
           trace_timestamp_ms,
           comment_type,
           comment_identifier,
+          is_edited,
+          last_edited_at,
           author: user_profiles ( id, username, avatar_url, first_name, last_name )
         `)
         .eq('trace_id', traceId)
@@ -77,6 +79,41 @@ import { PostgrestError } from "@supabase/supabase-js";
       console.error('Error creating trace comment:', error);
       const apiError: ApiError = {
         message: error instanceof Error ? error.message : "Failed to create comment",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
+    }
+  }
+
+  // Update an existing comment
+  export async function updateTraceComment(
+    commentId: string,
+    newContent: string
+  ): Promise<ApiResponse<TraceComment>> {
+    try {
+      const { data, error } = await supabase
+        .from('trace_comments')
+        .update({
+          content: newContent,
+          is_edited: true,
+          last_edited_at: new Date().toISOString(),
+        })
+        .eq('id', commentId)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      if (!data) throw new Error("Comment updated but data not returned.");
+
+      // You might need RLS policies in Supabase to ensure users can only update their own comments
+
+      return { data: data as TraceComment, error: null };
+    } catch (error) {
+      console.error(`Error updating comment ${commentId}:`, error);
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to update comment",
         code: (error as PostgrestError)?.code,
         details: (error as PostgrestError)?.details,
         hint: (error as PostgrestError)?.hint,

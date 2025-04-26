@@ -13,6 +13,7 @@ interface CommentListProps {
   replyingToCommentId: string | null;
   onStartReply: (commentId: string) => void;
   onCancelReply: () => void;
+  onCommentUpdated: (updatedComment: TraceCommentWithAuthor) => void;
   showReplyButton?: boolean;
   emptyStateMessage?: string;
   className?: string;
@@ -27,6 +28,7 @@ export function CommentList({
   replyingToCommentId,
   onStartReply,
   onCancelReply,
+  onCommentUpdated,
   showReplyButton,
   emptyStateMessage = "No comments yet.",
   className,
@@ -67,6 +69,7 @@ export function CommentList({
               replyingToCommentId={replyingToCommentId}
               onStartReply={onStartReply}
               onCancelReply={onCancelReply}
+              onCommentUpdated={onCommentUpdated}
               showReplyButton={showReplyButton}
             />
           ))

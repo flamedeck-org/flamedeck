@@ -7,18 +7,21 @@ import { traceApi, NewTraceComment } from '@/lib/api';
 import { Loader2, Send } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 
 interface CommentFormProps {
   traceId: string;
   parentId?: string | null;
-  commentType: string;
+  commentType?: string;
   commentIdentifier?: string | null;
-  onCommentPosted?: () => void;
+  onCommentPosted?: (newContent?: string) => void;
   onCancel?: () => void;
   placeholder?: string;
   autoFocus?: boolean;
   className?: string;
   initialContent?: string;
+  submitButtonText?: string;
+  mode?: 'create' | 'edit';
 }
 
 const CommentForm: React.FC<CommentFormProps> = ({
@@ -32,6 +35,8 @@ const CommentForm: React.FC<CommentFormProps> = ({
   autoFocus = false,
   className,
   initialContent = '',
+  submitButtonText = 'Post Comment',
+  mode = 'create',
 }) => {
   const [content, setContent] = useState(initialContent);
   const queryClient = useQueryClient();
@@ -60,20 +65,25 @@ const CommentForm: React.FC<CommentFormProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!content.trim() || !user || commentMutation.isPending) return;
+    if (!content.trim() || !user) return;
 
-    commentMutation.mutate({
-      trace_id: traceId,
-      content: content.trim(),
-      parent_comment_id: parentId,
-      trace_timestamp_ms: null,
-      comment_type: commentType,
-      comment_identifier: commentIdentifier,
-    });
+    if (mode === 'edit') {
+      onCommentPosted?.(content);
+    } else {
+      if (commentMutation.isPending) return;
+      commentMutation.mutate({
+        trace_id: traceId,
+        content: content.trim(),
+        parent_comment_id: parentId,
+        trace_timestamp_ms: null,
+        comment_type: commentType,
+        comment_identifier: commentIdentifier,
+      });
+    }
   };
 
   const handleCancel = () => {
-    setContent('');
+    setContent(mode === 'edit' ? initialContent : '');
     onCancel?.();
   };
 
@@ -148,6 +158,14 @@ const CommentForm: React.FC<CommentFormProps> = ({
           Cancel
         </Button>
       )}
+      <Button
+        type="submit"
+        variant="ghost"
+        disabled={!canSubmit}
+        size="sm"
+      >
+        {commentMutation.isPending && mode === 'create' ? 'Posting...' : submitButtonText}
+      </Button>
     </form>
   );
 };

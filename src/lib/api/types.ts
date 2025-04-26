@@ -10,6 +10,8 @@ export interface TraceCommentWithAuthor extends TraceComment {
   comment_type: string;
   comment_identifier: string | null;
   updated_at: string;
+  is_edited: boolean;
+  last_edited_at: string | null;
 }
 
 // Define types for permission data
