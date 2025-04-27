@@ -40,7 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 ```bash
 # --- Variables --- 
 API_KEY="YOUR_API_KEY"
-SUPABASE_FUNCTIONS_URL="https://jczffinsulwdzhgzggcj.supabase.co/functions/v1"
+BASE_URL="https://jczffinsulwdzhgzggcj.supabase.co/functions/v1"
 FILE_PATH="/path/to/your/trace.file"
 
 # --- Query Parameters --- 
@@ -48,7 +48,7 @@ FILE_PATH="/path/to/your/trace.file"
 PARAMS="fileName=my-test-trace.json&scenario=Curl%20Test%202&commitSha=abcdef123&branch=main&notes=Testing%20API%20upload&folderId=5e027ceb-9c66-490f-a128-9a7aa1281e5a"
 
 # --- Construct URL --- 
-FULL_URL="${SUPABASE_FUNCTIONS_URL}/api-upload-trace?${PARAMS}"
+FULL_URL="${BASE_URL}/api-upload-trace?${PARAMS}"
 
 # --- Execute Request ---
 curl -X POST \
@@ -71,7 +71,7 @@ const apiKey = 'YOUR_API_KEY';
 const filePath = '/path/to/your/trace.file';
 
 // --- Prepare Request Details --- 
-const functionUrl = `https://jczffinsulwdzhgzggcj.supabase.co/functions/v1/api-upload-trace`;
+const baseUrl = `https://jczffinsulwdzhgzggcj.supabase.co/functions/v1`;
 const fileName = path.basename(filePath);
 
 const params = new URLSearchParams({
@@ -83,7 +83,7 @@ const params = new URLSearchParams({
   folderId: '5e027ceb-9c66-490f-a128-9a7aa1281e5a',
 });
 
-const requestUrl = `${functionUrl}?${params.toString()}`;
+const requestUrl = `${baseUrl}/api-upload-trace?${params.toString()}`;
 
 // --- Make the Request --- 
 const fileStream = fs.createReadStream(filePath);

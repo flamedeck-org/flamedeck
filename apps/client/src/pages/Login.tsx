@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -14,19 +13,40 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
 
+  // This useEffect is used to handle the redirect after login
   useEffect(() => {
-    if (user) {
-      const from = location.state?.from?.pathname || "/traces";
-      navigate(from, { replace: true });
+    let storedPath: string | null = null;
+    try {
+      storedPath = sessionStorage.getItem('postLoginRedirectPath');
+    } catch (e) {
+      console.error("Failed to read sessionStorage:", e);
     }
-  }, [user, navigate, location]);
+
+    if (user) {
+      // Prefer location.state (handles internal redirects), fallback to sessionStorage (handles OAuth), then default
+      const from = location.state?.from?.pathname || storedPath || "/traces";
+      
+      // Clear the stored path from sessionStorage now that we've used it
+      if (storedPath) {
+        try {
+          sessionStorage.removeItem('postLoginRedirectPath');
+        } catch (e) {
+          console.error("Failed to remove sessionStorage item:", e);
+        }
+      }
+
+      navigate(from, { replace: true });
+    } else {
+    }
+    // Only depend on user and navigate. Location/sessionStorage are read directly.
+  }, [user, navigate]);
 
   const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/traces`
+          redirectTo: `${window.location.origin}/login`
         }
       });
 

@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const Navbar: React.FC = () => {
+  const { user } = useAuth();
+
   return (
     <header className="border-b fixed top-0 left-0 right-0 bg-background z-50 h-16 flex items-center px-4 md:px-6">
       <div className="w-full flex items-center justify-between">
@@ -23,7 +25,23 @@ const Navbar: React.FC = () => {
             <span className="text-xl font-semibold">Professo</span>
           </Link>
         </div>
-        <div className="pr-2">
+        <div className="flex items-center pr-2 space-x-4">
+          {!user && (
+            <>
+              <Link 
+                to="/docs"
+                className="text-sm font-medium text-foreground"
+              >
+                API Docs
+              </Link>
+              <Link 
+                to="/login" 
+                className="text-sm font-medium text-foreground"
+              >
+                Login
+              </Link>
+            </>
+          )}
           <ThemeToggle />
         </div>
       </div>
