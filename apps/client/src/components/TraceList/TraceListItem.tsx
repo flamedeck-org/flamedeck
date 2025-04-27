@@ -12,7 +12,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Trash2, Eye, Share2, Edit, Move, Flame, Info,
   Chrome, 
@@ -24,13 +23,14 @@ import {
   ContextMenuDivider 
 } from '@/components/ui/context-menu';
 import { TraceMetadata } from "@/types";
-import { formatRelativeDate, formatDuration, getInitials } from "@/lib/utils";
+import { formatRelativeDate, formatDuration } from "@/lib/utils";
 import { User } from '@supabase/supabase-js'; // Import User type if needed
 import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
 import { MoveItemDialog } from './MoveItemDialog'; // Import the new dialog
 import { RenameTraceDialog } from './RenameTraceDialog'; // Import the new dialog
 import { ProfileType } from '@trace-view-pilot/shared-importer'; // Import ProfileType
 import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/UserAvatar'; // Import the new component
 
 // Helper to get icon based on profile type
 const getIconForProfileType = (profileType?: ProfileType | string | null): React.ReactNode => {
@@ -91,17 +91,11 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
     [currentUser, trace.owner?.id]
   );
   
-  const ownerName = useMemo(() => 
-    isOwnerCurrentUser 
-      ? "me" 
-      : trace.owner?.username || `${trace.owner?.first_name || ''} ${trace.owner?.last_name || ''}`.trim() || "Unknown Owner",
-    [isOwnerCurrentUser, trace.owner?.username, trace.owner?.first_name, trace.owner?.last_name]
-  );
-  
-  const ownerInitials = useMemo(() => 
-    getInitials(ownerName === "me" ? currentUser?.email : ownerName), 
-    [ownerName, currentUser?.email]
-  );
+  const ownerDisplayName = useMemo(() => {
+    if (isOwnerCurrentUser) return "me";
+    const owner = trace.owner;
+    return owner?.username || `${owner?.first_name || ''} ${owner?.last_name || ''}`.trim() || "Unknown Owner";
+  }, [isOwnerCurrentUser, trace.owner]);
 
   // Function to open context menu at specific coordinates
   const openContextMenuAtPosition = useCallback((x: number, y: number) => {
@@ -180,23 +174,16 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         </TableCell>
         <TableCell className="py-4">
            <div className="flex items-center space-x-2">
-             <Avatar className="h-6 w-6">
-               <AvatarImage src={trace.owner?.avatar_url ?? undefined} alt={ownerName} />
-               <AvatarFallback>{ownerInitials}</AvatarFallback>
-             </Avatar>
-             <span className="text-sm truncate">{ownerName}</span>
+             <UserAvatar profile={trace.owner} currentUser={currentUser} size="md" />
+             <span className="text-sm truncate">{ownerDisplayName}</span>
           </div>
         </TableCell>
-        <TableCell className="py-4">{trace.branch || "N/A"}</TableCell>
-        <TableCell className="font-mono text-xs py-3">
-          {commitShortSha}
-        </TableCell>
-        <TableCell className="py-4">{trace.device_model || "N/A"}</TableCell>
+        <TableCell className="py-4 font-mono text-xs">{trace.branch || "N/A"}</TableCell>
+        <TableCell className="py-4 font-mono text-xs">{trace.commit_sha ? trace.commit_sha.substring(0, 7) : "N/A"}</TableCell>
         <TableCell className="py-4">{formatDuration(trace.duration_ms)}</TableCell>
         <TableCell className="py-4 text-muted-foreground text-sm">{formatRelativeDate(trace.updated_at || trace.uploaded_at)}</TableCell>
         <TableCell className="text-right pr-6 py-4">
           <div onClick={handleStopPropagation} className="inline-flex items-center gap-1">
-            {/* Restored Buttons */}
             <Button
               variant="outline"
               size="sm"
@@ -335,5 +322,16 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
     </>
   );
 };
+
+// Need to find formatBytes function if it's not imported/available globally
+// Placeholder:
+const formatBytes = (bytes: number, decimals = 2) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
 
 export const TraceListItem = memo(TraceListItemComponent);

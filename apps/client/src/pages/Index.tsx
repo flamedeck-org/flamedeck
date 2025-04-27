@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import PricingTable from "@/components/PricingTable";
-import { UploadCloud, Database, BarChart } from "lucide-react";
+import { UploadCloud, Database, BarChart, Search, Users, Code } from "lucide-react";
 
 const Index: React.FC = () => {
   return (
@@ -72,6 +72,41 @@ const Index: React.FC = () => {
                 <p className="text-muted-foreground">
                   Visualize trace data with the powerful Speedscope flame graph
                   viewer
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Section */}
+        <div className="py-24 px-4 bg-secondary/50">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Powerful Features for Performance Analysis</h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Streamline your performance debugging workflow with tools built for teams.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="p-8 border rounded-lg bg-card text-left space-y-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <Search className="h-10 w-10 text-primary mb-3" />
+                <h3 className="text-2xl font-semibold">Centralized Trace Storage</h3>
+                <p className="text-muted-foreground text-lg">
+                  Securely store and organize all your performance traces in one accessible location. Easily search and retrieve profiles when you need them.
+                </p>
+              </div>
+              <div className="p-8 border rounded-lg bg-card text-left space-y-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <Users className="h-10 w-10 text-primary mb-3" />
+                <h3 className="text-2xl font-semibold">Collaborative Debugging</h3>
+                <p className="text-muted-foreground text-lg">
+                  Dive deep into performance issues with an interactive flamegraph viewer. Share insights and collaborate with your team directly on the trace data.
+                </p>
+              </div>
+              <div className="p-8 border rounded-lg bg-card text-left space-y-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <Code className="h-10 w-10 text-primary mb-3" />
+                <h3 className="text-2xl font-semibold">API Integration</h3>
+                <p className="text-muted-foreground text-lg">
+                  Seamlessly integrate trace uploading into your CI/CD pipelines or automated testing frameworks using our simple API.
                 </p>
               </div>
             </div>

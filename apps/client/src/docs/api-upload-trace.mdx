@@ -18,9 +18,8 @@ Requires a valid Supabase API key with the `trace:upload` scope passed in the `A
 - `scenario` (string, optional, default: 'API Upload'): A description of the scenario.
 - `commitSha` (string, optional): Git commit SHA associated with the trace.
 - `branch` (string, optional): Git branch associated with the trace.
-- `deviceModel` (string, optional): Device the trace was captured on.
-- `notes` (string, optional): Additional notes.
-- `folderId` (uuid, optional): ID of the folder to place the trace in.
+- `notes` (string, optional): User-provided notes for the trace.
+- `folderId` (string, optional, UUID): The ID of the folder to place the trace in.
 
 ## Request Body
 

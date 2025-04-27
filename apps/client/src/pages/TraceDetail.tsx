@@ -31,11 +31,11 @@ import { SpeedscopeViewType } from '@/components/SpeedscopeViewer';
 import { useSharingModal } from '@/hooks/useSharingModal';
 import { useTraceDetails } from '@/hooks/useTraceDetails';
 import { useTraceComments } from '@/hooks/useTraceComments';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDuration } from "@/lib/utils";
 import { TraceCommentWithAuthor } from '@/lib/api';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
+import { UserAvatar } from "@/components/UserAvatar";
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -278,29 +278,19 @@ const TraceDetail: React.FC = () => {
   const traceId = trace?.id;
   const owner = trace?.owner;
 
-  const ownerInfo = useMemo(() => {
-    if (!owner) return { name: "Unknown Owner", initials: "?" };
+  const ownerDisplayName = useMemo(() => {
     const isOwnerCurrentUser = currentUser && owner?.id === currentUser.id;
-    const name = isOwnerCurrentUser 
-      ? "me" 
-      : owner?.username || `${owner?.first_name || ''} ${owner?.last_name || ''}`.trim() || "Unknown Owner";
-    const initials = name === 'me' 
-      ? currentUser?.email?.[0].toUpperCase() ?? '?' 
-      : name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
-    const avatarUrl = isOwnerCurrentUser ? currentUser?.user_metadata?.avatar_url : owner?.avatar_url ?? undefined;
-    return { name, initials, avatarUrl, isOwnerCurrentUser };
+    if (isOwnerCurrentUser) return "me";
+    return owner?.username || `${owner?.first_name || ''} ${owner?.last_name || ''}`.trim() || "Unknown Owner";
   }, [owner, currentUser]);
 
   const ownerSubtitle = owner ? (
-    <div className="flex items-center space-x-1.5">
+    <div className="flex items-center space-x-1.5 text-sm text-muted-foreground">
       <span>Owned by</span>
-      <Avatar className="h-5 w-5">
-        <AvatarImage src={ownerInfo.avatarUrl} alt={ownerInfo.name} />
-        <AvatarFallback className="text-xs">{ownerInfo.initials}</AvatarFallback>
-      </Avatar>
-      <span className="font-medium">{ownerInfo.name}</span>
+      <UserAvatar profile={owner} currentUser={currentUser} size="sm" />
+      <span className="font-medium text-foreground">{ownerDisplayName}</span>
     </div>
-  ) : null;
+  ) : null
 
   const isLoading = traceLoading || commentsLoading;
 
@@ -360,11 +350,6 @@ const TraceDetail: React.FC = () => {
                 <div className="text-lg font-medium truncate" title={trace?.scenario}>
                   {trace?.scenario || 'N/A'}
                 </div>
-                {trace?.device_model && (
-                  <div className="text-sm text-muted-foreground mt-1 truncate" title={trace.device_model}>
-                    {trace.device_model}
-                  </div>
-                )}
               </CardContent>
             </Card>
 
