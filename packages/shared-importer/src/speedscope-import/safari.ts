@@ -1,5 +1,5 @@
-import {Profile, FrameInfo, StackListProfileBuilder} from '../speedscope-core/profile'
-import {TimeFormatter} from '../speedscope-core/value-formatters'
+import {Profile, FrameInfo, StackListProfileBuilder} from '../speedscope-core/profile.ts'
+import {TimeFormatter} from '../speedscope-core/value-formatters.ts'
 
 interface Record {
   type: string

@@ -1,5 +1,5 @@
-import {FileFormat} from './file-format-spec'
-import {zeroPad} from './lib-utils'
+import {FileFormat} from './file-format-spec.ts'
+import {zeroPad} from './lib-utils.ts'
 
 export interface ValueFormatter {
   unit: FileFormat.ValueUnit

@@ -7,10 +7,10 @@ import {
   CallTreeProfileBuilder,
   StackListProfileBuilder,
   ProfileGroup,
-} from '../speedscope-core/profile'
-import {sortBy, getOrThrow, getOrInsert, lastOf, getOrElse, zeroPad} from '../speedscope-core/lib-utils'
-import {ByteFormatter, TimeFormatter} from '../speedscope-core/value-formatters'
-import {MaybeCompressedDataReader, TextFileContent} from './importer-utils'
+} from '../speedscope-core/profile.ts'
+import {sortBy, getOrThrow, getOrInsert, lastOf, getOrElse, zeroPad} from '../speedscope-core/lib-utils.ts'
+import {ByteFormatter, TimeFormatter} from '../speedscope-core/value-formatters.ts'
+import {MaybeCompressedDataReader, TextFileContent} from './importer-utils.ts'
 
 function parseTSV<T>(contents: TextFileContent): T[] {
   const lines = [...contents.splitLines()].map(l => l.split('\t'))

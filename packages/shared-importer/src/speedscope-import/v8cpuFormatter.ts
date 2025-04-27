@@ -1,4 +1,4 @@
-import {CPUProfile, CPUProfileNode} from './chrome'
+import {CPUProfile, CPUProfileNode} from './chrome.ts'
 
 /**
  * This importer handles an old format used by the C++ API of V8. This format is still used by v8-profiler-node8.

@@ -1,7 +1,7 @@
 // Returns `input` with hex escapes expanded (e.g. `\20` becomes ` `.)
 //
 
-import {Frame, SymbolRemapper} from './profile'
+import {Frame, SymbolRemapper} from './profile.ts'
 
 // NOTE: This will fail to ignore escaped backslahes (e.g. `\\20`).
 function unescapeHex(input: string): string {

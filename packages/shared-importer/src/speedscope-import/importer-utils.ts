@@ -1,16 +1,28 @@
-import * as pako from 'pako'
-import {JSON_parse} from 'uint8array-json-parser'
+// Define types for injected dependencies
+export type InflateFn = (data: Uint8Array) => Uint8Array;
+export type ParseJsonUint8ArrayFn = (data: Uint8Array) => unknown;
+// Define the specific shape needed for the 'Long' library's isLong function
+export type IsLongFn = (obj: any) => obj is { toNumber(): number };
+
+// Interface for the dependency object
+export interface ImporterDependencies {
+  inflate: InflateFn;
+  parseJsonUint8Array: ParseJsonUint8ArrayFn;
+  isLong: IsLongFn;
+}
 
 export interface ProfileDataSource {
   name(): Promise<string>
   readAsArrayBuffer(): Promise<ArrayBuffer>
-  readAsText(): Promise<TextFileContent>
+  // Pass dependencies when reading as text
+  readAsText(deps: Pick<ImporterDependencies, 'parseJsonUint8Array'>): Promise<TextFileContent>;
 }
 
 export interface TextFileContent {
   splitLines(): Iterable<string>
   firstChunk(): string
-  parseAsJSON(): unknown
+  // Pass dependencies when parsing JSON
+  parseAsJSON(deps: Pick<ImporterDependencies, 'parseJsonUint8Array'>): unknown;
 }
 
 // V8 has a maximum string size. To support files whose contents exceeds that
@@ -63,7 +75,8 @@ function permissivelyParseJSONString(content: string) {
   return JSON.parse(content)
 }
 
-function permissivelyParseJSONUint8Array(byteArray: Uint8Array) {
+// Adjusted helper to take the parser function via deps
+function permissivelyParseJSONUint8Array(byteArray: Uint8Array, deps: Pick<ImporterDependencies, 'parseJsonUint8Array'>): unknown {
   let indexOfFirstNonWhitespaceChar = 0
   for (let i = 0; i < byteArray.length; i++) {
     if (!/\s/.exec(String.fromCharCode(byteArray[i]))) {
@@ -98,7 +111,7 @@ function permissivelyParseJSONUint8Array(byteArray: Uint8Array) {
       byteArray = newByteArray
     }
   }
-  return JSON_parse(byteArray)
+  return deps.parseJsonUint8Array(byteArray) // Use injected parser
 }
 
 export class BufferBackedTextFileContent implements TextFileContent {
@@ -106,6 +119,7 @@ export class BufferBackedTextFileContent implements TextFileContent {
   private byteArray: Uint8Array
 
   constructor(buffer: ArrayBuffer) {
+    // Removed parser injection from constructor, will be passed to parseAsJSON
     const byteArray = (this.byteArray = new Uint8Array(buffer))
 
     let encoding: string = 'utf-8'
@@ -180,13 +194,12 @@ export class BufferBackedTextFileContent implements TextFileContent {
     return this.chunks[0] || ''
   }
 
-  parseAsJSON(): unknown {
-    // We only use the Uint8Array version of JSON.parse when necessary, because
-    // it's around 4x slower than native.
+  parseAsJSON(deps: Pick<ImporterDependencies, 'parseJsonUint8Array'>): unknown {
     if (this.chunks.length === 1) {
       return permissivelyParseJSONString(this.chunks[0])
     }
-    return permissivelyParseJSONUint8Array(this.byteArray)
+    // Call the adjusted helper, passing the injected parser dependency
+    return permissivelyParseJSONUint8Array(this.byteArray, deps)
   }
 }
 
@@ -201,7 +214,7 @@ export class StringBackedTextFileContent implements TextFileContent {
     return this.s
   }
 
-  parseAsJSON(): unknown {
+  parseAsJSON(deps: Pick<ImporterDependencies, 'parseJsonUint8Array'>): unknown {
     return permissivelyParseJSONString(this.s)
   }
 }
@@ -219,7 +232,7 @@ export class TextProfileDataSource implements ProfileDataSource {
     return new ArrayBuffer(0) 
   }
 
-  async readAsText() {
+  async readAsText(deps: Pick<ImporterDependencies, 'parseJsonUint8Array'>): Promise<TextFileContent> {
     return new StringBackedTextFileContent(this.contents)
   }
 }
@@ -230,13 +243,15 @@ export class MaybeCompressedDataReader implements ProfileDataSource {
   constructor(
     private namePromise: Promise<string>,
     maybeCompressedDataPromise: Promise<ArrayBuffer>,
+    deps: Pick<ImporterDependencies, 'inflate'> // Accept deps object
   ) {
     this.uncompressedData = maybeCompressedDataPromise.then(async (fileData: ArrayBuffer) => {
       try {
-        // Try to inflate, return original if it fails (e.g., not gzipped)
-        const result = pako.inflate(new Uint8Array(fileData)).buffer
+        // Use the injected inflate function via deps
+        const result = deps.inflate(new Uint8Array(fileData)).buffer
         return result
       } catch (e) {
+        // If inflate fails, assume it wasn't compressed
         return fileData
       }
     })
@@ -250,12 +265,15 @@ export class MaybeCompressedDataReader implements ProfileDataSource {
     return await this.uncompressedData
   }
 
-  async readAsText(): Promise<TextFileContent> {
+  // Pass only necessary deps
+  async readAsText(deps: Pick<ImporterDependencies, 'parseJsonUint8Array'>): Promise<TextFileContent> {
     const buffer = await this.readAsArrayBuffer()
+    // No need to pass parser to BufferBackedTextFileContent constructor anymore
     return new BufferBackedTextFileContent(buffer)
   }
 
-  static fromFile(file: File): MaybeCompressedDataReader {
+  // Accept full deps object for creating instance
+  static fromFile(file: File, deps: ImporterDependencies): MaybeCompressedDataReader {
     const maybeCompressedDataPromise: Promise<ArrayBuffer> = new Promise(resolve => {
       const reader = new FileReader()
       reader.addEventListener('loadend', () => {
@@ -266,12 +284,12 @@ export class MaybeCompressedDataReader implements ProfileDataSource {
       })
       reader.readAsArrayBuffer(file)
     })
-
-    return new MaybeCompressedDataReader(Promise.resolve(file.name), maybeCompressedDataPromise)
+    return new MaybeCompressedDataReader(Promise.resolve(file.name), maybeCompressedDataPromise, deps)
   }
 
-  static fromArrayBuffer(name: string, buffer: ArrayBuffer): MaybeCompressedDataReader {
-    return new MaybeCompressedDataReader(Promise.resolve(name), Promise.resolve(buffer))
+  // Accept full deps object for creating instance
+  static fromArrayBuffer(name: string, buffer: ArrayBuffer, deps: ImporterDependencies): MaybeCompressedDataReader {
+    return new MaybeCompressedDataReader(Promise.resolve(name), Promise.resolve(buffer), deps)
   }
 }
 

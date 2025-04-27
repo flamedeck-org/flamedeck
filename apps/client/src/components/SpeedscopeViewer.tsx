@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   importProfilesFromArrayBuffer,
-  importProfileGroupFromText 
+  importProfileGroupFromText,
+  type ImporterDependencies // Import type via alias
 } from '@trace-view-pilot/shared-importer';
+import * as pako from 'pako'; // Import pako for client-side use
+import { JSON_parse } from 'uint8array-json-parser'; // Import parser for client-side use
+import Long from 'long'; // Import Long for client-side
 import { profileGroupAtom, glCanvasAtom, flattenRecursionAtom } from '@/lib/speedscope-core/app-state';
 import { ActiveProfileState, useActiveProfileState, CallTreeNode } from '@/lib/speedscope-core/app-state/active-profile-state'; 
 import { useAtom } from '@/lib/speedscope-core/atom'; 
@@ -76,6 +80,13 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
     error: commentsError 
   } = useTraceComments(traceId);
 
+  // Create the dependencies object (useMemo to avoid recreating on every render)
+  const importerDeps = useMemo((): ImporterDependencies => ({
+    inflate: pako.inflate,
+    parseJsonUint8Array: JSON_parse,
+    isLong: Long.isLong
+  }), []);
+
   // Updated handler to accept the view type
   const handleNodeSelect = useCallback((activeView: SpeedscopeViewType, node: CallTreeNode | null, cellId?: string | null) => {
     console.log(`[handleNodeSelect] Called for view: ${activeView}, cellId: ${cellId}, node name: ${node?.frame.name}`); // Log arguments
@@ -105,10 +116,11 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
       setIsLoading(true);
       profileGroupAtom.set(null);
 
+      // Pass the importerDeps object
       const importerPromise = 
         traceData instanceof ArrayBuffer
-          ? importProfilesFromArrayBuffer(fileName, traceData)
-          : importProfileGroupFromText(fileName, traceData);
+          ? importProfilesFromArrayBuffer(fileName, traceData, importerDeps)
+          : importProfileGroupFromText(fileName, traceData, importerDeps);
 
       importerPromise
         .then(({ profileGroup }) => {
@@ -137,7 +149,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [traceData, fileName]);
+  }, [traceData, fileName, importerDeps]); // Add importerDeps to useEffect dependencies
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

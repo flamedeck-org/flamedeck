@@ -1,7 +1,10 @@
-import { importProfileGroupFromText, importProfilesFromArrayBuffer } from '@trace-view-pilot/shared-importer';
+import { importProfileGroupFromText, importProfilesFromArrayBuffer, type ImporterDependencies } from '@trace-view-pilot/shared-importer';
 import { exportProfileGroup } from '@trace-view-pilot/shared-importer';
 import { ProfileGroup } from '@/lib/speedscope-core/profile';
 import { ProfileType } from '@trace-view-pilot/shared-importer'; // Assuming ProfileType will be exported from index.ts
+import * as pako from 'pako'; // Import pako for client-side use
+import { JSON_parse } from 'uint8array-json-parser'; // Import parser for client-side use
+import Long from 'long'; // Import Long for client-side
 
 /**
  * Calculates the duration of a profile group in milliseconds.
@@ -57,12 +60,19 @@ interface ProcessedTraceData {
  */
 export async function processAndPrepareTraceUpload(originalFile: File): Promise<ProcessedTraceData> {
   let importResult: { profileGroup: ProfileGroup | null; profileType: ProfileType } | null = null;
+  
+  // Create the dependencies object for the client environment
+  const importerDeps: ImporterDependencies = {
+    inflate: pako.inflate,
+    parseJsonUint8Array: JSON_parse,
+    isLong: Long.isLong
+  };
 
   // Try importing via ArrayBuffer first
   try {
     const fileContent = await originalFile.arrayBuffer();
-    // Assuming importProfilesFromArrayBuffer will be updated to return { profileGroup, profileType }
-    importResult = await importProfilesFromArrayBuffer(originalFile.name, fileContent);
+    // Pass the dependencies object
+    importResult = await importProfilesFromArrayBuffer(originalFile.name, fileContent, importerDeps);
   } catch (e) {
     console.warn("Reading or importing as ArrayBuffer failed, will try text.", e);
     // Let it proceed to text import
@@ -73,8 +83,8 @@ export async function processAndPrepareTraceUpload(originalFile: File): Promise<
      console.log("Attempting import via text content.");
      try {
         const fileText = await originalFile.text();
-        // Assuming importProfileGroupFromText will be updated to return { profileGroup, profileType }
-        const textImportResult = await importProfileGroupFromText(originalFile.name, fileText);
+        // Pass the dependencies object
+        const textImportResult = await importProfileGroupFromText(originalFile.name, fileText, importerDeps);
         // Only use text result if it successfully found a profile group
         if (textImportResult?.profileGroup) {
             importResult = textImportResult;

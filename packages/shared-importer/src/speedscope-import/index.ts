@@ -1,4 +1,4 @@
-import {Profile, ProfileGroup} from '../speedscope-core/profile'
+import {Profile, ProfileGroup} from '../speedscope-core/profile.ts'
 
 import {
   importFromChromeCPUProfile,
@@ -6,23 +6,23 @@ import {
   isChromeTimeline,
   importFromOldV8CPUProfile,
   isChromeTimelineObject,
-} from './chrome'
-import {importFromStackprof} from './stackprof'
-import {importFromInstrumentsDeepCopy, importFromInstrumentsTrace} from './instruments'
-import {importFromBGFlameGraph} from './bg-flamegraph'
-import {importFromFirefox} from './firefox'
-import {importSpeedscopeProfiles} from './file-format'
-import {importFromV8ProfLog} from './v8proflog'
-import {importFromLinuxPerf} from './linux-tools-perf'
-import {importFromHaskell} from './haskell'
-import {importFromSafari} from './safari'
-import {ProfileDataSource, TextProfileDataSource, MaybeCompressedDataReader} from './importer-utils'
-import {importAsPprofProfile} from './pprof'
-import {decodeBase64} from './utils'
-import {importFromChromeHeapProfile} from './v8heapalloc'
-import {isTraceEventFormatted, importTraceEvents} from './trace-event'
-import {importFromCallgrind} from './callgrind'
-import {importFromPapyrus} from './papyrus'
+} from './chrome.ts'
+import {importFromStackprof} from './stackprof.ts'
+import {importFromInstrumentsDeepCopy, importFromInstrumentsTrace} from './instruments.ts'
+import {importFromBGFlameGraph} from './bg-flamegraph.ts'
+import {importFromFirefox} from './firefox.ts'
+import {importSpeedscopeProfiles} from './file-format.ts'
+import {importFromV8ProfLog} from './v8proflog.ts'
+import {importFromLinuxPerf} from './linux-tools-perf.ts'
+import {importFromHaskell} from './haskell.ts'
+import {importFromSafari} from './safari.ts'
+import {ProfileDataSource, TextProfileDataSource, MaybeCompressedDataReader, InflateFn, ParseJsonUint8ArrayFn, ImporterDependencies} from './importer-utils.ts'
+import {importAsPprofProfile} from './pprof.ts'
+import {decodeBase64} from './utils.ts'
+import {importFromChromeHeapProfile} from './v8heapalloc.ts'
+import {isTraceEventFormatted, importTraceEvents} from './trace-event.ts'
+import {importFromCallgrind} from './callgrind.ts'
+import {importFromPapyrus} from './papyrus.ts'
 
 // Define the possible profile types - based on the import functions available
 export type ProfileType =
@@ -55,34 +55,57 @@ interface ImportResult {
 export async function importProfileGroupFromText(
   fileName: string,
   contents: string,
+  deps: ImporterDependencies
 ): Promise<ImportResult | null> {
-  return await importProfileGroup(new TextProfileDataSource(fileName, contents))
+  return await importProfileGroup(
+    new TextProfileDataSource(fileName, contents),
+    deps
+  )
 }
 
 export async function importProfileGroupFromBase64(
   fileName: string,
   b64contents: string,
+  deps: ImporterDependencies
 ): Promise<ImportResult | null> {
   return await importProfileGroup(
-    MaybeCompressedDataReader.fromArrayBuffer(fileName, decodeBase64(b64contents).buffer),
+    MaybeCompressedDataReader.fromArrayBuffer(
+      fileName,
+      decodeBase64(b64contents).buffer,
+      deps
+    ),
+    deps
   )
 }
 
-export async function importProfilesFromFile(file: File): Promise<ImportResult | null> {
-  return importProfileGroup(MaybeCompressedDataReader.fromFile(file))
+export async function importProfilesFromFile(
+  file: File,
+  deps: ImporterDependencies
+): Promise<ImportResult | null> {
+  return importProfileGroup(
+    MaybeCompressedDataReader.fromFile(file, deps),
+    deps
+  )
 }
 
 export async function importProfilesFromArrayBuffer(
   fileName: string,
   buffer: ArrayBuffer,
+  deps: ImporterDependencies
 ): Promise<ImportResult | null> {
-  return importProfileGroup(MaybeCompressedDataReader.fromArrayBuffer(fileName, buffer))
+  return importProfileGroup(
+    MaybeCompressedDataReader.fromArrayBuffer(fileName, buffer, deps),
+    deps
+  )
 }
 
-async function importProfileGroup(dataSource: ProfileDataSource): Promise<ImportResult | null> {
+async function importProfileGroup(
+  dataSource: ProfileDataSource,
+  deps: ImporterDependencies
+): Promise<ImportResult | null> {
   const fileName = await dataSource.name()
 
-  const result = await _importProfileGroup(dataSource)
+  const result = await _importProfileGroup(dataSource, deps)
   if (result && result.profileGroup) {
     if (!result.profileGroup.name) {
       result.profileGroup.name = fileName
@@ -102,7 +125,10 @@ function toGroup(profile: Profile | null): ProfileGroup | null {
   return {name: profile.getName(), indexToView: 0, profiles: [profile]}
 }
 
-async function _importProfileGroup(dataSource: ProfileDataSource): Promise<ImportResult> {
+async function _importProfileGroup(
+  dataSource: ProfileDataSource,
+  deps: ImporterDependencies
+): Promise<ImportResult> {
   const fileName = await dataSource.name()
   let profileGroup: ProfileGroup | null = null
   let profileType: ProfileType = 'unknown'
@@ -110,7 +136,7 @@ async function _importProfileGroup(dataSource: ProfileDataSource): Promise<Impor
   // Try binary formats first
   try {
     const buffer = await dataSource.readAsArrayBuffer()
-    const pprofProfile = importAsPprofProfile(buffer)
+    const pprofProfile = importAsPprofProfile(buffer, deps)
     if (pprofProfile) {
       console.log('Importing as protobuf encoded pprof file')
       profileGroup = toGroup(pprofProfile)
@@ -123,7 +149,7 @@ async function _importProfileGroup(dataSource: ProfileDataSource): Promise<Impor
 
   let contents: any
   try {
-    contents = await dataSource.readAsText()
+    contents = await dataSource.readAsText(deps)
   } catch (e) {
     console.error("Failed to read data source as text:", e)
     return { profileGroup: null, profileType: 'unknown' }
@@ -134,19 +160,19 @@ async function _importProfileGroup(dataSource: ProfileDataSource): Promise<Impor
   if (fileName.endsWith('.speedscope.json')) {
     profileType = 'speedscope'
     console.log(`Importing as ${profileType}`)
-    try { profileGroup = importSpeedscopeProfiles(contents.parseAsJSON()) } catch (e) { console.error(e) }
+    try { profileGroup = importSpeedscopeProfiles(contents.parseAsJSON(deps)) } catch (e) { console.error(e) }
   } else if (/Trace-\d{8}T\d{6}/.exec(fileName)) {
     profileType = 'chrome-timeline'
     console.log(`Importing as ${profileType} (Object)`)
-    try { profileGroup = importFromChromeTimeline(contents.parseAsJSON().traceEvents, fileName) } catch (e) { console.error(e) }
+    try { profileGroup = importFromChromeTimeline(contents.parseAsJSON(deps).traceEvents, fileName) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.chrome.json') || /Profile-\d{8}T\d{6}/.exec(fileName)) {
     profileType = 'chrome-timeline'
     console.log(`Importing as ${profileType}`)
-    try { profileGroup = importFromChromeTimeline(contents.parseAsJSON(), fileName) } catch (e) { console.error(e) }
+    try { profileGroup = importFromChromeTimeline(contents.parseAsJSON(deps), fileName) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.stackprof.json')) {
     profileType = 'stackprof'
     console.log(`Importing as ${profileType}`)
-    try { profileGroup = toGroup(importFromStackprof(contents.parseAsJSON())) } catch (e) { console.error(e) }
+    try { profileGroup = toGroup(importFromStackprof(contents.parseAsJSON(deps))) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.instruments.txt')) {
     profileType = 'instruments-deepcopy'
     console.log(`Importing as ${profileType}`)
@@ -162,15 +188,15 @@ async function _importProfileGroup(dataSource: ProfileDataSource): Promise<Impor
   } else if (fileName.endsWith('.v8log.json')) {
     profileType = 'v8-prof-log'
     console.log(`Importing as ${profileType}`)
-    try { profileGroup = toGroup(importFromV8ProfLog(contents.parseAsJSON())) } catch (e) { console.error(e) }
+    try { profileGroup = toGroup(importFromV8ProfLog(contents.parseAsJSON(deps))) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('.heapprofile')) {
     profileType = 'chrome-heap-profile'
     console.log(`Importing as ${profileType}`)
-    try { profileGroup = toGroup(importFromChromeHeapProfile(contents.parseAsJSON())) } catch (e) { console.error(e) }
+    try { profileGroup = toGroup(importFromChromeHeapProfile(contents.parseAsJSON(deps))) } catch (e) { console.error(e) }
   } else if (fileName.endsWith('-recording.json')) {
     profileType = 'safari'
     console.log(`Importing as ${profileType}`)
-    try { profileGroup = toGroup(importFromSafari(contents.parseAsJSON())) } catch (e) { console.error(e) }
+    try { profileGroup = toGroup(importFromSafari(contents.parseAsJSON(deps))) } catch (e) { console.error(e) }
   } else if (fileName.startsWith('callgrind.')) {
     profileType = 'callgrind'
     console.log(`Importing as ${profileType}`)
@@ -183,7 +209,7 @@ async function _importProfileGroup(dataSource: ProfileDataSource): Promise<Impor
   // Second pass: Try to guess what file format it is based on structure
   let parsed: any
   try {
-    parsed = contents.parseAsJSON()
+    parsed = contents.parseAsJSON(deps)
   } catch (e) {}
 
   if (parsed) {
