@@ -21,6 +21,9 @@ import { getCanvasContext } from "./lib/speedscope-core/app-state/getters";
 import { GLCanvas } from "./components/speedscope-ui/application";
 import { SharingModalProvider } from '@/hooks/useSharingModal';
 import { SharingModal } from '@/components/sharing/SharingModal';
+// Import Settings components
+import SettingsLayout from '@/components/settings/SettingsLayout';
+import SettingsPage from './pages/settings/SettingsPage'; 
 
 const queryClient = new QueryClient();
 
@@ -39,7 +42,16 @@ const AppRoutes = () => {
       <Route path="/traces/:id" element={<TraceDetail />} />
       <Route path="/traces/:id/view" element={<TraceViewerPage />} />
       <Route path="/upload" element={<Upload />} />
-       <Route path="settings/api-keys" element={<ApiKeysPage />} />
+      
+      {/* Settings Routes */}
+      <Route path="/settings" element={<SettingsLayout />}>
+        {/* Redirect /settings to /settings/api-keys or a default settings page */}
+        <Route index element={<Navigate to="/settings/api-keys" replace />} /> 
+        {/* <Route index element={<SettingsPage />} /> */}
+        <Route path="api-keys" element={<ApiKeysPage />} />
+        {/* Add other settings sub-routes here */}
+      </Route>
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
