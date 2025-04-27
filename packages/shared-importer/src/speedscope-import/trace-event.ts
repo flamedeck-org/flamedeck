@@ -1,12 +1,12 @@
-import {sortBy, zeroPad, getOrInsert, lastOf} from '../speedscope-core/lib-utils'
+import {sortBy, zeroPad, getOrInsert, lastOf} from '../speedscope-core/lib-utils.ts'
 import {
   ProfileGroup,
   CallTreeProfileBuilder,
   FrameInfo,
   Profile,
   StackListProfileBuilder,
-} from '../speedscope-core/profile'
-import {TimeFormatter} from '../speedscope-core/value-formatters'
+} from '../speedscope-core/profile.ts'
+import {TimeFormatter} from '../speedscope-core/value-formatters.ts'
 
 // This file concerns import from the "Trace Event Format", authored by Google
 // and used for Google's own chrome://trace.

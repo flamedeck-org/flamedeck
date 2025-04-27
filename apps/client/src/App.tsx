@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Traces from "./pages/Traces";
 import TraceDetail from "./pages/TraceDetail";
+import ApiKeysPage from "./pages/settings/ApiKeysPage";
 import Upload from "./pages/Upload";
 import NotFound from "./pages/NotFound";
 import TraceViewerPage from "./pages/TraceViewerPage";
@@ -38,6 +39,7 @@ const AppRoutes = () => {
       <Route path="/traces/:id" element={<TraceDetail />} />
       <Route path="/traces/:id/view" element={<TraceViewerPage />} />
       <Route path="/upload" element={<Upload />} />
+       <Route path="settings/api-keys" element={<ApiKeysPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
