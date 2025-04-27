@@ -1,6 +1,6 @@
-import {lastOf, KeyedSet} from './lib-utils'
-import {ValueFormatter, RawValueFormatter} from './value-formatters'
-import {FileFormat} from './file-format-spec'
+import {lastOf, KeyedSet} from './lib-utils.ts'
+import {ValueFormatter, RawValueFormatter} from './value-formatters.ts'
+import {FileFormat} from './file-format-spec.ts'
 // const demangleCppModule = import('./demangle-cpp') // Commented out for now
 
 export interface FrameInfo {

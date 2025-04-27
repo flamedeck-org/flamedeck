@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          last_used_at: string | null
+          scopes: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          last_used_at?: string | null
+          scopes?: string[]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          last_used_at?: string | null
+          scopes?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
       folders: {
         Row: {
           created_at: string
@@ -65,7 +98,7 @@ export type Database = {
           trace_id: string
           trace_timestamp_ms: number | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           comment_identifier?: string | null
@@ -80,7 +113,7 @@ export type Database = {
           trace_id: string
           trace_timestamp_ms?: number | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           comment_identifier?: string | null
@@ -95,7 +128,7 @@ export type Database = {
           trace_id?: string
           trace_timestamp_ms?: number | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -268,6 +301,13 @@ export type Database = {
           min_role: Database["public"]["Enums"]["trace_role"]
         }
         Returns: boolean
+      }
+      create_api_key: {
+        Args: { p_description: string; p_scopes: string[] }
+        Returns: {
+          api_key_id: string
+          api_key_plaintext: string
+        }[]
       }
       delete_folder_contents_by_ids: {
         Args: {

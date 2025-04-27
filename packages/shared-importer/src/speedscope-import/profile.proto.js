@@ -6,9 +6,10 @@
 //
 // Then prepend this comment to the result.
  
-'use strict'
+// 'use strict' // No longer needed in ES modules
 
-var $protobuf = require('protobufjs/minimal')
+// Replaced require with import from esm.sh
+import * as $protobuf from 'https://esm.sh/protobufjs/minimal';
 
 // Common aliases
 var $Reader = $protobuf.Reader,
@@ -3540,4 +3541,6 @@ $root.perftools = (function() {
   return perftools
 })()
 
-module.exports = $root
+// Replace CommonJS export with ES Module default export
+// module.exports = $root
+export default $root;

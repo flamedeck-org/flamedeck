@@ -1,8 +1,8 @@
 import * as profileProto from './profile.proto.js'
-import {FrameInfo, StackListProfileBuilder, Profile} from '../speedscope-core/profile'
-import {lastOf} from '../speedscope-core/lib-utils'
-import {TimeFormatter, ByteFormatter} from '../speedscope-core/value-formatters'
-import Long from 'long'
+import {FrameInfo, StackListProfileBuilder, Profile} from '../speedscope-core/profile.ts'
+import {lastOf} from '../speedscope-core/lib-utils.ts'
+import {TimeFormatter, ByteFormatter} from '../speedscope-core/value-formatters.ts'
+import { ImporterDependencies } from './importer-utils.ts'
 
 const perftools = (profileProto as any).perftools
 
@@ -30,7 +30,10 @@ function getSampleTypeIndex(profile: perftools.profiles.Profile): number {
   return idx
 }
 
-export function importAsPprofProfile(rawProfile: ArrayBuffer): Profile | null {
+export function importAsPprofProfile(
+    rawProfile: ArrayBuffer,
+    deps: Pick<ImporterDependencies, 'isLong'>
+): Profile | null {
   if (rawProfile.byteLength === 0) return null
 
   let protoProfile: perftools.profiles.Profile
@@ -40,14 +43,14 @@ export function importAsPprofProfile(rawProfile: ArrayBuffer): Profile | null {
     return null
   }
 
-  function i32(n: number | Long): number {
-    if (Long.isLong(n)) {
+  function i32(n: number | { toNumber(): number }): number {
+    if (deps.isLong(n)) {
       return n.toNumber();
     }
-    return n; 
+    return n as number;
   }
 
-  function stringVal(key: number | Long): string | null {
+  function stringVal(key: number | { toNumber(): number }): string | null {
     return protoProfile.stringTable[i32(key)] || null;
   }
 
@@ -105,10 +108,10 @@ export function importAsPprofProfile(rawProfile: ArrayBuffer): Profile | null {
     const lastLine = lastOf(line)
     if (lastLine == null) return null
 
-    if (lastLine.functionId != null && Long.isLong(lastLine.functionId)) {
+    if (lastLine.functionId != null && deps.isLong(lastLine.functionId)) {
       const funcFrame = frameInfoByFunctionID.get(i32(lastLine.functionId))
       
-      const lineNumber = Long.isLong(lastLine.line) ? lastLine.line.toNumber() : lastLine.line
+      const lineNumber = deps.isLong(lastLine.line) ? lastLine.line.toNumber() : lastLine.line
 
       if (lineNumber != null && lineNumber > 0 && funcFrame != null) {
         funcFrame.line = lineNumber

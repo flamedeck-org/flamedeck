@@ -1,5 +1,5 @@
-import { ProfileGroup, FrameInfo, CallTreeProfileBuilder } from '../speedscope-core/profile'
-import { TimeFormatter, ByteFormatter } from '../speedscope-core/value-formatters'
+import { ProfileGroup, FrameInfo, CallTreeProfileBuilder } from '../speedscope-core/profile.ts'
+import { TimeFormatter, ByteFormatter } from '../speedscope-core/value-formatters.ts'
 
 // See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/profiling.html#json-profile-format
 // for information on the GHC profiler JSON output format.

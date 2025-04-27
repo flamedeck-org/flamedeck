@@ -22,10 +22,10 @@
 // the "Quest" script, and thus it has certain methods, like "CompleteQuest()". This information would be useful
 // for Debugging, but for profiling, it would hinder meaningful output in left heavy mode.
 
-import {CallTreeProfileBuilder, Frame, Profile} from '../speedscope-core/profile'
-import {KeyedSet, lastOf} from '../speedscope-core/lib-utils'
-import {TimeFormatter} from '../speedscope-core/value-formatters'
-import {TextFileContent} from './importer-utils'
+import {CallTreeProfileBuilder, Frame, Profile} from '../speedscope-core/profile.ts'
+import {KeyedSet, lastOf} from '../speedscope-core/lib-utils.ts'
+import {TimeFormatter} from '../speedscope-core/value-formatters.ts'
+import {TextFileContent} from './importer-utils.ts'
 
 type ParsedLine = {
   at: number

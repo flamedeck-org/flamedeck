@@ -1,7 +1,7 @@
-import {StackListProfileBuilder, ProfileGroup} from '../speedscope-core/profile'
-import {itMap, getOrInsert} from '../speedscope-core/lib-utils'
-import {TimeFormatter} from '../speedscope-core/value-formatters'
-import {TextFileContent} from './importer-utils'
+import {StackListProfileBuilder, ProfileGroup} from '../speedscope-core/profile.ts'
+import {itMap, getOrInsert} from '../speedscope-core/lib-utils.ts'
+import {TimeFormatter} from '../speedscope-core/value-formatters.ts'
+import {TextFileContent} from './importer-utils.ts'
 
 // This imports the output of the "perf script" command on linux.
 //
