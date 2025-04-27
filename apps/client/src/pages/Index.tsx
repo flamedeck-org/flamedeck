@@ -128,13 +128,6 @@ function Index() {
           <PricingTable />
         </div>
       </Layout>
-      {/* Footer */}
-      <footer className="bg-muted py-6 px-4 text-center text-muted-foreground">
-        <div className="max-w-7xl mx-auto">
-          <p>&copy; {new Date().getFullYear()} TraceView. All rights reserved.</p>
-          {/* Add any other footer links or info here */}
-        </div>
-      </footer>
     </>
   );
 };
