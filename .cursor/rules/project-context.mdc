@@ -40,6 +40,7 @@ This is the frontend client for the trace viewer, which allows for uploading, or
     *   `components/`: Reusable UI components. This is where the speedscope UI lives
     *   `hooks/`: Reusable hooks
     *   `pages/`: Top-level page components.
+    *   `docs/`: Documentation that is rendered from mdx files
     *   `lib/`: Utility functions - this is where the speedscope core logic lives. Contains:
         *   `api.ts`: Functions for interacting with the backend API (Supabase).
         *   `utils.ts`: General-purpose utility functions used across the application.
