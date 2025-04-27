@@ -1,0 +1,113 @@
+# API Trace Upload Documentation
+
+This document describes how to use the API endpoint for uploading traces.
+
+## Endpoint
+
+```
+POST /api/upload-trace
+```
+
+## Authentication
+
+Requires a valid Supabase API key with the `trace:upload` scope passed in the `Authorization: Bearer YOUR_API_KEY` header.
+
+## Query Parameters
+
+- `fileName` (string, required): The original filename of the trace.
+- `scenario` (string, optional, default: 'API Upload'): A description of the scenario.
+- `commitSha` (string, optional): Git commit SHA associated with the trace.
+- `branch` (string, optional): Git branch associated with the trace.
+- `deviceModel` (string, optional): Device the trace was captured on.
+- `notes` (string, optional): Additional notes.
+- `folderId` (uuid, optional): ID of the folder to place the trace in.
+
+## Request Body
+
+The raw trace file content (`Content-Type: application/octet-stream`).
+
+## Example Usage
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Tabs defaultValue="curl" className="w-full mt-6 border rounded-md">
+  <TabsList className="grid w-full grid-cols-2 border-b rounded-none">
+    <TabsTrigger value="curl">cURL</TabsTrigger>
+    <TabsTrigger value="node">Node.js</TabsTrigger>
+  </TabsList>
+  <TabsContent value="curl" className="code-tab-content mt-0">
+
+```bash
+# --- Variables --- 
+API_KEY="YOUR_API_KEY"
+SUPABASE_FUNCTIONS_URL="https://jczffinsulwdzhgzggcj.supabase.co/functions/v1"
+FILE_PATH="/path/to/your/trace.file"
+
+# --- Query Parameters --- 
+# Note: Ensure values are URL-encoded if they contain special characters
+PARAMS="fileName=my-test-trace.json&scenario=Curl%20Test%202&commitSha=abcdef123&branch=main&notes=Testing%20API%20upload&folderId=5e027ceb-9c66-490f-a128-9a7aa1281e5a"
+
+# --- Construct URL --- 
+FULL_URL="${SUPABASE_FUNCTIONS_URL}/api-upload-trace?${PARAMS}"
+
+# --- Execute Request ---
+curl -X POST \
+  --data-binary "@${FILE_PATH}" \
+  -H "Authorization: Bearer ${API_KEY}" \
+  -H "Content-Type: application/octet-stream" \
+  "${FULL_URL}"
+```
+
+  </TabsContent>
+  <TabsContent value="node" className="code-tab-content mt-0">
+
+```javascript
+import fetch from 'node-fetch';
+import fs from 'fs';
+import path from 'path';
+import { URLSearchParams } from 'url';
+
+const apiKey = 'YOUR_API_KEY';
+const filePath = '/path/to/your/trace.file';
+
+// --- Prepare Request Details --- 
+const functionUrl = `https://jczffinsulwdzhgzggcj.supabase.co/functions/v1/api-upload-trace`;
+const fileName = path.basename(filePath);
+
+const params = new URLSearchParams({
+  fileName: fileName,
+  scenario: 'Node.js Fetch Test',
+  commitSha: 'abcdef123',
+  branch: 'main',
+  notes: 'Testing API upload from Node.js using node-fetch',
+  folderId: '5e027ceb-9c66-490f-a128-9a7aa1281e5a',
+});
+
+const requestUrl = `${functionUrl}?${params.toString()}`;
+
+// --- Make the Request --- 
+const fileStream = fs.createReadStream(filePath);
+
+fetch(requestUrl, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/octet-stream',
+  },
+  body: fileStream, 
+  duplex: 'half'
+})
+.then(async (response) => {
+  const bodyText = await response.json();
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}, body: ${bodyText}`);
+  }
+  return bodyText;
+})
+.catch((error) => {
+  console.error('Problem with request:', error);
+});
+```
+
+  </TabsContent>
+</Tabs>

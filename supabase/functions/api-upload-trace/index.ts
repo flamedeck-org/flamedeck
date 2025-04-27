@@ -45,7 +45,7 @@ const queryParamsSchema = z.object({
   branch: z.string().nullable().optional(),
   deviceModel: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
-  // folderId: z.string().uuid().optional(), // Example if you add folderId later
+  folderId: z.string().uuid("Invalid folder ID format").nullable().optional(), // Allow optional folderId
 });
 
 type QueryParams = z.infer<typeof queryParamsSchema>;
@@ -123,6 +123,7 @@ serve(async (req) => {
       branch: url.searchParams.get('branch'),
       deviceModel: url.searchParams.get('deviceModel'),
       notes: url.searchParams.get('notes'),
+      folderId: url.searchParams.get('folderId'), // Extract folderId
     };
 
     const validationResult = queryParamsSchema.safeParse(queryParamsToValidate);
@@ -145,10 +146,11 @@ serve(async (req) => {
       commitSha,
       branch,
       deviceModel,
-      notes
+      notes,
+      folderId // Destructure folderId
     } = validationResult.data;
 
-    console.log(`Validated metadata - fileName: ${fileName}, scenario: ${scenario}`);
+    console.log(`Validated metadata - fileName: ${fileName}, scenario: ${scenario}, folderId: ${folderId ?? 'none'}`);
 
     // Create the dependencies object for the Deno environment
     const importerDeps: ImporterDependencies = {
@@ -293,7 +295,8 @@ serve(async (req) => {
             profile_type: profileType,
             notes: notes,
             uploaded_at: new Date().toISOString(),
-            // folder_id: folderId // Add if supporting folders via API
+            folder_id: folderId, // Add folderId here
+            upload_source: 'api' // Set upload source to API
         })
         .select() // Select the newly created record
         .single();
