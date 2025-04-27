@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
-import { ListTree, UploadCloud, LogOut, User as UserIcon } from "lucide-react"; // Add UserIcon
+import { ListTree, UploadCloud, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react"; // Add UserIcon and SettingsIcon
 import { useQuery } from "@tanstack/react-query"; // Import useQuery
 import { supabase } from "@/integrations/supabase/client"; // Import supabase client
 import { Database } from "@/integrations/supabase/types"; // Import Database types
@@ -107,7 +107,34 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
             )}
             {!minimized && <span>Traces</span>}
           </NavLink>
-          {/* Add other navigation items here if needed */}
+          {/* Settings Link */}
+           <NavLink
+            to="/settings"
+            // Match if path starts with /settings
+            isActive={(match, location) => location.pathname.startsWith('/settings')}
+            className={({ isActive }) =>
+              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`
+            }
+            aria-label="Settings"
+          >
+            {minimized ? (
+              <Tooltip disableHoverableContent={false}>
+                <TooltipTrigger asChild>
+                  <SettingsIcon className={LIST_ICON_SIZE} />
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={4}>
+                  <p>Settings</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <SettingsIcon className={LIST_ICON_SIZE} />
+            )}
+            {!minimized && <span>Settings</span>}
+          </NavLink>
         </nav>
 
         {/* Bottom Section */}
