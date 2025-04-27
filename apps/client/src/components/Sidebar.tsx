@@ -136,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                 <Link to="/upload" className={minimized ? 'w-full flex justify-center' : 'w-full'}>
                   <Button 
                     size={minimized ? "icon" : "sm"}
-                    variant="default" 
+                    variant="primary-outline" 
                     className={`${minimized ? MINIMIZED_BUTTON_SIZE : 'w-full space-x-2'} flex items-center justify-center`}
                     title={minimized ? "Upload Trace" : undefined}
                     aria-label="Upload Trace"

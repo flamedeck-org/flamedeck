@@ -13,8 +13,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 196 100% 40%; /* Darker blue (Lightness from 50% to 40%) */
-    --primary-foreground: 210 40% 98%; /* Lighter foreground for darker blue */
+    --primary: 24 95% 53%; /* Orange */
+    --primary-foreground: 20 14% 98%; /* Almost white for contrast */
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -51,8 +51,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 196 100% 50%; /* Keep primary blue */
-    --primary-foreground: 222 47% 11%; /* Adjust foreground for blue */
+    --primary: 24 85% 45%; /* Orange */
+    --primary-foreground: 20 14% 98%; /* Almost white for contrast */
 
     --secondary: 223 36% 10%;
     --secondary-foreground: 210 40% 98%;
