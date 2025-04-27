@@ -1,51 +1,8 @@
 import { importProfileGroupFromText, importProfilesFromArrayBuffer, type ImporterDependencies } from '@trace-view-pilot/shared-importer';
-import { exportProfileGroup } from '@trace-view-pilot/shared-importer';
-import { ProfileGroup } from '@/lib/speedscope-core/profile';
-import { ProfileType } from '@trace-view-pilot/shared-importer'; // Assuming ProfileType will be exported from index.ts
+import { exportProfileGroup, getDurationMsFromProfileGroup, ProfileType } from '@trace-view-pilot/shared-importer';
 import * as pako from 'pako'; // Import pako for client-side use
 import { JSON_parse } from 'uint8array-json-parser'; // Import parser for client-side use
 import Long from 'long'; // Import Long for client-side
-
-/**
- * Calculates the duration of a profile group in milliseconds.
- * Assumes the duration is determined by the first profile in the group.
- *
- * @param profileGroup The ProfileGroup object.
- * @returns The duration in milliseconds, or null if the unit is not time-based.
- */
-function getDurationMsFromProfileGroup(profileGroup: ProfileGroup): number | null {
-  if (!profileGroup || profileGroup.profiles.length === 0) {
-    return null; // Or handle this case as appropriate
-  }
-
-  const firstProfile = profileGroup.profiles[0];
-  const totalWeight = firstProfile.getTotalWeight();
-  const weightUnit = firstProfile.getWeightUnit();
-  let durationMs: number | null = null;
-
-  switch (weightUnit) {
-    case 'nanoseconds':
-      durationMs = totalWeight / 1_000_000;
-      break;
-    case 'microseconds':
-      durationMs = totalWeight / 1_000;
-      break;
-    case 'milliseconds':
-      durationMs = totalWeight;
-      break;
-    case 'seconds':
-      durationMs = totalWeight * 1_000;
-      break;
-    // If unit is 'bytes' or 'none', durationMs remains null
-  }
-  return durationMs;
-}
-
-interface ProcessedTraceData {
-  processedFile: File;
-  durationMs: number | null;
-  profileType: ProfileType;
-}
 
 /**
  * Processes a raw trace file using Speedscope import/export functions.
