@@ -1,7 +1,6 @@
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +18,7 @@ import { ListTree, UploadCloud, LogOut, User as UserIcon, Settings as SettingsIc
 import { useQuery } from "@tanstack/react-query"; // Import useQuery
 import { supabase } from "@/integrations/supabase/client"; // Import supabase client
 import { Database } from "@/integrations/supabase/types"; // Import Database types
+import { UserAvatar } from "@/components/UserAvatar"; // Import the new component
 
 type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
 
@@ -61,22 +61,13 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
     }
   };
 
-  // Determine display name and avatar details
-  // Use profile data if available and loaded, otherwise fallback
+  // Determine display name for tooltip/text (still needed)
   const displayName = !isProfileLoading && profile?.username 
     ? profile.username 
     : !isProfileLoading && profile?.first_name
     ? profile.first_name
     : user?.email || 'User';
   
-  const avatarUrl = !isProfileLoading ? profile?.avatar_url : null;
-  
-  const nameFallback = 
-    (!isProfileLoading && profile?.username?.charAt(0)) || 
-    (!isProfileLoading && profile?.first_name?.charAt(0)) || 
-    user?.email?.charAt(0) || 
-    'U';
-
   return (
     <TooltipProvider delayDuration={0}>
       <aside className={`${minimized ? 'w-16' : 'w-64'} border-r bg-background flex flex-col z-10 transition-width duration-200`}>
@@ -180,12 +171,12 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                       aria-label="User menu"
                       title={minimized ? displayName : undefined}
                     >
-                      <Avatar className={`${minimized ? MINIMIZED_BUTTON_SIZE : 'h-8 w-8 mr-3'}`}>
-                        {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-                        <AvatarFallback className="bg-secondary text-sm">
-                          {nameFallback.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar 
+                        profile={profile} 
+                        currentUser={user} 
+                        size="lg" // Existing size was h-8/w-8 which maps to lg
+                        className={!minimized ? 'mr-3' : ''} // Add margin only when not minimized
+                      />
                       {!minimized && (
                         <div className="flex-1 overflow-hidden">
                           <p className="text-sm font-medium truncate">
@@ -202,8 +193,6 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                   </TooltipContent>
                 )}
                 <DropdownMenuContent align="end" side="right" sideOffset={10} className="w-56 mb-2">
-                  {/* Optional: Add account settings link */}
-                  {/* <DropdownMenuItem asChild><Link to="/account">Account Settings</Link></DropdownMenuItem> */}
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50">
                     <LogOut className="mr-2 h-4 w-4"/>
                     Logout

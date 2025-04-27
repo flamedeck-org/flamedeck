@@ -393,7 +393,6 @@ function TraceListComponent() {
                     <TableHead>Owner</TableHead>
                     <TableHead>Branch</TableHead>
                     <TableHead>Commit</TableHead>
-                    <TableHead>Device</TableHead>
                     <TableHead>Duration</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead className="text-right pr-6">Actions</TableHead>

@@ -104,7 +104,6 @@ import { uploadJson } from "./storage";
               commit_sha: metadata.commit_sha,
               branch: metadata.branch,
               scenario: metadata.scenario,
-              device_model: metadata.device_model,
               duration_ms: Math.round(metadata.duration_ms),
               blob_path: storagePath,
               file_size_bytes: file.size, // Size of the *processed* (but uncompressed) file

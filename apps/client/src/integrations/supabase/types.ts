@@ -201,15 +201,16 @@ export type Database = {
           blob_path: string
           branch: string | null
           commit_sha: string | null
-          device_model: string | null
           duration_ms: number | null
           file_size_bytes: number | null
           folder_id: string | null
           id: string
+          metadata: Json | null
           notes: string | null
           profile_type: string | null
           scenario: string | null
           updated_at: string | null
+          upload_source: string
           uploaded_at: string
           user_id: string
         }
@@ -217,15 +218,16 @@ export type Database = {
           blob_path: string
           branch?: string | null
           commit_sha?: string | null
-          device_model?: string | null
           duration_ms?: number | null
           file_size_bytes?: number | null
           folder_id?: string | null
           id?: string
+          metadata?: Json | null
           notes?: string | null
           profile_type?: string | null
           scenario?: string | null
           updated_at?: string | null
+          upload_source?: string
           uploaded_at?: string
           user_id: string
         }
@@ -233,15 +235,16 @@ export type Database = {
           blob_path?: string
           branch?: string | null
           commit_sha?: string | null
-          device_model?: string | null
           duration_ms?: number | null
           file_size_bytes?: number | null
           folder_id?: string | null
           id?: string
+          metadata?: Json | null
           notes?: string | null
           profile_type?: string | null
           scenario?: string | null
           updated_at?: string | null
+          upload_source?: string
           uploaded_at?: string
           user_id?: string
         }
@@ -395,6 +398,14 @@ export type Database = {
       show_trgm: {
         Args: { "": string }
         Returns: string[]
+      }
+      verify_api_key: {
+        Args: { p_plaintext_key: string }
+        Returns: {
+          o_user_id: string
+          o_is_valid: boolean
+          o_scopes: string[]
+        }[]
       }
     }
     Enums: {
