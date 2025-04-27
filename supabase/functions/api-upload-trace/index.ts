@@ -15,12 +15,18 @@ import Long from 'npm:long'; // Import Long for Deno
 // Import type from the package index file
 import { type ImporterDependencies } from '../../../packages/shared-importer/src/index.ts'; 
 import { z } from 'https://esm.sh/zod@3.23.8'; // Import Zod
+// Adjust import to get the ProfileGroup type if needed, and exportProfileGroup
+import {
+  importProfilesFromArrayBuffer,
+  exportProfileGroup,
+  ProfileType, // Assuming ProfileType is exported
+  getDurationMsFromProfileGroup // Import the new utility
+} from '../../../packages/shared-importer/src/index.ts';
 
 // --- Shared Importer ---
 // NOTE: Ensure this relative path is correct from the perspective of the compiled function
 // It might require adjustment based on the final build structure or if using import maps.
 // Also ensure the shared importer is environment-agnostic (no browser/node APIs)
-import { importProfilesFromArrayBuffer } from '../../../packages/shared-importer/src/index.ts';
 
 // --- Compression Utility ---
 async function gzipCompressDeno(data: Uint8Array): Promise<ArrayBuffer> {
@@ -152,36 +158,65 @@ serve(async (req) => {
     };
 
     // 5. Import Processing
-    let speedscopeProfile: object | null = null;
+    let importResult: { profileGroup: ProfileGroup | null; profileType: ProfileType } | null = null;
     let durationMs = 0;
-    let profileType = 'unknown';
+    let compressedBuffer: ArrayBuffer | undefined = undefined;
+    let compressedSize = 0;
+    let profileType: ProfileType = 'unknown';
+
     try {
       console.log(`Attempting to import profile using shared importer for file: ${fileName}`);
       // Pass the dependencies object
-      speedscopeProfile = await importProfilesFromArrayBuffer(
-          fileName,
+      importResult = await importProfilesFromArrayBuffer(
+          fileName, // Pass filename first now
           fileBuffer,
           importerDeps
       );
 
-      if (!speedscopeProfile) {
-        // Importer returned null, indicating format not recognized or parse error
-        console.warn(`Import failed (importer returned null) for file: ${fileName}`);
+      // Check if importResult or profileGroup inside it is null
+      if (!importResult?.profileGroup) {
+        // Importer returned null or failed to find a group
+        console.warn(`Import failed (importer returned null/empty group) for file: ${fileName}`);
         return new Response(JSON.stringify({ error: 'Failed to parse trace file or unsupported format' }), {
-          status: 400, // Bad Request or 422 Unprocessable Entity could also fit
+          status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
       console.log(`Import successful for file: ${fileName}.`);
 
-      // Attempt to extract basic info (adjust keys based on actual Speedscope format)
-      // Use type assertion carefully or add proper type guards
-      const profileData = speedscopeProfile as any; // Use with caution!
-      durationMs = Math.round(profileData?.profiles?.[0]?.endValue ?? profileData?.maxValue ?? 0);
-      profileType = profileData?.exporter ?? 'unknown';
+      // Extract info from the ProfileGroup object
+      const profileGroup = importResult.profileGroup;
+      const profileType = importResult.profileType; // Get type from result
+
+      // Use the shared utility function for duration calculation
+      // The profileGroup object returned by the importer *must* conform
+      // structurally to the MinimalProfileGroup interface used by the utility.
+      durationMs = getDurationMsFromProfileGroup(profileGroup) ?? 0; // Use nullish coalescing for default
 
       console.log(`Extracted from profile - duration: ${durationMs}ms, type: ${profileType}`);
+
+      // !!! CRITICAL FIX: Export to serializable format BEFORE stringify !!!
+      console.log("Exporting profile group to serializable format...");
+      const serializableProfile = exportProfileGroup(profileGroup);
+
+      // Now stringify the serializable object
+      const jsonString = JSON.stringify(serializableProfile);
+      const uint8Array = new TextEncoder().encode(jsonString);
+      console.log(`Serializable profile stringified, size: ${uint8Array.byteLength} bytes`);
+
+      // Perform compression - assign to variables declared outside
+      try {
+          compressedBuffer = await gzipCompressDeno(uint8Array);
+          compressedSize = compressedBuffer.byteLength;
+          console.log(`Compression successful, compressed size: ${compressedSize} bytes`);
+      } catch (compressError) {
+        console.error(`Error during compression for ${fileName}:`, compressError);
+        return new Response(JSON.stringify({ error: 'An error occurred while compressing the trace file' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
 
     } catch (importError) {
       console.error(`Error during import process for ${fileName}:`, importError);
@@ -192,25 +227,16 @@ serve(async (req) => {
       });
     }
 
-    // 6. Compression
-    let compressedBuffer: ArrayBuffer;
-    let compressedSize = 0;
-    try {
-      const jsonString = JSON.stringify(speedscopeProfile);
-      const uint8Array = new TextEncoder().encode(jsonString);
-      console.log(`Speedscope profile stringified, size: ${uint8Array.byteLength} bytes`);
-      compressedBuffer = await gzipCompressDeno(uint8Array);
-      compressedSize = compressedBuffer.byteLength;
-      console.log(`Compression successful, compressed size: ${compressedSize} bytes`);
-    } catch (compressError) {
-      console.error(`Error during compression for ${fileName}:`, compressError);
-      return new Response(JSON.stringify({ error: 'An error occurred while compressing the trace file' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Check if compression succeeded before proceeding
+    if (compressedBuffer === undefined) {
+        console.error("Compression step failed or was skipped, cannot proceed with storage upload.");
+        return new Response(JSON.stringify({ error: 'Internal error during file processing' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
     }
 
-    // 7. Storage Upload
+    // 6. Storage Upload
     const bucket = 'traces';
     const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "/");
     // Sanitize filename slightly and ensure .gz suffix for clarity in bucket
@@ -261,7 +287,7 @@ serve(async (req) => {
             branch: branch,
             scenario: scenario,
             device_model: deviceModel,
-            duration_ms: durationMs,
+            duration_ms: durationMs, // Already rounded by the utility function (if not null)
             blob_path: storagePath,
             file_size_bytes: compressedSize, // Store compressed size
             profile_type: profileType,
