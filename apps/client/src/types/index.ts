@@ -9,32 +9,35 @@ export interface UserProfile {
   last_name?: string | null;
 }
 
+// Shared type for trace metadata used across the app
 export interface TraceMetadata {
-  id: string;
-  user_id: string;
-  uploaded_at: string;
+  id: string; // UUID
+  user_id: string; // UUID of the owner
   commit_sha: string | null;
   branch: string | null;
-  scenario: string | null;
-  device_model: string | null;
-  duration_ms: number | null;
-  blob_path: string;
-  file_size_bytes: number | null;
-  notes?: string | null;
-  profile_type?: ProfileType | string | null;
-  owner?: UserProfile | null;
-  updated_at?: string | null;
+  scenario: string;
+  duration_ms: number;
+  blob_path: string; // Path in Supabase Storage
+  file_size_bytes: number;
+  uploaded_at: string; // ISO 8601 timestamp
+  updated_at: string; // ISO 8601 timestamp
+  profile_type: ProfileType | 'unknown';
+  notes: string | null;
+  owner: UserProfile | null; // Joined user profile data
+  folder_id: string | null; // UUID of the parent folder
+  upload_source: 'web' | 'api'; // Source of the upload
 }
 
+// Type for uploading new traces (subset of TraceMetadata)
 export interface TraceUpload {
-  commit_sha: string;
-  branch: string;
+  commit_sha: string | null;
+  branch: string | null;
   scenario: string;
-  device_model: string;
-  blob_path: string;
   duration_ms: number;
-  profile_type: ProfileType | string;
-  notes?: string;
+  file_size_bytes: number;
+  profile_type: ProfileType | 'unknown';
+  notes: string | null;
+  blob_path: string; // Added temporarily during upload, then becomes part of TraceMetadata
 }
 
 // Define a structure for API errors

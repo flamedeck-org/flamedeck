@@ -134,7 +134,6 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
         <TableCell>&nbsp;</TableCell>
         <TableCell>&nbsp;</TableCell>
         <TableCell>&nbsp;</TableCell>
-        <TableCell>&nbsp;</TableCell>
         <TableCell className="text-muted-foreground">
           {formatRelativeDate(folder.updated_at || folder.created_at)}
         </TableCell>

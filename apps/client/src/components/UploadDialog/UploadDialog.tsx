@@ -88,7 +88,6 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       commit_sha: "",
       branch: "",
       scenario: "",
-      device_model: "",
       notes: "",
     },
     mode: "onChange",
@@ -413,8 +412,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
            )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+        <div className="space-y-2">
               <Label htmlFor="scenario">Scenario *</Label>
               <Input
                 id="scenario"
@@ -427,15 +425,6 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
               {errors.scenario && dirtyFields.scenario && (
                  <p className="text-sm text-destructive mt-1">{errors.scenario.message}</p>
               )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="device_model">Device Model</Label>
-              <Input
-                id="device_model"
-                placeholder="e.g. iPhone 15 Pro"
-                {...register("device_model")}
-              />
-            </div>
           </div>
 
         <div className="space-y-4">

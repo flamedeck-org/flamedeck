@@ -43,7 +43,6 @@ const queryParamsSchema = z.object({
   scenario: z.string().optional().default('API Upload'), // Optional with default
   commitSha: z.string().nullable().optional(),          // Optional, can be null
   branch: z.string().nullable().optional(),
-  deviceModel: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   folderId: z.string().uuid("Invalid folder ID format").nullable().optional(), // Allow optional folderId
 });
@@ -121,7 +120,6 @@ serve(async (req) => {
       scenario: url.searchParams.get('scenario'),
       commitSha: url.searchParams.get('commitSha'),
       branch: url.searchParams.get('branch'),
-      deviceModel: url.searchParams.get('deviceModel'),
       notes: url.searchParams.get('notes'),
       folderId: url.searchParams.get('folderId'), // Extract folderId
     };
@@ -145,7 +143,6 @@ serve(async (req) => {
       scenario,
       commitSha,
       branch,
-      deviceModel,
       notes,
       folderId // Destructure folderId
     } = validationResult.data;
@@ -288,7 +285,6 @@ serve(async (req) => {
             commit_sha: commitSha,
             branch: branch,
             scenario: scenario,
-            device_model: deviceModel,
             duration_ms: durationMs, // Already rounded by the utility function (if not null)
             blob_path: storagePath,
             file_size_bytes: compressedSize, // Store compressed size
