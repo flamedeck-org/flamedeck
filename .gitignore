@@ -30,3 +30,5 @@ dist-ssr
 .vercel
 
 apps/client/.env.local
+
+.yarn/install-state.gz
