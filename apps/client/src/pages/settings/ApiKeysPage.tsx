@@ -12,10 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { format } from 'date-fns';
 import { Copy, Loader2, AlertCircle } from 'lucide-react';
-import Layout from '@/components/Layout';
-import PageLayout from '@/components/PageLayout';
 import PageHeader from '@/components/PageHeader';
-import AuthGuard from '@/components/AuthGuard';
 import { formatRelativeDate } from '@/lib/utils';
 
 // Define available scopes (could come from a config file)
@@ -69,139 +66,135 @@ function ApiKeysPage() {
     };
 
     return (
-        <AuthGuard>
-            <Layout>
-                <PageLayout>
-                    <PageHeader title="API Keys" />
+        <>
+            <PageHeader title="API Keys" />
 
-                    <div className="space-y-8">
-                        {/* Create New Key Card */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Create New API Key</CardTitle>
-                                <CardDescription>Generate a new key for programmatic access.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="key-description">Description (Optional)</Label>
-                                    <Input
-                                        id="key-description"
-                                        placeholder="e.g., CI/CD Pipeline Key"
-                                        value={newKeyDescription}
-                                        onChange={(e) => setNewKeyDescription(e.target.value)}
-                                        disabled={createApiKeyMutation.isPending}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Scopes</Label>
-                                    <div className="space-y-2">
-                                        {AVAILABLE_SCOPES.map(scope => (
-                                            <div key={scope.id} className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id={`scope-${scope.id}`}
-                                                    checked={selectedScopes.includes(scope.id)}
-                                                    onCheckedChange={(checked) => handleScopeChange(scope.id, !!checked)}
-                                                    disabled={createApiKeyMutation.isPending}
-                                                />
-                                                <Label htmlFor={`scope-${scope.id}`} className="font-normal">
-                                                    {scope.label} ({scope.id})
-                                                </Label>
-                                            </div>
-                                        ))}
+            <div className="space-y-8">
+                {/* Create New Key Card */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Create New API Key</CardTitle>
+                        <CardDescription>Generate a new key for programmatic access.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="key-description">Description (Optional)</Label>
+                            <Input
+                                id="key-description"
+                                placeholder="e.g., CI/CD Pipeline Key"
+                                value={newKeyDescription}
+                                onChange={(e) => setNewKeyDescription(e.target.value)}
+                                disabled={createApiKeyMutation.isPending}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Scopes</Label>
+                            <div className="space-y-2">
+                                {AVAILABLE_SCOPES.map(scope => (
+                                    <div key={scope.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`scope-${scope.id}`}
+                                            checked={selectedScopes.includes(scope.id)}
+                                            onCheckedChange={(checked) => handleScopeChange(scope.id, !!checked)}
+                                            disabled={createApiKeyMutation.isPending}
+                                        />
+                                        <Label htmlFor={`scope-${scope.id}`} className="font-normal">
+                                            {scope.label} ({scope.id})
+                                        </Label>
                                     </div>
-                                </div>
-                            </CardContent>
-                            <CardFooter>
-                                <Button
-                                    onClick={handleCreateKey}
-                                    disabled={createApiKeyMutation.isPending || selectedScopes.length === 0}
-                                >
-                                    {createApiKeyMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Create API Key
-                                </Button>
-                            </CardFooter>
-                        </Card>
+                                ))}
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button
+                            onClick={handleCreateKey}
+                            disabled={createApiKeyMutation.isPending || selectedScopes.length === 0}
+                        >
+                            {createApiKeyMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Create API Key
+                        </Button>
+                    </CardFooter>
+                </Card>
 
-                        {/* Existing Keys Card */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Existing API Keys</CardTitle>
-                                <CardDescription>Manage your existing API keys.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {isLoadingKeys && <p>Loading keys...</p>}
-                                {keysError && <p className="text-red-600">Error loading keys: {keysError.message}</p>}
-                                {!isLoadingKeys && !keysError && (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Description</TableHead>
-                                                <TableHead>Scopes</TableHead>
-                                                <TableHead>Created</TableHead>
-                                                <TableHead>Last Used</TableHead>
-                                                <TableHead>Status</TableHead>
+                {/* Existing Keys Card */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Existing API Keys</CardTitle>
+                        <CardDescription>Manage your existing API keys.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingKeys && <p>Loading keys...</p>}
+                        {keysError && <p className="text-red-600">Error loading keys: {keysError.message}</p>}
+                        {!isLoadingKeys && !keysError && (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead>Scopes</TableHead>
+                                        <TableHead>Created</TableHead>
+                                        <TableHead>Last Used</TableHead>
+                                        <TableHead>Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {apiKeys && apiKeys.length > 0 ? (
+                                        apiKeys.map(key => (
+                                            <TableRow key={key.id} className={`${!key.is_active ? 'text-muted-foreground opacity-60' : ''}`}>
+                                                <TableCell className="font-medium truncate max-w-xs">{key.description || <span className="italic">No description</span>}</TableCell>
+                                                <TableCell className="space-x-1">
+                                                    {key.scopes.map(scope => <Badge key={scope} variant="secondary">{scope}</Badge>)}
+                                                </TableCell>
+                                                <TableCell>{formatRelativeDate(key.created_at)}</TableCell>
+                                                <TableCell>{key.last_used_at ? format(new Date(key.last_used_at), 'PPpp') : 'Never'}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={key.is_active ? "default" : "destructive"}>{key.is_active ? 'Active' : 'Revoked'}</Badge>
+                                                </TableCell>
                                             </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {apiKeys && apiKeys.length > 0 ? (
-                                                apiKeys.map(key => (
-                                                    <TableRow key={key.id} className={`${!key.is_active ? 'text-muted-foreground opacity-60' : ''}`}>
-                                                        <TableCell className="font-medium truncate max-w-xs">{key.description || <span className="italic">No description</span>}</TableCell>
-                                                        <TableCell className="space-x-1">
-                                                            {key.scopes.map(scope => <Badge key={scope} variant="secondary">{scope}</Badge>)}
-                                                        </TableCell>
-                                                        <TableCell>{formatRelativeDate(key.created_at)}</TableCell>
-                                                        <TableCell>{key.last_used_at ? format(new Date(key.last_used_at), 'PPpp') : 'Never'}</TableCell>
-                                                        <TableCell>
-                                                             <Badge variant={key.is_active ? "default" : "destructive"}>{key.is_active ? 'Active' : 'Revoked'}</Badge>
-                                                         </TableCell>
-                                                    </TableRow>
-                                                ))
-                                            ) : (
-                                                <TableRow>
-                                                    <TableCell colSpan={5} className="text-center text-muted-foreground">No API keys found.</TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                            </CardContent>
-                        </Card>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center text-muted-foreground">No API keys found.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
+                </Card>
 
-                        {/* Dialog to show newly generated key */}
-                        <AlertDialog open={showNewKeyDialog} onOpenChange={setShowNewKeyDialog}>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>API Key Created Successfully!</AlertDialogTitle>
-                                    <AlertDialogDescription className="flex items-start space-x-2 pt-2">
-                                       <AlertCircle className="h-5 w-5 text-yellow-500 mt-1 flex-shrink-0" />
-                                       <span>
-                                         Please copy your new API key now. You won't be able to see it again!
-                                       </span>
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <div className="my-4 p-3 bg-muted rounded-md font-mono text-sm break-all relative group">
-                                    {generatedKey?.key}
-                                    <Button
-                                       variant="ghost"
-                                       size="icon"
-                                       className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                       onClick={() => generatedKey && copyToClipboard(generatedKey.key)}
-                                       title="Copy Key"
-                                    >
-                                        <Copy className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <AlertDialogFooter>
-                                    {/* <AlertDialogCancel onClick={() => setGeneratedKey(null)}>Cancel</AlertDialogCancel> */} 
-                                    <AlertDialogAction onClick={() => setGeneratedKey(null)}>OK</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                </PageLayout>
-            </Layout>
-        </AuthGuard>
+                {/* Dialog to show newly generated key */}
+                <AlertDialog open={showNewKeyDialog} onOpenChange={setShowNewKeyDialog}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>API Key Created Successfully!</AlertDialogTitle>
+                            <AlertDialogDescription className="flex items-start space-x-2 pt-2">
+                               <AlertCircle className="h-5 w-5 text-yellow-500 mt-1 flex-shrink-0" />
+                               <span>
+                                 Please copy your new API key now. You won't be able to see it again!
+                               </span>
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="my-4 p-3 bg-muted rounded-md font-mono text-sm break-all relative group">
+                            {generatedKey?.key}
+                            <Button
+                               variant="ghost"
+                               size="icon"
+                               className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                               onClick={() => generatedKey && copyToClipboard(generatedKey.key)}
+                               title="Copy Key"
+                            >
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <AlertDialogFooter>
+                            {/* <AlertDialogCancel onClick={() => setGeneratedKey(null)}>Cancel</AlertDialogCancel> */} 
+                            <AlertDialogAction onClick={() => setGeneratedKey(null)}>OK</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+        </>
     );
 }
 
