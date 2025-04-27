@@ -21,6 +21,12 @@ SUPABASE_ACCESS_TOKEN=<my-token> yarn supabase gen types typescript --project-id
 yarn supabase functions deploy api-upload-trace --no-verify-jwt
 ```
 
+## Deploying the site
+
+```bash
+vercel --prod
+```
+
 ## What technologies are used for this project?
 
 This project is built with:
