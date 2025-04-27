@@ -64,6 +64,10 @@ Standard Vite/React/TS/Tailwind/Supabase config files (`vite.config.ts`, `tailwi
 
 We share the core logic of parsing a profile from a file / array buffer and converting it to the speedscope format between the client and a supabase edge function. To do this we ensure that the code is simple typescript and does not import from any external modules (since Vite and Deno handle module resolution differently).
 
+## Deployment
+
+Deployment is handled with vercel by running `vercel --prod`
+
 ## Key Takeaways for New Engineers
 
 1. We use NX for managing the client monorepo

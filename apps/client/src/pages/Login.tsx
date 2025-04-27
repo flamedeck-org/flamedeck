@@ -46,7 +46,7 @@ const Login: React.FC = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/login`
+          redirectTo: window.location.origin
         }
       });
 
@@ -76,7 +76,7 @@ const Login: React.FC = () => {
                 <path d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <CardTitle className="text-2xl font-bold">Welcome to Speedscope Plus</CardTitle>
+            <CardTitle className="text-2xl font-bold">Welcome to FlameDeck</CardTitle>
           </CardHeader>
           
           <CardContent className="space-y-4">

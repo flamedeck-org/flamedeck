@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ChevronRight } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ const Navbar: React.FC = () => {
                 <path d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="text-xl font-semibold">Professo</span>
+            <span className="text-xl font-semibold">FlameDeck</span>
           </Link>
         </div>
         <div className="flex items-center pr-2 space-x-4">
@@ -34,11 +35,12 @@ const Navbar: React.FC = () => {
               >
                 API Docs
               </Link>
-              <Link 
-                to="/login" 
-                className="text-sm font-medium text-foreground"
+              <Link
+                to="/login"
+                className="text-sm font-medium text-foreground flex items-center"
               >
-                Login
+                Sign in
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Link>
             </>
           )}

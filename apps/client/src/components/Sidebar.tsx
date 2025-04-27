@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -32,6 +32,7 @@ const MINIMIZED_BUTTON_SIZE = "h-10 w-10"; // Consistent size for minimized butt
 
 const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
   const { user, signOut } = useAuth(); // Only get user and signOut now
+  const navigate = useNavigate(); // Get navigate function
 
   // Fetch profile using react-query
   const { data: profile, isLoading: isProfileLoading } = useQuery<UserProfileType | null, Error>({
@@ -54,8 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
   const handleLogout = async () => {
     try {
       await signOut();
-      // Optional: redirect to login page or home page after logout
-      // navigate('/login'); 
+      navigate('/'); // Redirect to home page after successful logout
     } catch (error) {
       console.error("Error signing out:", error);
     }
