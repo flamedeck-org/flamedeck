@@ -27,3 +27,6 @@ dist-ssr
 
 .nx/cache
 .nx/workspace-data
+.vercel
+
+apps/client/.env.local
