@@ -1,11 +1,11 @@
-import React from "react";
+import React, { memo } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import PricingTable from "@/components/PricingTable";
 import { UploadCloud, Database, BarChart, Search, Users, Code } from "lucide-react";
 
-const Index: React.FC = () => {
+function Index() {
   return (
     <>
       <Layout>
@@ -26,7 +26,7 @@ const Index: React.FC = () => {
               </div>
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
                 Performance Profiling
-                <span className="block text-primary mt-2">
+                <span className="block bg-gradient-to-r from-red-500 to-yellow-500 bg-clip-text text-transparent mt-2 pb-1">
                   For Engineering Teams
                 </span>
               </h1>
@@ -38,7 +38,11 @@ const Index: React.FC = () => {
 
             <div className="flex flex-wrap gap-4 justify-center">
               <Link to="/login">
-                <Button size="lg" variant="default" className="text-lg px-8">
+                <Button
+                  size="lg"
+                  variant="gradient"
+                  className="text-lg px-8"
+                >
                   Get Started
                 </Button>
               </Link>
@@ -135,4 +139,4 @@ const Index: React.FC = () => {
   );
 };
 
-export default Index;
+export default memo(Index);

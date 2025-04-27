@@ -55,7 +55,7 @@ const UserAvatarComponent: React.FC<UserAvatarProps> = ({
   const { container: sizeClass, fallback: fallbackSizeClass } = sizeClasses[size];
 
   return (
-    <Avatar className={cn(sizeClass, className)}>
+    <Avatar className={cn("border border-secondary", sizeClass, className)}>
       <AvatarImage src={fallbackInfo.avatarUrl} alt={fallbackInfo.nameDisplay} />
       <AvatarFallback className={cn(
         "bg-primary/10 text-primary font-medium", 

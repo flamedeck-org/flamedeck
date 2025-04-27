@@ -65,16 +65,16 @@ const Login: React.FC = () => {
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 bg-primary w-12 h-12 rounded flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="w-6 h-6 text-primary-foreground"
-              >
-                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <div className="mx-auto mb-2 w-12 h-12 rounded flex items-center justify-center">
+            <div className="w-12 h-12 rounded">
+              <img
+                src="/flamestack_icon_300.webp"
+                alt="FlameDeck Logo"
+                width={45}
+                height={45}
+                className="rounded"
+              />
+            </div>
             </div>
             <CardTitle className="text-2xl font-bold">Welcome to FlameDeck</CardTitle>
           </CardHeader>

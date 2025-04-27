@@ -228,18 +228,18 @@ const TraceDetail: React.FC = () => {
       <Link
         to={`/traces/${id}/view`}
         state={{ blobPath: trace?.blob_path }}
-        className={buttonVariants({ variant: "default", size: "sm" })}
+        className={buttonVariants({ variant: "gradient", size: "sm" })}
       >
         <Eye className="mr-2 h-4 w-4" /> Explore Trace
       </Link>
 
-      <Button variant="default" size="sm" onClick={handleShareClick} aria-label="Share Trace">
+      <Button variant="outline" size="sm" onClick={handleShareClick} aria-label="Share Trace">
          <Share2 className="h-4 w-4" />
       </Button>
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="destructive" size="sm" disabled={deleteMutation.isPending} aria-label="Delete Trace">
+          <Button variant="destructive-outline" size="sm" disabled={deleteMutation.isPending} aria-label="Delete Trace">
             <Trash2 className="h-4 w-4" />
           </Button>
         </AlertDialogTrigger>

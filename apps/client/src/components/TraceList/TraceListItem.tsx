@@ -58,7 +58,7 @@ const getIconForProfileType = (profileType?: ProfileType | string | null): React
     }[profileType || 'unknown'] || Flame // Default to Flame if type is somehow missing
   );
   // Render the Flame icon with consistent styling
-  return <IconComponent className="mr-2 h-4 w-4 inline-block text-orange-500" />;
+  return <IconComponent className="mr-2 h-4 w-4 inline-block text-primary" />;
 };
 
 interface TraceListItemProps {

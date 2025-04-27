@@ -192,7 +192,7 @@ function TraceListComponent() {
           triggerElement={createFolderButton}
       />
       <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-        <Button size="sm" disabled={isLoading}>
+        <Button size="sm" disabled={isLoading} variant="primary-outline">
           <UploadCloud className="mr-2 h-4 w-4" /> Upload New Trace
         </Button>
       </Link>
@@ -366,7 +366,7 @@ function TraceListComponent() {
                       triggerElement={createFolderButton}
                   />
                   <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-                      <Button size="sm" disabled={isLoading}><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
+                      <Button variant="primary-outline" size="sm" disabled={isLoading}><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
                   </Link>
                 </div>
               )}
