@@ -2,12 +2,26 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { ThemeProvider } from './components/speedscope-ui/themes/theme';
+// Import highlight.js themes
+import 'highlight.js/styles/github.css';      // Default (light) theme
+import 'highlight.js/styles/github-dark.css'; // Dark theme
+import { ThemeProvider as SpeedscopeThemeProvider } from './components/speedscope-ui/themes/theme'; // Renamed for clarity
+// Import ThemeProvider from next-themes
+import { ThemeProvider as NextThemesProvider } from "next-themes"
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <App />
-    </ThemeProvider>
+    {/* Use next-themes provider to control Tailwind dark class */}
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      {/* Keep the original Speedscope provider for its specific needs */}
+      <SpeedscopeThemeProvider>
+        <App />
+      </SpeedscopeThemeProvider>
+    </NextThemesProvider>
   </React.StrictMode>,
 )

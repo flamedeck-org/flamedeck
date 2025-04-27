@@ -12,6 +12,7 @@ import ApiKeysPage from "./pages/settings/ApiKeysPage";
 import Upload from "./pages/Upload";
 import NotFound from "./pages/NotFound";
 import TraceViewerPage from "./pages/TraceViewerPage";
+import DocsApiPage from "./pages/DocsApiPage/DocsApiPage";
 import { useAuth } from "./contexts/AuthContext";
 import { useTheme } from "./components/speedscope-ui/themes/theme";
 import { useAtom } from "./lib/speedscope-core/atom";
@@ -51,6 +52,9 @@ const AppRoutes = () => {
         <Route path="api-keys" element={<ApiKeysPage />} />
         {/* Add other settings sub-routes here */}
       </Route>
+
+      {/* Documentation Routes */}
+      <Route path="/docs/api" element={<DocsApiPage />} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

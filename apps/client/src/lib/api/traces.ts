@@ -111,7 +111,8 @@ import { uploadJson } from "./storage";
               profile_type: metadata.profile_type,
               notes: metadata.notes,
               uploaded_at: new Date().toISOString(),
-              folder_id: folderId
+              folder_id: folderId,
+              upload_source: 'web'
           })
           .select()
           .single();

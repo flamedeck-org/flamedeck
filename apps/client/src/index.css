@@ -96,4 +96,25 @@
   .speedscope-container {
     @apply w-full h-[80vh] border border-border rounded-md overflow-hidden;
   }
+
+  .prose pre, .prose-invert pre {
+    @apply p-0 m-0;
+  }
+
+  /* Override prose margins for pre elements inside our specific tab content */
+  .prose .code-tab-content pre,
+  .prose-invert .code-tab-content pre {
+    @apply mt-0 mb-0;
+  }
+
+  /* --- Syntax Highlighting Theme Override --- */
+  /* Apply github-dark styles only when .dark class is present */
+  /* We assume github-dark.css is imported *after* github.css */
+  /* and that it primarily styles elements within .hljs blocks */
+  .dark .hljs {
+    /* This rule increases specificity. The actual styles */
+    /* are provided by the imported github-dark.css file. */
+    /* We just need this selector to ensure they win in dark mode. */
+    color: inherit; /* Placeholder rule to ensure the selector exists */
+  }
 }
