@@ -62,7 +62,7 @@ export default function DocsLayout() {
     <div className="flex-1 flex flex-col pt-16 bg-background"> {/* Add pt-16 for navbar offset */}
       <div className="flex-1 items-start md:grid md:grid-cols-[260px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)] z-10">
         {/* Desktop Sidebar */}
-        <aside className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-full shrink-0 md:sticky md:block overflow-y-auto py-6 lg:py-8 border-r px-4">
+        <aside className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-full shrink-0 md:sticky md:block overflow-y-auto py-6 lg:py-8 border-r px-4 bg-background">
           <DocsSidebarNav />
         </aside>
         
