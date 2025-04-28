@@ -55,7 +55,8 @@ const AppRoutes = () => {
         <Route path="/traces/:id/view" element={<TraceViewerPage />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/settings" element={<SettingsLayout />}>
-          <Route index element={<Navigate to="/settings/api-keys" replace />} /> 
+          <Route index element={<Navigate to="/settings/general" replace />} /> 
+          <Route path="general" element={<SettingsPage />} />
           <Route path="api-keys" element={<ApiKeysPage />} />
         </Route>
       </Route>
