@@ -7,6 +7,11 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
 import { corsHeaders } from "../_shared/cors.ts"
 
+interface TraceData {
+  id: string;
+  blob_path: string;
+}
+
 Deno.serve(async (req) => {
   try {
     // CORS preflight
@@ -80,53 +85,65 @@ Deno.serve(async (req) => {
 
     // Step 1: Delete all user's storage objects
     try {
-      // List all buckets (we'll need to clean up objects in all buckets)
-      const { data: buckets, error: bucketsError } = await supabaseAdmin
-        .storage
-        .listBuckets();
+      // Fetch all traces owned by the user from the database
+      const { data: traces, error: tracesError } = await supabaseAdmin
+        .from('traces')
+        .select('id, blob_path')
+        .eq('user_id', userId);
 
-      if (bucketsError) {
-        throw new Error(`Error listing buckets: ${bucketsError.message}`);
+      if (tracesError) {
+        throw new Error(`Error fetching user traces: ${tracesError.message}`);
       }
 
-      // Process all buckets in parallel
-      await Promise.all((buckets || []).map(async (bucket) => {
-        console.log(`Checking bucket ${bucket.name} for user files`);
+      console.log(`Found ${traces?.length || 0} traces for user ${userId}`);
+
+      // Efficiently process trace deletions in parallel batches
+      if (traces && traces.length > 0) {
+        const BUCKET_NAME = 'traces'; // All traces are in the 'traces' bucket
+        const BATCH_SIZE = 100; // Process in batches of 100 files
         
-        // List all objects in the bucket owned by the user
-        const { data: objects, error: objectsError } = await supabaseAdmin
-          .storage
-          .from(bucket.name)
-          .list("", {
-            limit: 1000, // Adjust as needed, might need pagination for many files
-            search: userId, // This is a simple approach - you might need a more complex query
-          });
-
-        if (objectsError) {
-          console.error(`Error listing objects in bucket ${bucket.name}: ${objectsError.message}`);
-          return; // Skip this bucket and continue with others
-        }
-
-        // Collect paths of objects to delete
-        const objectsToDelete = (objects || [])
-          .filter(object => object.metadata?.owner === userId || object.name.includes(userId))
-          .map(object => object.name);
+        // Get all file paths (removing the 'traces/' prefix if needed)
+        const filePaths = traces.map(trace => {
+          // Ensure we're using the correct path format for the storage API
+          // If blob_path already contains 'traces/', we want just the path part after the bucket name
+          return trace.blob_path.startsWith(`${BUCKET_NAME}/`) 
+            ? trace.blob_path.substring(BUCKET_NAME.length + 1) // +1 for the slash
+            : trace.blob_path;
+        });
         
-        if (objectsToDelete.length > 0) {
-          console.log(`Deleting ${objectsToDelete.length} objects from bucket ${bucket.name}`);
-          
-          const { error: deleteError } = await supabaseAdmin
-            .storage
-            .from(bucket.name)
-            .remove(objectsToDelete);
-
-          if (deleteError) {
-            console.error(`Error deleting objects from ${bucket.name}: ${deleteError.message}`);
-          }
-        } else {
-          console.log(`No objects to delete in bucket ${bucket.name}`);
+        // Split into batches
+        const batches: string[][] = [];
+        for (let i = 0; i < filePaths.length; i += BATCH_SIZE) {
+          batches.push(filePaths.slice(i, i + BATCH_SIZE));
         }
-      }));
+        
+        console.log(`Processing ${batches.length} batches in parallel`);
+        
+        // Process all batches in parallel
+        const deleteResults = await Promise.all(
+          batches.map(async (batch, index) => {
+            console.log(`Deleting batch ${index + 1}/${batches.length} (${batch.length} files)`);
+            
+            const { error: deleteError } = await supabaseAdmin
+              .storage
+              .from(BUCKET_NAME)
+              .remove(batch);
+              
+            if (deleteError) {
+              console.error(`Error deleting batch ${index + 1}: ${deleteError.message}`);
+              return { success: false, error: deleteError.message };
+            }
+            
+            return { success: true, count: batch.length };
+          })
+        );
+        
+        // Log results
+        const successfulBatches = deleteResults.filter(r => r.success).length;
+        console.log(`Successfully processed ${successfulBatches}/${batches.length} batches`);
+      } else {
+        console.log(`No traces found for user ${userId}`);
+      }
     } catch (error) {
       console.error("Error deleting storage objects:", error);
       return new Response(
