@@ -59,7 +59,7 @@ const PricingTable = () => {
               <Link to="/login" className="block w-full">
                 <Button
                   className="w-full"
-                  variant={tier.name === "Personal" ? "default" : "outline"}
+                  variant={tier.name === "Personal" ? "gradient" : "outline"}
                 >
                   Get Started
                 </Button>
