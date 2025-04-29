@@ -10,21 +10,18 @@ const PricingTable = () => {
       name: "Free",
       price: "0",
       features: [
-        "100MB Storage",
-        "Unlimited traces",
-        "Basic visualization",
-        "Community support",
+        "30-day trace retention",
+        "10 uploads per month",
+        "Basic viewing & collaboration",
       ],
     },
     {
-      name: "Personal",
+      name: "Pro",
       price: "10",
       features: [
-        "500MB Storage",
-        "Unlimited traces",
-        "Advanced visualization",
-        "Priority support",
-        "Custom metadata fields",
+        "Unlimited trace retention",
+        "1,000 total traces",
+        "Share traces so anyone can view",
       ],
     },
   ];
@@ -36,7 +33,7 @@ const PricingTable = () => {
           key={tier.name}
           className={cn(
             "relative flex flex-col hover:shadow-lg transition-shadow",
-            tier.name === "Personal" && "border-2 border-primary"
+            tier.name === "Pro" && "border-2 border-primary"
           )}
         >
           <CardHeader>
@@ -59,7 +56,7 @@ const PricingTable = () => {
               <Link to="/login" className="block w-full">
                 <Button
                   className="w-full"
-                  variant={tier.name === "Personal" ? "gradient" : "outline"}
+                  variant={tier.name === "Pro" ? "gradient" : "outline"}
                 >
                   Get Started
                 </Button>

@@ -7906,12 +7906,14 @@ __metadata:
   dependencies:
     "@eslint/js": "npm:^9.9.0"
     "@types/node": "npm:^22.5.5"
+    "@types/uuid": "npm:^10.0.0"
     eslint: "npm:^9.9.0"
     globals: "npm:^15.9.0"
     nx: "npm:20.8.1"
     supabase: "npm:2.22.6"
     typescript: "npm:^5.5.3"
     typescript-eslint: "npm:^8.0.1"
+    uuid: "npm:^11.1.0"
     vite: "npm:^5.4.1"
   languageName: unknown
   linkType: soft
