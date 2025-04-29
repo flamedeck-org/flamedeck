@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Supabase edge functions
+
+* If you want to create a new edge function, run the command `yarn supabase functions new <function-name>`
+* There are shared helpers supabase/functions/_shared that you should read first, for example [cors.ts](mdc:supabase/functions/_shared/cors.ts)
+* Always make sure you are handling edge cases and properly returning descriptive errors
+* Always consider your security model
