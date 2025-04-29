@@ -18,6 +18,7 @@ import { useTraceComments } from '@/hooks/useTraceComments';
 import CommentSidebar from './CommentSidebar';
 import { TraceCommentWithAuthor } from '@/lib/api';
 import { useAuth } from "@/contexts/AuthContext";
+import { ChatContainer } from '@/components/Chat';
 
 export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
 
@@ -93,11 +94,8 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
 
   // Updated handler to accept the view type
   const handleNodeSelect = useCallback((activeView: SpeedscopeViewType, node: CallTreeNode | null, cellId?: string | null) => {
-    console.log(`[handleNodeSelect] Called for view: ${activeView}, cellId: ${cellId}, node name: ${node?.frame.name}`); // Log arguments
     const nodeName = node?.frame.name ?? null;
     setSelectedCommentInfoByView(prev => {
-      // Log previous and next state for this view
-      console.log(`[handleNodeSelect] Updating state for ${activeView}. Prev:`, prev[activeView], `Next: { cellId: ${cellId ?? null}, nodeName: ${nodeName} }`);
       return {
           ...prev,
           [activeView]: { cellId: cellId ?? null, nodeName: nodeName }
@@ -155,25 +153,27 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
     };
   }, [traceData, fileName, importerDeps]); // Add importerDeps to useEffect dependencies
 
+  // Make sure the handleKeyDown effect doesn't interfere with chat input
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const targetElement = event.target as HTMLElement;
+      if (targetElement.closest('.chat-input-area')) {
+        return; 
+      }
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
         return;
       }
       if (event.key === 'r') { flattenRecursionAtom.set(!flattenRecursion); }
       if (event.key === 'Escape') {
-        // Close sidebar for the current view if it's open
         if (selectedCommentInfoByView[view].cellId !== null) {
           handleCloseSidebar();
         } else {
-          // Fallback to deselecting node in speedscope core
           activeProfileState?.setSelectedNode(null);
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => { window.removeEventListener('keydown', handleKeyDown); };
-    // Depend on the current view's selection state and the close handler
   }, [selectedCommentInfoByView, view, activeProfileState, flattenRecursion, handleCloseSidebar]);
 
   if (isLoading) {
@@ -205,57 +205,62 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
   const commentTypeForView = viewToCommentTypeMap[view];
 
   return (
-    <div className="h-full flex flex-row relative">
-      <div className="flex-grow h-full relative overflow-hidden">
-        <ProfileSearchContextProvider>
-          {view === 'sandwich' && (
-            <SandwichViewContainer
-              onFrameSelectForComment={() => { /* Potentially call handleNodeSelect('sandwich', ...) */ }}
-              activeProfileState={activeProfileState}
-              glCanvas={glCanvas}
-            />
-          )}
-          {view === 'time_ordered' && (
-            <ChronoFlamechartView
-              onNodeSelect={(node, cellId) => handleNodeSelect('time_ordered', node, cellId)}
-              activeProfileState={activeProfileState}
-              glCanvas={glCanvas}
-              commentedCellIds={commentedChronoCellIds || []}
-            />
-          )}
-          {view === 'left_heavy' && (
-            <LeftHeavyFlamechartView
-              onNodeSelect={(node, cellId) => {
-                // Log that the callback from LeftHeavyFlamechartView was triggered
-                console.log(`[LeftHeavyFlamechartView onNodeSelect] Triggered. cellId: ${cellId}, node name: ${node?.frame.name}`); 
-                handleNodeSelect('left_heavy', node, cellId)
-              }}
-              activeProfileState={activeProfileState}
-              glCanvas={glCanvas}
-              commentedCellIds={commentedLeftHeavyCellIds || []}
-            />
-          )}
-        </ProfileSearchContextProvider>
-      </div>
+    <div className="h-full flex flex-col relative">
+      <div className="flex-grow flex flex-row relative">
+        <div className="flex-grow h-full relative overflow-hidden">
+          <ProfileSearchContextProvider>
+            {view === 'sandwich' && (
+              <SandwichViewContainer
+                onFrameSelectForComment={() => { /* Potentially call handleNodeSelect('sandwich', ...) */ }}
+                activeProfileState={activeProfileState}
+                glCanvas={glCanvas}
+              />
+            )}
+            {view === 'time_ordered' && (
+              <ChronoFlamechartView
+                onNodeSelect={(node, cellId) => handleNodeSelect('time_ordered', node, cellId)}
+                activeProfileState={activeProfileState}
+                glCanvas={glCanvas}
+                commentedCellIds={commentedChronoCellIds || []}
+              />
+            )}
+            {view === 'left_heavy' && (
+              <LeftHeavyFlamechartView
+                onNodeSelect={(node, cellId) => {
+                  handleNodeSelect('left_heavy', node, cellId)
+                }}
+                activeProfileState={activeProfileState}
+                glCanvas={glCanvas}
+                commentedCellIds={commentedLeftHeavyCellIds || []}
+              />
+            )}
+          </ProfileSearchContextProvider>
+        </div>
 
-      {/* Render sidebar based on current view's selection state */} 
-      {currentSelection.cellId && traceId && (
-        <CommentSidebar
-          traceId={traceId}
-          cellId={currentSelection.cellId}
-          cellName={currentSelection.nodeName}
-          commentType={commentTypeForView} // Use the mapped comment type
-          comments={allComments || []} 
-          isLoading={commentsLoading}
-          error={commentsError}
-          onClose={handleCloseSidebar} // Use the specific close handler
-          replyingToCommentId={replyingToCommentId}
-          onStartReply={onStartReply}
-          onCancelReply={onCancelReply}
-          onCommentUpdated={onCommentUpdated}
-          isAuthenticated={isAuthenticated}
-        />
-      )}
+        {/* Render sidebar based on current view's selection state */} 
+        {currentSelection.cellId && traceId && (
+          <CommentSidebar
+            traceId={traceId}
+            cellId={currentSelection.cellId}
+            cellName={currentSelection.nodeName}
+            commentType={commentTypeForView}
+            comments={allComments || []} 
+            isLoading={commentsLoading}
+            error={commentsError}
+            onClose={handleCloseSidebar}
+            replyingToCommentId={replyingToCommentId}
+            onStartReply={onStartReply}
+            onCancelReply={onCancelReply}
+            onCommentUpdated={onCommentUpdated}
+            isAuthenticated={isAuthenticated}
+          />
+        )}
+
+        {/* Chat Feature - Render the container */}
+        {!isLoading && !error && profileGroup && (
+          <ChatContainer traceId={traceId} />
+        )}
+      </div>
     </div>
   );
 };
