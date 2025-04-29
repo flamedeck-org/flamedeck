@@ -17,6 +17,7 @@ import ProfileCommentForm from './ProfileCommentForm';
 import { useTraceComments } from '@/hooks/useTraceComments';
 import CommentSidebar from './CommentSidebar';
 import { TraceCommentWithAuthor } from '@/lib/api';
+import { useAuth } from "@/contexts/AuthContext";
 
 export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
 
@@ -79,6 +80,9 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
     isLoading: commentsLoading, 
     error: commentsError 
   } = useTraceComments(traceId);
+
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
 
   // Create the dependencies object (useMemo to avoid recreating on every render)
   const importerDeps = useMemo((): ImporterDependencies => ({
@@ -249,6 +253,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
           onStartReply={onStartReply}
           onCancelReply={onCancelReply}
           onCommentUpdated={onCommentUpdated}
+          isAuthenticated={isAuthenticated}
         />
       )}
     </div>
