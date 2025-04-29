@@ -2,39 +2,45 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { TraceCommentWithAuthor } from '@/lib/api';
 
-export function useCommentManagement(traceId?: string) {
+// Define a no-op function for unauthenticated state
+const noOp = () => {};
+
+export function useCommentManagement(traceId: string | undefined, isAuthenticated: boolean) {
   const queryClient = useQueryClient();
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
 
   const handleStartReply = useCallback((commentId: string) => {
+    if (!isAuthenticated) return; // Do nothing if not authenticated
     setReplyingToCommentId(commentId);
-  }, []);
+  }, [isAuthenticated]);
 
   const handleCancelReply = useCallback(() => {
+    if (!isAuthenticated) return; // Do nothing if not authenticated
     setReplyingToCommentId(null);
-  }, []);
+  }, [isAuthenticated]);
 
   const handleCommentUpdate = useCallback((updatedComment: TraceCommentWithAuthor) => {
-    if (!traceId) return; // Don't update if traceId is missing
-    
+    // Only run logic if authenticated and traceId is present
+    if (!isAuthenticated || !traceId) return; 
+
     console.log(`[useCommentManagement] Updating cache for trace ${traceId}`, updatedComment);
-    
+
     queryClient.setQueryData<TraceCommentWithAuthor[]>(
-      ['traceComments', traceId], 
+      ['traceComments', traceId],
       (oldData) => {
         if (!oldData) return [];
-        // Update the specific comment in the flat array cache
-        return oldData.map(comment => 
+        return oldData.map(comment =>
           comment.id === updatedComment.id ? updatedComment : comment
         );
       }
     );
-  }, [queryClient, traceId]); // Depend on queryClient and traceId
+  }, [queryClient, traceId, isAuthenticated]); // Add isAuthenticated to dependencies
 
+  // Return actual handlers only if authenticated
   return {
-    replyingToCommentId,
-    handleStartReply,
-    handleCancelReply,
-    handleCommentUpdate,
+    replyingToCommentId: isAuthenticated ? replyingToCommentId : null,
+    handleStartReply: isAuthenticated ? handleStartReply : noOp,
+    handleCancelReply: isAuthenticated ? handleCancelReply : noOp,
+    handleCommentUpdate: isAuthenticated ? handleCommentUpdate : noOp,
   };
 } 

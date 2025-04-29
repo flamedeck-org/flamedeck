@@ -47,12 +47,14 @@ const AppRoutes = () => {
         <Route path="api" element={<DocsApiPage />} />
       </Route>
 
+      {/* Public Trace Viewer Route - outside ProtectedRoute */}
+      <Route path="/traces/:id/view" element={<TraceViewerPage />} />
+
       {/* Protected Routes: Wrap authenticated routes with ProtectedRoute */}
       <Route element={<ProtectedRoute />}>
         <Route path="/traces" element={<Traces />} />
         <Route path="/traces/folder/:folderId" element={<Traces />} />
         <Route path="/traces/:id" element={<TraceDetail />} />
-        <Route path="/traces/:id/view" element={<TraceViewerPage />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/settings" element={<SettingsLayout />}>
           <Route index element={<Navigate to="/settings/general" replace />} /> 

@@ -185,7 +185,7 @@ function SharingModalImpl() {
       toast({ title: "Error", description: "Trace ID not found.", variant: "destructive" });
       return;
     }
-    const url = `${window.location.origin}/trace/${traceId}`;
+    const url = `${window.location.origin}/traces/${traceId}/view`;
     navigator.clipboard.writeText(url)
       .then(() => {
         toast({ title: "Link Copied" });
