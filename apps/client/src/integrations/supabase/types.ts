@@ -330,6 +330,13 @@ export type Database = {
         }
         Returns: Json
       }
+      get_public_trace_details: {
+        Args: { trace_uuid: string }
+        Returns: {
+          id: string
+          blob_path: string
+        }[]
+      }
       get_recursive_folder_contents: {
         Args: { folder_id_to_check: string }
         Returns: Json

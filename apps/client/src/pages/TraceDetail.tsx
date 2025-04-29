@@ -248,7 +248,7 @@ const TraceDetail: React.FC = () => {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the trace{' '}
-              <strong>{trace?.scenario || `ID: ${trace?.id.substring(0, 7)}`}</strong>{' '}
+              <strong>{trace?.scenario || `ID: ${trace?.id?.substring(0, 7)}`}</strong>{' '}
               and all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>

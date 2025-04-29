@@ -51,6 +51,48 @@ import { uploadJson } from "./storage";
     }
   }
 
+  // --- NEW: Get Public Trace by ID (using RPC) ---
+  export async function getPublicTrace(id: string): Promise<ApiResponse<{ id: string; blob_path: string }>> {
+    try {
+      // Call the RPC function which enforces RLS for the 'anon' role
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_public_trace_details', { trace_uuid: id });
+
+      if (rpcError) {
+        console.error(`RPC error fetching public trace details for ${id}:`, rpcError);
+        // Handle potential errors, like function not found, etc.
+        throw rpcError;
+      }
+
+      // rpcData is an array. If it's empty or null, the trace wasn't found or wasn't public (due to RLS)
+      if (!rpcData || rpcData.length === 0) {
+        return { data: null, error: { message: "Trace not found or is not public", code: "404" } };
+      }
+
+      // The RPC function returns an array, we expect at most one result
+      const traceDetails = rpcData[0];
+
+      // Explicitly check if blob_path is present, as it's crucial
+      if (!traceDetails.blob_path) {
+          console.error(`Public trace details for ${id} received null blob_path from RPC.`);
+          return { data: null, error: { message: "Public trace data is incomplete (missing blob path)", code: "500" } };
+      }
+
+      // Return only the id and blob_path provided by the RPC
+      return { data: { id: traceDetails.id, blob_path: traceDetails.blob_path }, error: null };
+
+    } catch (error) {
+      console.error(`Error fetching public trace details for ${id}:`, error);
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to fetch public trace details",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      return { data: null, error: apiError };
+    }
+  }
+
   // Upload a new trace
   export async function uploadTrace(
     file: File,

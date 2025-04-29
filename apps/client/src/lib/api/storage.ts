@@ -85,11 +85,6 @@ export const getTraceFile = async (path: string): Promise<unknown> => {
 // Get raw trace data blob from Supabase storage
 export const getTraceBlob = async (path: string): Promise<{ data: ArrayBuffer; fileName: string }> => {
     try {
-        const session = await supabase.auth.getSession();
-        if (!session.data.session) {
-            throw new Error('Authentication required to download files');
-        }
-
         // Extract bucket and file path from the full path
         // Assumes path format like "bucket_name/folder/subfolder/file.ext"
         const pathParts = path.split('/');
