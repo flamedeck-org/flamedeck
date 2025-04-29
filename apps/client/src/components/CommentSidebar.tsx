@@ -10,6 +10,8 @@ import { TraceCommentWithAuthor } from '@/lib/api'; // Use the consistent type
 import { CommentItem, StructuredComment } from '@/components/comments'; // Import CommentItem
 import { cn } from "@/lib/utils";
 import { useState } from 'react'; // Import useState for reply state
+import { Link } from 'react-router-dom'; // Import Link for routing
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 interface CommentSidebarProps {
   traceId: string;
@@ -25,7 +27,28 @@ interface CommentSidebarProps {
   onStartReply: (commentId: string) => void;
   onCancelReply: () => void;
   onCommentUpdated: (updatedComment: TraceCommentWithAuthor) => void;
+  isAuthenticated: boolean; // NEW: Add authentication status prop
 }
+
+const SignInPrompt = () => (
+  <div className="flex flex-col items-center justify-center p-6 text-center">
+    <p className="text-sm text-muted-foreground mb-4">
+      Want to discuss this part of the trace?
+    </p>
+    <div className="flex gap-2">
+      <Button asChild variant="outline" size="sm">
+        <Link to="/login">Sign In</Link>
+      </Button>
+      <span className="text-muted-foreground self-center">or</span>
+      <Button asChild variant="default" size="sm">
+        <Link to="/signup">Sign Up</Link>
+      </Button>
+    </div>
+    <p className="text-xs text-muted-foreground mt-3">
+      to leave comments.
+    </p>
+  </div>
+);
 
 const CommentSidebar: React.FC<CommentSidebarProps> = ({
   traceId,
@@ -41,6 +64,7 @@ const CommentSidebar: React.FC<CommentSidebarProps> = ({
   onStartReply,
   onCancelReply,
   onCommentUpdated,
+  isAuthenticated, // NEW: Add authentication status prop
 }) => {
   // Filter comments for the specific cellId and type
   // Assuming `comments` prop already contains potentially relevant comments
@@ -74,53 +98,57 @@ const CommentSidebar: React.FC<CommentSidebarProps> = ({
         </Button>
       </div>
 
-      {/* Comment List Area - Now rendering CommentItem directly */}
+      {/* Comment List Area */} 
       <ScrollArea className="h-full">
-        <div className={cn("flex flex-col px-4 py-2", /* className might be needed here */)}> 
+        <div className={cn("flex flex-col px-4 py-2")}>
           {isLoading ? (
-             <div className="space-y-3 py-2">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
+            <div className="space-y-3 py-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
           ) : error ? (
             <div className="p-4 text-sm text-destructive">
               Error loading comments: {error.message}
             </div>
-          ) : relevantComments.length === 0 ? (
+          // Show sign-in prompt if not authenticated and no comments would otherwise show
+          ) : relevantComments.length === 0 && !isAuthenticated ? (
+            <SignInPrompt />
+          // Show standard empty message if authenticated and no comments
+          ) : relevantComments.length === 0 && isAuthenticated ? (
             <div className="px-4 py-8 text-sm text-muted-foreground text-center">
               {emptyMessage}
             </div>
           ) : (
+            // Render comments if they exist (only possible if authenticated)
             relevantComments.map((comment) => (
-              <CommentItem 
-                // Pass necessary props directly to CommentItem
-                key={comment.id} 
-                // Cast comment - NOTE: This assumes no replies needed in sidebar context
-                // If replies ARE needed, structuring is required before this map
-                comment={comment} // Pass the plain comment data
+              <CommentItem
+                key={comment.id}
+                comment={comment}
                 traceId={traceId}
                 replyingToCommentId={replyingToCommentId}
                 onStartReply={onStartReply}
                 onCancelReply={onCancelReply}
-                onCommentUpdated={onCommentUpdated} // Pass the update handler
-                showReplyButton={false} // Explicitly hide reply button in sidebar view
-                currentDepth={0} // Top-level comments in this context
+                onCommentUpdated={onCommentUpdated}
+                showReplyButton={false}
+                currentDepth={0}
               />
             ))
           )}
         </div>
       </ScrollArea>
 
-      {/* Comment Form */}
-      <div className="p-3 border-t flex-shrink-0 bg-background">
-        <CommentForm
-          traceId={traceId}
-          commentType={commentType}
-          commentIdentifier={cellId} // Send cellId to backend
-          onCommentPosted={handleCommentPosted}
-          placeholder={`Add a comment...`} // Simplified placeholder
-        />
-      </div>
+      {/* Comment Form Area - Only render if authenticated */} 
+      {isAuthenticated && (
+        <div className="p-3 border-t flex-shrink-0 bg-background">
+          <CommentForm
+            traceId={traceId}
+            commentType={commentType}
+            commentIdentifier={cellId}
+            onCommentPosted={handleCommentPosted}
+            placeholder={`Add a comment...`}
+          />
+        </div>
+      )}
     </div>
   );
 };
