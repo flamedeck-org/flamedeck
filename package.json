@@ -27,5 +27,9 @@
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
   },
-  "nx": {}
+  "nx": {},
+  "dependencies": {
+    "@types/uuid": "^10.0.0",
+    "uuid": "^11.1.0"
+  }
 }
