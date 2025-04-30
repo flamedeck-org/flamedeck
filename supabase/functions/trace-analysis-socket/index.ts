@@ -72,18 +72,47 @@ serve(async (req: Request) => {
     try {
       if (parsedData.type === 'start_analysis') {
         // **SECURITY NOTE:** In production, get userId from JWT, not payload!
-        const { userId, modelProvider, modelName, traceId } = parsedData;
+        const { userId, traceId } = parsedData;
         if (!userId) {
             socket.send(JSON.stringify({ type: "error", message: "'start_analysis' requires a 'userId' field." }));
             socket.close(1008, "Missing userId"); // Close connection if auth fails
             return;
         }
-        console.log(`Received start_analysis for user: ${userId}`);
+        console.log(`[trace-analysis-socket] Handling start_analysis for user: ${userId}, trace: ${traceId}`);
         activeConnections.set(socket, { userId });
-        socket.send(JSON.stringify({ type: "connection_ack", message: "Analysis service ready." }));
+        socket.send(JSON.stringify({ type: "connection_ack", message: "Requesting initial analysis..." }));
 
-        // Maybe invoke processor immediately with a default prompt?
-        // Or wait for first user_prompt.
+        const initialPayload = {
+            userId: userId,
+            traceId: traceId,
+            modelProvider: "openai",
+            modelName: "gpt-4o-mini",
+            isInitialAnalysis: true, 
+            prompt: "Analyze this trace and provide an initial summary.",
+            history: []
+        };
+
+        // --- Add detailed logging and try/catch around invocation --- 
+        console.log("[trace-analysis-socket] Preparing to invoke process-ai-turn with payload:", initialPayload);
+        try {
+            const { data: invokeData, error: initialInvokeError } = await supabaseClient.functions.invoke(
+                'process-ai-turn', 
+                { body: initialPayload }
+            );
+            
+            // Log result regardless of error status for debugging
+            console.log("[trace-analysis-socket] Invocation result - Data:", invokeData, "Error:", initialInvokeError);
+
+            if (initialInvokeError) {
+                console.error("[trace-analysis-socket] Error invoking process-ai-turn for initial analysis:", initialInvokeError);
+                socket.send(JSON.stringify({ type: "error", message: `Failed to start initial analysis: ${initialInvokeError.message}` }));
+            }
+            // Response will come via Realtime if invocation succeeded
+        } catch (invokeCatchError) {
+            console.error("[trace-analysis-socket] Caught exception during function invocation:", invokeCatchError);
+            socket.send(JSON.stringify({ type: "error", message: `Internal error invoking analysis function: ${invokeCatchError.message}` }));
+        }
+        // -----------------------------------------------------------
 
       } else if (parsedData.type === 'user_prompt') {
         const connectionInfo = activeConnections.get(socket);
@@ -93,6 +122,7 @@ serve(async (req: Request) => {
         }
 
         const userPrompt = parsedData.prompt;
+        const history = parsedData.history || [];
         if (!userPrompt) {
           socket.send(JSON.stringify({ type: "error", message: "'user_prompt' message requires a 'prompt' field." }));
           return;
@@ -102,19 +132,20 @@ serve(async (req: Request) => {
         const payload = {
             userId: connectionInfo.userId,
             prompt: userPrompt,
-            traceId: parsedData.traceId, 
-            modelProvider: parsedData.modelProvider, 
-            modelName: parsedData.modelName,
-            history: parsedData.history || [] // Include history from client payload
+            traceId: parsedData.traceId,
+            history: history,
+            modelProvider: "openai",
+            modelName: "gpt-4o-mini",
+            isInitialAnalysis: false
         };
 
-        console.log(`Invoking process-ai-turn for user ${payload.userId} with history length ${payload.history.length}`);
+        console.log(`Invoking process-ai-turn for user prompt, user ${payload.userId}`);
         socket.send(JSON.stringify({ type: "waiting_for_model", message: "Processing request..." }));
 
         // Invoke the other function asynchronously
         const { error: invokeError } = await supabaseClient.functions.invoke(
             'process-ai-turn', 
-            { body: payload } 
+            { body: payload }
         );
 
         if (invokeError) {
