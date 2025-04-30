@@ -19,6 +19,31 @@ export const getTopFunctionsToolSchema = {
   }
 };
 
+// --- Tool Schema: Get Snapshot --- 
+export const getSnapshotToolSchema = {
+  type: "function" as const,
+  function: {
+    name: "get_flamegraph_snapshot",
+    description: "Use this tool ONLY when the user explicitly asks for a visual snapshot or image of a specific flamegraph view (Time Ordered, Left Heavy, Sandwich Caller, Sandwich Callee) to help answer their question. Do NOT use this for just getting function data.",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        viewType: {
+          type: "string" as const,
+          enum: ["time_ordered", "left_heavy", "sandwich_caller", "sandwich_callee"],
+          description: "The specific flamegraph view to capture (e.g., 'time_ordered', 'sandwich_callee').",
+        },
+        // Optional: Add frame identifier if needed for sandwich view
+        // frameIdentifier: {
+        //   type: "string" as const,
+        //   description: "The name or key of the frame required for 'sandwich_caller' or 'sandwich_callee' views."
+        // }
+      },
+      required: ["viewType"],
+    },
+  }
+};
+
 // --- Tool Execution Logic --- 
 const toolArgsSchema = z.object({
     sortBy: z.enum(["self", "total"]),

@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
-const TRACE_RETENTION_DAYS = 1; //TODO: Set to 30 days
+const TRACE_RETENTION_DAYS = 30;
 
 serve(async (req) => {
   // Handle CORS preflight requests
