@@ -159,7 +159,7 @@ serve(async (req: Request) => {
         const { data: continuationRecord, error: fetchError } = await supabaseClient
             .from('ai_chat_continuations')
             .select('*') // Select all stored columns
-            .eq('request_id', requestId)
+            .eq('tool_call_id', requestId) // Changed from request_id to tool_call_id
             .single();
 
         if (fetchError || !continuationRecord) {
@@ -173,7 +173,7 @@ serve(async (req: Request) => {
         const { error: deleteError } = await supabaseClient
              .from('ai_chat_continuations')
              .delete()
-             .eq('request_id', requestId);
+             .eq('tool_call_id', requestId); // Changed from request_id to tool_call_id
         
         if (deleteError) {
              // Log error but continue processing if possible, state might be processed by another instance?

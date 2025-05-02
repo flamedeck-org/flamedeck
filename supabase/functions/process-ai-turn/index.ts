@@ -65,7 +65,12 @@ function mapHistoryToOpenAIMessages(history: { sender: 'user' | 'model', text: s
 // --- System Prompt --- 
 const SYSTEM_PROMPT = `You are an expert performance analysis assistant specializing in interpreting trace files in the Speedscope format. 
 Analyze the provided trace data summary and answer user questions about performance bottlenecks, function timings, and call stacks. 
-**Use the available tools to answer questions that require specific data not present in the summary, such as requesting the top N functions by time.** Be concise and focus on actionable insights.`;
+
+You have access to the following tools:
+1. get_top_functions - Use this to request the top N functions by time (total or self time)
+2. get_flamegraph_snapshot - Use this to generate a visual snapshot of the flamegraph in different views (time_ordered, left_heavy, sandwich_caller, sandwich_callee)
+
+Use these tools to answer questions that require specific data not present in the summary. Be concise and focus on actionable insights.`;
 
 const toolsForApi: ChatCompletionTool[] = [
     getTopFunctionsToolSchema, 
@@ -126,20 +131,42 @@ Deno.serve(async (req) => {
                   role: "assistant", 
                   content: originalToolCall.content ?? "", // Use original assistant message content (should be "")
                   tool_calls: [originalToolCall] // Re-add the tool call info
-              },
-              { 
-                  role: "tool", 
-                  tool_call_id: toolResult.toolCallId,
-                  content: toolResult.content // Content is image data URL or error msg
               }
           ];
+          
+          // Special handling for image data URL - convert to content array with image_url
+          if (toolResult.status === 'success' && toolResult.content.startsWith('data:image/')) {
+              messagesForAPI.push({ 
+                  role: "user", 
+                  content: [
+                      { 
+                          type: "text", 
+                          text: "Here is the flamegraph snapshot you requested. Please analyze what you see in this image."
+                      },
+                      {
+                          type: "image_url",
+                          image_url: {
+                              url: toolResult.content,
+                          }
+                      }
+                  ]
+              });
+          } else {
+              // For error cases or non-image data
+              messagesForAPI.push({ 
+                  role: "tool", 
+                  tool_call_id: toolResult.toolCallId,
+                  content: toolResult.content // Use error message
+              });
+          }
           
           // 2. Make the second API call (streaming final response)
           console.log(`[process-ai-turn] Sending final request to OpenAI after tool result... Messages: ${messagesForAPI.length}`);
           const stream = await openai.chat.completions.create({
-              model: "gpt-4o-mini", // Or get from state if needed/possible
+              model: "gpt-4o", // Use gpt-4o with vision capabilities
               messages: messagesForAPI,
               stream: true,
+              max_tokens: 1000, // Limit response length
           });
 
           // 3. Stream response via Realtime
@@ -222,6 +249,7 @@ Deno.serve(async (req) => {
                   trace_id: traceId,
                   message_history: initialMessages, // History *before* assistant/tool messages
                   tool_call: snapshotToolCall, // The specific tool call object
+                  tool_call_id: snapshotToolCall.id, // Add the tool_call_id for lookup
               };
               console.log(`[process-ai-turn] Storing continuation state for request ${requestId}...`);
               const { error: insertError } = await supabaseAdmin

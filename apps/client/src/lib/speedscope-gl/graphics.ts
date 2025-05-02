@@ -334,7 +334,7 @@ export namespace WebGL {
         alpha: false,
         antialias: false,
         depth: false,
-        preserveDrawingBuffer: false,
+        preserveDrawingBuffer: true,
         stencil: false,
       })
 

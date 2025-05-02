@@ -66,6 +66,20 @@ export interface FlamechartPanZoomViewProps {
   commentedCellIds?: string[]
 }
 
+// Define a type for the overlay rendering parameters to avoid repetition
+type OverlayRenderParams = {
+  ctx: CanvasRenderingContext2D;
+  physicalViewSize: Vec2;
+  configToPhysical: AffineTransform;
+  physicalViewSpaceFontSize: number;
+  physicalViewSpaceFrameHeight: number;
+  minWidthToRender: number;
+  minConfigSpaceWidthToRender: number;
+  minConfigSpaceWidthToRenderOutline: number;
+  LABEL_PADDING_PX: number;
+  frameOutlineWidth: number;
+}
+
 export class FlamechartPanZoomView extends Component<
   FlamechartPanZoomViewProps,
   Record<string, never> // Use Record<string, never> for empty state
@@ -188,30 +202,65 @@ export class FlamechartPanZoomView extends Component<
     this.overlayCanvas.height = scaledHeight
   }
 
-  private renderOverlays() {
-    const ctx = this.overlayCtx
-    if (!ctx) return
-    if (this.props.configSpaceViewportRect.isEmpty()) return
+  // --- Method to draw overlay content onto a given context ---
+  public drawOverlayOnto(targetCtx: CanvasRenderingContext2D) {
+    // Ensure the component has the necessary info (size, viewport)
+    if (this.props.configSpaceViewportRect.isEmpty() || !this.overlayCanvas) return;
 
-    const configToPhysical = this.configSpaceToPhysicalViewSpace()
+    // Save the current state of the target context (including any applied scaling)
+    targetCtx.save();
 
-    const physicalViewSpaceFontSize = FontSize.LABEL * window.devicePixelRatio
-    const physicalViewSpaceFrameHeight =
-      this.LOGICAL_VIEW_SPACE_FRAME_HEIGHT * window.devicePixelRatio
+    // Use the component's current physical size and transformations
+    const physicalViewSize = this.physicalViewSize();
+    const configToPhysical = this.configSpaceToPhysicalViewSpace();
+    const physicalViewSpaceFontSize = FontSize.LABEL * window.devicePixelRatio;
+    const physicalViewSpaceFrameHeight = this.LOGICAL_VIEW_SPACE_FRAME_HEIGHT * window.devicePixelRatio;
+    const frameOutlineWidth = 2 * window.devicePixelRatio;
 
-    const physicalViewSize = this.physicalViewSize()
+    // Pre-calculate minimum widths needed for rendering based on the target context
+    targetCtx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`;
+    targetCtx.textBaseline = 'alphabetic'; // Ensure consistent baseline
+    const minWidthToRender = cachedMeasureTextWidth(targetCtx, 'M' + ELLIPSIS + 'M');
+    const minConfigSpaceWidthToRender = (configToPhysical.inverseTransformVector(new Vec2(minWidthToRender, 0)) || new Vec2(0, 0)).x;
+    const minConfigSpaceWidthToRenderOutline = (configToPhysical.inverseTransformVector(new Vec2(1, 0)) || new Vec2(0, 0)).x;
+    const LABEL_PADDING_PX = 5 * window.devicePixelRatio;
 
-    ctx.clearRect(0, 0, physicalViewSize.x, physicalViewSize.y)
+    const params: OverlayRenderParams = {
+      ctx: targetCtx,
+      physicalViewSize,
+      configToPhysical,
+      physicalViewSpaceFontSize,
+      physicalViewSpaceFrameHeight,
+      minWidthToRender,
+      minConfigSpaceWidthToRender,
+      minConfigSpaceWidthToRenderOutline,
+      LABEL_PADDING_PX,
+      frameOutlineWidth,
+    };
 
-    ctx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`
-    ctx.textBaseline = 'alphabetic'
+    // Skip clearing the target context when drawing onto a snapshot canvas
+    // targetCtx.clearRect(0, 0, physicalViewSize.x, physicalViewSize.y);
 
-    const minWidthToRender = cachedMeasureTextWidth(ctx, 'M' + ELLIPSIS + 'M')
-    const minConfigSpaceWidthToRender = (
-      configToPhysical.inverseTransformVector(new Vec2(minWidthToRender, 0)) || new Vec2(0, 0)
-    ).x
+    // Call the refactored drawing logic
+    this._renderOverlayContent(params);
+    this._renderTimeIndicators(params);
+    
+    // Restore the target context to its original state
+    targetCtx.restore();
+  }
+  // -----------------------------------------------------------
 
-    const LABEL_PADDING_PX = 5 * window.devicePixelRatio
+  // Refactored overlay rendering logic
+  private _renderOverlayContent(params: OverlayRenderParams) {
+    const {
+      ctx, physicalViewSize, configToPhysical, physicalViewSpaceFontSize,
+      physicalViewSpaceFrameHeight, minWidthToRender, minConfigSpaceWidthToRender,
+      minConfigSpaceWidthToRenderOutline, LABEL_PADDING_PX, frameOutlineWidth
+    } = params;
+
+    // Set font properties on the target context
+    ctx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`;
+    ctx.textBaseline = 'alphabetic';
 
     const labelBatch = new BatchCanvasTextRenderer()
     const fadedLabelBatch = new BatchCanvasTextRenderer()
@@ -266,8 +315,6 @@ export class FlamechartPanZoomView extends Component<
           if (match) {
             const rangesToHighlightInTrimmedText = remapRangesToTrimmedText(trimmedText, match)
 
-            // Once we have the character ranges to highlight, we need to
-            // actually do the highlighting.
             let lastEndIndex = 0
             let left = physicalLabelBounds.left() + LABEL_PADDING_PX
 
@@ -296,8 +343,6 @@ export class FlamechartPanZoomView extends Component<
           const batch = this.props.searchResults != null && !match ? fadedLabelBatch : labelBatch
           batch.text({
             text: trimmedText.trimmedString,
-
-            // This is specifying the position of the starting text baseline.
             x: physicalLabelBounds.left() + LABEL_PADDING_PX,
             y: Math.round(
               physicalLabelBounds.bottom() -
@@ -311,11 +356,9 @@ export class FlamechartPanZoomView extends Component<
       }
     }
 
-    const frameOutlineWidth = 2 * window.devicePixelRatio
-    ctx.strokeStyle = this.props.theme.selectionSecondaryColor
-    const minConfigSpaceWidthToRenderOutline = (
-      configToPhysical.inverseTransformVector(new Vec2(1, 0)) || new Vec2(0, 0)
-    ).x
+    // Use frameOutlineWidth from params
+    ctx.strokeStyle = this.props.theme.selectionSecondaryColor;
+    // minConfigSpaceWidthToRenderOutline is already calculated in params
 
     const renderSpecialFrameOutlines = (frame: FlamechartFrame, depth = 0) => {
       if (!this.props.selectedNode && this.props.searchResults == null && !this.props.commentedCellIds?.length) return
@@ -393,74 +436,108 @@ export class FlamechartPanZoomView extends Component<
     indirectlySelectedOutlineBatch.stroke(ctx, theme.selectionSecondaryColor, frameOutlineWidth)
     directlySelectedOutlineBatch.stroke(ctx, theme.selectionPrimaryColor, frameOutlineWidth)
 
+    // Draw hover outline using the target context
     if (this.hoveredLabel) {
-      let color: string = theme.fgPrimaryColor
+      let color: string = theme.fgPrimaryColor;
       if (this.props.selectedNode === this.hoveredLabel.node) {
-        color = theme.selectionPrimaryColor
+        color = theme.selectionPrimaryColor;
       }
 
-      ctx.lineWidth = 2 * devicePixelRatio
-      ctx.strokeStyle = color
+      ctx.save(); // Save context state
+      ctx.lineWidth = 2 * devicePixelRatio;
+      ctx.strokeStyle = color;
 
-      const physicalViewBounds = configToPhysical.transformRect(this.hoveredLabel.configSpaceBounds)
+      const physicalViewBounds = configToPhysical.transformRect(this.hoveredLabel.configSpaceBounds);
       ctx.strokeRect(
         Math.round(physicalViewBounds.left()),
         Math.round(physicalViewBounds.top()),
         Math.round(Math.max(0, physicalViewBounds.width())),
-        Math.round(Math.max(0, physicalViewBounds.height())),
-      )
+        Math.round(Math.max(0, physicalViewBounds.height()))
+      );
+      ctx.restore(); // Restore context state
     }
-
-    this.renderTimeIndicators()
   }
 
-  private renderTimeIndicators() {
-    const ctx = this.overlayCtx
-    if (!ctx) return
+  // Refactored time indicator rendering logic
+  private _renderTimeIndicators(params: OverlayRenderParams) {
+    const {
+      ctx, physicalViewSize, configToPhysical, physicalViewSpaceFontSize,
+      physicalViewSpaceFrameHeight, LABEL_PADDING_PX
+    } = params;
 
-    const physicalViewSpaceFrameHeight =
-      this.LOGICAL_VIEW_SPACE_FRAME_HEIGHT * window.devicePixelRatio
-    const physicalViewSize = this.physicalViewSize()
-    const configToPhysical = this.configSpaceToPhysicalViewSpace()
-    const physicalViewSpaceFontSize = FontSize.LABEL * window.devicePixelRatio
-    const labelPaddingPx = (physicalViewSpaceFrameHeight - physicalViewSpaceFontSize) / 2
+    const left = this.props.configSpaceViewportRect.left();
+    const right = this.props.configSpaceViewportRect.right();
 
-    const left = this.props.configSpaceViewportRect.left()
-    const right = this.props.configSpaceViewportRect.right()
-    // We want about 10 gridlines to be visible, and want the unit to be
-    // 1eN, 2eN, or 5eN for some N
-    // Ideally, we want an interval every 100 logical screen pixels
-    const logicalToConfig = (
-      this.configSpaceToPhysicalViewSpace().inverted() || new AffineTransform()
-    ).times(this.logicalToPhysicalViewSpace())
-    const targetInterval = logicalToConfig.transformVector(new Vec2(200, 1)).x
-    const minInterval = Math.pow(10, Math.floor(Math.log10(targetInterval)))
-    let interval = minInterval
+    // Calculation for interval (same as before)
+    const logicalToConfig = (configToPhysical.inverted() || new AffineTransform()).times(this.logicalToPhysicalViewSpace());
+    const targetInterval = logicalToConfig.transformVector(new Vec2(200, 1)).x;
+    const minInterval = Math.pow(10, Math.floor(Math.log10(targetInterval)));
+    let interval = minInterval;
     if (targetInterval / interval > 5) {
-      interval *= 5
+      interval *= 5;
     } else if (targetInterval / interval > 2) {
-      interval *= 2
+      interval *= 2;
     }
 
-    const theme = this.props.theme
+    const theme = this.props.theme;
 
     {
-      const y = this.props.renderInverted ? physicalViewSize.y - physicalViewSpaceFrameHeight : 0
+      const y = this.props.renderInverted ? physicalViewSize.y - physicalViewSpaceFrameHeight : 0;
 
-      ctx.fillStyle = Color.fromCSSHex(theme.bgPrimaryColor).withAlpha(0.8).toCSS()
-      ctx.fillRect(0, y, physicalViewSize.x, physicalViewSpaceFrameHeight)
-      ctx.textBaseline = 'top'
+      // Set font properties on the target context
+      ctx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`;
+      ctx.textBaseline = 'top'; // Ensure consistent baseline
+
+      ctx.fillStyle = Color.fromCSSHex(theme.bgPrimaryColor).withAlpha(0.8).toCSS();
+      ctx.fillRect(0, y, physicalViewSize.x, physicalViewSpaceFrameHeight);
+
       for (let x = Math.ceil(left / interval) * interval; x < right; x += interval) {
-        // TODO(jlfwong): Ensure that labels do not overlap
-        const pos = Math.round(configToPhysical.transformPosition(new Vec2(x, 0)).x)
-        const labelText = this.props.flamechart.formatValue(x)
-        const textWidth = cachedMeasureTextWidth(ctx, labelText)
-        ctx.fillStyle = theme.fgPrimaryColor
-        ctx.fillText(labelText, pos - textWidth - labelPaddingPx, y + labelPaddingPx)
-        ctx.fillStyle = theme.fgSecondaryColor
-        ctx.fillRect(pos, 0, 1, physicalViewSize.y)
+        const pos = Math.round(configToPhysical.transformPosition(new Vec2(x, 0)).x);
+        const labelText = this.props.flamechart.formatValue(x);
+        const textWidth = cachedMeasureTextWidth(ctx, labelText); // Use target context
+        ctx.fillStyle = theme.fgPrimaryColor;
+        ctx.fillText(labelText, pos - textWidth - LABEL_PADDING_PX, y + LABEL_PADDING_PX);
+        ctx.fillStyle = theme.fgSecondaryColor;
+        ctx.fillRect(pos, 0, 1, physicalViewSize.y);
       }
     }
+  }
+
+  private renderOverlays() {
+    const ctx = this.overlayCtx;
+    if (!ctx) return;
+    if (this.props.configSpaceViewportRect.isEmpty()) return;
+
+    const physicalViewSize = this.physicalViewSize();
+    const configToPhysical = this.configSpaceToPhysicalViewSpace();
+    const physicalViewSpaceFontSize = FontSize.LABEL * window.devicePixelRatio;
+    const physicalViewSpaceFrameHeight = this.LOGICAL_VIEW_SPACE_FRAME_HEIGHT * window.devicePixelRatio;
+    const frameOutlineWidth = 2 * window.devicePixelRatio;
+
+    // Calculate minimum widths using the component's overlayCtx
+    ctx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`;
+    ctx.textBaseline = 'alphabetic';
+    const minWidthToRender = cachedMeasureTextWidth(ctx, 'M' + ELLIPSIS + 'M');
+    const minConfigSpaceWidthToRender = (configToPhysical.inverseTransformVector(new Vec2(minWidthToRender, 0)) || new Vec2(0, 0)).x;
+    const minConfigSpaceWidthToRenderOutline = (configToPhysical.inverseTransformVector(new Vec2(1, 0)) || new Vec2(0, 0)).x;
+    const LABEL_PADDING_PX = 5 * window.devicePixelRatio;
+
+    const params: OverlayRenderParams = {
+      ctx,
+      physicalViewSize,
+      configToPhysical,
+      physicalViewSpaceFontSize,
+      physicalViewSpaceFrameHeight,
+      minWidthToRender,
+      minConfigSpaceWidthToRender,
+      minConfigSpaceWidthToRenderOutline,
+      LABEL_PADDING_PX,
+      frameOutlineWidth,
+    };
+
+    ctx.clearRect(0, 0, physicalViewSize.x, physicalViewSize.y); // Clear the component's own canvas
+    this._renderOverlayContent(params); // Draw onto the component's canvas
+    this._renderTimeIndicators(params); // Draw time indicators onto the component's canvas
   }
 
   private updateConfigSpaceViewport() {
@@ -996,7 +1073,12 @@ export class FlamechartPanZoomView extends Component<
         onContextMenu={this.handleContextMenu}
         ref={this.containerRef}
       >
-        <canvas width={1} height={1} ref={this.overlayCanvasRef} className="w-full h-full absolute top-0 left-0" />
+        <canvas 
+          width={1} 
+          height={1} 
+          ref={this.overlayCanvasRef} 
+          className="w-full h-full absolute top-0 left-0 flamechart-overlay" 
+        />
       </div>
     )
   }

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, MouseEvent } from 'react'
+import React, { memo, useCallback, MouseEvent, useRef, useImperativeHandle, forwardRef } from 'react'
 import {CanvasContext} from '../../lib/speedscope-gl/canvas-context'
 import {Flamechart} from '../../lib/speedscope-core/flamechart'
 import {FlamechartRenderer, FlamechartRendererOptions} from '../../lib/speedscope-gl/flamechart-renderer'
@@ -18,6 +18,11 @@ import {FlamechartSearchContextProvider} from './flamechart-search-view'
 import {Theme, useTheme} from './themes/theme'
 import {FlamechartID, FlamechartViewState} from '../../lib/speedscope-core/app-state/profile-group'
 import {profileGroupAtom} from '../../lib/speedscope-core/app-state'
+
+// Define the handle type that will be exposed via the ref
+export interface FlamechartViewHandle {
+  drawOverlayOnto: (targetCtx: CanvasRenderingContext2D) => void;
+}
 
 interface FlamechartSetters {
   setLogicalSpaceViewportSize: (logicalSpaceViewportSize: Vec2) => void
@@ -112,9 +117,13 @@ export interface FlamechartViewContainerProps {
   onNodeSelect: (node: CallTreeNode | null, cellId?: string | null) => void
 }
 
-export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) => {
+// Use forwardRef to allow parent components to get a ref to FlamechartView
+export const ChronoFlamechartView = memo(forwardRef<FlamechartViewHandle, FlamechartViewContainerProps>((props, ref) => {
   const {activeProfileState, glCanvas, commentedCellIds} = props
   const {profile, chronoViewState} = activeProfileState
+
+  // Create a ref for the underlying FlamechartView instance
+  const flamechartViewRef = useRef<FlamechartView | null>(null);
 
   const theme = useTheme()
 
@@ -131,6 +140,13 @@ export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) =
 
   const setters = useFlamechartSetters(FlamechartID.CHRONO, props.onNodeSelect)
 
+  // Expose the drawOverlayOnto method via the ref handle
+  useImperativeHandle(ref, () => ({
+    drawOverlayOnto: (targetCtx: CanvasRenderingContext2D) => {
+      flamechartViewRef.current?.drawOverlayOnto(targetCtx);
+    }
+  }));
+
   return (
     <FlamechartSearchContextProvider
       flamechart={flamechart}
@@ -140,6 +156,7 @@ export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) =
       setConfigSpaceViewportRect={setters.setConfigSpaceViewportRect}
     >
       <FlamechartView
+        ref={flamechartViewRef} // Assign the ref here
         theme={theme}
         renderInverted={false}
         flamechart={flamechart}
@@ -155,7 +172,7 @@ export const ChronoFlamechartView = memo((props: FlamechartViewContainerProps) =
       />
     </FlamechartSearchContextProvider>
   )
-})
+}))
 
 export const getLeftHeavyFlamechart = memoizeByShallowEquality(
   ({
@@ -176,10 +193,14 @@ export const getLeftHeavyFlamechart = memoizeByShallowEquality(
 
 const getLeftHeavyFlamechartRenderer = createMemoizedFlamechartRenderer()
 
-export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerProps) => {
-  const {activeProfileState, glCanvas, commentedCellIds, onNodeSelect} = ownProps
+// Use forwardRef for LeftHeavyFlamechartView as well
+export const LeftHeavyFlamechartView = memo(forwardRef<FlamechartViewHandle, FlamechartViewContainerProps>((props, ref) => {
+  const {activeProfileState, glCanvas, commentedCellIds, onNodeSelect} = props
 
   const {profile, leftHeavyViewState} = activeProfileState
+
+  // Create a ref for the underlying FlamechartView instance
+  const flamechartViewRef = useRef<FlamechartView | null>(null);
 
   const theme = useTheme()
 
@@ -199,6 +220,13 @@ export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerPr
 
   const setters = useFlamechartSetters(FlamechartID.LEFT_HEAVY, onNodeSelect)
 
+  // Expose the drawOverlayOnto method via the ref handle
+  useImperativeHandle(ref, () => ({
+    drawOverlayOnto: (targetCtx: CanvasRenderingContext2D) => {
+      flamechartViewRef.current?.drawOverlayOnto(targetCtx);
+    }
+  }));
+
   return (
     <FlamechartSearchContextProvider
       flamechart={flamechart}
@@ -208,6 +236,7 @@ export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerPr
       setConfigSpaceViewportRect={setters.setConfigSpaceViewportRect}
     >
       <FlamechartView
+        ref={flamechartViewRef} // Assign the ref here
         theme={theme}
         renderInverted={false}
         flamechart={flamechart}
@@ -223,4 +252,4 @@ export const LeftHeavyFlamechartView = memo((ownProps: FlamechartViewContainerPr
       />
     </FlamechartSearchContextProvider>
   )
-})
+}))

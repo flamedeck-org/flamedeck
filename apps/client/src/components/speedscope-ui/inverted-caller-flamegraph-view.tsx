@@ -1,4 +1,4 @@
-import {memo} from 'react'
+import {memo, forwardRef, useRef, useImperativeHandle} from 'react'
 import {memoizeByShallowEquality, noop} from '../../lib/speedscope-core/lib-utils'
 import {Profile, Frame} from '../../lib/speedscope-core/profile'
 import {Flamechart} from '../../lib/speedscope-core/flamechart'
@@ -6,6 +6,7 @@ import {
   createMemoizedFlamechartRenderer,
   FlamechartViewContainerProps,
   useFlamechartSetters,
+  FlamechartViewHandle,
 } from './flamechart-view-container'
 import {
   getCanvasContext,
@@ -53,12 +54,20 @@ const getInvertedCallerFlamegraph = memoizeByShallowEquality(
 
 const getInvertedCallerFlamegraphRenderer = createMemoizedFlamechartRenderer({inverted: true})
 
-export const InvertedCallerFlamegraphView = memo((ownProps: FlamechartViewContainerProps) => {
-  const {activeProfileState} = ownProps
+export const InvertedCallerFlamegraphView = memo(forwardRef<FlamechartViewHandle, FlamechartViewContainerProps>((props, ref) => {
+  const {activeProfileState} = props
   const {profile, sandwichViewState} = activeProfileState
   const flattenRecursion = useAtom(flattenRecursionAtom)
   const glCanvas = useAtom(glCanvasAtom)
   const theme = useTheme()
+
+  const flamechartWrapperRef = useRef<FlamechartViewHandle>(null);
+
+  useImperativeHandle(ref, () => ({
+    drawOverlayOnto: (targetCtx: CanvasRenderingContext2D) => {
+      flamechartWrapperRef.current?.drawOverlayOnto(targetCtx);
+    }
+  }));
 
   if (!profile) throw new Error('profile missing')
   if (!glCanvas) throw new Error('glCanvas missing')
@@ -83,6 +92,7 @@ export const InvertedCallerFlamegraphView = memo((ownProps: FlamechartViewContai
 
   return (
     <FlamechartWrapper
+      ref={flamechartWrapperRef}
       theme={theme}
       renderInverted={true}
       flamechart={flamechart}
@@ -94,4 +104,4 @@ export const InvertedCallerFlamegraphView = memo((ownProps: FlamechartViewContai
       setSelectedNode={noop}
     />
   )
-})
+}));
