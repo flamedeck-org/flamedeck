@@ -24,14 +24,14 @@ export const getSnapshotToolSchema = {
   type: "function" as const,
   function: {
     name: "get_flamegraph_snapshot",
-    description: "Use this tool ONLY when the user explicitly asks for a visual snapshot or image of a specific flamegraph view (Time Ordered, Left Heavy, Sandwich Caller, Sandwich Callee) to help answer their question. Do NOT use this for just getting function data.",
+    description: "Captures and returns a real-time visual snapshot of the flamegraph from the currently loaded trace. Use this whenever a user asks to see or visualize the flamegraph, or when you need to analyze the visual structure of the profile. The snapshot will be returned as an image that you can then analyze and describe to the user.",
     parameters: {
       type: "object" as const,
       properties: {
         viewType: {
           type: "string" as const,
           enum: ["time_ordered", "left_heavy", "sandwich_caller", "sandwich_callee"],
-          description: "The specific flamegraph view to capture (e.g., 'time_ordered', 'sandwich_callee').",
+          description: "The specific flamegraph view to capture: 'time_ordered' (chronological view), 'left_heavy' (aggregated by call frequency), 'sandwich_caller' (who calls a function), or 'sandwich_callee' (who a function calls).",
         },
         // Optional: Add frame identifier if needed for sandwich view
         // frameIdentifier: {

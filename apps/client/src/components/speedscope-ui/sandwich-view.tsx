@@ -1,6 +1,6 @@
 import {Frame} from '../../lib/speedscope-core/profile'
 import {ProfileTableViewContainer} from './profile-table-view'
-import React, { JSX, createContext, memo, useCallback, useMemo, useContext, Component } from 'react'
+import React, { JSX, createContext, memo, useCallback, useMemo, useContext, Component, forwardRef, useRef, useImperativeHandle } from 'react'
 import {Sizes, FontSize} from './style'
 import {InvertedCallerFlamegraphView} from './inverted-caller-flamegraph-view'
 import {CalleeFlamegraphView} from './callee-flamegraph-view'
@@ -11,6 +11,7 @@ import {ProfileSearchContext} from './search-view'
 import {Theme, useTheme} from './themes/theme'
 import {SortField, SortDirection, profileGroupAtom, tableSortMethodAtom} from '../../lib/speedscope-core/app-state'
 import {useAtom} from '../../lib/speedscope-core/atom'
+import { FlamechartViewHandle } from './flamechart-view-container'
 
 interface SandwichViewProps {
   selectedFrame: Frame | null
@@ -21,6 +22,8 @@ interface SandwichViewProps {
   glCanvas: HTMLCanvasElement
   onFrameSelectForComment?: (key: string | number | null) => void
   commentedFrameKeys?: (string | number)[]
+  invertedCallerRef: React.RefObject<FlamechartViewHandle>
+  calleeRef: React.RefObject<FlamechartViewHandle>
 }
 
 class SandwichView extends Component<SandwichViewProps> {
@@ -42,7 +45,7 @@ class SandwichView extends Component<SandwichViewProps> {
   }
 
   render() {
-    const {selectedFrame} = this.props
+    const {selectedFrame, invertedCallerRef, calleeRef} = this.props
 
     return (
       <div className="flex flex-row h-full">
@@ -57,6 +60,7 @@ class SandwichView extends Component<SandwichViewProps> {
                 <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center font-mono mb-1">Callers</div>
               </div>
               <InvertedCallerFlamegraphView
+                ref={invertedCallerRef}
                 glCanvas={this.props.glCanvas}
                 activeProfileState={this.props.activeProfileState}
                 onFrameSelectForComment={this.props.onFrameSelectForComment}
@@ -68,6 +72,7 @@ class SandwichView extends Component<SandwichViewProps> {
                 <div className="w-[1.2em] shrink-1 transform -rotate-90 origin-center flex justify-end font-mono mt-1">Callees</div>
               </div>
               <CalleeFlamegraphView
+                ref={calleeRef}
                 glCanvas={this.props.glCanvas}
                 activeProfileState={this.props.activeProfileState}
                 onFrameSelectForComment={this.props.onFrameSelectForComment}
@@ -95,12 +100,35 @@ interface SandwichViewContextData {
   getSearchMatchForFrame: (frame: Frame) => [number, number][] | null
 }
 
+// Define a handle type to expose methods like drawOverlayOnto
+export interface SandwichViewHandle {
+  drawOverlayOnto: (targetCtx: CanvasRenderingContext2D, viewType: string) => void;
+}
+
 export const SandwichViewContext = createContext<SandwichViewContextData | null>(null)
 
-export const SandwichViewContainer = memo((ownProps: SandwichViewContainerProps) => {
-  const {activeProfileState, glCanvas, onFrameSelectForComment, commentedFrameKeys} = ownProps
-  const {sandwichViewState, index} = activeProfileState
-  const {callerCallee} = sandwichViewState
+// Update SandwichViewContainer to properly handle context updates
+export const SandwichViewContainer = memo(forwardRef<SandwichViewHandle, SandwichViewContainerProps>((props, ref) => {
+  const {activeProfileState, glCanvas, onFrameSelectForComment, commentedFrameKeys} = props;
+  const {sandwichViewState, index} = activeProfileState;
+  const {callerCallee} = sandwichViewState;
+
+  // Create refs for the flamegraph views
+  const invertedCallerRef = useRef<FlamechartViewHandle>(null);
+  const calleeRef = useRef<FlamechartViewHandle>(null);
+
+  // Expose the drawOverlayOnto method that can choose which view to draw
+  useImperativeHandle(ref, () => ({
+    drawOverlayOnto: (targetCtx: CanvasRenderingContext2D, viewType: string) => {
+      if (viewType === 'sandwich_caller') {
+        invertedCallerRef.current?.drawOverlayOnto(targetCtx);
+      } else if (viewType === 'sandwich_callee') {
+        calleeRef.current?.drawOverlayOnto(targetCtx);
+      } else {
+        console.warn(`Unknown sandwich view type for snapshot: ${viewType}`);
+      }
+    }
+  }));
 
   const theme = useTheme()
   const setSelectedFrame = useCallback((selectedFrame: Frame | null) => {
@@ -113,7 +141,8 @@ export const SandwichViewContainer = memo((ownProps: SandwichViewContainerProps)
 
   const selectedFrame = callerCallee ? callerCallee.selectedFrame : null
 
-  const rowList: Frame[] = useMemo(() => {
+  // Ensure this is calculated on every render when dependencies change
+  const rowList = useMemo(() => {
     const rows: Frame[] = []
 
     profile.forEachFrame(frame => {
@@ -142,9 +171,10 @@ export const SandwichViewContainer = memo((ownProps: SandwichViewContainerProps)
     }
 
     return rows
-  }, [profile, profileSearchResults, tableSortMethod])
+  }, [profile, profileSearchResults, tableSortMethod]);
 
-  const getIndexForFrame: (frame: Frame) => number | null = useMemo(() => {
+  // Re-optimize these calculations to ensure they're correctly updated
+  const getIndexForFrame = useMemo(() => {
     const indexByFrame = new Map<Frame, number>()
     for (let i = 0; i < rowList.length; i++) {
       indexByFrame.set(rowList[i], i)
@@ -155,13 +185,14 @@ export const SandwichViewContainer = memo((ownProps: SandwichViewContainerProps)
     }
   }, [rowList])
 
-  const getSearchMatchForFrame: (frame: Frame) => [number, number][] | null = useMemo(() => {
+  const getSearchMatchForFrame = useMemo(() => {
     return (frame: Frame) => {
       if (profileSearchResults == null) return null
       return profileSearchResults.getMatchForFrame(frame)
     }
   }, [profileSearchResults])
 
+  // Create fresh context value on every render when dependencies change
   const contextData: SandwichViewContextData = {
     rowList,
     selectedFrame,
@@ -170,6 +201,7 @@ export const SandwichViewContainer = memo((ownProps: SandwichViewContainerProps)
     getSearchMatchForFrame,
   }
 
+  // Create a new SandwichView instance on each render to ensure it gets updated props
   return (
     <SandwichViewContext.Provider value={contextData}>
       <SandwichView
@@ -181,7 +213,9 @@ export const SandwichViewContainer = memo((ownProps: SandwichViewContainerProps)
         profileIndex={index}
         onFrameSelectForComment={onFrameSelectForComment}
         commentedFrameKeys={commentedFrameKeys}
+        invertedCallerRef={invertedCallerRef}
+        calleeRef={calleeRef}
       />
     </SandwichViewContext.Provider>
   )
-})
+}));

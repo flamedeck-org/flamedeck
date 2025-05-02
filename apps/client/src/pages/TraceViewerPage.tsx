@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +15,7 @@ import { ArrowLeft, MessageSquare } from 'lucide-react';
 import { TraceViewerCommentSidebar } from '@/components/TraceViewerCommentList/TraceViewerCommentSidebar';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { ApiError } from '@/types';
+import { ChatContainer } from '@/components/Chat';
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -26,6 +27,24 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
     </div>
   );
 }
+
+// Define the type for the snapshot generator function
+type SnapshotGenerator = (viewType: string, frameKey?: string) => Promise<string | null>;
+
+// Define the type for the snapshot result state
+interface SnapshotResultState {
+    requestId: string;
+    status: 'success' | 'error';
+    data?: string; // imageDataUrl
+    error?: string;
+}
+
+// --- Add state for test snapshot display ---
+interface TestSnapshotState {
+    dataUrl: string | null;
+    error: string | null;
+}
+// -----------------------------------------
 
 const TraceViewerPage: React.FC = () => {
   const { id = '' } = useParams<{ id: string }>();
@@ -44,6 +63,13 @@ const TraceViewerPage: React.FC = () => {
   // NOTE: useCommentManagement needs to be updated to handle isAuthenticated=false internally
   const commentManagement = useCommentManagement(id, isAuthenticated);
   // -----------------------------------------
+
+  // --- Snapshot State and Refs --- 
+  const [snapshotResultForClient, setSnapshotResultForClient] = useState<SnapshotResultState | null>(null);
+  const snapshotGeneratorRef = useRef<SnapshotGenerator | null>(null);
+  // --- State for local testing display ---
+  const [testSnapshot, setTestSnapshot] = useState<TestSnapshotState>({ dataUrl: null, error: null });
+  // ------------------------------------
 
   // --- Conditionally fetch trace details ---
   const traceDetailsQueryKey = useMemo(() =>
@@ -70,7 +96,7 @@ const TraceViewerPage: React.FC = () => {
     queryFn: fetchTraceDetailsFn,
     enabled: !!id && !blobPathFromState, // Only fetch if ID exists and blob path isn't in state
     staleTime: 5 * 60 * 1000, // Stale time of 5 minutes
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: ApiError) => {
        // Don't retry on 404-like errors (not found or not public)
        if (error?.error?.code === '404' || error?.error?.code === 'PGRST116') {
            return false;
@@ -115,6 +141,67 @@ const TraceViewerPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps 
   }, [location.state]);
 
+  // --- Snapshot Handling Callbacks --- 
+  const handleRegisterSnapshotter = useCallback((generator: SnapshotGenerator) => {
+    console.log("[TraceViewerPage] Snapshot generator registered.");
+    snapshotGeneratorRef.current = generator;
+  }, []);
+
+  // Original handler for ChatContainer
+  const handleTriggerSnapshotForChat = useCallback(
+    async (requestId: string, viewType: string, frameKey?: string) => {
+      if (!snapshotGeneratorRef.current) {
+        console.error('[TraceViewerPage] Snapshot generator not registered!');
+        setSnapshotResultForClient({ requestId, status: 'error', error: 'Snapshot function not available.' });
+        return;
+      }
+      try {
+        console.log(`[TraceViewerPage] Triggering snapshot for ${viewType}, requestId ${requestId} (for Chat)`);
+        const imageDataUrl = await snapshotGeneratorRef.current(viewType, frameKey);
+        if (imageDataUrl) {
+          setSnapshotResultForClient({ requestId, status: 'success', data: imageDataUrl });
+        } else {
+          throw new Error('Snapshot generation returned null.');
+        }
+      } catch (error: unknown) {
+        console.error('[TraceViewerPage] Snapshot generation failed:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to generate snapshot.';
+        setSnapshotResultForClient({ requestId, status: 'error', error: errorMessage });
+      }
+    },
+    [], // No dependencies needed as it uses a ref
+  );
+
+  // --- Test function to trigger snapshot locally ---
+  const handleTriggerSnapshotForTest = useCallback(async () => {
+    setTestSnapshot({ dataUrl: null, error: "Generating..." }); // Indicate loading
+    if (!snapshotGeneratorRef.current) {
+        console.error('[TraceViewerPage] Snapshot generator not registered!');
+        setTestSnapshot({ dataUrl: null, error: 'Snapshot function not available.' });
+        return;
+    }
+    try {
+        console.log(`[TraceViewerPage] Triggering snapshot for ${selectedView} (for Test)`);
+        const imageDataUrl = await snapshotGeneratorRef.current(selectedView); // Use current view
+        if (imageDataUrl) {
+            setTestSnapshot({ dataUrl: imageDataUrl, error: null });
+        } else {
+            throw new Error('Snapshot generation returned null.');
+        }
+    } catch (error: unknown) {
+        console.error('[TraceViewerPage] Test snapshot generation failed:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to generate test snapshot.';
+        setTestSnapshot({ dataUrl: null, error: errorMessage });
+    }
+  }, [selectedView]); // Recreate if selectedView changes
+  // ---------------------------------------------
+
+  const clearSnapshotResult = useCallback(() => {
+      console.log("[TraceViewerPage] Clearing snapshot result for chat.");
+      setSnapshotResultForClient(null);
+  }, []);
+  // -----------------------------------
+
   // Whether we're loading data
   const isLoading = (isLoadingTraceDetails && !blobPathFromState) || (isLoadingBlob && !!blobPath);
 
@@ -150,6 +237,11 @@ const TraceViewerPage: React.FC = () => {
               </TabsList>
             </Tabs>
             <div className="flex items-center gap-2">
+              {/* --- Add Test Snapshot Button --- */}
+              <Button variant="outline" size="sm" onClick={handleTriggerSnapshotForTest} title="Generate snapshot for current view">
+                Test Snapshot
+              </Button>
+              {/* ------------------------------ */}
               {isAuthenticated && commentManagement && <TraceViewerCommentSidebar traceId={id} activeView={selectedView} />}
               <Link to={isAuthenticated ? `/traces/${id}` : '/'} title={isAuthenticated ? "Back to Details" : "Back to Home"}>
                 <Button variant="ghost" size="sm">
@@ -176,9 +268,34 @@ const TraceViewerPage: React.FC = () => {
                 onStartReply={commentManagement?.handleStartReply}
                 onCancelReply={commentManagement?.handleCancelReply}
                 onCommentUpdated={commentManagement?.handleCommentUpdate}
+                onRegisterSnapshotter={handleRegisterSnapshotter}
               />
             </ErrorBoundary>
+            <ChatContainer 
+                traceId={id}
+                triggerSnapshot={handleTriggerSnapshotForChat}
+                snapshotResult={snapshotResultForClient}
+                clearSnapshotResult={clearSnapshotResult}
+            />
           </div>
+          {/* --- Display Test Snapshot --- */}
+          {(testSnapshot.dataUrl || testSnapshot.error) && (
+            <div className="absolute bottom-4 left-4 bg-card p-2 border rounded shadow-lg z-20 max-w-sm max-h-sm overflow-auto">
+                <h4 className="text-sm font-semibold mb-1">Test Snapshot Result:</h4>
+                {testSnapshot.error && <p className="text-xs text-destructive">{testSnapshot.error}</p>}
+                {testSnapshot.dataUrl && (
+                    <img 
+                        src={testSnapshot.dataUrl} 
+                        alt={`Snapshot of ${selectedView} view`} 
+                        className="max-w-full h-auto mt-1"
+                    />
+                )}
+                 <Button variant="ghost" size="sm" className="mt-1 w-full" onClick={() => setTestSnapshot({ dataUrl: null, error: null })}>
+                    Close Test Snapshot
+                </Button>
+            </div>
+          )}
+          {/* -------------------------- */}
         </div>
       )}
 

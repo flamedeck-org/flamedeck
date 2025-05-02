@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
   importProfilesFromArrayBuffer,
   importProfileGroupFromText,
@@ -10,9 +10,9 @@ import Long from 'long'; // Import Long for client-side
 import { profileGroupAtom, glCanvasAtom, flattenRecursionAtom } from '@/lib/speedscope-core/app-state';
 import { ActiveProfileState, useActiveProfileState, CallTreeNode } from '@/lib/speedscope-core/app-state/active-profile-state'; 
 import { useAtom } from '@/lib/speedscope-core/atom'; 
-import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
+import { SandwichViewContainer, SandwichViewHandle } from './speedscope-ui/sandwich-view'; 
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
-import { ChronoFlamechartView, LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
+import { ChronoFlamechartView, LeftHeavyFlamechartView, FlamechartViewHandle } from './speedscope-ui/flamechart-view-container';
 import ProfileCommentForm from './ProfileCommentForm';
 import { useTraceComments } from '@/hooks/useTraceComments';
 import CommentSidebar from './CommentSidebar';
@@ -35,6 +35,17 @@ const viewToCommentTypeMap: Record<SpeedscopeViewType, string> = {
   sandwich: 'sandwich',
 };
 
+// Define the type for snapshot result state
+interface SnapshotResultState {
+    requestId: string;
+    status: 'success' | 'error';
+    data?: string; // imageDataUrl
+    error?: string;
+}
+
+// Define the type for the generator function expected by the prop
+type SnapshotGenerator = (viewType: string, frameKey?: string) => Promise<string | null>;
+
 // Add the new props required by CommentSidebar
 interface SpeedscopeViewerProps {
   traceId: string;
@@ -45,6 +56,7 @@ interface SpeedscopeViewerProps {
   onStartReply: (commentId: string) => void;
   onCancelReply: () => void;
   onCommentUpdated: (updatedComment: TraceCommentWithAuthor) => void;
+  onRegisterSnapshotter?: (generator: SnapshotGenerator) => void; // Optional prop
 }
 
 const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ 
@@ -57,6 +69,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
   onStartReply,
   onCancelReply,
   onCommentUpdated,
+  onRegisterSnapshotter,
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +85,13 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
   const glCanvas = useAtom(glCanvasAtom);
   const flattenRecursion = useAtom(flattenRecursionAtom);
   const activeProfileState = useActiveProfileState();
+
+  // --- Refs for view components ---
+  const chronoViewRef = useRef<FlamechartViewHandle>(null);
+  const leftHeavyViewRef = useRef<FlamechartViewHandle>(null);
+  const sandwichViewRef = useRef<SandwichViewHandle>(null);
+  // TODO: Add ref for SandwichViewContainer if snapshot support is needed there
+  // ------------------------------
 
   // Fetch all comments once
   const { 
@@ -176,6 +196,148 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
     return () => { window.removeEventListener('keydown', handleKeyDown); };
   }, [selectedCommentInfoByView, view, activeProfileState, flattenRecursion, handleCloseSidebar]);
 
+  // State for managing snapshot results to send back to chat
+  const [snapshotResultForClient, setSnapshotResultForClient] = useState<SnapshotResultState | null>(null);
+
+  const clearSnapshotResult = useCallback(() => {
+    console.log("[SpeedscopeViewer] Clearing snapshot result for chat.");
+    setSnapshotResultForClient(null);
+  }, []);
+
+  // --- Snapshot Logic --- 
+  const generateSnapshotCallback = useCallback(async (requestedViewType: string, frameKey?: string): Promise<string | null> => {
+    console.log(`[SpeedscopeViewer] generateSnapshot called for view: ${requestedViewType}`);
+    if (!glCanvas) {
+        console.error("Cannot generate snapshot: glCanvas not available.");
+        return null;
+    }
+
+    // Determine which view ref to use
+    let activeViewRef: React.RefObject<FlamechartViewHandle | SandwichViewHandle> | null = null;
+    let isSandwichView = false;
+    
+    if (requestedViewType === 'time_ordered') {
+      activeViewRef = chronoViewRef;
+    } else if (requestedViewType === 'left_heavy') {
+      activeViewRef = leftHeavyViewRef;
+    } else if (requestedViewType.startsWith('sandwich_')) {
+      activeViewRef = sandwichViewRef;
+      isSandwichView = true;
+    }
+
+    if (!activeViewRef || !activeViewRef.current) {
+        console.error(`Cannot generate snapshot: Ref for view ${requestedViewType} is not available.`);
+        return null;
+    }
+
+    try {
+        // Find the overlay canvas element with the specific class
+        const overlayCanvas = document.querySelector('.flamechart-overlay') as HTMLCanvasElement;
+        if (!overlayCanvas) {
+            console.error("Cannot generate snapshot: Overlay canvas not found with class 'flamechart-overlay'");
+            return null;
+        }
+
+        // Get the dimensions of both canvases
+        const overlayRect = overlayCanvas.getBoundingClientRect();
+        const glRect = glCanvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        
+        // Create a temporary canvas with the overlay canvas dimensions
+        const tempCanvas = document.createElement('canvas');
+        const canvasWidth = Math.floor(overlayRect.width);
+        const canvasHeight = Math.floor(overlayRect.height);
+        
+        // Set physical size (actual pixels)
+        tempCanvas.width = Math.floor(canvasWidth * dpr);
+        tempCanvas.height = Math.floor(canvasHeight * dpr);
+        
+        // Set display size (CSS pixels)
+        tempCanvas.style.width = `${canvasWidth}px`;
+        tempCanvas.style.height = `${canvasHeight}px`;
+
+        const tempCtx = tempCanvas.getContext('2d');
+        if (!tempCtx) {
+            console.error("Cannot generate snapshot: Failed to get 2D context for temporary canvas.");
+            return null;
+        }
+
+        // Fill with a dark background color
+        tempCtx.fillStyle = '#121212'; // Dark background
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        
+        // Calculate source coordinates for proper alignment
+        // We want to align both the right and bottom edges of the canvases
+        
+        // Calculate vertical alignment (bottom align)
+        const sourceY = Math.max(0, (glRect.height - overlayRect.height)) * dpr;
+        const sourceHeight = Math.min(glRect.height, overlayRect.height) * dpr;
+        
+        // Calculate horizontal alignment (right align)
+        const sourceX = Math.max(0, (glRect.width - overlayRect.width)) * dpr;
+        const sourceWidth = Math.min(glRect.width, overlayRect.width) * dpr;
+
+        console.log(`[SpeedscopeViewer] Canvas sizes - GL: ${glRect.width}x${glRect.height}, Overlay: ${overlayRect.width}x${overlayRect.height}`);
+        console.log(`[SpeedscopeViewer] Source region - X: ${sourceX}, Y: ${sourceY}, Width: ${sourceWidth}, Height: ${sourceHeight}`);
+        
+        // Draw the bottom-right portion of the GL canvas onto the temp canvas
+        tempCtx.drawImage(
+            glCanvas,
+            sourceX, sourceY, sourceWidth, sourceHeight,  // Source: Only take the bottom-right portion of glCanvas
+            0, 0, tempCanvas.width, tempCanvas.height     // Destination: Cover the entire tempCanvas
+        );
+
+        // Draw the overlay onto the combined canvas
+        if (isSandwichView) {
+            (activeViewRef.current as SandwichViewHandle).drawOverlayOnto(tempCtx, requestedViewType);
+        } else {
+            (activeViewRef.current as FlamechartViewHandle).drawOverlayOnto(tempCtx);
+        }
+
+        // Generate data URL from the combined canvas
+        const dataUrl = tempCanvas.toDataURL('image/png');
+        return dataUrl;
+    } catch (e) {
+        console.error("[SpeedscopeViewer] Error generating combined snapshot:", e);
+        return null;
+    }
+  }, [glCanvas, chronoViewRef, leftHeavyViewRef, sandwichViewRef]);
+
+  // For ChatContainer - triggers snapshot generation and updates the snapshotResultForClient state
+  const handleTriggerSnapshotForChat = useCallback(
+    async (requestId: string, viewType: string, frameKey?: string) => {
+      console.log(`[SpeedscopeViewer] Chat requested snapshot for ${viewType}, requestId ${requestId}`);
+      if (!glCanvas) {
+        console.error('[SpeedscopeViewer] Cannot generate snapshot: glCanvas not available.');
+        setSnapshotResultForClient({ requestId, status: 'error', error: 'Canvas not available.' });
+        return;
+      }
+      
+      try {
+        const imageDataUrl = await generateSnapshotCallback(viewType, frameKey);
+        if (imageDataUrl) {
+          setSnapshotResultForClient({ requestId, status: 'success', data: imageDataUrl });
+        } else {
+          throw new Error('Snapshot generation returned null.');
+        }
+      } catch (error: unknown) {
+        console.error('[SpeedscopeViewer] Snapshot generation failed:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to generate snapshot.';
+        setSnapshotResultForClient({ requestId, status: 'error', error: errorMessage });
+      }
+    },
+    [glCanvas, generateSnapshotCallback]
+  );
+
+  // Register the snapshot generator with the parent
+  useEffect(() => {
+      if (onRegisterSnapshotter) {
+          console.log("[SpeedscopeViewer] Registering snapshot generator.");
+          onRegisterSnapshotter(generateSnapshotCallback);
+      }
+  }, [onRegisterSnapshotter, generateSnapshotCallback]);
+  // --- End Snapshot Logic ---
+
   if (isLoading) {
     return (
       <div className="h-full w-full flex items-center justify-center p-4 border border-gray-300">
@@ -206,11 +368,12 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
 
   return (
     <div className="h-full flex flex-col relative">
-      <div className="flex-grow flex flex-row relative">
-        <div className="flex-grow h-full relative overflow-hidden">
+      <div className="flex-1 flex flex-row relative overflow-hidden">
+        <div className="flex-1 h-full relative overflow-hidden">
           <ProfileSearchContextProvider>
             {view === 'sandwich' && (
               <SandwichViewContainer
+                ref={sandwichViewRef}
                 onFrameSelectForComment={() => { /* Potentially call handleNodeSelect('sandwich', ...) */ }}
                 activeProfileState={activeProfileState}
                 glCanvas={glCanvas}
@@ -218,6 +381,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
             )}
             {view === 'time_ordered' && (
               <ChronoFlamechartView
+                ref={chronoViewRef}
                 onNodeSelect={(node, cellId) => handleNodeSelect('time_ordered', node, cellId)}
                 activeProfileState={activeProfileState}
                 glCanvas={glCanvas}
@@ -226,6 +390,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
             )}
             {view === 'left_heavy' && (
               <LeftHeavyFlamechartView
+                ref={leftHeavyViewRef}
                 onNodeSelect={(node, cellId) => {
                   handleNodeSelect('left_heavy', node, cellId)
                 }}
@@ -258,7 +423,12 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
 
         {/* Chat Feature - Render the container */}
         {!isLoading && !error && profileGroup && (
-          <ChatContainer traceId={traceId} />
+          <ChatContainer 
+            traceId={traceId}
+            triggerSnapshot={handleTriggerSnapshotForChat}
+            snapshotResult={snapshotResultForClient}
+            clearSnapshotResult={clearSnapshotResult}
+          />
         )}
       </div>
     </div>

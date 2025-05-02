@@ -7,11 +7,27 @@ import { supabase } from '@/integrations/supabase/client'; // Import Supabase cl
 import { RealtimeChannel } from '@supabase/supabase-js'; // Import type for channel ref
 import { HumanMessage, AIMessage as LangChainAIMessage, BaseMessage } from "@langchain/core/messages"; // Import Langchain message types if needed for type checking history mapping
 
-interface ChatContainerProps {
-  traceId: string | null; // Trace ID is needed to start analysis
+// Define the type for the snapshot result prop
+interface SnapshotResultProp {
+    requestId: string;
+    status: 'success' | 'error';
+    data?: string; // imageDataUrl
+    error?: string;
 }
 
-export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
+interface ChatContainerProps {
+  traceId: string | null; 
+  triggerSnapshot: (requestId: string, viewType: string, frameKey?: string) => void; // Prop to trigger snapshot
+  snapshotResult: SnapshotResultProp | null; // Prop receiving the result
+  clearSnapshotResult: () => void; // Prop to clear the result after sending
+}
+
+export const ChatContainer: React.FC<ChatContainerProps> = ({ 
+    traceId,
+    triggerSnapshot,
+    snapshotResult,
+    clearSnapshotResult 
+}) => {
   const { user } = useAuth(); // Get user from Auth context
   const userId = user?.id;
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -58,6 +74,14 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
                 const payload = message.payload;
                 let newError: string | null = null;
                 let forceScroll = false; // Flag to determine if scroll should be forced
+
+                if (payload.type === 'request_snapshot') {
+                    console.log("[ChatContainer] Received snapshot request:", payload);
+                    // Call the trigger function passed via props
+                    triggerSnapshot(payload.requestId, payload.viewType, payload.frameKey);
+                    // Don't add this request to chat messages
+                    return; // Stop processing this message further here
+                }
 
                 setChatMessages(prevMessages => {
                     const messageId = uuidv4(); // Generate ID within state update if needed
@@ -155,7 +179,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
         if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current = null; }
     };
   // Rerun when chat opens/closes, or when userId/traceId become available/change
-  }, [isChatOpen, userId, traceId, isSocketConnected, connectSocket, disconnectSocket]);
+  }, [isChatOpen, userId, traceId, isSocketConnected, connectSocket, disconnectSocket, triggerSnapshot]);
 
   // --- Effect to reset flag only when traceId changes --- 
   useEffect(() => {
@@ -267,7 +291,23 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
     }
   }, [socketErrorEvent]);
 
-  // handleSendMessage (Remove model details)
+  // --- Effect to send snapshot result back via WebSocket --- 
+  useEffect(() => {
+    if (snapshotResult) {
+        console.log("[ChatContainer] Sending snapshot result via WebSocket:", snapshotResult);
+        sendRawSocketMessage({
+            type: 'snapshot_result',
+            requestId: snapshotResult.requestId,
+            status: snapshotResult.status,
+            imageDataUrl: snapshotResult.data,
+            errorMessage: snapshotResult.error
+        });
+        // Clear the result prop in the parent component
+        clearSnapshotResult();
+    }
+  }, [snapshotResult, sendRawSocketMessage, clearSnapshotResult]);
+
+  // handleSendMessage (Add userId and traceId to user_prompt)
   const handleSendMessage = useCallback((prompt: string) => {
     if (prompt.trim() && isSocketConnected && userId && traceId) {
       const newUserMessage: ChatMessage = { id: uuidv4(), sender: 'user', text: prompt };
@@ -276,22 +316,20 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
       setChatError(null); 
       setIsStreaming(false);
 
-      // Force scroll when user sends a message
       setTimeout(() => {
-        chatWindowRef.current?.scrollToBottom(true); // Pass true to force
+        chatWindowRef.current?.scrollToBottom(true); 
       }, 0);
-
-      // Prepare history
+      
       const historyToSend = chatMessages
-        .filter(msg => msg.sender === 'user' || msg.sender === 'model') // Only user/model turns
-        .slice(-10) // Limit history size
-        .map(msg => ({ sender: msg.sender, text: msg.text })); // Send simplified history
+        .filter(msg => msg.sender === 'user' || msg.sender === 'model') 
+        .slice(-10) 
+        .map(msg => ({ sender: msg.sender, text: msg.text })); 
 
       sendRawSocketMessage({
           type: 'user_prompt',
           prompt: prompt,
-          userId: userId, 
-          traceId: traceId, 
+          userId: userId,
+          traceId: traceId,
           history: historyToSend
       });
     } else if (!isSocketConnected) {

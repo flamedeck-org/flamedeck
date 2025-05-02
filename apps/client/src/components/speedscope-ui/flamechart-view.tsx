@@ -1,4 +1,4 @@
-import { Fragment, Component, MouseEvent as ReactMouseEvent } from 'react';
+import { Fragment, Component, MouseEvent as ReactMouseEvent, forwardRef, useRef, useImperativeHandle } from 'react';
 
 import {CallTreeNode } from '../../lib/speedscope-core/profile';
 import {Rect, Vec2, AffineTransform} from '../../lib/speedscope-core/math';
@@ -13,25 +13,41 @@ import {FlamechartViewProps as FlamechartViewContainerProps} from './flamechart-
 import {ProfileSearchContext} from './search-view'
 import {FlamechartSearchView} from './flamechart-search-view'
 
-interface FlamechartViewProps extends FlamechartViewContainerProps {
-  // No longer needs commentedCellIds or onCellSelectForComment
-  // Actually, keep commentedCellIds since it's back in the container props
+// Define the handle type that will be exposed via the ref
+// This should match the methods we want to call on FlamechartPanZoomView
+export interface FlamechartViewRef {
+  drawOverlayOnto: (targetCtx: CanvasRenderingContext2D) => void;
+  // Add other methods if needed
 }
 
-export class FlamechartView extends Component<FlamechartViewProps> {
-  private configSpaceSize() {
+// Use FlamechartViewContainerProps directly instead of the empty interface
+export const FlamechartView = forwardRef<FlamechartViewRef, FlamechartViewContainerProps>((props, ref) => {
+  // Create a ref for the FlamechartPanZoomView instance
+  const panZoomViewRef = useRef<FlamechartPanZoomView>(null);
+
+  // Use useImperativeHandle to expose methods from FlamechartPanZoomView
+  useImperativeHandle(ref, () => ({
+    drawOverlayOnto: (targetCtx: CanvasRenderingContext2D) => {
+      panZoomViewRef.current?.drawOverlayOnto(targetCtx);
+    }
+    // Expose other methods from panZoomViewRef.current if needed
+  }));
+
+  // Replicate the class component's logic within a functional component structure
+  // Most methods can be moved inside or defined as callbacks
+  const configSpaceSize = () => {
     return new Vec2(
-      this.props.flamechart.getTotalWeight(),
-      this.props.flamechart.getLayers().length,
+      props.flamechart.getTotalWeight(),
+      props.flamechart.getLayers().length,
     )
   }
 
-  private setConfigSpaceViewportRect = (viewportRect: Rect): void => {
+  const setConfigSpaceViewportRect = (viewportRect: Rect): void => {
     const configSpaceDetailViewHeight = Sizes.DETAIL_VIEW_HEIGHT / Sizes.FRAME_HEIGHT
 
-    const configSpaceSize = this.configSpaceSize()
+    const currentConfigSpaceSize = configSpaceSize(); // Use the function
 
-    const width = this.props.flamechart.getClampedViewportWidth(viewportRect.size.x)
+    const width = props.flamechart.getClampedViewportWidth(viewportRect.size.x)
     const size = viewportRect.size.withX(width)
 
     const origin = Vec2.clamp(
@@ -39,50 +55,50 @@ export class FlamechartView extends Component<FlamechartViewProps> {
       new Vec2(0, -1),
       Vec2.max(
         Vec2.zero,
-        configSpaceSize.minus(size).plus(new Vec2(0, configSpaceDetailViewHeight + 1)),
+        currentConfigSpaceSize.minus(size).plus(new Vec2(0, configSpaceDetailViewHeight + 1)),
       ),
     )
 
-    this.props.setConfigSpaceViewportRect(new Rect(origin, viewportRect.size.withX(width)))
+    props.setConfigSpaceViewportRect(new Rect(origin, viewportRect.size.withX(width)))
   }
 
-  private setLogicalSpaceViewportSize = (logicalSpaceViewportSize: Vec2): void => {
-    this.props.setLogicalSpaceViewportSize(logicalSpaceViewportSize)
+  const setLogicalSpaceViewportSize = (logicalSpaceViewportSize: Vec2): void => {
+    props.setLogicalSpaceViewportSize(logicalSpaceViewportSize)
   }
 
-  private transformViewport = (transform: AffineTransform): void => {
-    this.setConfigSpaceViewportRect(transform.transformRect(this.props.configSpaceViewportRect))
+  const transformViewport = (transform: AffineTransform): void => {
+    setConfigSpaceViewportRect(transform.transformRect(props.configSpaceViewportRect))
   }
 
-  private onNodeHover = (hover: {node: CallTreeNode; event: ReactMouseEvent} | null) => {
-    this.props.setNodeHover(hover as any)
+  const onNodeHover = (hover: {node: CallTreeNode; event: ReactMouseEvent} | null) => {
+    props.setNodeHover(hover)
   }
 
-  // Updated: Accept cellId and pass it through
-  onNodeClick = (node: CallTreeNode | null, cellId?: string | null) => {
-    this.props.setSelectedNode(node, cellId)
+  const onNodeClick = (node: CallTreeNode | null, cellId?: string | null) => {
+    props.setSelectedNode(node, cellId)
   }
 
-  formatValue(weight: number) {
-    const totalWeight = this.props.flamechart.getTotalWeight()
+  const formatValue = (weight: number) => {
+    const totalWeight = props.flamechart.getTotalWeight()
     const percent = (100 * weight) / totalWeight
     const formattedPercent = formatPercent(percent)
-    return `${this.props.flamechart.formatValue(weight)} (${formattedPercent})`
+    return `${props.flamechart.formatValue(weight)} (${formattedPercent})`
   }
 
-  renderTooltip() {
-    if (!this.container) return null
-
-    const {hover} = this.props
+  const renderTooltip = () => {
+    // Note: Need a way to get the container ref if Hovertip depends on it
+    // For now, assume Hovertip can work without explicit container ref from here
+    const {hover} = props
     if (!hover) return null
-    const {width, height, left, top} = this.container.getBoundingClientRect()
-    const offset = new Vec2(hover.event.clientX - left, hover.event.clientY - top)
+    // This calculation might need adjustment if containerRef is strictly required by Hovertip
+    const rect = (hover.event.target as Element)?.getBoundingClientRect() ?? { left: 0, top: 0, width: 0, height: 0 };
+    const offset = new Vec2(hover.event.clientX - rect.left, hover.event.clientY - rect.top)
     const frame = hover.node.frame
 
     return (
-      <Hovertip containerSize={new Vec2(width, height)} offset={offset}>
+      <Hovertip containerSize={new Vec2(rect.width, rect.height)} offset={offset}>
         <span className="text-green-500">
-          {this.formatValue(hover.node.getTotalWeight())}
+          {formatValue(hover.node.getTotalWeight())}
         </span>{' '}
         {frame.name}
         {frame.file ? (
@@ -94,56 +110,60 @@ export class FlamechartView extends Component<FlamechartViewProps> {
     )
   }
 
-  container: HTMLDivElement | null = null
-  containerRef = (container: Element | null) => {
-    this.container = (container as HTMLDivElement) || null
-  }
+  // const containerRef = useRef<HTMLDivElement>(null); // Keep if needed by Hovertip
 
-  render() {
-    return (
-      <div className="w-full h-full flex flex-col left-0 top-0 relative overflow-hidden" ref={this.containerRef}>
-        <FlamechartMinimapView
-          theme={this.props.theme}
-          configSpaceViewportRect={this.props.configSpaceViewportRect}
-          transformViewport={this.transformViewport}
-          flamechart={this.props.flamechart}
-          flamechartRenderer={this.props.flamechartRenderer}
-          canvasContext={this.props.canvasContext}
-          setConfigSpaceViewportRect={this.setConfigSpaceViewportRect}
-        />
-        <ProfileSearchContext.Consumer>
-          {searchResults => (
-            <Fragment>
-              <FlamechartPanZoomView
-                theme={this.props.theme}
-                canvasContext={this.props.canvasContext}
-                flamechart={this.props.flamechart}
-                flamechartRenderer={this.props.flamechartRenderer}
-                renderInverted={false}
-                onNodeHover={this.onNodeHover}
-                onNodeSelect={this.onNodeClick}
-                selectedNode={this.props.selectedNode}
-                transformViewport={this.transformViewport}
-                configSpaceViewportRect={this.props.configSpaceViewportRect}
-                setConfigSpaceViewportRect={this.setConfigSpaceViewportRect}
-                logicalSpaceViewportSize={this.props.logicalSpaceViewportSize}
-                setLogicalSpaceViewportSize={this.setLogicalSpaceViewportSize}
-                searchResults={searchResults}
-                commentedCellIds={this.props.commentedCellIds}
-              />
-              <FlamechartSearchView />
-            </Fragment>
-          )}
-        </ProfileSearchContext.Consumer>
-        {this.renderTooltip()}
-        {this.props.selectedNode && (
-          <FlamechartDetailView
-            flamechart={this.props.flamechart}
-            getCSSColorForFrame={this.props.getCSSColorForFrame}
-            selectedNode={this.props.selectedNode}
-          />
+  // Return the JSX structure from the original render method
+  return (
+    <div className="w-full h-full flex flex-col left-0 top-0 relative overflow-hidden" /* ref={containerRef} */ >
+      <FlamechartMinimapView
+        theme={props.theme}
+        configSpaceViewportRect={props.configSpaceViewportRect}
+        transformViewport={transformViewport}
+        flamechart={props.flamechart}
+        flamechartRenderer={props.flamechartRenderer}
+        canvasContext={props.canvasContext}
+        setConfigSpaceViewportRect={setConfigSpaceViewportRect}
+      />
+      <ProfileSearchContext.Consumer>
+        {searchResults => (
+          <Fragment>
+            <FlamechartPanZoomView
+              ref={panZoomViewRef} // Pass the ref down
+              theme={props.theme}
+              canvasContext={props.canvasContext}
+              flamechart={props.flamechart}
+              flamechartRenderer={props.flamechartRenderer}
+              renderInverted={false}
+              onNodeHover={onNodeHover}
+              onNodeSelect={onNodeClick}
+              selectedNode={props.selectedNode}
+              transformViewport={transformViewport}
+              configSpaceViewportRect={props.configSpaceViewportRect}
+              setConfigSpaceViewportRect={setConfigSpaceViewportRect}
+              logicalSpaceViewportSize={props.logicalSpaceViewportSize}
+              setLogicalSpaceViewportSize={setLogicalSpaceViewportSize}
+              searchResults={searchResults}
+              commentedCellIds={props.commentedCellIds}
+            />
+            <FlamechartSearchView />
+          </Fragment>
         )}
-      </div>
-    )
-  }
+      </ProfileSearchContext.Consumer>
+      {renderTooltip()}
+      {props.selectedNode && (
+        <FlamechartDetailView
+          flamechart={props.flamechart}
+          getCSSColorForFrame={props.getCSSColorForFrame}
+          selectedNode={props.selectedNode}
+        />
+      )}
+    </div>
+  );
+});
+
+// Original class component remains commented out or removed
+/*
+export class FlamechartView extends Component<FlamechartViewProps> {
+  // ... original class component implementation ...
 }
+*/
