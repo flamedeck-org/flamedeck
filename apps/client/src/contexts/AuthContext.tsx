@@ -17,7 +17,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    console.log("Attempting sign out...");
+    try {
+      const result = await supabase.auth.signOut();
+      console.log("Supabase signOut call completed (network status may vary).");
+      console.log("Supabase signOut result:", result);
+    } catch (error) {
+      console.error("Error signout call:", error);
+    } finally {
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -30,8 +41,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (_event !== 'SIGNED_OUT') {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
         setLoading(false);
       }
     );
