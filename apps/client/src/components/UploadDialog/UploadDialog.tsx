@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { traceApi, Folder } from "@/lib/api";
 import { TraceUpload, ApiError } from "@/types";
@@ -238,7 +239,19 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
         setUploadError(response.error.message);
         toast({ title: "Upload failed", description: response.error.message, variant: "destructive" });
       } else {
-        toast({ title: "Trace saved", description: "Your trace file has been processed and uploaded successfully" });
+        // const newTraceId = response.data?.id;
+        toast({
+          title: "Trace saved",
+          description: "Your trace file has been processed and uploaded successfully",
+          // action: newTraceId ? (
+          //   <ToastAction 
+          //     altText="View Trace" 
+          //     onClick={() => navigate(`/traces/${newTraceId}/view`)}
+          //   >
+          //     View Trace
+          //   </ToastAction>
+          // ) : undefined,
+        });
         
         queryClient.invalidateQueries({ queryKey: getFolderViewQueryKey(selectedFolderId, '') });
         if (user?.id) { 
@@ -247,11 +260,11 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
         
         if (onClose) onClose();
         
-        // Navigate back to the list view of the folder where the trace was uploaded
+        // Navigate to folder (keep existing navigation)
         if (selectedFolderId) {
           navigate(`/traces/folder/${selectedFolderId}`);
         } else {
-          navigate("/traces"); // Navigate to root if uploaded there
+          navigate("/traces");
         }
       }
     } catch (error) {

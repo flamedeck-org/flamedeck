@@ -223,6 +223,10 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                   </TooltipContent>
                 )}
                 <DropdownMenuContent align="end" side="right" sideOffset={10} className="w-56 mb-2">
+                  <DropdownMenuItem onClick={() => navigate('/settings/general')}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    Manage Account
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50">
                     <LogOut className="mr-2 h-4 w-4"/>
                     Logout
