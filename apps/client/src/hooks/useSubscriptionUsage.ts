@@ -2,12 +2,26 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserSubscriptionUsage, SubscriptionUsage } from "@/lib/api/subscription";
 
+// Define a constant for the base query key
+export const SUBSCRIPTION_USAGE_QUERY_KEY = 'subscriptionUsage';
+
+/**
+ * Generates the React Query key for fetching user subscription usage.
+ * @param userId - The ID of the user, or null/undefined if no user is logged in.
+ * @returns The query key array.
+ */
+export function getSubscriptionUsageQueryKey(userId: string | null | undefined) {
+  // Use a placeholder like 'guest' or null if no user ID is present,
+  // matching the behavior in the useQuery hook itself.
+  return [SUBSCRIPTION_USAGE_QUERY_KEY, userId ?? null];
+}
+
 export const useSubscriptionUsage = () => {
     const { user } = useAuth();
     const userId = user?.id;
 
     return useQuery<SubscriptionUsage | null, Error>({ // Specify types
-        queryKey: ['subscriptionUsage', userId], // Query key includes userId
+        queryKey: getSubscriptionUsageQueryKey(userId), // Use the generator function
         queryFn: async () => {
             if (!userId) {
                 return null; // No user, no usage data
