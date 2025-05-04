@@ -8,6 +8,9 @@ import {lightTheme} from './light-theme.ts'
 import { Atom } from '../../../lib/speedscope-core/atom.ts'
 import { flamegraphThemeRegistry } from './flamegraph-theme-registry.ts'
 
+// Define common colors if needed elsewhere, or just use literal
+const WHITE = '#FFFFFF';
+
 export interface Theme {
   fgPrimaryColor: string
   fgSecondaryColor: string
@@ -30,32 +33,62 @@ export interface Theme {
 
   colorForBucket: (t: number) => Color
   colorForBucketGLSL: string
+  flamegraphTextColor?: string // Optional on base Theme
 }
 
 // Specific interface for flamegraph coloring
 export interface FlamegraphTheme {
   colorForBucket: (t: number) => Color
   colorForBucketGLSL: string
+  flamegraphTextColor: string // Required for flamegraph themes
 }
 
 // Names for the available flamegraph themes
 // 'system' uses the default provided by the light/dark theme
-export type FlamegraphThemeName = 'system' | 'fire' | 'peach'
+export type FlamegraphThemeName = 'system' | 'fire' | 'peach' | 'ice'
 
 // Define display names for themes
 export const flamegraphThemeDisplayNames: Record<FlamegraphThemeName, string> = {
-  system: 'System Default',
+  system: 'Default',
   fire: 'Fire',
   peach: 'Peach',
+  ice: 'Ice',
 }
 
-// Atom to store the currently selected flamegraph theme name
-export const flamegraphThemeAtom = new Atom<FlamegraphThemeName>('system', 'flamegraphTheme')
+// Define simple CSS gradient previews for themes
+export const flamegraphThemePreviews: Partial<Record<FlamegraphThemeName, string>> = {
+  system: 'linear-gradient(to right,rgb(83, 69, 165),rgb(158, 63, 61),rgb(92, 159, 53))', // White -> Black
+  fire: 'linear-gradient(to right, #a00000, #ff4500, #ffae42)', // Dark Red -> Orange -> Orange-Yellow
+  peach: 'linear-gradient(to right, #d2691e, #ff8c69, #ffd700)', // Chocolate -> Salmon -> Gold
+  ice: 'linear-gradient(to right,rgb(74, 173, 203),rgb(110, 93, 176),rgb(49, 166, 108))', // Black -> Black -> Black
+}
+
+const FLAMEGRAPH_THEME_STORAGE_KEY = 'flamegraphTheme';
+
+// Helper to safely get the theme name from storage
+function getInitialFlamegraphTheme(): FlamegraphThemeName {
+  try {
+    const storedValue = localStorage.getItem(FLAMEGRAPH_THEME_STORAGE_KEY);
+    if (storedValue && storedValue in flamegraphThemeDisplayNames) {
+      return storedValue as FlamegraphThemeName;
+    }
+  } catch (e) {
+    console.error("Failed to read flamegraph theme from localStorage", e);
+  }
+  return 'system'; // Default value
+}
+
+// Atom to store the currently selected flamegraph theme name, initialized from storage
+export const flamegraphThemeAtom = new Atom<FlamegraphThemeName>(
+  getInitialFlamegraphTheme(), 
+  'flamegraphTheme' // Debug key
+);
 
 // Type for the theme registry structure (holding light/dark variants)
 export type FlamegraphThemeVariants = {
   light: FlamegraphTheme
   dark: FlamegraphTheme
+  // flamegraphTextColor will be part of FlamegraphTheme
 }
 
 export const ThemeContext = createContext<Theme>(lightTheme)
@@ -134,6 +167,15 @@ export function ThemeProvider(props: {children: React.ReactNode}) {
 
   const baseTheme = isDarkMode ? darkTheme : lightTheme;
 
+  // Effect to persist theme selection to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(FLAMEGRAPH_THEME_STORAGE_KEY, selectedFlamegraphThemeName);
+    } catch (e) {
+      console.error("Failed to save flamegraph theme to localStorage", e);
+    }
+  }, [selectedFlamegraphThemeName]);
+
   // Get the appropriate flamegraph theme variant (light or dark)
   let flamegraphThemeOverride: FlamegraphTheme | null = null;
   if (selectedFlamegraphThemeName !== 'system') {
@@ -144,7 +186,7 @@ export function ThemeProvider(props: {children: React.ReactNode}) {
   }
 
   // Combine base theme with selected flamegraph theme variant
-  const finalTheme = flamegraphThemeOverride
+  const finalTheme: Theme = flamegraphThemeOverride
     ? { ...baseTheme, ...flamegraphThemeOverride }
     : baseTheme
 
