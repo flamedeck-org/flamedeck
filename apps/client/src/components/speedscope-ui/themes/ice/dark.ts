@@ -1,16 +1,17 @@
 import { Color } from '../../../../lib/speedscope-core/color.ts'
 import { FlamegraphTheme } from '../theme.tsx'
 
-// Fire theme HCL constants (0-1 scale for C & L, degrees for H)
-const H_MIN = 5.0;    // Deeper red
-const H_RANGE = 40.0; // Up to orange-yellow
-const H_WIGGLE = 10.0; // Local hue wiggle for variety
+// Ice theme (DARK) HCL constants
+// Adjusted for a darker background
+const H_MIN = 20.0;    // Deeper red/orange start
+const H_RANGE = 80.0; // Up to orange-yellow
+const H_WIGGLE = 20.0; // Local hue wiggle for variety
 
-const C_BASE = 0.90;  // Strong chroma base
-const C_VAR  = 0.08;  // More chroma wiggle
+const C_BASE = 0.15;  // Slightly lower base chroma for dark mode
+const C_VAR  = 0.12;  // Chroma wiggle
 
-const L_BASE = 0.55;  // Base luma
-const L_VAR  = 0.09;  // Larger luma wiggle
+const L_BASE = 0.2;  // Lower base luma for dark mode
+const L_VAR  = 0.05;  // Smaller luma wiggle for dark mode
 
 // Triangle wave helper (JS)
 function triangle(x: number): number {
@@ -22,15 +23,14 @@ const colorForBucket = (t: number): Color => {
   const clampedT = Math.max(0, Math.min(1, t));
   const x = triangle(30.0 * clampedT);
 
-  // Hue gets a linear component plus extra wiggle based on x
   const H = H_MIN + H_RANGE * clampedT + H_WIGGLE * (x - 0.5);
   const C = C_BASE + C_VAR * (x - 0.5) * 2.0;
-  const L = L_BASE + L_VAR * (0.5 - x); // brighter near peaks of triangle
+  const L = L_BASE + L_VAR * (0.5 - x);
 
   return Color.fromLumaChromaHue(L, C, H);
 }
 
-// GLSL version mirroring the same maths (uses triangle() from main shader)
+// GLSL version
 const colorForBucketGLSL = `
 vec3 colorForBucket(float t) {
   float clampedT = clamp(t, 0.0, 1.0);
@@ -40,13 +40,11 @@ vec3 colorForBucket(float t) {
   float C = ${C_BASE.toFixed(2)} + ${C_VAR.toFixed(2)} * (x - 0.5) * 2.0;
   float L = ${L_BASE.toFixed(2)} + ${L_VAR.toFixed(2)} * (0.5 - x);
 
-  // hcl2rgb expects H in degrees, C & L in 0-1 range
   return hcl2rgb(H, C, L);
 }
 `;
 
-// Exported as fireFlamegraphThemeLight
-export const fireFlamegraphThemeLight: FlamegraphTheme = {
+export const iceFlamegraphThemeDark: FlamegraphTheme = {
   colorForBucket,
   colorForBucketGLSL,
   flamegraphTextColor: '#FFFFFF',

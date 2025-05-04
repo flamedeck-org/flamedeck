@@ -1,23 +1,22 @@
-import {Rect, AffineTransform, Vec2, clamp} from '../../lib/speedscope-core/math'
-import {CallTreeNode, Frame} from '../../lib/speedscope-core/profile'
-import {Flamechart, FlamechartFrame} from '../../lib/speedscope-core/flamechart'
-import {CanvasContext} from '../../lib/speedscope-gl/canvas-context'
-import {FlamechartRenderer} from '../../lib/speedscope-gl/flamechart-renderer'
-import {Sizes, FontSize, FontFamily} from './style'
+import {Rect, AffineTransform, Vec2, clamp} from '../../lib/speedscope-core/math.ts'
+import {CallTreeNode} from '../../lib/speedscope-core/profile.ts'
+import {Flamechart, FlamechartFrame} from '../../lib/speedscope-core/flamechart.ts'
+import {CanvasContext} from '../../lib/speedscope-gl/canvas-context.ts'
+import {FlamechartRenderer} from '../../lib/speedscope-gl/flamechart-renderer.ts'
+import {Sizes, FontSize, FontFamily} from './style.ts'
 import {
   cachedMeasureTextWidth,
   ELLIPSIS,
   trimTextMid,
   remapRangesToTrimmedText,
-} from '../../lib/speedscope-core/text-utils'
-import React, {Component, MouseEvent as ReactMouseEvent, WheelEvent as ReactWheelEvent} from 'react'
+} from '../../lib/speedscope-core/text-utils.ts'
+import React, {Component, MouseEvent as ReactMouseEvent} from 'react'
 import ReactDOM from 'react-dom'
-import {ProfileSearchResults} from '../../lib/speedscope-core/profile-search'
-import {BatchCanvasTextRenderer, BatchCanvasRectRenderer} from '../../lib/speedscope-core/canvas-2d-batch-renderers'
-import {Color} from '../../lib/speedscope-core/color'
-import {Theme} from './themes/theme'
-import { ContextMenu, ContextMenuItem, ContextMenuDivider } from '@/components/ui/context-menu'
-import { MessageSquare } from 'lucide-react'
+import {ProfileSearchResults} from '../../lib/speedscope-core/profile-search.ts'
+import {BatchCanvasTextRenderer, BatchCanvasRectRenderer} from '../../lib/speedscope-core/canvas-2d-batch-renderers.ts'
+import {Color} from '../../lib/speedscope-core/color.ts'
+import {Theme} from './themes/theme.tsx'
+import { ContextMenu, ContextMenuDivider } from '@/components/ui/context-menu'
 
 interface FlamechartFrameLabel {
   configSpaceBounds: Rect
@@ -480,6 +479,7 @@ export class FlamechartPanZoomView extends Component<
     }
 
     const theme = this.props.theme;
+    const flamegraphTextColor = theme.flamegraphTextColor || theme.fgPrimaryColor;
 
     {
       const y = this.props.renderInverted ? physicalViewSize.y - physicalViewSpaceFrameHeight : 0;
@@ -495,7 +495,7 @@ export class FlamechartPanZoomView extends Component<
         const pos = Math.round(configToPhysical.transformPosition(new Vec2(x, 0)).x);
         const labelText = this.props.flamechart.formatValue(x);
         const textWidth = cachedMeasureTextWidth(ctx, labelText); // Use target context
-        ctx.fillStyle = theme.fgPrimaryColor;
+        ctx.fillStyle = flamegraphTextColor;
         ctx.fillText(labelText, pos - textWidth - LABEL_PADDING_PX, y + LABEL_PADDING_PX);
         ctx.fillStyle = theme.fgSecondaryColor;
         ctx.fillRect(pos, 0, 1, physicalViewSize.y);
@@ -907,10 +907,10 @@ export class FlamechartPanZoomView extends Component<
     }
   }
 
-  shouldComponentUpdate() {
+  override shouldComponentUpdate() {
     return false
   }
-  componentWillReceiveProps(nextProps: FlamechartPanZoomViewProps) {
+  override componentWillReceiveProps(nextProps: FlamechartPanZoomViewProps) {
     if (this.props.flamechart !== nextProps.flamechart) {
       this.hoveredLabel = null
       this.renderCanvas()
@@ -930,7 +930,7 @@ export class FlamechartPanZoomView extends Component<
       }
     }
   }
-  componentDidMount() {
+  override componentDidMount() {
     this.props.canvasContext.addBeforeFrameHandler(this.onBeforeFrame)
     window.addEventListener('resize', this.onWindowResize)
     window.addEventListener('keydown', this.onWindowKeyPress)
@@ -938,10 +938,10 @@ export class FlamechartPanZoomView extends Component<
     window.addEventListener('keydown', this.handleKeyDown)
     // Manually add wheel listener with passive: false
     if (this.container) {
-      this.container.addEventListener('wheel', this.onWheel, {passive: false})
+      this.container.addEventListener('wheel', this.onWheel as EventListener, {passive: false})
     }
   }
-  componentWillUnmount() {
+  override componentWillUnmount() {
     this.props.canvasContext.removeBeforeFrameHandler(this.onBeforeFrame)
     window.removeEventListener('resize', this.onWindowResize)
     window.removeEventListener('keydown', this.onWindowKeyPress)
@@ -956,7 +956,7 @@ export class FlamechartPanZoomView extends Component<
     }
     // Remove manually added wheel listener
     if (this.container) {
-      this.container.removeEventListener('wheel', this.onWheel)
+      this.container.removeEventListener('wheel', this.onWheel as EventListener)
     }
   }
 
@@ -1061,7 +1061,7 @@ export class FlamechartPanZoomView extends Component<
     }
   };
 
-  render() {
+  override render() {
     return (
       <div
         className="flex-1 flex-col relative overflow-hidden"
