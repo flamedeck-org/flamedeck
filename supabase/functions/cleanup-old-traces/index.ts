@@ -3,9 +3,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
-const TRACE_RETENTION_DAYS = 30;
-
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -32,36 +30,36 @@ serve(async (req) => {
       // Using SERVICE_ROLE_KEY for cleanup, bypassing RLS as we need to delete across users.
     )
 
-    // Calculate the cutoff date
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - TRACE_RETENTION_DAYS);
-    const cutoffTimestamp = cutoffDate.toISOString();
+    // Calculate the cutoff date based on NOW()
+    const nowTimestamp = new Date().toISOString();
 
-    console.log(`Looking for traces older than: ${cutoffTimestamp}`);
+    console.log(`Looking for traces where expires_at <= ${nowTimestamp}`);
 
-    // 1. Fetch old traces
-    const { data: oldTraces, error: fetchError } = await supabaseClient
+    // 1. Fetch expired traces based on expires_at column
+    const { data: expiredTraces, error: fetchError } = await supabaseClient
       .from('traces')
       .select('id, blob_path')
-      .lt('uploaded_at', cutoffTimestamp); // Find traces uploaded *before* the cutoff
+      .lte('expires_at', nowTimestamp); // Find traces where expires_at is in the past or now
 
     if (fetchError) {
-      console.error("Error fetching old traces:", fetchError);
+      console.error("Error fetching expired traces:", fetchError);
       throw fetchError;
     }
 
-    if (!oldTraces || oldTraces.length === 0) {
-      console.log("No old traces found to delete.");
-      return new Response(JSON.stringify({ message: 'No old traces found.' }), {
+    if (!expiredTraces || expiredTraces.length === 0) {
+      console.log("No expired traces found to delete.");
+      return new Response(JSON.stringify({ message: 'No expired traces found.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
     }
 
-    console.log(`Found ${oldTraces.length} traces to delete.`);
+    console.log(`Found ${expiredTraces.length} expired traces to delete.`);
 
-    const traceIdsToDelete = oldTraces.map(trace => trace.id);
-    const blobPathsToDelete = oldTraces.map(trace => trace.blob_path).filter(path => path); // Filter null/empty paths
+    const traceIdsToDelete = expiredTraces.map((trace: { id: string }) => trace.id);
+    const blobPathsToDelete = expiredTraces
+        .map((trace: { blob_path: string | null }) => trace.blob_path)
+        .filter((path: string | null): path is string => path !== null && path !== '');
 
     // 2. Delete associated storage objects
     if (blobPathsToDelete.length > 0) {
@@ -101,7 +99,8 @@ serve(async (req) => {
     })
   } catch (error) {
     console.error("Unhandled error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     })
