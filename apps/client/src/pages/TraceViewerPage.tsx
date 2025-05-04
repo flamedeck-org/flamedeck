@@ -11,11 +11,14 @@ import { traceApi, TraceMetadata } from "@/lib/api";
 import { ApiResponse } from '@/types';
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Palette } from 'lucide-react';
 import { TraceViewerCommentSidebar } from '@/components/TraceViewerCommentList/TraceViewerCommentSidebar';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { ApiError } from '@/types';
 import { ChatContainer } from '@/components/Chat';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAtom } from "../lib/speedscope-core/atom.ts";
+import { flamegraphThemeAtom, FlamegraphThemeName, flamegraphThemeDisplayNames } from "../components/speedscope-ui/themes/theme.tsx";
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -55,6 +58,10 @@ const TraceViewerPage: React.FC = () => {
   // Read initialView from location state, default to 'time_ordered'
   const initialViewFromState = location.state?.initialView as SpeedscopeViewType | undefined;
   const [selectedView, setSelectedView] = useState<SpeedscopeViewType>(initialViewFromState || 'time_ordered');
+
+  // --- Flamegraph Theme State --- 
+  const selectedFlamegraphTheme = useAtom(flamegraphThemeAtom);
+  // ------------------------------
 
   // Get blobPath from location state
   const blobPathFromState = location.state?.blobPath as string | undefined;
@@ -229,7 +236,7 @@ const TraceViewerPage: React.FC = () => {
       {!isLoading && !error && traceBlobData && id && (
         <div className="h-full w-full flex flex-col bg-background">
           <div className="flex justify-between items-center flex-shrink-0 border-b z-[1] bg-background px-4 gap-4">
-            <Tabs value={selectedView} onValueChange={(value) => setSelectedView(value as SpeedscopeViewType)} className="inline-block">
+            <Tabs value={selectedView} onValueChange={(value: string) => setSelectedView(value as SpeedscopeViewType)} className="inline-block">
               <TabsList className="inline-flex rounded-none bg-transparent text-foreground p-0 border-none">
                 <TabsTrigger value="time_ordered" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Time Ordered</TabsTrigger>
                 <TabsTrigger value="left_heavy" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Left Heavy</TabsTrigger>
@@ -238,10 +245,28 @@ const TraceViewerPage: React.FC = () => {
             </Tabs>
             <div className="flex items-center gap-2">
               {/* --- Add Test Snapshot Button --- */}
-              <Button variant="outline" size="sm" onClick={handleTriggerSnapshotForTest} title="Generate snapshot for current view">
+              {/* <Button variant="outline" size="sm" onClick={handleTriggerSnapshotForTest} title="Generate snapshot for current view">
                 Test Snapshot
-              </Button>
+              </Button> */}
               {/* ------------------------------ */}
+              {/* --- Flamegraph Theme Selector --- */} 
+              <Select 
+                value={selectedFlamegraphTheme}
+                onValueChange={(value: FlamegraphThemeName) => flamegraphThemeAtom.set(value)}
+              >
+                <SelectTrigger className="w-[180px]" title="Select Flamegraph Theme">
+                   <Palette className="h-4 w-4 mr-2" />
+                   <SelectValue placeholder="Select theme..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(flamegraphThemeDisplayNames) as FlamegraphThemeName[]).map((themeName) => (
+                    <SelectItem key={themeName} value={themeName}>
+                      {flamegraphThemeDisplayNames[themeName]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* --------------------------------- */} 
               {isAuthenticated && commentManagement && <TraceViewerCommentSidebar traceId={id} activeView={selectedView} />}
               <Link to={isAuthenticated ? `/traces/${id}` : '/'} title={isAuthenticated ? "Back to Details" : "Back to Home"}>
                 <Button variant="ghost" size="sm">
@@ -271,15 +296,15 @@ const TraceViewerPage: React.FC = () => {
                 onRegisterSnapshotter={handleRegisterSnapshotter}
               />
             </ErrorBoundary>
-            <ChatContainer 
+            {/* <ChatContainer 
                 traceId={id}
                 triggerSnapshot={handleTriggerSnapshotForChat}
                 snapshotResult={snapshotResultForClient}
                 clearSnapshotResult={clearSnapshotResult}
-            />
+            /> */}
           </div>
           {/* --- Display Test Snapshot --- */}
-          {(testSnapshot.dataUrl || testSnapshot.error) && (
+          {/* {(testSnapshot.dataUrl || testSnapshot.error) && (
             <div className="absolute bottom-4 left-4 bg-card p-2 border rounded shadow-lg z-20 max-w-sm max-h-sm overflow-auto">
                 <h4 className="text-sm font-semibold mb-1">Test Snapshot Result:</h4>
                 {testSnapshot.error && <p className="text-xs text-destructive">{testSnapshot.error}</p>}
@@ -294,7 +319,7 @@ const TraceViewerPage: React.FC = () => {
                     Close Test Snapshot
                 </Button>
             </div>
-          )}
+          )} */}
           {/* -------------------------- */}
         </div>
       )}

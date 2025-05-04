@@ -19,6 +19,10 @@ SUPABASE_ACCESS_TOKEN=<my-token> yarn supabase gen types typescript --project-id
 
 ```bash
 yarn supabase functions deploy api-upload-trace --no-verify-jwt
+yarn supabase functions deploy trace-analysis-socket --no-verify-jwt
+yarn supabase functions deploy process-ai-turn
+yarn supabase functions deploy delete-user
+yarn supabase functions deploy cleanup-old-traces --no-verify-jwt
 ```
 
 ## Deploying the site
