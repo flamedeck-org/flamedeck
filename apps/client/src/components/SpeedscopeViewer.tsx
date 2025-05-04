@@ -422,14 +422,15 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
         )}
 
         {/* Chat Feature - Render the container */}
-        {!isLoading && !error && profileGroup && (
+        {/* Disabling this for now as it's not working */}
+        {/* {!isLoading && !error && profileGroup && (
           <ChatContainer 
             traceId={traceId}
             triggerSnapshot={handleTriggerSnapshotForChat}
             snapshotResult={snapshotResultForClient}
             clearSnapshotResult={clearSnapshotResult}
           />
-        )}
+        )} */}
       </div>
     </div>
   );
