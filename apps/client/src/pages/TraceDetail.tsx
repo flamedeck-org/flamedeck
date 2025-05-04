@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { traceApi } from "@/lib/api";
-import { ArrowLeft, Trash2, Eye, Share2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle } from "lucide-react";
 import PageLayout from "@/components/PageLayout";
 import PageHeader from "@/components/PageHeader";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,7 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CommentForm from "@/components/CommentForm";
-import { CommentList, CommentItem, StructuredComment } from "@/components/comments";
+import { CommentItem, StructuredComment } from "@/components/comments";
 import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
 import { ProfileType } from "@trace-view-pilot/shared-importer";
@@ -36,6 +36,9 @@ import { formatDuration } from "@/lib/utils";
 import { TraceCommentWithAuthor } from '@/lib/api';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { UserAvatar } from "@/components/UserAvatar";
+import { getExpirationStatus } from "@/lib/utils/getExpirationStatus";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { format } from 'date-fns';
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -110,7 +113,7 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
   
   // Optional: Sort replies within each comment (e.g., oldest first)
   Object.values(commentMap).forEach(comment => {
-      comment.replies.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      comment.replies.sort((a: StructuredComment, b: StructuredComment) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   });
 
   return rootComments;
@@ -120,7 +123,6 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
 const TraceDetail: React.FC = () => {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { openModal } = useSharingModal();
@@ -294,6 +296,9 @@ const TraceDetail: React.FC = () => {
 
   const isLoading = traceLoading || commentsLoading;
 
+  // Calculate expiration status for the current trace
+  const expirationStatus = getExpirationStatus(trace?.expires_at);
+
   if (isLoading) {
     return (
       <AuthGuard>
@@ -342,6 +347,21 @@ const TraceDetail: React.FC = () => {
             subtitle={ownerSubtitle}
             actions={headerActions}
           />
+
+          {/* Expiration Warning Alert */}
+          {expirationStatus.isExpiring && (
+
+<Alert variant="warning" className="mb-5">
+  <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Deletion Scheduled</AlertTitle>
+  <AlertDescription className="mt-2 mb-2">
+    This trace will be automatically deleted in approximately{' '}
+                <strong>{expirationStatus.daysRemaining} {expirationStatus.daysRemaining === 1 ? 'day' : 'days'}</strong>
+                {expirationStatus.formattedExpirationDate && ` (on ${expirationStatus.formattedExpirationDate})`}{' '}
+                due to the configured data retention policy.
+  </AlertDescription>
+</Alert>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <Card>

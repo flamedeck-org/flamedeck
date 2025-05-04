@@ -1,10 +1,12 @@
-import { ComponentChildren, createContext, useCallback, useContext, useEffect, useState } from 'react'
-import {ColorScheme, colorSchemeAtom} from '../../../lib/speedscope-core/app-state/color-scheme'
-import {useAtom} from '../../../lib/speedscope-core/atom'
-import {Color} from '../../../lib/speedscope-core/color'
-import {memoizeByReference} from '../../../lib/speedscope-core/lib-utils'
-import {darkTheme} from './dark-theme'
-import {lightTheme} from './light-theme'
+import React, { ComponentChildren, createContext, useCallback, useContext, useEffect, useState } from 'react'
+import {ColorScheme, colorSchemeAtom} from '../../../lib/speedscope-core/app-state/color-scheme.ts'
+import {useAtom} from '../../../lib/speedscope-core/atom.ts'
+import {Color} from '../../../lib/speedscope-core/color.ts'
+import {memoizeByReference} from '../../../lib/speedscope-core/lib-utils.ts'
+import {darkTheme} from './dark-theme.ts'
+import {lightTheme} from './light-theme.ts'
+import { Atom } from '../../../lib/speedscope-core/atom.ts'
+import { flamegraphThemeRegistry } from './flamegraph-theme-registry.ts'
 
 export interface Theme {
   fgPrimaryColor: string
@@ -28,6 +30,32 @@ export interface Theme {
 
   colorForBucket: (t: number) => Color
   colorForBucketGLSL: string
+}
+
+// Specific interface for flamegraph coloring
+export interface FlamegraphTheme {
+  colorForBucket: (t: number) => Color
+  colorForBucketGLSL: string
+}
+
+// Names for the available flamegraph themes
+// 'system' uses the default provided by the light/dark theme
+export type FlamegraphThemeName = 'system' | 'fire' | 'peach'
+
+// Define display names for themes
+export const flamegraphThemeDisplayNames: Record<FlamegraphThemeName, string> = {
+  system: 'System Default',
+  fire: 'Fire',
+  peach: 'Peach',
+}
+
+// Atom to store the currently selected flamegraph theme name
+export const flamegraphThemeAtom = new Atom<FlamegraphThemeName>('system', 'flamegraphTheme')
+
+// Type for the theme registry structure (holding light/dark variants)
+export type FlamegraphThemeVariants = {
+  light: FlamegraphTheme
+  dark: FlamegraphTheme
 }
 
 export const ThemeContext = createContext<Theme>(lightTheme)
@@ -56,6 +84,8 @@ export function colorSchemeToString(scheme: ColorScheme): string {
       return 'Light'
     }
   }
+  // Add a default return or throw an error for exhaustive check
+  throw new Error(`Unhandled ColorScheme: ${scheme}`)
 }
 
 function getTheme(colorScheme: ColorScheme, systemPrefersDarkMode: boolean): Theme {
@@ -70,6 +100,8 @@ function getTheme(colorScheme: ColorScheme, systemPrefersDarkMode: boolean): The
       return lightTheme
     }
   }
+  // Add a default return or throw an error for exhaustive check
+  throw new Error(`Unhandled ColorScheme: ${colorScheme}`)
 }
 
 export function ThemeProvider(props: {children: React.ReactNode}) {
@@ -93,7 +125,28 @@ export function ThemeProvider(props: {children: React.ReactNode}) {
   }, [matchMediaListener])
 
   const colorScheme = useAtom(colorSchemeAtom)
-  const theme = getTheme(colorScheme, systemPrefersDarkMode)
+  const selectedFlamegraphThemeName = useAtom(flamegraphThemeAtom)
+
+  // Determine if we are in dark mode
+  const isDarkMode = 
+      colorScheme === ColorScheme.DARK || 
+      (colorScheme === ColorScheme.SYSTEM && systemPrefersDarkMode);
+
+  const baseTheme = isDarkMode ? darkTheme : lightTheme;
+
+  // Get the appropriate flamegraph theme variant (light or dark)
+  let flamegraphThemeOverride: FlamegraphTheme | null = null;
+  if (selectedFlamegraphThemeName !== 'system') {
+    const variants = flamegraphThemeRegistry[selectedFlamegraphThemeName];
+    if (variants) {
+      flamegraphThemeOverride = isDarkMode ? variants.dark : variants.light;
+    }
+  }
+
+  // Combine base theme with selected flamegraph theme variant
+  const finalTheme = flamegraphThemeOverride
+    ? { ...baseTheme, ...flamegraphThemeOverride }
+    : baseTheme
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -108,7 +161,7 @@ export function ThemeProvider(props: {children: React.ReactNode}) {
     }
   }, [colorScheme, systemPrefersDarkMode]);
 
-  return <ThemeContext.Provider value={theme} children={props.children} />
+  return <ThemeContext.Provider value={finalTheme} children={props.children} />
 }
 
 export { colorSchemeAtom }

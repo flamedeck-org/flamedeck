@@ -15,7 +15,8 @@ import {
 import { 
   Trash2, Eye, Share2, Edit, Move, Flame, Info,
   Chrome, 
-  MoreVertical
+  MoreVertical,
+  Clock
 } from "lucide-react";
 import { 
   ContextMenu, 
@@ -23,14 +24,15 @@ import {
   ContextMenuDivider 
 } from '@/components/ui/context-menu';
 import { TraceMetadata } from "@/types";
-import { formatRelativeDate, formatDuration } from "@/lib/utils";
+import { formatRelativeDate, formatDuration, cn } from "@/lib/utils";
 import { User } from '@supabase/supabase-js'; // Import User type if needed
 import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
 import { MoveItemDialog } from './MoveItemDialog'; // Import the new dialog
 import { RenameTraceDialog } from './RenameTraceDialog'; // Import the new dialog
 import { ProfileType } from '@trace-view-pilot/shared-importer'; // Import ProfileType
-import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/UserAvatar'; // Import the new component
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getExpirationStatus } from "@/lib/utils/getExpirationStatus";
 
 // Helper to get icon based on profile type
 const getIconForProfileType = (profileType?: ProfileType | string | null): React.ReactNode => {
@@ -160,6 +162,11 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
     [trace.scenario, trace.id]
   );
 
+  // Calculate expiration status (only relevant for traces)
+  const expirationStatus = trace.expires_at
+    ? getExpirationStatus(trace.expires_at)
+    : { isExpiring: false, daysRemaining: null, expirationDate: null, formattedExpirationDate: null };
+
   return (
     <>
       <TableRow 
@@ -181,7 +188,27 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         <TableCell className="py-4 font-mono text-xs">{trace.branch || "N/A"}</TableCell>
         <TableCell className="py-4 font-mono text-xs">{trace.commit_sha ? trace.commit_sha.substring(0, 7) : "N/A"}</TableCell>
         <TableCell className="py-4">{formatDuration(trace.duration_ms)}</TableCell>
-        <TableCell className="py-4 text-muted-foreground text-sm">{formatRelativeDate(trace.updated_at || trace.uploaded_at)}</TableCell>
+        <TableCell className="py-4 text-muted-foreground text-sm">
+          <div className="flex items-center gap-2">
+            <span>{formatRelativeDate(trace.updated_at || trace.uploaded_at)}</span>
+            {expirationStatus.isExpiring && (
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Clock className="h-4 w-4 text-yellow-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      Expires in {expirationStatus.daysRemaining} 
+                      {expirationStatus.daysRemaining === 1 ? ' day' : ' days'}
+                      {expirationStatus.formattedExpirationDate && ` (on ${expirationStatus.formattedExpirationDate})`}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        </TableCell>
         <TableCell className="text-right pr-6 py-4">
           <div onClick={handleStopPropagation} className="inline-flex items-center gap-1">
             <Button
