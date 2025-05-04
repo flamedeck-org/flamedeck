@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 const PricingTable = () => {
   const tiers = [
     {
-      name: "Free",
+      name: "Hobby",
       price: "0",
       features: [
         "30-day trace retention",
@@ -22,6 +23,9 @@ const PricingTable = () => {
         "Unlimited trace retention",
         "1,000 total traces",
         "Share traces so anyone can view",
+        "Advanced collaboration features",
+        "Priority support",
+        "More features coming soon...",
       ],
     },
   ];
@@ -36,6 +40,11 @@ const PricingTable = () => {
             tier.name === "Pro" && "border-2 border-primary"
           )}
         >
+          {tier.name === "Pro" && (
+            <Badge className="absolute top-4 right-4">
+              Coming Soon
+            </Badge>
+          )}
           <CardHeader>
             <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
             <div className="mt-2">
@@ -53,10 +62,19 @@ const PricingTable = () => {
               ))}
             </ul>
             <div className="mt-6">
-              <Link to="/login" className="block w-full">
+              <Link
+                to="/login"
+                className={cn(
+                  "block w-full",
+                  tier.name === "Pro" && "pointer-events-none opacity-50"
+                )}
+                aria-disabled={tier.name === "Pro"}
+                tabIndex={tier.name === "Pro" ? -1 : undefined}
+              >
                 <Button
                   className="w-full"
                   variant={tier.name === "Pro" ? "gradient" : "outline"}
+                  disabled={tier.name === "Pro"}
                 >
                   Get Started
                 </Button>
