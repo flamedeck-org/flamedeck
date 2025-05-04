@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { FolderSelectDialog } from "@/components/FolderSelectDialog";
 import { getFolderViewQueryKey } from "@/components/TraceList/hooks/useTraces";
+import { getSubscriptionUsageQueryKey } from "@/hooks/useSubscriptionUsage";
 
 // Define the shape of our form data
 type FormFields = Omit<
@@ -240,8 +241,11 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
         toast({ title: "Trace saved", description: "Your trace file has been processed and uploaded successfully" });
         
         queryClient.invalidateQueries({ queryKey: getFolderViewQueryKey(selectedFolderId, '') });
+        if (user?.id) { 
+          queryClient.invalidateQueries({ queryKey: getSubscriptionUsageQueryKey(user.id) });
+        }
         
-        if (onClose) onClose(); // Call onClose callback if provided
+        if (onClose) onClose();
         
         // Navigate back to the list view of the folder where the trace was uploaded
         if (selectedFolderId) {
