@@ -284,8 +284,8 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       {uploadError && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Upload Error</AlertTitle>
-          <AlertDescription>{uploadError}</AlertDescription>
+          <AlertTitle className="pb-2">Upload Error</AlertTitle>
+          <AlertDescription className="pb-2">{uploadError}</AlertDescription>
         </Alert>
       )}
        {processingError && !isProcessing && (

@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_chat_continuations: {
+        Row: {
+          created_at: string
+          message_history: Json
+          request_id: string
+          tool_call: Json
+          tool_call_id: string | null
+          trace_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          message_history: Json
+          request_id?: string
+          tool_call: Json
+          tool_call_id?: string | null
+          trace_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          message_history?: Json
+          request_id?: string
+          tool_call?: Json
+          tool_call_id?: string | null
+          trace_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_continuations_trace_id_fkey"
+            columns: ["trace_id"]
+            isOneToOne: false
+            referencedRelation: "traces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -83,6 +121,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          allow_public_sharing: boolean
+          created_at: string
+          display_name: string
+          id: string
+          monthly_upload_limit: number | null
+          name: string
+          price_monthly: number
+          retention_days: number | null
+          total_trace_limit: number | null
+          updated_at: string
+        }
+        Insert: {
+          allow_public_sharing?: boolean
+          created_at?: string
+          display_name: string
+          id?: string
+          monthly_upload_limit?: number | null
+          name: string
+          price_monthly?: number
+          retention_days?: number | null
+          total_trace_limit?: number | null
+          updated_at?: string
+        }
+        Update: {
+          allow_public_sharing?: boolean
+          created_at?: string
+          display_name?: string
+          id?: string
+          monthly_upload_limit?: number | null
+          name?: string
+          price_monthly?: number
+          retention_days?: number | null
+          total_trace_limit?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       trace_comments: {
         Row: {
@@ -202,6 +279,7 @@ export type Database = {
           branch: string | null
           commit_sha: string | null
           duration_ms: number | null
+          expires_at: string | null
           file_size_bytes: number | null
           folder_id: string | null
           id: string
@@ -219,6 +297,7 @@ export type Database = {
           branch?: string | null
           commit_sha?: string | null
           duration_ms?: number | null
+          expires_at?: string | null
           file_size_bytes?: number | null
           folder_id?: string | null
           id?: string
@@ -236,6 +315,7 @@ export type Database = {
           branch?: string | null
           commit_sha?: string | null
           duration_ms?: number | null
+          expires_at?: string | null
           file_size_bytes?: number | null
           folder_id?: string | null
           id?: string
@@ -292,6 +372,69 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          monthly_uploads_used: number
+          payment_provider: string | null
+          payment_provider_subscription_id: string | null
+          plan_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end: string
+          current_period_start: string
+          id?: string
+          monthly_uploads_used?: number
+          payment_provider?: string | null
+          payment_provider_subscription_id?: string | null
+          plan_id: string
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          monthly_uploads_used?: number
+          payment_provider?: string | null
+          payment_provider_subscription_id?: string | null
+          plan_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -318,6 +461,10 @@ export type Database = {
           p_trace_ids_to_delete: string[]
           p_original_folder_id: string
         }
+        Returns: undefined
+      }
+      delete_old_ai_continuations: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       get_folder_view_data: {
@@ -374,6 +521,15 @@ export type Database = {
           | { p_user_id: string; p_search_query: string; p_folder_id?: string }
         Returns: number
       }
+      get_user_subscription_usage: {
+        Args: { p_user_id: string }
+        Returns: {
+          monthly_uploads_used: number
+          monthly_upload_limit: number
+          current_period_end: string
+          plan_name: string
+        }[]
+      }
       gtrgm_compress: {
         Args: { "": unknown }
         Returns: unknown
@@ -393,6 +549,10 @@ export type Database = {
       gtrgm_out: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      reset_expired_monthly_limits: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       set_limit: {
         Args: { "": number }

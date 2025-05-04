@@ -183,11 +183,12 @@ import { uploadJson } from "./storage";
 
         // Return structured error
         const apiError: ApiError = {
-            message: error instanceof Error ? error.message : "Failed to upload trace",
-            code: (error as PostgrestError)?.code,
-            details: (error as PostgrestError)?.details,
-            hint: (error as PostgrestError)?.hint,
+          message: error instanceof Error ? error.message : "Failed to upload trace",
+          code: (error as PostgrestError)?.code,
+          details: (error as PostgrestError)?.details,
+          hint: (error as PostgrestError)?.hint,
         };
+
         return { data: null, error: apiError };
     }
   }

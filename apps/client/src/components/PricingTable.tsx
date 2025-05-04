@@ -13,6 +13,7 @@ const PricingTable = () => {
       features: [
         "30-day trace retention",
         "10 uploads per month",
+        "Share public traces",
         "Basic viewing & collaboration",
       ],
     },
@@ -22,7 +23,6 @@ const PricingTable = () => {
       features: [
         "Unlimited trace retention",
         "1,000 total traces",
-        "Share traces so anyone can view",
         "Advanced collaboration features",
         "Priority support",
         "More features coming soon...",
