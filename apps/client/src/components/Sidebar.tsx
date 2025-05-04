@@ -19,6 +19,9 @@ import { useQuery } from "@tanstack/react-query"; // Import useQuery
 import { supabase } from "@/integrations/supabase/client"; // Import supabase client
 import { Database } from "@/integrations/supabase/types"; // Import Database types
 import { UserAvatar } from "@/components/UserAvatar"; // Import the new component
+import { useSubscriptionUsage } from "@/hooks/useSubscriptionUsage"; // Import the new hook
+import { Progress } from "@/components/ui/progress"; // Import Progress component
+import { formatDistanceToNowStrict } from 'date-fns'; // For countdown
 
 type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
 
@@ -52,6 +55,9 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
     staleTime: 5 * 60 * 1000, // Cache for 5 mins
   });
 
+  // Fetch subscription usage
+  const { data: usageData, isLoading: isUsageLoading } = useSubscriptionUsage();
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -68,6 +74,15 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
     ? profile.first_name
     : user?.email || 'User';
   
+  // Calculate usage details for display
+  const showUsage = usageData && usageData.monthly_upload_limit !== null && usageData.monthly_uploads_used !== null;
+  const usagePercent = showUsage
+    ? (usageData.monthly_uploads_used! / usageData.monthly_upload_limit!) * 100
+    : 0;
+  const resetsIn = usageData?.current_period_end
+    ? formatDistanceToNowStrict(new Date(usageData.current_period_end), { addSuffix: true })
+    : null;
+
   return (
     <TooltipProvider delayDuration={0}>
       <aside className={`${minimized ? 'w-16' : 'w-64'} border-r bg-background flex flex-col z-10 transition-width duration-200`}>
@@ -98,11 +113,9 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
             )}
             {!minimized && <span>Traces</span>}
           </NavLink>
-          {/* Settings Link */}
+          {/* Settings Link - FIX isActive prop */}
            <NavLink
             to="/settings"
-            // Match if path starts with /settings
-            isActive={(match, location) => location.pathname.startsWith('/settings')}
             className={({ isActive }) =>
               `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${
                 isActive
@@ -127,6 +140,23 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
             {!minimized && <span>Settings</span>}
           </NavLink>
         </nav>
+
+        {/* --- Subscription Usage --- */}
+        {showUsage && !minimized && (
+          <div className="px-4 pb-4 border-b">
+            <div className="text-xs text-muted-foreground mb-1 flex justify-between">
+                <span className="font-medium text-foreground">Monthly Uploads</span>
+                <span className="font-medium text-foreground">{usageData.monthly_uploads_used} / {usageData.monthly_upload_limit}</span>
+            </div>
+            <Progress value={usagePercent} className="h-2" />
+            {/* {resetsIn && (
+              <div className="text-xs text-muted-foreground mt-1 text-center">
+                Resets {resetsIn}
+              </div>
+            )} */}
+          </div>
+        )}
+        {/* --- End Subscription Usage --- */}
 
         {/* Bottom Section */}
         <div className={`${minimized ? 'px-2' : 'px-4'} py-4 border-t flex flex-col items-center`}>
