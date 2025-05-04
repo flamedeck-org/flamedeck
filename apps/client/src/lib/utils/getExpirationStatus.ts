@@ -9,7 +9,7 @@ export type ExpirationStatus = {
 };
 
 // Define the warning threshold
-const EXPIRATION_WARNING_THRESHOLD_DAYS = 100; // Keep the debug value for now
+const EXPIRATION_WARNING_THRESHOLD_DAYS = 100; 
 
 /**
  * Calculates the expiration status of a trace based on its expiry date.

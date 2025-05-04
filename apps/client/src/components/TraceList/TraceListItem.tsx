@@ -190,7 +190,6 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         <TableCell className="py-4">{formatDuration(trace.duration_ms)}</TableCell>
         <TableCell className="py-4 text-muted-foreground text-sm">
           <div className="flex items-center gap-2">
-            <span>{formatRelativeDate(trace.updated_at || trace.uploaded_at)}</span>
             {expirationStatus.isExpiring && (
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
@@ -207,6 +206,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
                 </Tooltip>
               </TooltipProvider>
             )}
+            <span>{formatRelativeDate(trace.updated_at || trace.uploaded_at)}</span>
           </div>
         </TableCell>
         <TableCell className="text-right pr-6 py-4">
