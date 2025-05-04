@@ -7,11 +7,11 @@ const H_MIN = 5.0;    // Deeper red/orange start
 const H_RANGE = 40.0; // Up to orange-yellow
 const H_WIGGLE = 10.0; // Local hue wiggle for variety
 
-const C_BASE = 0.75;  // Slightly lower base chroma for dark mode
-const C_VAR  = 0.06;  // Chroma wiggle
+const C_BASE = 0.45;  // Significantly reduced base chroma
+const C_VAR  = 0.03;  // Reduced chroma wiggle
 
-const L_BASE = 0.40;  // Lower base luma for dark mode
-const L_VAR  = 0.15;  // Smaller luma wiggle for dark mode
+const L_BASE = 0.25;  // Keep base luma low
+const L_VAR  = 0.04;  // Significantly reduced luma wiggle
 
 // Triangle wave helper (JS)
 function triangle(x: number): number {
@@ -48,4 +48,5 @@ vec3 colorForBucket(float t) {
 export const peachFlamegraphThemeDark: FlamegraphTheme = {
   colorForBucket,
   colorForBucketGLSL,
+  flamegraphTextColor: '#FFFFFF',
 }; 

@@ -18,7 +18,12 @@ import { ApiError } from '@/types';
 import { ChatContainer } from '@/components/Chat';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAtom } from "../lib/speedscope-core/atom.ts";
-import { flamegraphThemeAtom, FlamegraphThemeName, flamegraphThemeDisplayNames } from "../components/speedscope-ui/themes/theme.tsx";
+import { 
+  flamegraphThemeAtom, 
+  FlamegraphThemeName, 
+  flamegraphThemeDisplayNames, 
+  flamegraphThemePreviews
+} from "../components/speedscope-ui/themes/theme.tsx";
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -61,6 +66,7 @@ const TraceViewerPage: React.FC = () => {
 
   // --- Flamegraph Theme State --- 
   const selectedFlamegraphTheme = useAtom(flamegraphThemeAtom);
+  const selectedThemePreview = flamegraphThemePreviews[selectedFlamegraphTheme]; // Get selected preview
   // ------------------------------
 
   // Get blobPath from location state
@@ -249,21 +255,34 @@ const TraceViewerPage: React.FC = () => {
                 Test Snapshot
               </Button> */}
               {/* ------------------------------ */}
-              {/* --- Flamegraph Theme Selector --- */} 
-              <Select 
+              {/* --- Flamegraph Theme Selector --- */}
+              <Select
                 value={selectedFlamegraphTheme}
                 onValueChange={(value: FlamegraphThemeName) => flamegraphThemeAtom.set(value)}
               >
-                <SelectTrigger className="w-[180px]" title="Select Flamegraph Theme">
-                   <Palette className="h-4 w-4 mr-2" />
+                <SelectTrigger className="w-[150px] h-8 py-0.5 text-sm" title="Select Flamegraph Theme">
                    <SelectValue placeholder="Select theme..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(flamegraphThemeDisplayNames) as FlamegraphThemeName[]).map((themeName) => (
-                    <SelectItem key={themeName} value={themeName}>
-                      {flamegraphThemeDisplayNames[themeName]}
-                    </SelectItem>
-                  ))}
+                  {(Object.keys(flamegraphThemeDisplayNames) as FlamegraphThemeName[]).map((themeName) => {
+                    const previewGradient = flamegraphThemePreviews[themeName];
+                    return (
+                      <SelectItem 
+                        key={themeName} 
+                        value={themeName}
+                        className="data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground [&_svg]:hidden pl-3"
+                      >
+                        <div className="flex items-center gap-2"> 
+                          <span 
+                            className="inline-block w-4 h-4 rounded-sm border border-border" 
+                            style={previewGradient ? { background: previewGradient } : { backgroundColor: 'transparent' } }
+                            aria-hidden="true"
+                          />
+                          <span>{flamegraphThemeDisplayNames[themeName]}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {/* --------------------------------- */} 
