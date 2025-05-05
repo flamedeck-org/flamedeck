@@ -53,6 +53,7 @@ function TraceListComponent() {
     folders,
     traces,
     path,
+    currentFolder,
     currentFolderId,
     searchQuery,
     setSearchQuery,
@@ -126,6 +127,10 @@ function TraceListComponent() {
     }
   }, [debouncedSearchQuery, setSearchQuery, searchQuery]);
 
+  const handleLocalSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearchQuery(e.target.value);
+  }, []);
+
   const handleClearSearch = useCallback(() => {
       setLocalSearchQuery("");
       setSearchQuery("");
@@ -171,12 +176,17 @@ function TraceListComponent() {
       setDroppedFile(null);
   }, []);
 
+  // --- UI Elements --- 
+
+  // Determine if currently loading (initial or subsequent fetch)
+  const isCurrentlyLoading = isLoading || isFetchingNextPage;
+
   const createFolderButton = (
     <Button 
       size="sm" 
       variant="outline" 
       onClick={handleOpenCreateFolderDialog} 
-      disabled={isCreatingFolder || isLoading || isFetchingNextPage}
+      disabled={isCreatingFolder || isCurrentlyLoading}
     >
       <FolderPlus className="mr-2 h-4 w-4" /> New Folder
     </Button>
@@ -192,53 +202,34 @@ function TraceListComponent() {
           triggerElement={createFolderButton}
       />
       <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-        <Button size="sm" disabled={isLoading} variant="primary-outline">
+        <Button size="sm" disabled={isCurrentlyLoading} variant="primary-outline">
           <UploadCloud className="mr-2 h-4 w-4" /> Upload New Trace
         </Button>
       </Link>
     </div>
   );
 
-  const searchInput = (
-      <div className="relative w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-              type="search"
-              placeholder="Search scenarios, branches, commits..."
-              value={localSearchQuery}
-              onChange={(e) => setLocalSearchQuery(e.target.value)}
-              className="pl-8 pr-8 w-full hide-native-search-cancel-button"
-              aria-label="Search traces"
-              disabled={isLoading}
-          />
-          {localSearchQuery && (
-              <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1.5 top-1.5 h-7 w-7"
-                  onClick={handleClearSearch}
-                  aria-label="Clear search"
-                  disabled={isLoading}
-              >
-                  <X className="h-4 w-4" />
-              </Button>
-          )}
-      </div>
-  );
+  const breadcrumbElement = <Breadcrumbs path={path} onNavigate={handleNavigate} />;
+  const headerTitle = currentFolderId ? currentFolder?.name || "Loading folder..." : "Performance Traces";
+  const headerSubtitle = isLoading ? <Skeleton className="h-5 w-64 mt-1" /> : breadcrumbElement;
 
-  const breadcrumbElement = isLoading ? 
-    <Skeleton className="h-5 w-64 mt-1" /> : 
-    <Breadcrumbs path={path} onNavigate={handleNavigate} />;
+  // --- Conditional Content Rendering Logic --- 
 
-  if (isLoading) {
-    return (
-      <PageLayout>
-        <PageHeader 
-          title={<Skeleton className="h-8 w-48" />} 
-          subtitle={<Skeleton className="h-5 w-64 mt-1" />}
-          actions={<div className="flex gap-2"><Skeleton className="h-9 w-28 rounded-md" /><Skeleton className="h-9 w-36 rounded-md" /></div>} 
-        />
-        <div className="mb-4">{searchInput}</div>
+  const renderContent = () => {
+    if (error) {
+      return (
+        <Card>
+          <CardContent className="pt-12 pb-12 text-center">
+            <p className="text-destructive mb-4">Error loading contents: {error.message}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (isLoading) {
+      // Skeleton state for initial load
+      return (
         <Card>
           <CardContent className="p-0">
             <Table>
@@ -271,32 +262,123 @@ function TraceListComponent() {
             </Table>
           </CardContent>
         </Card>
-      </PageLayout>
-    );
-  }
+      );
+    }
 
-  if (error) {
-    return (
-      <PageLayout>
-        <PageHeader 
-          subtitle={breadcrumbElement}
-          title="Performance Traces" 
-          actions={primaryActions} 
-        />
-        <div className="mb-4">{searchInput}</div>
+    const isEmpty = folders.length === 0 && traces.length === 0;
+    const isSearchingAndEmpty = isEmpty && !!searchQuery;
+
+    if (isEmpty) {
+      // Empty State Rendering (different messages for empty folder vs empty search)
+      return (
         <Card>
-          <CardContent className="pt-12 pb-12 text-center">
-            <p className="text-destructive mb-4">Error loading contents: {error.message}</p>
-            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          <DraggableArea
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            isDragging={isDragging}
+            draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
+            baseClassName="p-1" // Ensure consistent padding
+            className="pt-12 pb-12 text-center flex flex-col justify-center items-center"
+          >
+            <CardContent className="p-0"> {/* Remove padding from CardContent itself */}
+              {isSearchingAndEmpty ? 
+                <Search className="mx-auto h-16 w-16 text-muted-foreground mb-4" /> : 
+                (currentFolderId ? 
+                  <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" /> : 
+                  <FileJson className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                )
+              }
+              <h3 className="text-xl font-medium mb-2">
+                {isSearchingAndEmpty ? "No Results Found" : (currentFolderId ? "Folder is Empty" : "No Items Yet")}
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                {isSearchingAndEmpty
+                  ? `Your search for "${searchQuery}" did not match any items.`
+                  : (currentFolderId ? "This folder doesn\'t contain any traces or subfolders." : "Create a folder or upload your first trace.")
+                }
+              </p>
+              {isSearchingAndEmpty ? (
+                <Button onClick={handleClearSearch} variant="outline" size="sm">Clear Search</Button>
+              ) : (
+                <div className="flex justify-center gap-2">
+                  <CreateFolderDialog
+                      isOpen={isCreateFolderDialogOpen}
+                      setIsOpen={setIsCreateFolderDialogOpen}
+                      onSubmit={handleDialogSubmit}
+                      isPending={isCreatingFolder}
+                      triggerElement={createFolderButton}
+                  />
+                  <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
+                      <Button variant="primary-outline" size="sm" disabled={isCurrentlyLoading}><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </DraggableArea>
+        </Card>
+      );
+    }
+
+    // Default: List Rendering
+    return (
+      <DraggableArea
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        isDragging={isDragging}
+        draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
+        baseClassName="p-1"
+        className="flex flex-col flex-grow"
+      >
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="pl-6">Name</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Branch</TableHead>
+                  <TableHead>Commit</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Last Updated</TableHead>
+                  <TableHead className="text-right pr-6">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {folders.map((folder) => (
+                  <FolderItem
+                    key={`folder-${folder.id}`}
+                    folder={folder}
+                    onClick={() => handleFolderClick(folder.id)}
+                  />
+                ))}
+                {traces.map((trace) => (
+                  <TraceListItem
+                    key={`trace-${trace.id}`}
+                    trace={trace}
+                    currentUser={currentUser}
+                    onDelete={deleteTrace}
+                    isDeleting={isDeleting}
+                    onClick={() => navigate(`/traces/${trace.id}`)}
+                    currentFolderId={currentFolderId}
+                  />
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
-      </PageLayout>
+
+        <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
+          {isFetchingNextPage && (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          )}
+        </div>
+      </DraggableArea>
     );
-  }
+  };
 
-  const isEmpty = !isLoading && !isFetchingNextPage && folders.length === 0 && traces.length === 0;
-
-  // --- Define Upload Dialog JSX --- 
+  // --- Upload Dialog --- 
   const uploadDialog = (
     <Dialog open={isUploadModalOpen} onOpenChange={(open) => {
         if (!open) {
@@ -318,117 +400,43 @@ function TraceListComponent() {
     </Dialog>
   );
 
+  // Main component structure: Layout, Header, Search are always rendered.
+  // renderContent() handles the conditional display of skeletons, errors, empty states, or the list.
   return (
     <PageLayout>
       <PageHeader 
-        subtitle={breadcrumbElement}
-        title="Performance Traces" 
+        subtitle={headerSubtitle}
+        title={headerTitle} 
         actions={primaryActions} 
       />
-      <div className="mb-4">{searchInput}</div>
-
-      {isEmpty ? (
-        // Empty State Rendering
-        <Card>
-          {/* Wrap empty state content in DraggableArea */}
-          <DraggableArea
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            isDragging={isDragging}
-            draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
-            baseClassName="p-1" // Ensure consistent padding
-            className="pt-12 pb-12 text-center flex flex-col justify-center items-center"
-          >
-            <CardContent className="p-0"> {/* Remove padding from CardContent itself */}
-              {currentFolderId ?
-                <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" /> :
-                <FileJson className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              }
-              <h3 className="text-xl font-medium mb-2">
-                {searchQuery ? "No Results Found" : (currentFolderId ? "Folder is Empty" : "No Items Yet")}
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                {searchQuery
-                  ? `Your search for "${searchQuery}" did not match any items.`
-                  : (currentFolderId ? "This folder doesn't contain any traces or subfolders." : "Create a folder or upload your first trace.")
-                }
-              </p>
-              {searchQuery ? (
-                <Button onClick={handleClearSearch} variant="outline" size="sm">Clear Search</Button>
-              ) : (
-                <div className="flex justify-center gap-2">
-                  <CreateFolderDialog
-                      isOpen={isCreateFolderDialogOpen}
-                      setIsOpen={setIsCreateFolderDialogOpen}
-                      onSubmit={handleDialogSubmit}
-                      isPending={isCreatingFolder}
-                      triggerElement={createFolderButton}
-                  />
-                  <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-                      <Button variant="primary-outline" size="sm" disabled={isLoading}><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </DraggableArea>
-        </Card>
-      ) : (
-        // List Rendering
-        <DraggableArea
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          isDragging={isDragging}
-          draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
-          baseClassName="p-1"
-          className="flex flex-col flex-grow"
-        >
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="pl-6">Name</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Branch</TableHead>
-                    <TableHead>Commit</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-right pr-6">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {folders.map((folder) => (
-                    <FolderItem
-                      key={`folder-${folder.id}`}
-                      folder={folder}
-                      onClick={() => handleFolderClick(folder.id)}
-                    />
-                  ))}
-                  {traces.map((trace) => (
-                    <TraceListItem
-                      key={`trace-${trace.id}`}
-                      trace={trace}
-                      currentUser={currentUser}
-                      onDelete={deleteTrace}
-                      isDeleting={isDeleting}
-                      onClick={() => navigate(`/traces/${trace.id}`)}
-                      currentFolderId={currentFolderId}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
-            {isFetchingNextPage && (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      <div className="mb-4">
+        <div className="relative w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+                type="search"
+                placeholder="Search scenarios, branches, commits..."
+                value={localSearchQuery}
+                onChange={handleLocalSearchChange}
+                className="pl-8 pr-8 w-full hide-native-search-cancel-button"
+                aria-label="Search traces"
+            />
+            {localSearchQuery && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1.5 top-1.5 h-7 w-7"
+                    onClick={handleClearSearch}
+                    aria-label="Clear search"
+                    disabled={isCurrentlyLoading} // Use combined loading state
+                >
+                    <X className="h-4 w-4" />
+                </Button>
             )}
-          </div>
-        </DraggableArea>
-      )}
+        </div>
+      </div>
+
+      {/* Render the content based on state */} 
+      {renderContent()}
 
       {/* Render extracted upload dialog */} 
       {uploadDialog}

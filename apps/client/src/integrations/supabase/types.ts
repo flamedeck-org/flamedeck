@@ -528,6 +528,8 @@ export type Database = {
           monthly_upload_limit: number
           current_period_end: string
           plan_name: string
+          total_trace_limit: number
+          current_total_traces: number
         }[]
       }
       gtrgm_compress: {
