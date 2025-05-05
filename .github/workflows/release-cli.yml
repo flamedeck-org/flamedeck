@@ -131,8 +131,8 @@ jobs:
       - name: Set artifact vars
         id: vars
         run: |
-          echo "artifact_name=flamedeck-upload-win-x64.exe" >> $GITHUB_OUTPUT
-          echo "binary_path=cli-rust/target/x86_64-pc-windows-msvc/release/cli-rust.exe" >> $GITHUB_OUTPUT
+          echo "artifact_name=flamedeck-upload-win-x64.exe" >> $env:GITHUB_OUTPUT
+          echo "binary_path=cli-rust/target/x86_64-pc-windows-msvc/release/cli-rust.exe" >> $env:GITHUB_OUTPUT
 
       # Upload artifact
       - name: Upload artifact
