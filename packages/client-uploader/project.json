@@ -1,0 +1,39 @@
+{
+  "name": "@flamedeck/upload",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/client-uploader/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "generatorOptions": {
+        "packageRoot": "packages/client-uploader/dist",
+        "currentVersionResolver": "git-tag",
+        "fallbackCurrentVersionResolver": "disk"
+      }
+    }
+  },
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "packages/client-uploader/dist",
+        "configFile": "packages/client-uploader/vite.config.ts"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "npm publish --access public",
+        "cwd": "packages/client-uploader/dist"
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "packages/client-uploader/dist"
+      }
+    }
+  }
+}
