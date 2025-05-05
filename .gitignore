@@ -32,3 +32,5 @@ dist-ssr
 apps/client/.env.local
 
 .yarn/install-state.gz
+
+bin/
