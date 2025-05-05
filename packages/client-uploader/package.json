@@ -2,7 +2,6 @@
   "name": "@flamedeck/upload",
   "version": "0.0.2",
   "description": "Client library for uploading traces to Flamedeck.",
-  "private": false,
   "type": "module",
   "main": "./dist/flamedeck-upload.umd.js",
   "module": "./dist/flamedeck-upload.es.js",
