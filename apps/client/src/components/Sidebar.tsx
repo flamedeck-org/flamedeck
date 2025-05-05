@@ -14,7 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
-import { ListTree, UploadCloud, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react"; // Add UserIcon and SettingsIcon
+import { ListTree, UploadCloud, LogOut, User as UserIcon, Settings as SettingsIcon, Star } from "lucide-react"; // Add UserIcon, SettingsIcon, and Star
 import { useQuery } from "@tanstack/react-query"; // Import useQuery
 import { supabase } from "@/integrations/supabase/client"; // Import supabase client
 import { Database } from "@/integrations/supabase/types"; // Import Database types
@@ -88,6 +88,12 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
   const totalUsagePercent = showTotalUsage
     ? (usageData.current_total_traces! / usageData.total_trace_limit!) * 100
     : 0;
+
+  // Helper function to title case plan name
+  const formatPlanName = (name: string | null | undefined): string => {
+    if (!name) return '';
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -209,7 +215,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
           </div>
 
           {/* User Menu - Show loading state or actual menu */}
-          {isProfileLoading && user ? (
+          {(isProfileLoading || isUsageLoading) && user ? (
             <div className={`flex items-center justify-center ${minimized ? MINIMIZED_BUTTON_SIZE : 'space-x-3 px-3 py-2 w-full'}`}>
                <UserIcon className={ICON_SIZE} />
                {!minimized && <div className="flex-1"><span className="text-sm text-muted-foreground">Loading...</span></div>}
@@ -228,14 +234,24 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                       <UserAvatar 
                         profile={profile} 
                         currentUser={user} 
-                        size="lg" // Existing size was h-8/w-8 which maps to lg
-                        className={!minimized ? 'mr-3' : ''} // Add margin only when not minimized
+                        size="lg"
+                        className={!minimized ? 'mr-2' : ''}
                       />
                       {!minimized && (
                         <div className="flex-1 overflow-hidden">
                           <p className="text-sm font-medium truncate">
                             {displayName}
                           </p>
+                          {/* Add Plan Name Indicator */}
+                          {usageData?.plan_name && (
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                              <span>{formatPlanName(usageData.plan_name)} plan</span>
+                              {/* Add star for pro plan */}
+                              {usageData.plan_name === 'pro' && (
+                                <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </Button>
