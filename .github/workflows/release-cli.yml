@@ -26,17 +26,17 @@ jobs:
         with:
           node-version: '18' # Use Node.js 18.x, matching pkg target
 
-      # Set up Yarn (automatically detects version from package.json)
-      - name: Set up Yarn
-        uses: Wandalen/setup-yarn@v2
-
-      # Install dependencies
+      # Install dependencies using borales/actions-yarn
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        uses: borales/actions-yarn@v5
+        with:
+          cmd: install --frozen-lockfile
 
-      # Build the CLI executables using Nx
+      # Build the CLI executables using borales/actions-yarn
       - name: Build CLI Executables
-        run: yarn nx run @flamedeck/cli-uploader:build:executable
+        uses: borales/actions-yarn@v5
+        with:
+          cmd: nx run @flamedeck/cli-uploader:build:executable
 
       # Create GitHub Release and Upload Assets
       - name: Create Release and Upload Binaries
@@ -46,8 +46,8 @@ jobs:
           # token: ${{ secrets.GITHUB_TOKEN }} # Usually not needed to specify explicitly
           tag_name: ${{ github.ref_name }} # Use the tag that triggered the workflow
           name: CLI Release ${{ github.ref_name }} # Name of the release
-          draft: true # Create a published release
-          prerelease: false # Mark as a stable release (set to true for pre-releases)
+          draft: false # Create a published release
+          prerelease: true # Mark as a stable release (set to true for pre-releases)
           fail_on_unmatched_files: true # Fail if assets aren't found
           files: |
             packages/cli-uploader/bin/flamedeck-upload-linux
