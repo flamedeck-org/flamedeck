@@ -7,6 +7,8 @@ export interface SubscriptionUsage {
     monthly_upload_limit: number | null;
     current_period_end: string | null; // Comes as string from DB
     plan_name: string | null;
+    total_trace_limit: number | null;
+    current_total_traces: number | null;
 }
 
 export async function getUserSubscriptionUsage(userId: string): Promise<ApiResponse<SubscriptionUsage>> {
