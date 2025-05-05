@@ -168,10 +168,12 @@ function SettingsPage() {
                       id="username"
                       {...register('username')}
                       placeholder="Username"
+                      disabled
                     />
                     {errors.username && (
                       <p className="text-sm text-destructive">{errors.username.message}</p>
                     )}
+                    <p className="text-sm text-muted-foreground">Usernames cannot currently be changed after signup.</p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
