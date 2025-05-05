@@ -29,11 +29,8 @@ import SettingsPage from './pages/settings/SettingsPage';
 import Navbar from "./components/Navbar";
 import ProtectedRoute from './components/ProtectedRoute';
 import { Loader2 } from 'lucide-react';
-
-// --- Placeholder Import for Onboarding Step ---
-// You will need to create this component
-import UsernameStep from './pages/Onboarding/UsernameStep'; 
-// --- End Placeholder ---
+import UsernameStep from './pages/Onboarding/UsernameStep';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -74,6 +71,7 @@ const AppRoutes = () => {
 
       {/* Other Public Routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       
       {/* Documentation Routes - accessible to all */}
       <Route path="/docs" element={<DocsLayout />}>

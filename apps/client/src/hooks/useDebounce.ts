@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Debounces a value.
+ * Custom hook to debounce a value.
  * @param value The value to debounce.
  * @param delay The debounce delay in milliseconds.
  * @returns The debounced value.
@@ -10,18 +10,16 @@ export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    // Update debounced value after delay
+    // Set timeout to update debounced value after delay
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
 
-    // Cancel the timeout if value changes (also on delay change or unmount)
-    // This is how we prevent debounced value from updating if value is changed ...
-    // .. within the delay period. Timeout gets cleared and restarted.
+    // Cleanup function to clear the timeout if value changes before delay
     return () => {
       clearTimeout(handler);
     };
-  }, [value, delay]); // Only re-call effect if value or delay changes
+  }, [value, delay]); // Re-run effect only if value or delay changes
 
   return debouncedValue;
 } 
