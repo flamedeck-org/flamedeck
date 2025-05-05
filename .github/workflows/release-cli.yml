@@ -1,5 +1,5 @@
 # .github/workflows/release-cli.yml
-name: Release CLI Binaries
+name: Release Rust CLI Binaries
 
 # Controls when the workflow will run
 on:
@@ -12,31 +12,59 @@ permissions:
 
 jobs:
   build-and-release:
-    name: Build and Release CLI
-    runs-on: ubuntu-latest # Use Linux runner to build all targets (pkg works cross-platform)
+    name: Build and Release Rust CLI
+    # We might need separate runners later if cross-compilation fails, 
+    # but let's try ubuntu first with added targets.
+    runs-on: ubuntu-latest 
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Set up Node.js environment
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18' # Use Node.js 18.x, matching pkg target
+      # Install Rust toolchain
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
-      # Install dependencies using borales/actions-yarn
-      - name: Install dependencies
-        uses: borales/actions-yarn@v5
-        with:
-          cmd: install --frozen-lockfile
+      # Add cross-compilation targets
+      - name: Add targets
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-pc-windows-msvc 
+          # May need linker setup for cross-compiling, especially for windows-msvc
+          # sudo apt-get update && sudo apt-get install -y mingw-w64 # Example for windows
 
-      # Build the CLI executables using borales/actions-yarn
-      - name: Build CLI Executables
-        uses: borales/actions-yarn@v5
-        with:
-          cmd: nx run @flamedeck/cli-uploader:build:executable
+      # Build for Linux x86_64
+      - name: Build for Linux (x86_64)
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+        working-directory: ./cli-rust
+
+      # Build for macOS x86_64
+      - name: Build for macOS (x86_64)
+        run: cargo build --release --target x86_64-apple-darwin
+        working-directory: ./cli-rust
+
+      # Build for macOS Apple Silicon (aarch64)
+      - name: Build for macOS (ARM64)
+        run: cargo build --release --target aarch64-apple-darwin
+        working-directory: ./cli-rust
+
+      # Build for Windows x86_64
+      - name: Build for Windows (x86_64)
+        run: cargo build --release --target x86_64-pc-windows-msvc
+        working-directory: ./cli-rust
+
+      # Rename binaries for consistency
+      - name: Rename Binaries
+        run: |
+          cd cli-rust/target
+          mv x86_64-unknown-linux-gnu/release/cli-rust ./flamedeck-upload-linux-x64
+          mv x86_64-apple-darwin/release/cli-rust ./flamedeck-upload-macos-x64
+          mv aarch64-apple-darwin/release/cli-rust ./flamedeck-upload-macos-arm64
+          mv x86_64-pc-windows-msvc/release/cli-rust.exe ./flamedeck-upload-win-x64.exe
+          cd ../..
 
       # Create GitHub Release and Upload Assets
       - name: Create Release and Upload Binaries
@@ -47,9 +75,10 @@ jobs:
           tag_name: ${{ github.ref_name }} # Use the tag that triggered the workflow
           name: CLI Release ${{ github.ref_name }} # Name of the release
           draft: false # Create a published release
-          prerelease: true # Mark as a stable release (set to true for pre-releases)
+          prerelease: true # Keep as pre-release for testing if desired
           fail_on_unmatched_files: true # Fail if assets aren't found
           files: |
-            packages/cli-uploader/bin/flamedeck-upload-linux
-            packages/cli-uploader/bin/flamedeck-upload-macos
-            packages/cli-uploader/bin/flamedeck-upload-win.exe 
+            cli-rust/target/flamedeck-upload-linux-x64
+            cli-rust/target/flamedeck-upload-macos-x64
+            cli-rust/target/flamedeck-upload-macos-arm64
+            cli-rust/target/flamedeck-upload-win-x64.exe 
