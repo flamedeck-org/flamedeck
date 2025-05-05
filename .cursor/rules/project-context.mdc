@@ -58,7 +58,12 @@ This is the frontend client for the trace viewer, which allows for uploading, or
     *   `main.tsx`: Application entry point.
 *   `public/`: Static assets.
 
+
 Standard Vite/React/TS/Tailwind/Supabase config files (`vite.config.ts`, `tailwind.config.ts`, `tsconfig.*.json`, `package.json`, `components.json`) also live in `apps/client`.
+
+#### Database schema
+
+The database schema is defined in [types.ts](mdc:apps/client/src/integrations/supabase/types.ts)
 
 ### `packages/shared-importer`
 

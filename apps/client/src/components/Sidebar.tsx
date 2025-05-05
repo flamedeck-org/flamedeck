@@ -22,6 +22,7 @@ import { UserAvatar } from "@/components/UserAvatar"; // Import the new componen
 import { useSubscriptionUsage } from "@/hooks/useSubscriptionUsage"; // Import the new hook
 import { Progress } from "@/components/ui/progress"; // Import Progress component
 import { formatDistanceToNowStrict } from 'date-fns'; // For countdown
+import { useDisplayName } from "@/hooks/useDisplayName"; // Import the new hook
 
 type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
 
@@ -34,26 +35,11 @@ const LIST_ICON_SIZE = "h-5 w-5"; // Define smaller size for list icon
 const MINIMIZED_BUTTON_SIZE = "h-10 w-10"; // Consistent size for minimized buttons
 
 const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
-  const { user, signOut } = useAuth(); // Only get user and signOut now
+  const { user, signOut, profile, profileLoading } = useAuth(); // Only get user and signOut now
   const navigate = useNavigate(); // Get navigate function
 
-  // Fetch profile using react-query
-  const { data: profile, isLoading: isProfileLoading } = useQuery<UserProfileType | null, Error>({
-    queryKey: ['userProfile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    },
-    enabled: !!user?.id, // Only run if user exists
-    staleTime: 5 * 60 * 1000, // Cache for 5 mins
-  });
+  // Use the new hook to get the display name
+  const displayName = useDisplayName(profile, user);
 
   // Fetch subscription usage
   const { data: usageData, isLoading: isUsageLoading } = useSubscriptionUsage();
@@ -67,13 +53,6 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
     }
   };
 
-  // Determine display name for tooltip/text (still needed)
-  const displayName = !isProfileLoading && profile?.username 
-    ? profile.username 
-    : !isProfileLoading && profile?.first_name
-    ? profile.first_name
-    : user?.email || 'User';
-  
   // Calculate usage details for display
   const showMonthlyUsage = usageData && usageData.monthly_upload_limit !== null && usageData.monthly_uploads_used !== null;
   const monthlyUsagePercent = showMonthlyUsage
@@ -215,7 +194,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
           </div>
 
           {/* User Menu - Show loading state or actual menu */}
-          {(isProfileLoading || isUsageLoading) && user ? (
+          {(profileLoading || isUsageLoading) && user ? (
             <div className={`flex items-center justify-center ${minimized ? MINIMIZED_BUTTON_SIZE : 'space-x-3 px-3 py-2 w-full'}`}>
                <UserIcon className={ICON_SIZE} />
                {!minimized && <div className="flex-1"><span className="text-sm text-muted-foreground">Loading...</span></div>}
