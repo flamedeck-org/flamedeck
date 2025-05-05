@@ -1,17 +1,18 @@
-import { Fragment, Component, MouseEvent as ReactMouseEvent, forwardRef, useRef, useImperativeHandle } from 'react';
+import { Fragment, Component, MouseEvent as ReactMouseEvent, forwardRef, useRef, useImperativeHandle, useEffect, memo } from 'react';
 
 import {CallTreeNode } from '../../lib/speedscope-core/profile';
 import {Rect, Vec2, AffineTransform} from '../../lib/speedscope-core/math';
-import {formatPercent} from '../../lib/speedscope-core/lib-utils';
+import {formatPercent} from '../../lib/speedscope-core/lib-utils.ts';
 import {FlamechartMinimapView} from './flamechart-minimap-view'
 
 import {Sizes } from './style'
 import {FlamechartDetailView} from './flamechart-detail-view'
-import {FlamechartPanZoomView} from './flamechart-pan-zoom-view'
-import {Hovertip} from './hovertip'
+import {FlamechartPanZoomView, type HoverPayload} from './flamechart-pan-zoom-view'
 import {FlamechartViewProps as FlamechartViewContainerProps} from './flamechart-view-container'
 import {ProfileSearchContext} from './search-view'
 import {FlamechartSearchView} from './flamechart-search-view'
+import { ContextMenu, ContextMenuDivider } from '@/components/ui/context-menu';
+import { useState } from 'react';
 
 // Define the handle type that will be exposed via the ref
 // This should match the methods we want to call on FlamechartPanZoomView
@@ -21,7 +22,8 @@ export interface FlamechartViewRef {
 }
 
 // Use FlamechartViewContainerProps directly instead of the empty interface
-export const FlamechartView = forwardRef<FlamechartViewRef, FlamechartViewContainerProps>((props, ref) => {
+// Wrap with React.memo for performance optimization (similar to shouldComponentUpdate)
+export const FlamechartView = memo(forwardRef<FlamechartViewRef, FlamechartViewContainerProps>((props, ref) => {
   // Create a ref for the FlamechartPanZoomView instance
   const panZoomViewRef = useRef<FlamechartPanZoomView>(null);
 
@@ -37,7 +39,7 @@ export const FlamechartView = forwardRef<FlamechartViewRef, FlamechartViewContai
   // Most methods can be moved inside or defined as callbacks
   const configSpaceSize = () => {
     return new Vec2(
-      props.flamechart.getTotalWeight(),
+      props.flamechart?.getTotalWeight() ?? 0,
       props.flamechart.getLayers().length,
     )
   }
@@ -62,6 +64,18 @@ export const FlamechartView = forwardRef<FlamechartViewRef, FlamechartViewContai
     props.setConfigSpaceViewportRect(new Rect(origin, viewportRect.size.withX(width)))
   }
 
+  // State for managing the context menu triggered by hover
+  const [hoverMenu, setHoverMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    node: CallTreeNode | null;
+    cellId: string | null;
+  }>({ visible: false, x: 0, y: 0, node: null, cellId: null });
+
+  // Ref to store the timeout ID for debouncing the hover menu hide
+  const hideMenuTimeoutRef = useRef<number | null>(null);
+
   const setLogicalSpaceViewportSize = (logicalSpaceViewportSize: Vec2): void => {
     props.setLogicalSpaceViewportSize(logicalSpaceViewportSize)
   }
@@ -70,8 +84,35 @@ export const FlamechartView = forwardRef<FlamechartViewRef, FlamechartViewContai
     setConfigSpaceViewportRect(transform.transformRect(props.configSpaceViewportRect))
   }
 
-  const onNodeHover = (hover: {node: CallTreeNode; event: ReactMouseEvent} | null) => {
-    props.setNodeHover(hover)
+  // Updated onNodeHover to handle the new payload and manage hover context menu state
+  const onNodeHover = (hover: HoverPayload | null) => {
+    props.setNodeHover(hover); 
+
+    // Clear any existing timeout to prevent hiding if hover moves to another frame quickly
+    if (hideMenuTimeoutRef.current) {
+      clearTimeout(hideMenuTimeoutRef.current);
+      hideMenuTimeoutRef.current = null;
+    }
+
+    if (hover) {
+      const menuOffset = 5; // Pixels to offset the menu from the cursor
+      // Offset the menu slightly from the cursor position.
+      // This prevents the menu itself from appearing directly under the cursor
+      // and interfering with the hover detection on the underlying canvas,
+      // which could cause flickering as the hover state rapidly toggles on/off.
+      setHoverMenu({
+        visible: true,
+        x: hover.event.clientX + menuOffset,
+        y: hover.event.clientY + menuOffset,
+        node: hover.node,
+        cellId: hover.cellId
+      });
+    } else {
+      // Set a timeout to hide the menu after a short delay
+      hideMenuTimeoutRef.current = setTimeout(() => {
+        setHoverMenu({ visible: false, x: 0, y: 0, node: null, cellId: null });
+      }, 100); // 100ms delay
+    }
   }
 
   const onNodeClick = (node: CallTreeNode | null, cellId?: string | null) => {
@@ -85,30 +126,14 @@ export const FlamechartView = forwardRef<FlamechartViewRef, FlamechartViewContai
     return `${props.flamechart.formatValue(weight)} (${formattedPercent})`
   }
 
-  const renderTooltip = () => {
-    // Note: Need a way to get the container ref if Hovertip depends on it
-    // For now, assume Hovertip can work without explicit container ref from here
-    const {hover} = props
-    if (!hover) return null
-    // This calculation might need adjustment if containerRef is strictly required by Hovertip
-    const rect = (hover.event.target as Element)?.getBoundingClientRect() ?? { left: 0, top: 0, width: 0, height: 0 };
-    const offset = new Vec2(hover.event.clientX - rect.left, hover.event.clientY - rect.top)
-    const frame = hover.node.frame
-
-    return (
-      <Hovertip containerSize={new Vec2(rect.width, rect.height)} offset={offset}>
-        <span className="text-green-500">
-          {formatValue(hover.node.getTotalWeight())}
-        </span>{' '}
-        {frame.name}
-        {frame.file ? (
-          <div>
-            {frame.file}:{frame.line}
-          </div>
-        ) : undefined}
-      </Hovertip>
-    )
-  }
+  // Effect to clear the timeout when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (hideMenuTimeoutRef.current) {
+        clearTimeout(hideMenuTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // const containerRef = useRef<HTMLDivElement>(null); // Keep if needed by Hovertip
 
@@ -149,7 +174,31 @@ export const FlamechartView = forwardRef<FlamechartViewRef, FlamechartViewContai
           </Fragment>
         )}
       </ProfileSearchContext.Consumer>
-      {renderTooltip()}
+      {/* Render the ContextMenu based on hover state */} 
+      {hoverMenu.visible && hoverMenu.node && (
+        <ContextMenu
+          x={hoverMenu.x} // Position directly using mouse coordinates
+          y={hoverMenu.y} // Position directly using mouse coordinates
+          onClose={() => setHoverMenu({ ...hoverMenu, visible: false })}
+          frameKey={hoverMenu.cellId}
+        >
+          <div className="px-3 py-1.5">
+            <div className="truncate max-w-[300px] font-mono">
+              {hoverMenu.node.frame.name}
+            </div>
+            {hoverMenu.node.frame.file && (
+              <div className="text-xs text-muted-foreground truncate mt-0.5">
+                {hoverMenu.node.frame.file}
+                {hoverMenu.node.frame.line && `:${hoverMenu.node.frame.line}`}
+              </div>
+            )}
+            <div className="text-xs flex justify-between mt-1">
+              <span className="text-muted-foreground pr-3">Total: {formatValue(hoverMenu.node.getTotalWeight())}</span>
+              <span className="text-muted-foreground">Self: {formatValue(hoverMenu.node.getSelfWeight())}</span>
+            </div>
+          </div>
+        </ContextMenu>
+      )}
       {props.selectedNode && (
         <FlamechartDetailView
           flamechart={props.flamechart}
@@ -159,11 +208,4 @@ export const FlamechartView = forwardRef<FlamechartViewRef, FlamechartViewContai
       )}
     </div>
   );
-});
-
-// Original class component remains commented out or removed
-/*
-export class FlamechartView extends Component<FlamechartViewProps> {
-  // ... original class component implementation ...
-}
-*/
+})); // Close memo and forwardRef

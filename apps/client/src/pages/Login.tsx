@@ -13,44 +13,27 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  // This useEffect is used to handle the redirect after login
-  useEffect(() => {
-    let storedPath: string | null = null;
-    try {
-      storedPath = sessionStorage.getItem('postLoginRedirectPath');
-    } catch (e) {
-      console.error("Failed to read sessionStorage:", e);
-    }
-
-    if (user) {
-      // Prefer location.state (handles internal redirects), fallback to sessionStorage (handles OAuth), then default
-      const from = location.state?.from?.pathname || storedPath || "/traces";
-      
-      // Clear the stored path from sessionStorage now that we've used it
-      if (storedPath) {
-        try {
-          sessionStorage.removeItem('postLoginRedirectPath');
-        } catch (e) {
-          console.error("Failed to remove sessionStorage item:", e);
-        }
-      }
-
-      navigate(from, { replace: true });
-    } else {
-    }
-    // Only depend on user and navigate. Location/sessionStorage are read directly.
-  }, [user, navigate]);
-
   const handleGoogleLogin = async () => {
+    // Store the intended destination before redirecting to Google
+    const from = location.state?.from?.pathname || sessionStorage.getItem('postLoginRedirectPath') || "/traces";
+    try {
+        sessionStorage.setItem('postLoginRedirectPath', from);
+    } catch (e) {
+        console.error("Failed to set sessionStorage for redirect path:", e);
+        // Continue without storing? Or show error? Depends on UX preference.
+    }
+    
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + "/traces"
+          // Redirect to the dedicated callback page
+          redirectTo: window.location.origin + "/auth/callback" 
         }
       });
 
       if (error) throw error;
+      // No navigation here, Supabase handles the redirect
     } catch (error) {
       toast({
         title: "Login failed",

@@ -91,6 +91,41 @@ export async function updateUserProfile(userId: string, profileData: UserProfile
 }
 
 /**
+ * Check if a username is available.
+ * @param username The username to check.
+ * @returns ApiResponse indicating availability (data: true if available, false if taken)
+ */
+export async function checkUsernameAvailability(username: string): Promise<ApiResponse<boolean>> {
+    if (!username || username.trim().length < 3) {
+      // Basic client-side check to avoid unnecessary API calls
+      return { data: false, error: { message: "Username too short" } };
+    }
+    try {
+      const { data, error, count } = await supabase
+        .from('user_profiles')
+        .select('id', { count: 'exact', head: true }) // Only check existence, count results
+        .eq('username', username.trim());
+  
+      if (error) throw error;
+  
+      // If count is 0, the username is available
+      const isAvailable = count === 0;
+      return { data: isAvailable, error: null };
+  
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      const apiError: ApiError = {
+        message: error instanceof Error ? error.message : "Failed to check username availability",
+        code: (error as PostgrestError)?.code,
+        details: (error as PostgrestError)?.details,
+        hint: (error as PostgrestError)?.hint,
+      };
+      // Return false availability on error to be safe
+      return { data: false, error: apiError }; 
+    }
+  }
+
+/**
  * Delete user account using edge function
  */
 export async function deleteUserAccount(): Promise<ApiResponse<null>> {

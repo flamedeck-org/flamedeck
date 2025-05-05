@@ -16,13 +16,21 @@ import {ProfileSearchResults} from '../../lib/speedscope-core/profile-search.ts'
 import {BatchCanvasTextRenderer, BatchCanvasRectRenderer} from '../../lib/speedscope-core/canvas-2d-batch-renderers.ts'
 import {Color} from '../../lib/speedscope-core/color.ts'
 import {Theme} from './themes/theme.tsx'
-import { ContextMenu, ContextMenuDivider } from '@/components/ui/context-menu'
 
 interface FlamechartFrameLabel {
   configSpaceBounds: Rect
   node: CallTreeNode
   frameStart: number
   depth: number
+}
+
+// Define the shape of the hover payload
+interface HoverPayload {
+  node: CallTreeNode;
+  event: ReactMouseEvent<HTMLDivElement>;
+  cellId: string;
+  frameStart: number;
+  depth: number;
 }
 
 /**
@@ -51,7 +59,7 @@ export interface FlamechartPanZoomViewProps {
   selectedNode: CallTreeNode | null
   theme: Theme
 
-  onNodeHover: (hover: {node: CallTreeNode; event: ReactMouseEvent<HTMLDivElement>} | null) => void
+  onNodeHover: (hover: HoverPayload | null) => void
   onNodeSelect: (node: CallTreeNode | null, cellId?: string | null) => void
 
   configSpaceViewportRect: Rect
@@ -83,23 +91,6 @@ export class FlamechartPanZoomView extends Component<
   FlamechartPanZoomViewProps,
   Record<string, never> // Use Record<string, never> for empty state
 > {
-  // Track context menu state in instance variables instead of React state
-  private contextMenuState = {
-    visible: false,
-    x: 0,
-    y: 0,
-    cellIdentifier: null as string | null,
-    commentType: 'chrono' as string,
-    frameName: null as string | null,
-    filePath: undefined as string | undefined,
-    lineNumber: undefined as number | undefined,
-    weight: undefined as number | undefined,
-    selfWeight: undefined as number | undefined
-  };
-
-  // Create a portal element for the context menu
-  private contextMenuPortal: HTMLDivElement | null = null;
-  
   constructor(props: FlamechartPanZoomViewProps) {
     super(props);
   }
@@ -804,8 +795,21 @@ export class FlamechartPanZoomView extends Component<
       setHoveredLabel(frame)
     }
 
+    // Calculate cellId and prepare payload if hoveredLabel exists
     if (this.hoveredLabel) {
-      this.props.onNodeHover({node: this.hoveredLabel!.node, event: ev})
+      const frame = this.hoveredLabel.node.frame;
+      const frameStart = this.hoveredLabel.frameStart;
+      const depth = this.hoveredLabel.depth;
+      const cellId = `${frame.key}_${depth}_${frameStart.toFixed(3)}`;
+
+      const payload: HoverPayload = {
+        node: this.hoveredLabel.node,
+        event: ev,
+        cellId: cellId,
+        frameStart: frameStart,
+        depth: depth
+      };
+      this.props.onNodeHover(payload);
     } else {
       this.props.onNodeHover(null)
     }
@@ -934,8 +938,6 @@ export class FlamechartPanZoomView extends Component<
     this.props.canvasContext.addBeforeFrameHandler(this.onBeforeFrame)
     window.addEventListener('resize', this.onWindowResize)
     window.addEventListener('keydown', this.onWindowKeyPress)
-    // Close context menu on escape key
-    window.addEventListener('keydown', this.handleKeyDown)
     // Manually add wheel listener with passive: false
     if (this.container) {
       this.container.addEventListener('wheel', this.onWheel as EventListener, {passive: false})
@@ -945,121 +947,11 @@ export class FlamechartPanZoomView extends Component<
     this.props.canvasContext.removeBeforeFrameHandler(this.onBeforeFrame)
     window.removeEventListener('resize', this.onWindowResize)
     window.removeEventListener('keydown', this.onWindowKeyPress)
-    window.removeEventListener('keydown', this.handleKeyDown)
-    // Remove context menu
-    this.removeContextMenu();
-    if (this.contextMenuPortal) {
-      if (this.contextMenuPortal.parentNode) {
-        this.contextMenuPortal.parentNode.removeChild(this.contextMenuPortal);
-      }
-      this.contextMenuPortal = null;
-    }
     // Remove manually added wheel listener
     if (this.container) {
       this.container.removeEventListener('wheel', this.onWheel as EventListener)
     }
   }
-
-  // Add context menu handling
-  private handleContextMenu = (ev: ReactMouseEvent<HTMLDivElement>) => {
-    ev.preventDefault();
-    
-    // Hide any existing context menu
-    this.hideContextMenu();
-    
-    if (this.hoveredLabel) {
-      const frame = this.hoveredLabel.node.frame;
-      const frameStart = this.hoveredLabel.frameStart;
-      const depth = this.hoveredLabel.depth;
-      // Generate the specific cell identifier including depth
-      const cellId = `${frame.key}_${depth}_${frameStart.toFixed(3)}`;
-      
-      this.contextMenuState = {
-        visible: true,
-        x: ev.clientX,
-        y: ev.clientY,
-        cellIdentifier: cellId,
-        commentType: 'chrono',
-        frameName: frame.name,
-        filePath: frame.file,
-        lineNumber: frame.line,
-        weight: this.hoveredLabel.node.getTotalWeight(),
-        selfWeight: this.hoveredLabel.node.getSelfWeight()
-      };
-      
-      this.renderContextMenu();
-      console.log('Right-clicked on cellId:', cellId);
-    }
-  };
-  
-  private hideContextMenu = () => {
-    if (this.contextMenuState.visible) {
-      this.contextMenuState.visible = false;
-      this.removeContextMenu();
-    }
-  };
-  
-  private renderContextMenu() {
-    // Remove any existing context menu first
-    this.removeContextMenu();
-    
-    // Create portal container if needed
-    if (!this.contextMenuPortal) {
-      this.contextMenuPortal = document.createElement('div');
-      document.body.appendChild(this.contextMenuPortal);
-    }
-    
-    // Render the context menu into the portal
-    const menu = this.contextMenuState;
-    
-    if (this.contextMenuPortal && menu.visible) {
-      ReactDOM.render(
-        <ContextMenu
-          x={menu.x}
-          y={menu.y}
-          onClose={this.hideContextMenu}
-          frameKey={menu.cellIdentifier}
-        >
-          {menu.frameName && (
-            <>
-              <div className="px-3 py-1.5">
-                <div className="font-medium truncate max-w-[300px]">
-                  {menu.frameName}
-                </div>
-                {menu.filePath && (
-                  <div className="text-xs text-muted-foreground truncate mt-0.5">
-                    {menu.filePath}
-                    {menu.lineNumber && `:${menu.lineNumber}`}
-                  </div>
-                )}
-                {menu.weight !== undefined && (
-                  <div className="text-xs flex justify-between mt-1">
-                    <span>Total: {this.props.flamechart.formatValue(menu.weight)}</span>
-                    <span>Self: {this.props.flamechart.formatValue(menu.selfWeight || 0)}</span>
-                  </div>
-                )}
-              </div>
-              <ContextMenuDivider />
-            </>
-          )}
-        </ContextMenu>,
-        this.contextMenuPortal
-      );
-    }
-  }
-  
-  private removeContextMenu() {
-    if (this.contextMenuPortal) {
-      ReactDOM.unmountComponentAtNode(this.contextMenuPortal);
-    }
-  }
-  
-  // Add handler for escape key to close context menu
-  private handleKeyDown = (ev: KeyboardEvent) => {
-    if (ev.key === 'Escape' && this.contextMenuState.visible) {
-      this.hideContextMenu();
-    }
-  };
 
   override render() {
     return (
@@ -1070,7 +962,6 @@ export class FlamechartPanZoomView extends Component<
         onMouseLeave={this.onMouseLeave}
         onClick={this.onClick}
         onDoubleClick={this.onDblClick}
-        onContextMenu={this.handleContextMenu}
         ref={this.containerRef}
       >
         <canvas 
