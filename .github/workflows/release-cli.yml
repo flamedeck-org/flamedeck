@@ -1,0 +1,55 @@
+# .github/workflows/release-cli.yml
+name: Release CLI Binaries
+
+# Controls when the workflow will run
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+-cli' # Trigger on tags like v0.1.0-cli, v1.2.3-cli
+
+permissions:
+  contents: write # Needed to create releases
+
+jobs:
+  build-and-release:
+    name: Build and Release CLI
+    runs-on: ubuntu-latest # Use Linux runner to build all targets (pkg works cross-platform)
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Use Node.js 18.x, matching pkg target
+
+      # Set up Yarn (automatically detects version from package.json)
+      - name: Set up Yarn
+        uses: Wandalen/setup-yarn@v2
+
+      # Install dependencies
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # Build the CLI executables using Nx
+      - name: Build CLI Executables
+        run: yarn nx run @flamedeck/cli-uploader:build:executable
+
+      # Create GitHub Release and Upload Assets
+      - name: Create Release and Upload Binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          # The GITHUB_TOKEN is automatically available to the workflow
+          # token: ${{ secrets.GITHUB_TOKEN }} # Usually not needed to specify explicitly
+          tag_name: ${{ github.ref_name }} # Use the tag that triggered the workflow
+          name: CLI Release ${{ github.ref_name }} # Name of the release
+          draft: true # Create a published release
+          prerelease: false # Mark as a stable release (set to true for pre-releases)
+          fail_on_unmatched_files: true # Fail if assets aren't found
+          files: |
+            packages/cli-uploader/bin/flamedeck-upload-linux
+            packages/cli-uploader/bin/flamedeck-upload-macos
+            packages/cli-uploader/bin/flamedeck-upload-win.exe 
