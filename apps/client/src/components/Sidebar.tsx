@@ -75,13 +75,19 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
     : user?.email || 'User';
   
   // Calculate usage details for display
-  const showUsage = usageData && usageData.monthly_upload_limit !== null && usageData.monthly_uploads_used !== null;
-  const usagePercent = showUsage
+  const showMonthlyUsage = usageData && usageData.monthly_upload_limit !== null && usageData.monthly_uploads_used !== null;
+  const monthlyUsagePercent = showMonthlyUsage
     ? (usageData.monthly_uploads_used! / usageData.monthly_upload_limit!) * 100
     : 0;
-  const resetsIn = usageData?.current_period_end
+  const resetsIn = usageData?.current_period_end && showMonthlyUsage // Only show reset if showing monthly
     ? formatDistanceToNowStrict(new Date(usageData.current_period_end), { addSuffix: true })
     : null;
+
+  // Calculate total usage details only if monthly isn't shown
+  const showTotalUsage = !showMonthlyUsage && usageData && usageData.total_trace_limit !== null && usageData.current_total_traces !== null;
+  const totalUsagePercent = showTotalUsage
+    ? (usageData.current_total_traces! / usageData.total_trace_limit!) * 100
+    : 0;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -142,18 +148,36 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
         </nav>
 
         {/* --- Subscription Usage --- */}
-        {showUsage && !minimized && (
+        {!minimized && (showMonthlyUsage || showTotalUsage) && (
           <div className="px-4 pb-4 border-b">
-            <div className="text-xs text-muted-foreground mb-1 flex justify-between">
-                <span className="font-medium text-foreground">Monthly Uploads</span>
-                <span className="font-medium text-foreground">{usageData.monthly_uploads_used} / {usageData.monthly_upload_limit}</span>
-            </div>
-            <Progress value={usagePercent} className="h-2" />
-            {/* {resetsIn && (
-              <div className="text-xs text-muted-foreground mt-1 text-center">
-                Resets {resetsIn}
-              </div>
-            )} */}
+            {showMonthlyUsage && (
+              <>
+                <div className="text-xs text-muted-foreground mb-1 flex justify-between">
+                  <span className="font-medium text-foreground">Monthly Uploads</span>
+                  <span className="font-medium text-foreground">
+                    {usageData.monthly_uploads_used} / {usageData.monthly_upload_limit}
+                  </span>
+                </div>
+                <Progress value={monthlyUsagePercent} className="h-2" />
+                {resetsIn && (
+                  <div className="text-xs text-muted-foreground mt-1 text-center">
+                    Resets {resetsIn}
+                  </div>
+                )}
+              </>
+            )}
+            {showTotalUsage && (
+              <>
+                <div className="text-xs text-muted-foreground mb-1 flex justify-between">
+                  <span className="font-medium text-foreground">Total Traces</span>
+                  <span className="font-medium text-foreground">
+                    {usageData.current_total_traces} / {usageData.total_trace_limit}
+                  </span>
+                </div>
+                <Progress value={totalUsagePercent} className="h-2" />
+                 {/* No reset info needed for total limit */}
+              </>
+            )}
           </div>
         )}
         {/* --- End Subscription Usage --- */}

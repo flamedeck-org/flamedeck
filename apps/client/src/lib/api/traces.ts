@@ -183,11 +183,25 @@ import { uploadJson } from "./storage";
 
         // Return structured error
         const apiError: ApiError = {
-          message: error instanceof Error ? error.message : "Failed to upload trace",
-          code: (error as PostgrestError)?.code,
-          details: (error as PostgrestError)?.details,
-          hint: (error as PostgrestError)?.hint,
+            message: error instanceof Error ? error.message : "Failed to upload trace",
+            code: (error as PostgrestError)?.code,
+            details: (error as PostgrestError)?.details,
+            hint: (error as PostgrestError)?.hint,
         };
+
+        // --- Check for specific limit exceeded errors from trigger --- 
+        if (error instanceof Error && error.message.includes('limit')) { // General check for limit errors
+          const pgErrorCode = (error as any)?.code; // Attempt to get Postgres error code
+          if (pgErrorCode === 'P0002') { // Monthly Limit
+            apiError.message = "Monthly upload limit reached. Please upgrade or wait until next cycle.";
+            // Optionally add: apiError.code = 'MONTHLY_LIMIT_EXCEEDED'; 
+          } else if (pgErrorCode === 'P0003') { // Total Limit
+            apiError.message = "Total trace storage limit reached. Please delete older traces or upgrade your plan.";
+            // Optionally add: apiError.code = 'TOTAL_LIMIT_EXCEEDED';
+          } 
+          // Keep original DB message if code doesn't match known ones
+        }
+        // --- End Limit Check Error Handling --- 
 
         return { data: null, error: apiError };
     }
