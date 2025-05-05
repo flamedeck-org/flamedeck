@@ -1,13 +1,14 @@
+import React, { useMemo } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ScrollToTop from "./components/utils/ScrollToTop";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Traces from "./pages/Traces";
+import Index from "./pages/Index.tsx";
+import Login from "./pages/Login.tsx";
+import Traces from "./pages/Traces.tsx";
 import TraceDetail from "./pages/TraceDetail";
 import ApiKeysPage from "./pages/settings/ApiKeysPage";
 import Upload from "./pages/Upload";
@@ -18,8 +19,7 @@ import DocsGettingStartedPage from "./pages/DocsGettingStartedPage";
 import DocsLayout from "./components/docs/DocsLayout";
 import { useTheme } from "./components/speedscope-ui/themes/theme";
 import { useAtom } from "./lib/speedscope-core/atom";
-import { glCanvasAtom } from "./lib/speedscope-core/app-state";
-import { useMemo } from "react";
+import { glCanvasAtom } from "./lib/speedscope-core/app-state/index";
 import { getCanvasContext } from "./lib/speedscope-core/app-state/getters";
 import { GLCanvas } from "./components/speedscope-ui/application";
 import { SharingModalProvider } from '@/hooks/useSharingModal';
@@ -28,18 +28,53 @@ import SettingsLayout from '@/components/settings/SettingsLayout';
 import SettingsPage from './pages/settings/SettingsPage';
 import Navbar from "./components/Navbar";
 import ProtectedRoute from './components/ProtectedRoute';
+import { Loader2 } from 'lucide-react';
+
+// --- Placeholder Import for Onboarding Step ---
+// You will need to create this component
+import UsernameStep from './pages/Onboarding/UsernameStep'; 
+// --- End Placeholder ---
+
+// --- Component to handle root path logic ---
+function RootHandler() {
+  const { user, loading, profileLoading } = useAuth();
+  // Consider both loading states
+  const isAuthLoading = loading || profileLoading;
+
+  if (isAuthLoading) {
+    // Show spinner covering the main content area while determining auth state
+    return (
+       <div className="flex justify-center items-center h-[calc(100vh-var(--header-height))] w-full">
+         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+       </div>
+     );
+  }
+
+  // If loading is finished and there's no user, show the Index page
+  if (!user) {
+    return <Index />;
+  }
+
+  // If loading is finished and there *is* a user, navigate to the main app section.
+  // ProtectedRoute will then handle the /traces route and any onboarding redirects.
+  return <Navigate to="/traces" replace />;
+}
+// --- End RootHandler ---
 
 const queryClient = new QueryClient();
 
 // Wrapper component for conditional routing
 const AppRoutes = () => {
-  const { user } = useAuth();
-  
+  // Remove useAuth from here again, RootHandler and ProtectedRoute handle checks
+
   return (
     <Routes>
-      <Route path="/" element={user ? <Navigate to="/traces" replace /> : <Index />} />
-      <Route path="/login" element={<Login />} />
+      {/* Handle the root path explicitly using RootHandler */}
+      <Route path="/" element={<RootHandler />} />
 
+      {/* Other Public Routes */}
+      <Route path="/login" element={<Login />} />
+      
       {/* Documentation Routes - accessible to all */}
       <Route path="/docs" element={<DocsLayout />}>
         <Route index element={<Navigate to="/docs/getting-started" replace />} />
@@ -50,9 +85,13 @@ const AppRoutes = () => {
       {/* Public Trace Viewer Route - outside ProtectedRoute */}
       <Route path="/traces/:id/view" element={<TraceViewerPage />} />
 
-      {/* Protected Routes: Wrap authenticated routes with ProtectedRoute */}
+      {/* Onboarding Route - Must be outside ProtectedRoute */}
+      <Route path="/onboarding/username" element={<UsernameStep />} />
+
+      {/* Protected Routes - NO LONGER includes the root path "/" */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/traces" element={<Traces />} />
+        {/* ProtectedRoute now only guards these specific authenticated paths */}
+        <Route path="/traces" element={<Traces />} /> 
         <Route path="/traces/folder/:folderId" element={<Traces />} />
         <Route path="/traces/:id" element={<TraceDetail />} />
         <Route path="/upload" element={<Upload />} />
@@ -63,6 +102,7 @@ const AppRoutes = () => {
         </Route>
       </Route>
 
+      {/* Catch-all Not Found Route */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

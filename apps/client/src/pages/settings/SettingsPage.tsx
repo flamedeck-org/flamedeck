@@ -8,10 +8,10 @@ import { toast } from 'sonner';
 import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchUserProfile, updateUserProfile, deleteUserAccount } from '@/lib/api/users';
+import { updateUserProfile, deleteUserAccount } from '@/lib/api/users';
 
 interface UserProfileFormValues {
   username: string;
@@ -29,7 +29,7 @@ const FormFieldSkeleton = ({ label }: { label: string }) => (
 );
 
 function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, profile, profileLoading } = useAuth();
   const queryClient = useQueryClient();
   
   const {
@@ -46,39 +46,20 @@ function SettingsPage() {
     }
   });
 
-  // Fetch user profile with React Query
-  const { data: profileData, isLoading, isError } = useQuery({
-    queryKey: ['userProfile', user?.id],
-    queryFn: async () => {
-      if (!user) throw new Error('User not authenticated');
-      
-      const { data, error } = await fetchUserProfile(user.id);
-      
-      if (error) throw new Error(error.message);
-      if (!data) throw new Error('No profile data returned');
-      
-      return data;
-    },
-    enabled: !!user,
-    onError: (error) => {
-      console.error('Error fetching user profile:', error);
-      toast.error('Failed to load user profile');
-    }
-  });
+  const isLoading = profileLoading;
+  const isError = false;
 
-  // Update form when profile data changes
   useEffect(() => {
-    if (profileData) {
+    if (profile) {
       reset({
-        username: profileData.username || '',
-        firstName: profileData.first_name || '',
-        lastName: profileData.last_name || '',
+        username: profile.username || '',
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
         email: user?.email || ''
       });
     }
-  }, [profileData, reset, user?.email]);
+  }, [profile, reset, user?.email]);
 
-  // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (formData: UserProfileFormValues) => {
       if (!user) throw new Error('User not authenticated');
@@ -102,7 +83,6 @@ function SettingsPage() {
     }
   });
 
-  // Delete account mutation
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('User not authenticated');
