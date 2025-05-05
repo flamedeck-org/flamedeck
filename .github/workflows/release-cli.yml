@@ -152,9 +152,18 @@ jobs:
         with:
           path: artifacts # Download all artifacts to a directory named 'artifacts'
       
-      # List downloaded files (for debugging)
-      - name: List downloaded files
-        run: find artifacts -type f
+      # Rename files for unique asset names
+      - name: Rename binaries for release
+        run: |
+          mkdir release-assets
+          mv artifacts/flamedeck-upload-linux-x64/cli-rust release-assets/flamedeck-upload-linux-x64
+          mv artifacts/flamedeck-upload-macos-x64/cli-rust release-assets/flamedeck-upload-macos-x64
+          mv artifacts/flamedeck-upload-macos-arm64/cli-rust release-assets/flamedeck-upload-macos-arm64
+          mv artifacts/flamedeck-upload-win-x64.exe/cli-rust.exe release-assets/flamedeck-upload-win-x64.exe
+      
+      # List files (for debugging)
+      - name: List final assets
+        run: ls -l release-assets
 
       # Create GitHub Release and Upload Binaries
       - name: Create Release and Upload Binaries
@@ -165,8 +174,5 @@ jobs:
           draft: false
           prerelease: true # Keep as pre-release for testing
           fail_on_unmatched_files: true
-          files: |
-            artifacts/flamedeck-upload-linux-x64/cli-rust
-            artifacts/flamedeck-upload-macos-x64/cli-rust
-            artifacts/flamedeck-upload-macos-arm64/cli-rust
-            artifacts/flamedeck-upload-win-x64.exe/cli-rust.exe 
+          # Use a glob pattern to upload all files from the staging directory
+          files: release-assets/* 
