@@ -11,12 +11,12 @@ permissions:
   contents: write # Needed to create releases
 
 jobs:
-  build-and-release:
-    name: Build and Release Rust CLI
-    # We might need separate runners later if cross-compilation fails, 
-    # but let's try ubuntu first with added targets.
-    runs-on: ubuntu-latest 
-
+  build-linux:
+    name: Build Linux (x86_64)
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_name: ${{ steps.vars.outputs.artifact_name }}
+      binary_path: ${{ steps.vars.outputs.binary_path }}
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout code
@@ -27,58 +27,146 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       # Add cross-compilation targets
-      - name: Add targets
-        run: |
-          rustup target add x86_64-unknown-linux-gnu
-          rustup target add x86_64-apple-darwin
-          rustup target add aarch64-apple-darwin
-          rustup target add x86_64-pc-windows-msvc 
-          # May need linker setup for cross-compiling, especially for windows-msvc
-          # sudo apt-get update && sudo apt-get install -y mingw-w64 # Example for windows
+      - name: Add target
+        run: rustup target add x86_64-unknown-linux-gnu
 
       # Build for Linux x86_64
-      - name: Build for Linux (x86_64)
+      - name: Build
         run: cargo build --release --target x86_64-unknown-linux-gnu
         working-directory: ./cli-rust
 
+      # Set artifact vars
+      - name: Set artifact vars
+        id: vars
+        run: |
+          echo "artifact_name=flamedeck-upload-linux-x64" >> $GITHUB_OUTPUT
+          echo "binary_path=cli-rust/target/x86_64-unknown-linux-gnu/release/cli-rust" >> $GITHUB_OUTPUT
+
+      # Upload artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.vars.outputs.artifact_name }}
+          path: ${{ steps.vars.outputs.binary_path }}
+
+  build-macos:
+    name: Build macOS (x86_64 + ARM64)
+    runs-on: macos-latest # Use native macOS runner
+    outputs:
+      artifact_name_x64: ${{ steps.vars.outputs.artifact_name_x64 }}
+      binary_path_x64: ${{ steps.vars.outputs.binary_path_x64 }}
+      artifact_name_arm64: ${{ steps.vars.outputs.artifact_name_arm64 }}
+      binary_path_arm64: ${{ steps.vars.outputs.binary_path_arm64 }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install Rust toolchain
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # Add cross-compilation targets
+      - name: Add targets
+        run: |
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+
       # Build for macOS x86_64
-      - name: Build for macOS (x86_64)
+      - name: Build x86_64
         run: cargo build --release --target x86_64-apple-darwin
         working-directory: ./cli-rust
 
       # Build for macOS Apple Silicon (aarch64)
-      - name: Build for macOS (ARM64)
+      - name: Build arm64
         run: cargo build --release --target aarch64-apple-darwin
         working-directory: ./cli-rust
 
+      # Set artifact vars
+      - name: Set artifact vars
+        id: vars
+        run: |
+          echo "artifact_name_x64=flamedeck-upload-macos-x64" >> $GITHUB_OUTPUT
+          echo "binary_path_x64=cli-rust/target/x86_64-apple-darwin/release/cli-rust" >> $GITHUB_OUTPUT
+          echo "artifact_name_arm64=flamedeck-upload-macos-arm64" >> $GITHUB_OUTPUT
+          echo "binary_path_arm64=cli-rust/target/aarch64-apple-darwin/release/cli-rust" >> $GITHUB_OUTPUT
+
+      # Upload x64 artifact
+      - name: Upload x64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.vars.outputs.artifact_name_x64 }}
+          path: ${{ steps.vars.outputs.binary_path_x64 }}
+
+      # Upload arm64 artifact
+      - name: Upload arm64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.vars.outputs.artifact_name_arm64 }}
+          path: ${{ steps.vars.outputs.binary_path_arm64 }}
+
+  build-windows:
+    name: Build Windows (x86_64)
+    runs-on: windows-latest # Use native Windows runner
+    outputs:
+      artifact_name: ${{ steps.vars.outputs.artifact_name }}
+      binary_path: ${{ steps.vars.outputs.binary_path }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install Rust toolchain
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # Add cross-compilation targets
+      - name: Add target
+        run: rustup target add x86_64-pc-windows-msvc
+
       # Build for Windows x86_64
-      - name: Build for Windows (x86_64)
+      - name: Build
         run: cargo build --release --target x86_64-pc-windows-msvc
         working-directory: ./cli-rust
 
-      # Rename binaries for consistency
-      - name: Rename Binaries
+      # Set artifact vars
+      - name: Set artifact vars
+        id: vars
         run: |
-          cd cli-rust/target
-          mv x86_64-unknown-linux-gnu/release/cli-rust ./flamedeck-upload-linux-x64
-          mv x86_64-apple-darwin/release/cli-rust ./flamedeck-upload-macos-x64
-          mv aarch64-apple-darwin/release/cli-rust ./flamedeck-upload-macos-arm64
-          mv x86_64-pc-windows-msvc/release/cli-rust.exe ./flamedeck-upload-win-x64.exe
-          cd ../..
+          echo "artifact_name=flamedeck-upload-win-x64.exe" >> $GITHUB_OUTPUT
+          echo "binary_path=cli-rust/target/x86_64-pc-windows-msvc/release/cli-rust.exe" >> $GITHUB_OUTPUT
 
-      # Create GitHub Release and Upload Assets
+      # Upload artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.vars.outputs.artifact_name }}
+          path: ${{ steps.vars.outputs.binary_path }}
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-macos, build-windows] # Wait for builds
+    steps:
+      # Download all build artifacts
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts # Download all artifacts to a directory named 'artifacts'
+      
+      # List downloaded files (for debugging)
+      - name: List downloaded files
+        run: find artifacts -type f
+
+      # Create GitHub Release and Upload Binaries
       - name: Create Release and Upload Binaries
         uses: softprops/action-gh-release@v2
         with:
-          # The GITHUB_TOKEN is automatically available to the workflow
-          # token: ${{ secrets.GITHUB_TOKEN }} # Usually not needed to specify explicitly
-          tag_name: ${{ github.ref_name }} # Use the tag that triggered the workflow
-          name: CLI Release ${{ github.ref_name }} # Name of the release
-          draft: false # Create a published release
-          prerelease: true # Keep as pre-release for testing if desired
-          fail_on_unmatched_files: true # Fail if assets aren't found
+          tag_name: ${{ github.ref_name }}
+          name: CLI Release ${{ github.ref_name }}
+          draft: false
+          prerelease: true # Keep as pre-release for testing
+          fail_on_unmatched_files: true
           files: |
-            cli-rust/target/flamedeck-upload-linux-x64
-            cli-rust/target/flamedeck-upload-macos-x64
-            cli-rust/target/flamedeck-upload-macos-arm64
-            cli-rust/target/flamedeck-upload-win-x64.exe 
+            artifacts/flamedeck-upload-linux-x64/cli-rust
+            artifacts/flamedeck-upload-macos-x64/cli-rust
+            artifacts/flamedeck-upload-macos-arm64/cli-rust
+            artifacts/flamedeck-upload-win-x64.exe/cli-rust.exe 
