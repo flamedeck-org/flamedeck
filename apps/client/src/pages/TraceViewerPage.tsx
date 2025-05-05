@@ -11,7 +11,7 @@ import { traceApi, TraceMetadata } from "@/lib/api";
 import { ApiResponse } from '@/types';
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, Palette } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Palette, Share2 } from 'lucide-react';
 import { TraceViewerCommentSidebar } from '@/components/TraceViewerCommentList/TraceViewerCommentSidebar';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { ApiError } from '@/types';
@@ -24,6 +24,7 @@ import {
   flamegraphThemeDisplayNames, 
   flamegraphThemePreviews
 } from "../components/speedscope-ui/themes/theme.tsx";
+import { useSharingModal } from '@/hooks/useSharingModal';
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -59,6 +60,7 @@ const TraceViewerPage: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
   const isAuthenticated = !!user;
+  const { openModal } = useSharingModal();
   
   // Read initialView from location state, default to 'time_ordered'
   const initialViewFromState = location.state?.initialView as SpeedscopeViewType | undefined;
@@ -215,6 +217,17 @@ const TraceViewerPage: React.FC = () => {
   }, []);
   // -----------------------------------
 
+  // --- Share Handler ---
+  const handleShareClick = useCallback(() => {
+    if (id) {
+      openModal(id);
+    } else {
+      console.error("[TraceViewerPage] Trace ID is undefined, cannot open sharing modal.");
+      // Optionally show a toast message here
+    }
+  }, [id, openModal]);
+  // -------------------
+
   // Whether we're loading data
   const isLoading = (isLoadingTraceDetails && !blobPathFromState) || (isLoadingBlob && !!blobPath);
 
@@ -285,8 +298,15 @@ const TraceViewerPage: React.FC = () => {
                   })}
                 </SelectContent>
               </Select>
-              {/* --------------------------------- */} 
+              {/* --------------------------------- */}
               {isAuthenticated && commentManagement && <TraceViewerCommentSidebar traceId={id} activeView={selectedView} />}
+              {/* --- Add Share Button --- */}
+              {isAuthenticated && (
+                <Button variant="ghost" size="sm" onClick={handleShareClick} title="Share Trace">
+                   <Share2 className="h-4 w-4" />
+                </Button>
+              )}
+              {/* ------------------------- */}
               <Link to={isAuthenticated ? `/traces/${id}` : '/'} title={isAuthenticated ? "Back to Details" : "Back to Home"}>
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
