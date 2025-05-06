@@ -13,7 +13,7 @@ This repository contains the source code for:
 
 ## Installing the `flamedeck` CLI
 
-The `flamedeck` CLI provides a convenient way to upload trace files to your Flamedeck instance directly from your terminal or CI pipelines.
+The `flamedeck` CLI provides a convenient way to upload trace files to [Flamedeck](https://www.flamedeck.com) directly from your terminal or CI pipelines.
 
 ### Using Homebrew (Recommended for macOS)
 
