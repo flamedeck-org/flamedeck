@@ -49,12 +49,22 @@ Refer to the built-in help for all available options:
 ./target/release/cli-rust --help
 ```
 
-## Distribution / Releases
+## Distribution / Releases (for Maintainers)
 
-Official binaries for Linux (x64), macOS (x64, ARM64), and Windows (x64) are automatically built and attached to **GitHub Releases** whenever a tag matching the pattern `v*.*.*-cli` is pushed.
+To create a new release with binaries for Linux, macOS, and Windows:
 
-Find the latest release and download the appropriate binary for your platform here:
+1.  **Create a new tag:**
+    ```bash
+    # Replace vX.Y.Z with the desired version number (e.g., v0.1.0)
+    git tag vX.Y.Z-cli
+    ```
 
-[**Latest Release**](https://github.com/flamedeck-org/flamedeck/releases/latest) *(Replace with your actual organization/repo name)*
+2.  **Push the tag to GitHub:**
+    ```bash
+    # Replace vX.Y.Z with the same version number
+    git push origin vX.Y.Z-cli
+    ```
 
-See the workflow definition at `.github/workflows/release-cli.yml`. 
+Pushing a tag matching the `v*.*.*-cli` pattern automatically triggers the GitHub Action defined in `.github/workflows/release-cli.yml`, which builds the binaries and attaches them to a new GitHub Release.
+
+You can find all releases here: [https://github.com/flamedeck-org/flamedeck/releases](https://github.com/flamedeck-org/flamedeck/releases) *(Replace with your actual organization/repo name)* 
