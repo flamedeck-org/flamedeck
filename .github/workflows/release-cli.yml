@@ -144,15 +144,34 @@ jobs:
   release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-linux, build-macos, build-windows] # Wait for builds
+    needs: [build-linux, build-macos, build-windows]
     steps:
-      # Download all build artifacts
+      # Check out code to read Cargo.toml
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts # Download all artifacts to a directory named 'artifacts'
-      
-      # Rename files for unique asset names
+          path: artifacts
+          
+      # Validate version consistency
+      - name: Validate Versions
+        run: |
+          # Extract version from tag (e.g., v0.0.2-cli -> 0.0.2)
+          TAG_VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//' | sed 's/-cli$//')
+          # Extract version from Cargo.toml
+          CARGO_VERSION=$(grep '^version = ' cli-rust/Cargo.toml | head -n 1 | cut -d '"' -f 2)
+          
+          echo "Tag version: $TAG_VERSION"
+          echo "Cargo.toml version: $CARGO_VERSION"
+          
+          if [ "$TAG_VERSION" != "$CARGO_VERSION" ]; then
+            echo "::error::Tag version ($TAG_VERSION) does not match Cargo.toml version ($CARGO_VERSION)! Update Cargo.toml before tagging."
+            exit 1
+          fi
+          echo "Versions match."
+          
       - name: Rename binaries for release
         run: |
           mkdir release-assets
@@ -161,11 +180,9 @@ jobs:
           mv artifacts/flamedeck-macos-arm64/flamedeck release-assets/flamedeck-macos-arm64
           mv artifacts/flamedeck-win-x64.exe/flamedeck.exe release-assets/flamedeck-win-x64.exe
       
-      # List files (for debugging)
       - name: List final assets
         run: ls -l release-assets
 
-      # Create GitHub Release and Upload Binaries
       - name: Create Release and Upload Binaries
         uses: softprops/action-gh-release@v2
         with:
