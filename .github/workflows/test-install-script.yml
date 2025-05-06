@@ -1,0 +1,51 @@
+# .github/workflows/test-install-script.yml
+name: Test Install Script
+
+# Allow manual triggering
+on:
+  workflow_dispatch:
+
+jobs:
+  test-linux:
+    name: Test on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y curl jq
+
+      - name: Make script executable
+        run: chmod +x ./scripts/install.sh
+
+      - name: Run install script
+        run: sudo ./scripts/install.sh # Run with sudo to install to /usr/local/bin
+
+      - name: Verify installation
+        run: |
+          which flamedeck
+          flamedeck --version
+          flamedeck upload --help # Check subcommand help
+
+  test-macos:
+    name: Test on macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install jq
+
+      - name: Make script executable
+        run: chmod +x ./scripts/install.sh
+
+      - name: Run install script
+        run: sudo ./scripts/install.sh # Run with sudo to install to /usr/local/bin
+
+      - name: Verify installation
+        run: |
+          which flamedeck
+          flamedeck --version
+          flamedeck upload --help # Check subcommand help 
