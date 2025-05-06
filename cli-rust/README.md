@@ -63,13 +63,13 @@ To build the CLI on your local machine:
     ```bash
     cargo build
     ```
-    The executable will be located at `target/debug/cli-rust` (or `target\debug\cli-rust.exe` on Windows).
+    The executable will be located at `target/debug/flamedeck` (or `target\debug\flamedeck.exe` on Windows).
 
 3.  **Build (Release):** For an optimized release build (smaller and faster):
     ```bash
     cargo build --release
     ```
-    The executable will be located at `target/release/cli-rust` (or `target\release\cli-rust.exe` on Windows).
+    The executable will be located at `target/release/flamedeck` (or `target\release\flamedeck.exe` on Windows).
 
 ## Distribution / Releases (for Maintainers)
 
