@@ -51,7 +51,13 @@ case "$OS" in
   *) echo_err "Unsupported operating system: $OS" ;;
 esac
 
-ASSET_NAME="${TOOL_NAME}-upload-${ASSET_SUFFIX}"
+# Construct asset name without '-upload'
+ASSET_NAME="${TOOL_NAME}-${ASSET_SUFFIX}"
+# Add .exe for windows
+if [ "$OS" = "windows" ]; then 
+    ASSET_NAME="${ASSET_NAME}.exe"
+fi
+
 echo "Detected Platform: $OS/$ARCH -> Required Asset: $ASSET_NAME"
 # ---------------------
 
