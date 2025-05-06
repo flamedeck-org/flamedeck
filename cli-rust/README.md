@@ -8,6 +8,48 @@ This version is built in Rust to produce small, fast, self-contained binaries.
 
 - Rust and Cargo (Install via [rustup](https://www.rust-lang.org/tools/install))
 
+## Installation
+
+### Using Homebrew (Recommended for macOS)
+
+```bash
+brew tap flamedeck-org/flamedeck
+brew install flamedeck
+```
+
+*(Note: You might see a macOS Gatekeeper warning on first run. If so, right-click the binary in Finder, select "Open", and confirm.)*
+
+### Manual Installation (Linux, Windows, macOS)
+
+1.  Go to the [**Latest Release**](https://github.com/flamedeck-org/flamedeck/releases/latest) page *(Replace with your actual organization/repo name)*.
+2.  Download the appropriate binary for your operating system and architecture (e.g., `flamedeck-upload-linux-x64`, `flamedeck-upload-macos-arm64`, `flamedeck-upload-win-x64.exe`).
+3.  Rename the downloaded binary to `flamedeck` (or `flamedeck.exe` on Windows).
+4.  Place the renamed binary in a directory included in your system's `PATH` environment variable.
+5.  Make the binary executable (on Linux/macOS):
+    ```bash
+    chmod +x /path/to/your/flamedeck
+    ```
+6.  *(macOS Only): You might need to bypass Gatekeeper on first run (Right-click -> Open).*
+
+## Usage
+
+Once installed (either manually or via Homebrew), you can run the CLI:
+
+```bash
+# Ensure API key is set in environment or use --api-key flag
+export FLAMEDECK_API_KEY="YOUR_API_KEY"
+
+# Basic upload
+flamedeck upload -s "My Test" /path/to/trace.json
+
+# Upload via stdin (requires --file-name)
+cat /path/to/trace.json | flamedeck upload -s "Piped Test" -n "trace.json"
+
+# Get help
+flamedeck --help
+flamedeck upload --help
+```
+
 ## Building Locally
 
 To build the CLI on your local machine:
@@ -29,27 +71,14 @@ To build the CLI on your local machine:
     ```
     The executable will be located at `target/release/cli-rust` (or `target\release\cli-rust.exe` on Windows).
 
-## Usage (Local Build)
-
-Once built, you can run the executable directly from the `target/<debug_or_release>/` directory.
-
-```bash
-# Example on macOS/Linux (using release build):
-export FLAMEDECK_API_KEY="YOUR_API_KEY"
-./target/release/cli-rust -s "My Local Rust Test" /path/to/your/trace.json
-
-# Example piping on Linux:
-export FLAMEDECK_API_KEY="YOUR_API_KEY"
-cat /path/to/your/trace.json | ./target/release/cli-rust -s "Piped Test" -n "trace.json"
-```
-
-Refer to the built-in help for all available options:
-
-```bash
-./target/release/cli-rust --help
-```
-
 ## Distribution / Releases (for Maintainers)
+
+Releases are handled automatically via GitHub Actions when a tag matching `v*.*.*-cli` is pushed. Binaries are attached to the GitHub Release.
+
+For Homebrew distribution, the formula in the separate `flamedeck-org/homebrew-flamedeck` repository must be manually updated after each release:
+
+1.  Update `version`, `url`s, and `sha256` checksums in `Formula/flamedeck.rb`.
+2.  Commit and push the changes to the `homebrew-flamedeck` repository.
 
 To create a new release with binaries for Linux, macOS, and Windows:
 
@@ -65,6 +94,4 @@ To create a new release with binaries for Linux, macOS, and Windows:
     git push origin vX.Y.Z-cli
     ```
 
-Pushing a tag matching the `v*.*.*-cli` pattern automatically triggers the GitHub Action defined in `.github/workflows/release-cli.yml`, which builds the binaries and attaches them to a new GitHub Release.
-
-You can find all releases here: [https://github.com/flamedeck-org/flamedeck/releases](https://github.com/flamedeck-org/flamedeck/releases) *(Replace with your actual organization/repo name)* 
+You can find all releases here: [https://github.com/flamedeck-org/flamedeck/releases](https://github.com/flamedeck-org/flamedeck/releases)
