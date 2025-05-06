@@ -8,48 +8,6 @@ This version is built in Rust to produce small, fast, self-contained binaries.
 
 - Rust and Cargo (Install via [rustup](https://www.rust-lang.org/tools/install))
 
-## Installation
-
-### Using Homebrew (Recommended for macOS)
-
-```bash
-brew tap flamedeck-org/flamedeck
-brew install flamedeck
-```
-
-*(Note: You might see a macOS Gatekeeper warning on first run. If so, right-click the binary in Finder, select "Open", and confirm.)*
-
-### Manual Installation (Linux, Windows, macOS)
-
-1.  Go to the [**Latest Release**](https://github.com/flamedeck-org/flamedeck/releases/latest) page *(Replace with your actual organization/repo name)*.
-2.  Download the appropriate binary for your operating system and architecture (e.g., `flamedeck-upload-linux-x64`, `flamedeck-upload-macos-arm64`, `flamedeck-upload-win-x64.exe`).
-3.  Rename the downloaded binary to `flamedeck` (or `flamedeck.exe` on Windows).
-4.  Place the renamed binary in a directory included in your system's `PATH` environment variable.
-5.  Make the binary executable (on Linux/macOS):
-    ```bash
-    chmod +x /path/to/your/flamedeck
-    ```
-6.  *(macOS Only): You might need to bypass Gatekeeper on first run (Right-click -> Open).*
-
-## Usage
-
-Once installed (either manually or via Homebrew), you can run the CLI:
-
-```bash
-# Ensure API key is set in environment or use --api-key flag
-export FLAMEDECK_API_KEY="YOUR_API_KEY"
-
-# Basic upload
-flamedeck upload -s "My Test" /path/to/trace.json
-
-# Upload via stdin (requires --file-name)
-cat /path/to/trace.json | flamedeck upload -s "Piped Test" -n "trace.json"
-
-# Get help
-flamedeck --help
-flamedeck upload --help
-```
-
 ## Building Locally
 
 To build the CLI on your local machine:
@@ -71,7 +29,7 @@ To build the CLI on your local machine:
     ```
     The executable will be located at `target/release/flamedeck` (or `target\release\flamedeck.exe` on Windows).
 
-## Distribution / Releases (for Maintainers)
+## Distribution / Releases
 
 Releases are handled automatically via GitHub Actions when a tag matching `v*.*.*-cli` is pushed. Binaries are attached to the GitHub Release.
 
