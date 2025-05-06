@@ -172,7 +172,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: CLI Release ${{ github.ref_name }}
           draft: false
-          prerelease: true # Keep as pre-release for testing
+          prerelease: false
           fail_on_unmatched_files: true
           # Use a glob pattern to upload all files from the staging directory
           files: release-assets/* 
