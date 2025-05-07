@@ -34,3 +34,5 @@ apps/client/.env.local
 .yarn/install-state.gz
 
 bin/
+
+tmp/
