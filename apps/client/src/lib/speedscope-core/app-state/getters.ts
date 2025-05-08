@@ -1,9 +1,9 @@
-import {Frame, Profile} from '../profile'
+import type {Frame, Profile} from '../profile'
 import {memoizeByReference, memoizeByShallowEquality} from '../lib-utils'
 import {RowAtlas} from '../../speedscope-gl/row-atlas'
 import {CanvasContext} from '../../speedscope-gl/canvas-context'
-import {FlamechartRowAtlasKey} from '../../speedscope-gl/flamechart-renderer'
-import {Theme} from '@/components/speedscope-ui/themes/theme'
+import type {FlamechartRowAtlasKey} from '../../speedscope-gl/flamechart-renderer'
+import type {Theme} from '@/components/speedscope-ui/themes/theme'
 
 export const createGetColorBucketForFrame = memoizeByReference(
   (frameToColorBucket: Map<number | string, number>) => {

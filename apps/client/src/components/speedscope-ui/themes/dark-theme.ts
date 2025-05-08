@@ -1,6 +1,6 @@
 import {Color} from '../../../lib/speedscope-core/color'
 import {triangle} from '../../../lib/speedscope-core/lib-utils'
-import {Theme} from './theme'
+import type {Theme} from './theme'
 
 // These colors are intentionally not exported from this file, because these
 // colors are theme specific, and we want all color values to come from the

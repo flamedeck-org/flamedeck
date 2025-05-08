@@ -1,12 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
 import { fetchUserProfile } from '@/lib/api/users';
-import { ApiResponse, UserProfileData } from '@/types';
+import type { ApiResponse, UserProfileData } from '@/types';
 
 type UserProfile = UserProfileData;
 

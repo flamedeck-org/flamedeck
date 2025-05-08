@@ -1,9 +1,10 @@
 import React, { useRef, forwardRef, useImperativeHandle } from 'react'
-import {CallTreeNode} from '../../lib/speedscope-core/profile'
-import {Rect, AffineTransform, Vec2} from '../../lib/speedscope-core/math'
+import type {CallTreeNode} from '../../lib/speedscope-core/profile'
+import type {Rect, AffineTransform, Vec2} from '../../lib/speedscope-core/math'
 import {FlamechartPanZoomView, type HoverPayload} from './flamechart-pan-zoom-view'
 import {noop, formatPercent} from '../../lib/speedscope-core/lib-utils'
-import {FlamechartViewProps, FlamechartHover, FlamechartViewHandle} from './flamechart-view-container'
+import type {FlamechartViewProps, FlamechartViewHandle} from './flamechart-view-container';
+import { FlamechartHover} from './flamechart-view-container'
 import { ContextMenu, ContextMenuDivider } from '@/components/ui/context-menu';
 import { useState, useEffect } from 'react';
 

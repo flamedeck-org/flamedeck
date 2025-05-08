@@ -1,13 +1,13 @@
 import React, { Fragment, useCallback, useState, useEffect } from 'react';
-import { ApplicationProps } from './application'
+import type { ApplicationProps } from './application'
 import { Sizes, FontFamily, FontSize, Duration } from './style'
 import { ProfileSelect } from './profile-select'
-import { Profile } from '../../lib/speedscope-core/profile'
+import type { Profile } from '../../lib/speedscope-core/profile'
 import { objectsHaveShallowEquality } from '../../lib/speedscope-core/lib-utils'
 import { colorSchemeToString, useTheme, Theme } from './themes/theme'
 import { ViewMode } from '../../lib/speedscope-core/view-mode'
 import { viewModeAtom } from '../../lib/speedscope-core/app-state'
-import { ProfileGroupState } from '../../lib/speedscope-core/app-state/profile-group'
+import type { ProfileGroupState } from '../../lib/speedscope-core/app-state/profile-group'
 import { colorSchemeAtom } from '../../lib/speedscope-core/app-state/color-scheme'
 import { useAtom } from '../../lib/speedscope-core/atom'
 

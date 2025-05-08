@@ -1,11 +1,12 @@
 import {memoizeByShallowEquality, noop} from '../../lib/speedscope-core/lib-utils'
-import {Profile, Frame} from '../../lib/speedscope-core/profile'
+import type {Profile, Frame} from '../../lib/speedscope-core/profile'
 import {Flamechart} from '../../lib/speedscope-core/flamechart'
+import type {
+  FlamechartViewContainerProps,
+  FlamechartViewHandle} from './flamechart-view-container';
 import {
   createMemoizedFlamechartRenderer,
-  FlamechartViewContainerProps,
-  useFlamechartSetters,
-  FlamechartViewHandle,
+  useFlamechartSetters
 } from './flamechart-view-container'
 import {
   getCanvasContext,

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserSubscriptionUsage, SubscriptionUsage } from "@/lib/api/subscription";
+import type { SubscriptionUsage } from "@/lib/api/subscription";
+import { getUserSubscriptionUsage } from "@/lib/api/subscription";
 
 // Define a constant for the base query key
 export const SUBSCRIPTION_USAGE_QUERY_KEY = 'subscriptionUsage';

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { traceApi, TraceCommentWithAuthor } from '@/lib/api';
+import type { TraceCommentWithAuthor } from '@/lib/api';
+import { traceApi } from '@/lib/api';
 import { useMemo, useCallback } from 'react';
 
 // Helper function to extract unique commented cell IDs for a given type

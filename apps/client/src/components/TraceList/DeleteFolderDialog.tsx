@@ -10,7 +10,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuery } from '@tanstack/react-query';
 import { traceApi } from '@/lib/api';
-import { RecursiveFolderContents } from '@/types';
+import type { RecursiveFolderContents } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface DeleteFolderDialogProps {

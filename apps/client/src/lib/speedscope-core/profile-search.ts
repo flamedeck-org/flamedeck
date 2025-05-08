@@ -1,5 +1,5 @@
-import {Profile, Frame, CallTreeNode} from './profile'
-import {Flamechart, FlamechartFrame} from './flamechart'
+import type {Profile, Frame, CallTreeNode} from './profile'
+import type {Flamechart, FlamechartFrame} from './flamechart'
 import {Rect, Vec2} from './math'
 
 export enum FlamechartType {

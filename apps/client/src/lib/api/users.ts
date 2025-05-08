@@ -1,9 +1,9 @@
-import { ApiError, UserProfile } from "@/types";
+import type { ApiError, UserProfile } from "@/types";
 
-import { ApiResponse } from "@/types";
+import type { ApiResponse } from "@/types";
 
 import { supabase } from "@/integrations/supabase/client";
-import { PostgrestError } from "@supabase/supabase-js";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 export interface UserProfileData {
   username?: string;

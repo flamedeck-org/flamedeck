@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react';
-import { useMutation, useQueryClient, useInfiniteQuery, InfiniteData } from "@tanstack/react-query";
+import type { InfiniteData } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useParams } from 'react-router-dom';
 import { toast } from "@/components/ui/use-toast";
-import { Folder, traceApi } from "@/lib/api";
-import { TraceMetadata } from "@/types";
+import type { Folder} from "@/lib/api";
+import { traceApi } from "@/lib/api";
+import type { TraceMetadata } from "@/types";
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { PostgrestError } from '@supabase/supabase-js';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 type ExplicitFolderViewData = {
   path: Pick<Folder, 'id' | 'name'>[];

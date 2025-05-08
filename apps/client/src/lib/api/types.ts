@@ -1,5 +1,5 @@
-import { Database } from "@/integrations/supabase/types";
-import { TraceComment, TraceMetadata } from "@/types";
+import type { Database } from "@/integrations/supabase/types";
+import type { TraceComment, TraceMetadata } from "@/types";
 
 // Define the profile type using the generated table type
 type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];

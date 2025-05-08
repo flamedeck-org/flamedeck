@@ -1,13 +1,13 @@
-import { ApiError } from "@/types";
+import type { ApiError } from "@/types";
 
-import { TraceComment } from "@/types";
+import type { TraceComment } from "@/types";
 
-import { ApiResponse } from "@/types";
+import type { ApiResponse } from "@/types";
 
-import { NewTraceComment, TraceCommentWithAuthor } from "./types";
+import type { NewTraceComment, TraceCommentWithAuthor } from "./types";
 
 import { supabase } from "@/integrations/supabase/client";
-import { PostgrestError } from "@supabase/supabase-js";
+import type { PostgrestError } from "@supabase/supabase-js";
 
   // Get comments for a specific trace
   export async function getTraceComments(traceId: string): Promise<ApiResponse<TraceCommentWithAuthor[]>> {

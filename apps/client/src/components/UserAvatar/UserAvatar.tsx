@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from 'react';
-import { User } from '@supabase/supabase-js';
-import { UserProfile } from '@/types';
+import type { User } from '@supabase/supabase-js';
+import type { UserProfile } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
 

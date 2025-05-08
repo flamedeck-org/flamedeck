@@ -2,25 +2,29 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useParams, Link, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/contexts/AuthContext";
-import SpeedscopeViewer, { SpeedscopeViewType } from "@/components/SpeedscopeViewer";
+import type { SpeedscopeViewType } from "@/components/SpeedscopeViewer";
+import SpeedscopeViewer from "@/components/SpeedscopeViewer";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getTraceBlob } from "@/lib/api/storage";
-import { traceApi, TraceMetadata } from "@/lib/api";
-import { ApiResponse } from '@/types';
-import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+import type { TraceMetadata } from "@/lib/api";
+import { traceApi } from "@/lib/api";
+import type { ApiResponse } from '@/types';
+import type { FallbackProps } from "react-error-boundary";
+import { ErrorBoundary } from "react-error-boundary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, MessageSquare, Palette, Share2 } from 'lucide-react';
 import { TraceViewerCommentSidebar } from '@/components/TraceViewerCommentList/TraceViewerCommentSidebar';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
-import { ApiError } from '@/types';
+import type { ApiError } from '@/types';
 import { ChatContainer } from '@/components/Chat';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAtom } from "../lib/speedscope-core/atom.ts";
+import type { 
+  FlamegraphThemeName} from "../components/speedscope-ui/themes/theme.tsx";
 import { 
   flamegraphThemeAtom, 
-  FlamegraphThemeName, 
   flamegraphThemeDisplayNames, 
   flamegraphThemePreviews
 } from "../components/speedscope-ui/themes/theme.tsx";

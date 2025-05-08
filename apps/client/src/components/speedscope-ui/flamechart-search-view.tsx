@@ -1,13 +1,15 @@
-import React, {memo, useContext, useMemo, useCallback, createContext, ComponentChildren} from 'react'
+import type { ComponentChildren} from 'react';
+import React, {memo, useContext, useMemo, useCallback, createContext} from 'react'
 import {SearchView, ProfileSearchContext} from './search-view'
-import {
+import type {
   FlamechartSearchMatch,
-  FlamechartSearchResults,
-  ProfileSearchResults,
+  ProfileSearchResults} from '../../lib/speedscope-core/profile-search';
+import {
+  FlamechartSearchResults
 } from '../../lib/speedscope-core/profile-search'
 import {Rect, Vec2} from '../../lib/speedscope-core/math'
-import {Flamechart} from '../../lib/speedscope-core/flamechart'
-import {CallTreeNode} from '../../lib/speedscope-core/profile'
+import type {Flamechart} from '../../lib/speedscope-core/flamechart'
+import type {CallTreeNode} from '../../lib/speedscope-core/profile'
 
 export const FlamechartSearchContext = createContext<FlamechartSearchData | null>(null)
 

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { traceApi } from '@/lib/api';
-import { TraceMetadata, ApiError } from '@/types';
+import type { TraceMetadata, ApiError } from '@/types';
 
 /**
  * Custom hook to fetch trace metadata.

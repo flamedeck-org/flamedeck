@@ -1,4 +1,4 @@
-import { FlamegraphThemeName, FlamegraphThemeVariants } from './theme.tsx'
+import type { FlamegraphThemeName, FlamegraphThemeVariants } from './theme.tsx'
 import { fireFlamegraphThemeLight } from './fire/light.ts'
 import { fireFlamegraphThemeDark } from './fire/dark.ts'
 import { peachFlamegraphThemeLight } from './peach/light.ts'

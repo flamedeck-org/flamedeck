@@ -1,5 +1,5 @@
 import { Color } from '../../../../lib/speedscope-core/color.ts'
-import { FlamegraphTheme } from '../theme.tsx'
+import type { FlamegraphTheme } from '../theme.tsx'
 
 // Fire theme (DARK) HCL constants
 const H_MIN = 5.0;   // Start at clearer red

@@ -1,7 +1,7 @@
 import {formatPercent} from '@/lib/speedscope-core/lib-utils'
-import {Frame, CallTreeNode} from '@/lib/speedscope-core/profile'
+import type {Frame, CallTreeNode} from '@/lib/speedscope-core/profile'
 import {ColorChit} from './color-chit'
-import {Flamechart} from '@/lib/speedscope-core/flamechart'
+import type {Flamechart} from '@/lib/speedscope-core/flamechart'
 
 interface StatisticsTableProps {
   title: string

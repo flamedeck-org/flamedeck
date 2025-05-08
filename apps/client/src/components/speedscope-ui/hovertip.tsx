@@ -1,5 +1,5 @@
 import React, {useCallback} from 'react'
-import {Vec2} from '../../lib/speedscope-core/math'
+import type {Vec2} from '../../lib/speedscope-core/math'
 import { useTheme } from './themes/theme'
 
 interface HovertipProps {

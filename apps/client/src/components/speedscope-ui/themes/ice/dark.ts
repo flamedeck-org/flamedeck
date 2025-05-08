@@ -1,5 +1,5 @@
 import { Color } from '../../../../lib/speedscope-core/color.ts'
-import { FlamegraphTheme } from '../theme.tsx'
+import type { FlamegraphTheme } from '../theme.tsx'
 
 // Ice theme (DARK) HCL constants
 // Adjusted for a darker background

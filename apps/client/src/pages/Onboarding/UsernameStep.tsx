@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'; // Adjust path
 import { Label } from '@/components/ui/label'; // Adjust path
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'; // Adjust path
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react'; // Remove Search icon
-import { useForm, SubmitHandler } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 // Import API functions
 import { checkUsernameAvailability, updateUserProfile } from '@/lib/api/users'; // Adjust path

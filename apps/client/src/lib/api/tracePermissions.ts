@@ -1,9 +1,9 @@
-import { ApiError } from "@/types";
+import type { ApiError } from "@/types";
 
 import { supabase } from "@/integrations/supabase/client";
-import { ApiResponse } from "@/types";
-import { TracePermissionRow, TracePermissionWithUser, TraceRole } from "./types";
-import { PostgrestError } from "@supabase/supabase-js";
+import type { ApiResponse } from "@/types";
+import type { TracePermissionRow, TracePermissionWithUser, TraceRole } from "./types";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 export async function getTracePermissions(traceId: string): Promise<ApiResponse<TracePermissionWithUser[]>> {
     try {

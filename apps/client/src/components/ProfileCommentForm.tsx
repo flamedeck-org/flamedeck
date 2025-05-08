@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { traceApi, NewTraceComment, ApiError } from '@/lib/api';
+import type { NewTraceComment, ApiError } from '@/lib/api';
+import { traceApi } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 

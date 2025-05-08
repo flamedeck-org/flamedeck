@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { TraceCommentWithAuthor } from '@/lib/api';
+import type { TraceCommentWithAuthor } from '@/lib/api';
 import { formatDistanceToNow } from 'date-fns';
 import CommentForm from './CommentForm';
 import { MessageSquare, ChevronDown, ChevronRight } from 'lucide-react'; // Added Chevron icons

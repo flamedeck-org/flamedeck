@@ -1,7 +1,8 @@
-import { ApiError, ApiResponse, TraceMetadata } from "@/types";
+import type { ApiError, ApiResponse, TraceMetadata } from "@/types";
 
-import { PostgrestError, PostgrestMaybeSingleResponse, PostgrestResponse } from "@supabase/supabase-js";
-import { DirectoryListingOptions, DirectoryListingResponse, Folder, DirectoryListingContentsResponse, FolderContextResponse } from "./types";
+import type { PostgrestError, PostgrestMaybeSingleResponse, PostgrestResponse } from "@supabase/supabase-js";
+import type { DirectoryListingOptions, Folder, DirectoryListingContentsResponse, FolderContextResponse } from "./types";
+import { DirectoryListingResponse } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { getFolderPath } from "./utils";
 import { listUserTraces } from "./storage";

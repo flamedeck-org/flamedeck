@@ -1,12 +1,14 @@
 // src/hooks/useApiKeys.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-    listUserApiKeys,
-    createApiKeyViaRpc,
+import type {
     ApiKeyDisplayData
 } from '@/lib/api/apiKeys';
+import {
+    listUserApiKeys,
+    createApiKeyViaRpc
+} from '@/lib/api/apiKeys';
 import { useAuth } from '@/contexts/AuthContext';
-import { ApiError } from '@/lib/api';
+import type { ApiError } from '@/lib/api';
 
 const API_KEYS_QUERY_KEY = 'apiKeys';
 

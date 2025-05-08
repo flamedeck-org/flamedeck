@@ -1,4 +1,4 @@
-import {FileFormat} from './file-format-spec'
+import type {FileFormat} from './file-format-spec'
 import {zeroPad} from './lib-utils'
 
 export interface ValueFormatter {

@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { traceApi, TraceRole, TracePermissionWithUser } from '@/lib/api';
+import type { TraceRole, TracePermissionWithUser } from '@/lib/api';
+import { traceApi } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -33,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList, CommandInput } from "@/components/ui/command";
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/integrations/supabase/types';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTraceDetails } from '@/hooks/useTraceDetails';
 import { useDebounce } from '@/hooks/useDebounce';
