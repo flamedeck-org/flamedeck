@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import type { ProfileType } from '../utils';
-import { processAndPrepareTraceUpload } from '../utils';
+import type { ProfileType } from "../utils";
+import { processAndPrepareTraceUpload } from "../utils";
 
 interface UseTraceProcessorProps {
   file: File | null;
@@ -35,43 +35,57 @@ export function useTraceProcessor({ file }: UseTraceProcessorProps): UseTracePro
         currentFileRef.current = file; // Mark this file as the one being processed
 
         try {
-          const { processedFile: newProcessedFile, durationMs, profileType: detectedType } = await processAndPrepareTraceUpload(file);
+          const {
+            processedFile: newProcessedFile,
+            durationMs,
+            profileType: detectedType,
+          } = await processAndPrepareTraceUpload(file);
 
           if (file === currentFileRef.current) {
-            console.log("Background processing complete:", file.name, "Duration:", durationMs, "Type:", detectedType);
+            console.log(
+              "Background processing complete:",
+              file.name,
+              "Duration:",
+              durationMs,
+              "Type:",
+              detectedType
+            );
             setProcessedFile(newProcessedFile);
             setProcessedDurationMs(durationMs);
             setProfileType(detectedType);
             setProcessingError(null);
-          } 
+          }
         } catch (error) {
           if (file === currentFileRef.current) {
-            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during processing.";
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred during processing.";
             console.error("Background processing failed:", errorMessage);
             setProcessingError(errorMessage);
             setProcessedFile(null);
             setProcessedDurationMs(null);
             setProfileType(null);
-             toast({
-                title: "Trace Processing Failed",
-                description: errorMessage,
-                variant: "destructive",
-             });
+            toast({
+              title: "Trace Processing Failed",
+              description: errorMessage,
+              variant: "destructive",
+            });
           }
         } finally {
-           if (file === currentFileRef.current) {
+          if (file === currentFileRef.current) {
             setIsProcessing(false);
-           }
+          }
         }
       };
       processFile();
     } else if (!file) {
-        setIsProcessing(false);
-        setProcessingError(null);
-        setProcessedFile(null);
-        setProcessedDurationMs(null);
-        setProfileType(null);
-        currentFileRef.current = null;
+      setIsProcessing(false);
+      setProcessingError(null);
+      setProcessedFile(null);
+      setProcessedDurationMs(null);
+      setProfileType(null);
+      currentFileRef.current = null;
     }
   }, [file, toast]);
 

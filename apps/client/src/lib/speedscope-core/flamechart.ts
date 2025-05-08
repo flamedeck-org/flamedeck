@@ -1,55 +1,55 @@
-import type {Frame, CallTreeNode} from './profile'
+import type { Frame, CallTreeNode } from "./profile";
 
-import {lastOf} from './lib-utils'
-import {clamp, Rect, Vec2} from './math'
+import { lastOf } from "./lib-utils";
+import { clamp, Rect, Vec2 } from "./math";
 
 export interface FlamechartFrame {
-  node: CallTreeNode
-  start: number
-  end: number
-  parent: FlamechartFrame | null
-  children: FlamechartFrame[]
+  node: CallTreeNode;
+  start: number;
+  end: number;
+  parent: FlamechartFrame | null;
+  children: FlamechartFrame[];
 }
 
-type StackLayer = FlamechartFrame[]
+type StackLayer = FlamechartFrame[];
 
 interface FlamechartDataSource {
-  getTotalWeight(): number
+  getTotalWeight(): number;
 
-  formatValue(v: number): string
+  formatValue(v: number): string;
 
   forEachCall(
     openFrame: (node: CallTreeNode, value: number) => void,
-    closeFrame: (node: CallTreeNode, value: number) => void,
-  ): void
+    closeFrame: (node: CallTreeNode, value: number) => void
+  ): void;
 
-  getColorBucketForFrame(f: Frame): number
+  getColorBucketForFrame(f: Frame): number;
 }
 
 export class Flamechart {
   // Bottom to top
-  private layers: StackLayer[] = []
-  private totalWeight: number = 0
-  private minFrameWidth: number = 1
+  private layers: StackLayer[] = [];
+  private totalWeight: number = 0;
+  private minFrameWidth: number = 1;
 
   getTotalWeight() {
-    return this.totalWeight
+    return this.totalWeight;
   }
   getLayers() {
-    return this.layers
+    return this.layers;
   }
   getColorBucketForFrame(frame: Frame) {
-    return this.source.getColorBucketForFrame(frame)
+    return this.source.getColorBucketForFrame(frame);
   }
   getMinFrameWidth() {
-    return this.minFrameWidth
+    return this.minFrameWidth;
   }
   formatValue(v: number) {
-    return this.source.formatValue(v)
+    return this.source.formatValue(v);
   }
 
   getClampedViewportWidth(viewportWidth: number) {
-    const maxWidth = this.getTotalWeight()
+    const maxWidth = this.getTotalWeight();
 
     // In order to avoid floating point error, we cap the maximum zoom. In
     // particular, it's important that at the maximum zoom level, the total
@@ -78,16 +78,16 @@ export class Flamechart {
     //   > Math.pow(2, 40) / (60 * Math.pow(10, 9))
     //   18.325193796266667
     //
-    const maxZoom = Math.pow(2, 40)
+    const maxZoom = Math.pow(2, 40);
 
     // In addition to capping zoom to avoid floating point error, we further cap
     // zoom to avoid letting you zoom in so that the smallest element more than
     // fills the screen, since that probably isn't useful. The final zoom cap is
     // determined by the minimum zoom of either 2^40x zoom or the necessary zoom
     // for the smallest frame to fill the screen three times.
-    const minWidth = clamp(3 * this.getMinFrameWidth(), maxWidth / maxZoom, maxWidth)
+    const minWidth = clamp(3 * this.getMinFrameWidth(), maxWidth / maxZoom, maxWidth);
 
-    return clamp(viewportWidth, minWidth, maxWidth)
+    return clamp(viewportWidth, minWidth, maxWidth);
   }
 
   // Given a desired config-space viewport rectangle, clamp the rectangle so
@@ -97,52 +97,52 @@ export class Flamechart {
     configSpaceViewportRect,
     renderInverted,
   }: {
-    configSpaceViewportRect: Rect
-    renderInverted?: boolean
+    configSpaceViewportRect: Rect;
+    renderInverted?: boolean;
   }) {
-    const configSpaceSize = new Vec2(this.getTotalWeight(), this.getLayers().length)
-    const width = this.getClampedViewportWidth(configSpaceViewportRect.size.x)
-    const size = configSpaceViewportRect.size.withX(width)
+    const configSpaceSize = new Vec2(this.getTotalWeight(), this.getLayers().length);
+    const width = this.getClampedViewportWidth(configSpaceViewportRect.size.x);
+    const size = configSpaceViewportRect.size.withX(width);
     const origin = Vec2.clamp(
       configSpaceViewportRect.origin,
       new Vec2(0, renderInverted ? 0 : -1),
-      Vec2.max(Vec2.zero, configSpaceSize.minus(size).plus(new Vec2(0, 1))),
-    )
-    return new Rect(origin, configSpaceViewportRect.size.withX(width))
+      Vec2.max(Vec2.zero, configSpaceSize.minus(size).plus(new Vec2(0, 1)))
+    );
+    return new Rect(origin, configSpaceViewportRect.size.withX(width));
   }
 
   constructor(private source: FlamechartDataSource) {
-    const stack: FlamechartFrame[] = []
+    const stack: FlamechartFrame[] = [];
     const openFrame = (node: CallTreeNode, value: number) => {
-      const parent = lastOf(stack)
+      const parent = lastOf(stack);
       const frame: FlamechartFrame = {
         node,
         parent,
         children: [],
         start: value,
         end: value,
-      }
+      };
       if (parent) {
-        parent.children.push(frame)
+        parent.children.push(frame);
       }
-      stack.push(frame)
-    }
+      stack.push(frame);
+    };
 
-    this.minFrameWidth = Infinity
+    this.minFrameWidth = Infinity;
     const closeFrame = (node: CallTreeNode, value: number) => {
-      console.assert(stack.length > 0)
-      const stackTop = stack.pop()!
-      stackTop.end = value
-      if (stackTop.end - stackTop.start === 0) return
-      const layerIndex = stack.length
-      while (this.layers.length <= layerIndex) this.layers.push([])
-      this.layers[layerIndex].push(stackTop)
-      this.minFrameWidth = Math.min(this.minFrameWidth, stackTop.end - stackTop.start)
-    }
+      console.assert(stack.length > 0);
+      const stackTop = stack.pop()!;
+      stackTop.end = value;
+      if (stackTop.end - stackTop.start === 0) return;
+      const layerIndex = stack.length;
+      while (this.layers.length <= layerIndex) this.layers.push([]);
+      this.layers[layerIndex].push(stackTop);
+      this.minFrameWidth = Math.min(this.minFrameWidth, stackTop.end - stackTop.start);
+    };
 
-    this.totalWeight = source.getTotalWeight()
-    source.forEachCall(openFrame, closeFrame)
+    this.totalWeight = source.getTotalWeight();
+    source.forEachCall(openFrame, closeFrame);
 
-    if (!isFinite(this.minFrameWidth)) this.minFrameWidth = 1
+    if (!isFinite(this.minFrameWidth)) this.minFrameWidth = 1;
   }
 }

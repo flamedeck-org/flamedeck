@@ -1,16 +1,16 @@
-import { Color } from '../../../../lib/speedscope-core/color.ts'
-import type { FlamegraphTheme } from '../theme.tsx'
+import { Color } from "../../../../lib/speedscope-core/color.ts";
+import type { FlamegraphTheme } from "../theme.tsx";
 
 // Fire theme (DARK) HCL constants
-const H_MIN = 5.0;   // Start at clearer red
+const H_MIN = 5.0; // Start at clearer red
 const H_RANGE = 40.0; // End in yellow (10+50=60)
 const H_WIGGLE = 5.0; // Keep hue wiggle
 
-const C_BASE = 0.58;  // Reduced saturation for dark
-const C_VAR  = 0.03;  // Keep low chroma wiggle
+const C_BASE = 0.58; // Reduced saturation for dark
+const C_VAR = 0.03; // Keep low chroma wiggle
 
-const L_BASE = 0.20;  // Raised base luma slightly from previous dark
-const L_VAR  = 0.09;  // Keep low luma wiggle
+const L_BASE = 0.2; // Raised base luma slightly from previous dark
+const L_VAR = 0.09; // Keep low luma wiggle
 
 // Triangle wave helper (JS)
 function triangle(x: number): number {
@@ -27,7 +27,7 @@ const colorForBucket = (t: number): Color => {
   const L = L_BASE + L_VAR * (0.5 - x);
 
   return Color.fromLumaChromaHue(L, C, H);
-}
+};
 
 // GLSL version
 const colorForBucketGLSL = `
@@ -46,5 +46,5 @@ vec3 colorForBucket(float t) {
 export const fireFlamegraphThemeDark: FlamegraphTheme = {
   colorForBucket,
   colorForBucketGLSL,
-  flamegraphTextColor: '#FFFFFF',
-}; 
+  flamegraphTextColor: "#FFFFFF",
+};

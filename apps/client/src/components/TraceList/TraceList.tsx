@@ -9,7 +9,15 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Link, useNavigate } from "react-router-dom";
-import { FileJson, UploadCloud, Search, X, Folder as FolderIcon, FolderPlus, Loader2 } from "lucide-react";
+import {
+  FileJson,
+  UploadCloud,
+  Search,
+  X,
+  Folder as FolderIcon,
+  FolderPlus,
+  Loader2,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageLayout from "../PageLayout";
@@ -20,20 +28,15 @@ import { useTraces } from "./hooks/useTraces";
 import { TraceListItem } from "./TraceListItem";
 import { FolderItem } from "./FolderItem";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Breadcrumbs } from './Breadcrumbs';
-import { CreateFolderDialog } from './CreateFolderDialog';
-import { useInView } from 'react-intersection-observer';
+import { Breadcrumbs } from "./Breadcrumbs";
+import { CreateFolderDialog } from "./CreateFolderDialog";
+import { useInView } from "react-intersection-observer";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { UploadDialog } from "@/components/UploadDialog";
 import { DraggableArea } from "@/components/DraggableArea";
 import type { Folder } from "@/lib/api/types";
-import type { PostgrestError } from '@supabase/supabase-js';
+import type { PostgrestError } from "@supabase/supabase-js";
 import type { ApiResponse } from "@/types";
 
 function TraceListComponent() {
@@ -78,52 +81,61 @@ function TraceListComponent() {
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const handleNavigate = useCallback((folderId: string | null) => {
+  const handleNavigate = useCallback(
+    (folderId: string | null) => {
       setLocalSearchQuery("");
       setSearchQuery("");
       window.scrollTo(0, 0);
       if (folderId === null) {
-          navigate('/traces');
+        navigate("/traces");
       } else {
-          navigate(`/traces/folder/${folderId}`);
+        navigate(`/traces/folder/${folderId}`);
       }
-  }, [navigate, setSearchQuery]);
+    },
+    [navigate, setSearchQuery]
+  );
 
-  const handleFolderClick = useCallback((folderId: string) => {
-    handleNavigate(folderId);
-  }, [handleNavigate]);
+  const handleFolderClick = useCallback(
+    (folderId: string) => {
+      handleNavigate(folderId);
+    },
+    [handleNavigate]
+  );
 
   const handleOpenCreateFolderDialog = useCallback(() => {
     setIsCreateFolderDialogOpen(true);
   }, []);
 
-  const handleDialogSubmit = useCallback((folderName: string) => {
-    createFolder(
-      { name: folderName, parentFolderId: currentFolderId },
-      {
-        onSuccess: (response: ApiResponse<Folder>) => {
-          setIsCreateFolderDialogOpen(false);
-          if (response.data) {
-            handleNavigate(response.data.id);
-          } else {
-            console.warn("Folder creation succeeded but no data returned.");
-          }
-        },
-        onError: (error: PostgrestError) => {
-          console.error("Error creating folder:", error);
-          toast({
-            title: "Error creating folder",
-            description: error.message,
-            variant: "destructive",
-          });
+  const handleDialogSubmit = useCallback(
+    (folderName: string) => {
+      createFolder(
+        { name: folderName, parentFolderId: currentFolderId },
+        {
+          onSuccess: (response: ApiResponse<Folder>) => {
+            setIsCreateFolderDialogOpen(false);
+            if (response.data) {
+              handleNavigate(response.data.id);
+            } else {
+              console.warn("Folder creation succeeded but no data returned.");
+            }
+          },
+          onError: (error: PostgrestError) => {
+            console.error("Error creating folder:", error);
+            toast({
+              title: "Error creating folder",
+              description: error.message,
+              variant: "destructive",
+            });
+          },
         }
-      }
-    );
-  }, [createFolder, currentFolderId, handleNavigate, toast]);
+      );
+    },
+    [createFolder, currentFolderId, handleNavigate, toast]
+  );
 
   useEffect(() => {
     if (debouncedSearchQuery !== searchQuery) {
-        setSearchQuery(debouncedSearchQuery);
+      setSearchQuery(debouncedSearchQuery);
     }
   }, [debouncedSearchQuery, setSearchQuery, searchQuery]);
 
@@ -132,8 +144,8 @@ function TraceListComponent() {
   }, []);
 
   const handleClearSearch = useCallback(() => {
-      setLocalSearchQuery("");
-      setSearchQuery("");
+    setLocalSearchQuery("");
+    setSearchQuery("");
   }, [setSearchQuery]);
 
   // --- Drag and Drop Handlers ---
@@ -149,43 +161,46 @@ function TraceListComponent() {
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
 
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      if (file.size > 100 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Maximum file size is 100MB.",
-          variant: "destructive",
-        });
-        return;
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (file.size > 100 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: "Maximum file size is 100MB.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setDroppedFile(file);
+        setIsUploadModalOpen(true);
       }
-
-      setDroppedFile(file);
-      setIsUploadModalOpen(true);
-    }
-  }, [toast]);
+    },
+    [toast]
+  );
 
   const handleCloseUploadModal = useCallback(() => {
-      setIsUploadModalOpen(false);
-      setDroppedFile(null);
+    setIsUploadModalOpen(false);
+    setDroppedFile(null);
   }, []);
 
-  // --- UI Elements --- 
+  // --- UI Elements ---
 
   // Determine if currently loading (initial or subsequent fetch)
   const isCurrentlyLoading = isLoading || isFetchingNextPage;
 
   const createFolderButton = (
-    <Button 
-      size="sm" 
-      variant="outline" 
-      onClick={handleOpenCreateFolderDialog} 
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={handleOpenCreateFolderDialog}
       disabled={isCreatingFolder || isCurrentlyLoading}
     >
       <FolderPlus className="mr-2 h-4 w-4" /> New Folder
@@ -195,11 +210,11 @@ function TraceListComponent() {
   const primaryActions = (
     <div className="flex items-center gap-2">
       <CreateFolderDialog
-          isOpen={isCreateFolderDialogOpen}
-          setIsOpen={setIsCreateFolderDialogOpen}
-          onSubmit={handleDialogSubmit}
-          isPending={isCreatingFolder}
-          triggerElement={createFolderButton}
+        isOpen={isCreateFolderDialogOpen}
+        setIsOpen={setIsCreateFolderDialogOpen}
+        onSubmit={handleDialogSubmit}
+        isPending={isCreatingFolder}
+        triggerElement={createFolderButton}
       />
       <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
         <Button size="sm" disabled={isCurrentlyLoading} variant="primary-outline">
@@ -210,10 +225,12 @@ function TraceListComponent() {
   );
 
   const breadcrumbElement = <Breadcrumbs path={path} onNavigate={handleNavigate} />;
-  const headerTitle = currentFolderId ? currentFolder?.name || "Loading folder..." : "Performance Traces";
+  const headerTitle = currentFolderId
+    ? currentFolder?.name || "Loading folder..."
+    : "Performance Traces";
   const headerSubtitle = isLoading ? <Skeleton className="h-5 w-64 mt-1" /> : breadcrumbElement;
 
-  // --- Conditional Content Rendering Logic --- 
+  // --- Conditional Content Rendering Logic ---
 
   const renderContent = () => {
     if (error) {
@@ -235,27 +252,59 @@ function TraceListComponent() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="pl-6 py-3"><Skeleton className="h-4 w-20" /></TableHead>
-                  <TableHead className="py-3"><Skeleton className="h-4 w-24" /></TableHead>
-                  <TableHead className="py-3"><Skeleton className="h-4 w-16" /></TableHead>
-                  <TableHead className="py-3"><Skeleton className="h-4 w-16" /></TableHead>
-                  <TableHead className="py-3"><Skeleton className="h-4 w-20" /></TableHead>
-                  <TableHead className="py-3"><Skeleton className="h-4 w-12" /></TableHead>
-                  <TableHead className="py-3"><Skeleton className="h-4 w-24" /></TableHead>
-                  <TableHead className="text-right pr-6 py-3"><Skeleton className="h-9 w-9 float-right" /></TableHead>
+                  <TableHead className="pl-6 py-3">
+                    <Skeleton className="h-4 w-20" />
+                  </TableHead>
+                  <TableHead className="py-3">
+                    <Skeleton className="h-4 w-24" />
+                  </TableHead>
+                  <TableHead className="py-3">
+                    <Skeleton className="h-4 w-16" />
+                  </TableHead>
+                  <TableHead className="py-3">
+                    <Skeleton className="h-4 w-16" />
+                  </TableHead>
+                  <TableHead className="py-3">
+                    <Skeleton className="h-4 w-20" />
+                  </TableHead>
+                  <TableHead className="py-3">
+                    <Skeleton className="h-4 w-12" />
+                  </TableHead>
+                  <TableHead className="py-3">
+                    <Skeleton className="h-4 w-24" />
+                  </TableHead>
+                  <TableHead className="text-right pr-6 py-3">
+                    <Skeleton className="h-9 w-9 float-right" />
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {[...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell className="pl-6 py-3"><Skeleton className="h-4 w-3/4" /></TableCell>
-                    <TableCell className="py-3"><Skeleton className="h-4 w-1/2" /></TableCell>
-                    <TableCell className="py-3"><Skeleton className="h-4 w-1/4" /></TableCell>
-                    <TableCell className="py-3"><Skeleton className="h-4 w-1/4" /></TableCell>
-                    <TableCell className="py-3"><Skeleton className="h-4 w-1/3" /></TableCell>
-                    <TableCell className="py-3"><Skeleton className="h-4 w-1/5" /></TableCell>
-                    <TableCell className="py-3"><Skeleton className="h-4 w-1/2" /></TableCell>
-                    <TableCell className="text-right pr-6 py-3"><Skeleton className="h-9 w-9 float-right" /></TableCell>
+                    <TableCell className="pl-6 py-3">
+                      <Skeleton className="h-4 w-3/4" />
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <Skeleton className="h-4 w-1/2" />
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <Skeleton className="h-4 w-1/4" />
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <Skeleton className="h-4 w-1/4" />
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <Skeleton className="h-4 w-1/3" />
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <Skeleton className="h-4 w-1/5" />
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <Skeleton className="h-4 w-1/2" />
+                    </TableCell>
+                    <TableCell className="text-right pr-6 py-3">
+                      <Skeleton className="h-9 w-9 float-right" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -281,36 +330,47 @@ function TraceListComponent() {
             baseClassName="p-1" // Ensure consistent padding
             className="pt-12 pb-12 text-center flex flex-col justify-center items-center"
           >
-            <CardContent className="p-0"> {/* Remove padding from CardContent itself */}
-              {isSearchingAndEmpty ? 
-                <Search className="mx-auto h-16 w-16 text-muted-foreground mb-4" /> : 
-                (currentFolderId ? 
-                  <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" /> : 
-                  <FileJson className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                )
-              }
+            <CardContent className="p-0">
+              {" "}
+              {/* Remove padding from CardContent itself */}
+              {isSearchingAndEmpty ? (
+                <Search className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+              ) : currentFolderId ? (
+                <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+              ) : (
+                <FileJson className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+              )}
               <h3 className="text-xl font-medium mb-2">
-                {isSearchingAndEmpty ? "No Results Found" : (currentFolderId ? "Folder is Empty" : "No Items Yet")}
+                {isSearchingAndEmpty
+                  ? "No Results Found"
+                  : currentFolderId
+                    ? "Folder is Empty"
+                    : "No Items Yet"}
               </h3>
               <p className="text-muted-foreground mb-6">
                 {isSearchingAndEmpty
                   ? `Your search for "${searchQuery}" did not match any items.`
-                  : (currentFolderId ? "This folder doesn\'t contain any traces or subfolders." : "Create a folder or upload your first trace.")
-                }
+                  : currentFolderId
+                    ? "This folder doesn\'t contain any traces or subfolders."
+                    : "Create a folder or upload your first trace."}
               </p>
               {isSearchingAndEmpty ? (
-                <Button onClick={handleClearSearch} variant="outline" size="sm">Clear Search</Button>
+                <Button onClick={handleClearSearch} variant="outline" size="sm">
+                  Clear Search
+                </Button>
               ) : (
                 <div className="flex justify-center gap-2">
                   <CreateFolderDialog
-                      isOpen={isCreateFolderDialogOpen}
-                      setIsOpen={setIsCreateFolderDialogOpen}
-                      onSubmit={handleDialogSubmit}
-                      isPending={isCreatingFolder}
-                      triggerElement={createFolderButton}
+                    isOpen={isCreateFolderDialogOpen}
+                    setIsOpen={setIsCreateFolderDialogOpen}
+                    onSubmit={handleDialogSubmit}
+                    isPending={isCreatingFolder}
+                    triggerElement={createFolderButton}
                   />
                   <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-                      <Button variant="primary-outline" size="sm" disabled={isCurrentlyLoading}><UploadCloud className="mr-2 h-4 w-4" /> Upload Trace</Button>
+                    <Button variant="primary-outline" size="sm" disabled={isCurrentlyLoading}>
+                      <UploadCloud className="mr-2 h-4 w-4" /> Upload Trace
+                    </Button>
                   </Link>
                 </div>
               )}
@@ -370,33 +430,34 @@ function TraceListComponent() {
         </Card>
 
         <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
-          {isFetchingNextPage && (
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          )}
+          {isFetchingNextPage && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
         </div>
       </DraggableArea>
     );
   };
 
-  // --- Upload Dialog --- 
+  // --- Upload Dialog ---
   const uploadDialog = (
-    <Dialog open={isUploadModalOpen} onOpenChange={(open) => {
+    <Dialog
+      open={isUploadModalOpen}
+      onOpenChange={(open) => {
         if (!open) {
-            handleCloseUploadModal();
+          handleCloseUploadModal();
         }
-    }}>
-        <DialogContent className="sm:max-w-[625px]">
-            <DialogHeader>
-                <DialogTitle>Upload Dropped Trace</DialogTitle>
-            </DialogHeader>
-            {droppedFile && (
-              <UploadDialog
-                initialFolderId={currentFolderId}
-                initialFile={droppedFile}
-                onClose={handleCloseUploadModal}
-              />
-            )}
-        </DialogContent>
+      }}
+    >
+      <DialogContent className="sm:max-w-[625px]">
+        <DialogHeader>
+          <DialogTitle>Upload Dropped Trace</DialogTitle>
+        </DialogHeader>
+        {droppedFile && (
+          <UploadDialog
+            initialFolderId={currentFolderId}
+            initialFile={droppedFile}
+            onClose={handleCloseUploadModal}
+          />
+        )}
+      </DialogContent>
     </Dialog>
   );
 
@@ -404,41 +465,37 @@ function TraceListComponent() {
   // renderContent() handles the conditional display of skeletons, errors, empty states, or the list.
   return (
     <PageLayout>
-      <PageHeader 
-        subtitle={headerSubtitle}
-        title={headerTitle} 
-        actions={primaryActions} 
-      />
+      <PageHeader subtitle={headerSubtitle} title={headerTitle} actions={primaryActions} />
       <div className="mb-4">
         <div className="relative w-full">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-                type="search"
-                placeholder="Search scenarios, branches, commits..."
-                value={localSearchQuery}
-                onChange={handleLocalSearchChange}
-                className="pl-8 pr-8 w-full hide-native-search-cancel-button"
-                aria-label="Search traces"
-            />
-            {localSearchQuery && (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1.5 top-1.5 h-7 w-7"
-                    onClick={handleClearSearch}
-                    aria-label="Clear search"
-                    disabled={isCurrentlyLoading} // Use combined loading state
-                >
-                    <X className="h-4 w-4" />
-                </Button>
-            )}
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search scenarios, branches, commits..."
+            value={localSearchQuery}
+            onChange={handleLocalSearchChange}
+            className="pl-8 pr-8 w-full hide-native-search-cancel-button"
+            aria-label="Search traces"
+          />
+          {localSearchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1.5 top-1.5 h-7 w-7"
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+              disabled={isCurrentlyLoading} // Use combined loading state
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Render the content based on state */} 
+      {/* Render the content based on state */}
       {renderContent()}
 
-      {/* Render extracted upload dialog */} 
+      {/* Render extracted upload dialog */}
       {uploadDialog}
     </PageLayout>
   );

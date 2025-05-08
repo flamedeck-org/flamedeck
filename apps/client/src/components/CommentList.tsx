@@ -1,10 +1,10 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import type { TraceCommentWithAuthor } from '@/lib/api';
-import { traceApi } from '@/lib/api';
-import CommentItem from './CommentItem';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, MessageSquare } from 'lucide-react';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { TraceCommentWithAuthor } from "@/lib/api";
+import { traceApi } from "@/lib/api";
+import CommentItem from "./CommentItem";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle, MessageSquare } from "lucide-react";
 
 // Type for structured comment including potentially nested replies
 type StructuredComment = TraceCommentWithAuthor & { replies: StructuredComment[] };
@@ -17,11 +17,11 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
   const commentMap: { [key: string]: StructuredComment } = {};
   const rootComments: StructuredComment[] = [];
 
-  comments.forEach(comment => {
+  comments.forEach((comment) => {
     commentMap[comment.id] = { ...comment, replies: [] };
   });
 
-  comments.forEach(comment => {
+  comments.forEach((comment) => {
     const mappedComment = commentMap[comment.id];
     if (comment.parent_comment_id && commentMap[comment.parent_comment_id]) {
       // Ensure parent exists before pushing
@@ -33,8 +33,8 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
 
   // Sort root comments: specific comments first, grouped, then general comments
   rootComments.sort((a, b) => {
-    const isAOverview = a.comment_type === 'overview';
-    const isBOverview = b.comment_type === 'overview';
+    const isAOverview = a.comment_type === "overview";
+    const isBOverview = b.comment_type === "overview";
 
     // If both are overview or both are specific, sort by date (newest first)
     if (isAOverview === isBOverview) {
@@ -45,10 +45,10 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
       // If they are specific with different identifiers, sort by identifier (grouping)
       if (!isAOverview) {
         // Handle null identifiers just in case, though should be non-null for non-overview
-        const idA = String(a.comment_identifier ?? '');
-        const idB = String(b.comment_identifier ?? '');
+        const idA = String(a.comment_identifier ?? "");
+        const idB = String(b.comment_identifier ?? "");
         if (idA !== idB) {
-           return idA.localeCompare(idB);
+          return idA.localeCompare(idB);
         }
       }
       // If both are overview or same identifier, sort by date
@@ -64,11 +64,11 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
 
 // Function to group comments by type/identifier
 const groupCommentsByTypeAndIdentifier = (comments: StructuredComment[]) => {
-  const specificGroups: Record<string, { type: string, comments: StructuredComment[] }> = {};
+  const specificGroups: Record<string, { type: string; comments: StructuredComment[] }> = {};
   const generalComments: StructuredComment[] = [];
 
-  comments.forEach(comment => {
-    if (comment.comment_type !== 'overview' && comment.comment_identifier) {
+  comments.forEach((comment) => {
+    if (comment.comment_type !== "overview" && comment.comment_identifier) {
       const key = `${comment.comment_type}-${comment.comment_identifier}`;
       if (!specificGroups[key]) {
         specificGroups[key] = { type: comment.comment_type, comments: [] };
@@ -84,8 +84,12 @@ const groupCommentsByTypeAndIdentifier = (comments: StructuredComment[]) => {
 };
 
 const CommentList: React.FC<CommentListProps> = ({ traceId }) => {
-  const { data: comments, isLoading, error } = useQuery({
-    queryKey: ['traceComments', traceId],
+  const {
+    data: comments,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["traceComments", traceId],
     queryFn: async () => {
       const response = await traceApi.getTraceComments(traceId);
       if (response.error) throw new Error(response.error.message);
@@ -137,11 +141,13 @@ const CommentList: React.FC<CommentListProps> = ({ traceId }) => {
             <div className="flex items-center space-x-2 mb-2 text-sm font-medium bg-muted p-2 rounded capitalize">
               <MessageSquare className="h-4 w-4" />
               {/* Make title more descriptive */}
-              <span>Comments on {groupData.type}: {identifier}</span>
+              <span>
+                Comments on {groupData.type}: {identifier}
+              </span>
               <span className="text-muted-foreground">({groupData.comments.length})</span>
             </div>
             <div className="ml-4">
-              {groupData.comments.map(comment => (
+              {groupData.comments.map((comment) => (
                 <CommentItem
                   key={comment.id}
                   comment={comment}
@@ -162,13 +168,8 @@ const CommentList: React.FC<CommentListProps> = ({ traceId }) => {
               <span>Overview Comments</span>
             </div>
           )}
-          {generalComments.map(comment => (
-            <CommentItem
-              key={comment.id}
-              comment={comment}
-              traceId={traceId}
-              currentDepth={0}
-            />
+          {generalComments.map((comment) => (
+            <CommentItem key={comment.id} comment={comment} traceId={traceId} currentDepth={0} />
           ))}
         </div>
       )}
@@ -176,4 +177,4 @@ const CommentList: React.FC<CommentListProps> = ({ traceId }) => {
   );
 };
 
-export default CommentList; 
+export default CommentList;

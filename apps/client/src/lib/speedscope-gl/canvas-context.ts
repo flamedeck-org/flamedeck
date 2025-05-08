@@ -1,87 +1,92 @@
-import {Graphics, WebGL} from './graphics'
-import {RectangleBatchRenderer} from './rectangle-batch-renderer'
-import {TextureRenderer} from './texture-renderer'
-import {Rect, Vec2} from '@/lib/speedscope-core/math'
-import {ViewportRectangleRenderer} from './overlay-rectangle-renderer'
-import {FlamechartColorPassRenderer} from './flamechart-color-pass-renderer'
-import {Color} from '@/lib/speedscope-core/color'
-import type {Theme} from '@/components/speedscope-ui/themes/theme'
+import { Graphics, WebGL } from "./graphics";
+import { RectangleBatchRenderer } from "./rectangle-batch-renderer";
+import { TextureRenderer } from "./texture-renderer";
+import { Rect, Vec2 } from "@/lib/speedscope-core/math";
+import { ViewportRectangleRenderer } from "./overlay-rectangle-renderer";
+import { FlamechartColorPassRenderer } from "./flamechart-color-pass-renderer";
+import { Color } from "@/lib/speedscope-core/color";
+import type { Theme } from "@/components/speedscope-ui/themes/theme";
 
-type FrameCallback = () => void
+type FrameCallback = () => void;
 
 export class CanvasContext {
-  public readonly gl: WebGL.Context
-  public readonly rectangleBatchRenderer: RectangleBatchRenderer
-  public readonly textureRenderer: TextureRenderer
-  public readonly viewportRectangleRenderer: ViewportRectangleRenderer
-  public readonly flamechartColorPassRenderer: FlamechartColorPassRenderer
-  public readonly theme: Theme
+  public readonly gl: WebGL.Context;
+  public readonly rectangleBatchRenderer: RectangleBatchRenderer;
+  public readonly textureRenderer: TextureRenderer;
+  public readonly viewportRectangleRenderer: ViewportRectangleRenderer;
+  public readonly flamechartColorPassRenderer: FlamechartColorPassRenderer;
+  public readonly theme: Theme;
 
   constructor(canvas: HTMLCanvasElement, theme: Theme) {
-    this.gl = new WebGL.Context(canvas)
-    this.rectangleBatchRenderer = new RectangleBatchRenderer(this.gl)
-    this.textureRenderer = new TextureRenderer(this.gl)
-    this.viewportRectangleRenderer = new ViewportRectangleRenderer(this.gl, theme)
-    this.flamechartColorPassRenderer = new FlamechartColorPassRenderer(this.gl, theme)
-    this.theme = theme
+    this.gl = new WebGL.Context(canvas);
+    this.rectangleBatchRenderer = new RectangleBatchRenderer(this.gl);
+    this.textureRenderer = new TextureRenderer(this.gl);
+    this.viewportRectangleRenderer = new ViewportRectangleRenderer(this.gl, theme);
+    this.flamechartColorPassRenderer = new FlamechartColorPassRenderer(this.gl, theme);
+    this.theme = theme;
 
     // Whenever the canvas is resized, draw immediately. This prevents
     // flickering during resizing.
-    this.gl.addAfterResizeEventHandler(this.onBeforeFrame)
+    this.gl.addAfterResizeEventHandler(this.onBeforeFrame);
 
-    const webGLInfo = this.gl.getWebGLInfo()
+    const webGLInfo = this.gl.getWebGLInfo();
     if (webGLInfo) {
       console.log(
-        `WebGL initialized. renderer: ${webGLInfo.renderer}, vendor: ${webGLInfo.vendor}, version: ${webGLInfo.version}`,
-      )
+        `WebGL initialized. renderer: ${webGLInfo.renderer}, vendor: ${webGLInfo.vendor}, version: ${webGLInfo.version}`
+      );
     }
-    ;(window as any)['testContextLoss'] = () => {
-      this.gl.testContextLoss()
-    }
+    (window as any)["testContextLoss"] = () => {
+      this.gl.testContextLoss();
+    };
   }
 
-  private animationFrameRequest: number | null = null
-  private beforeFrameHandlers = new Set<FrameCallback>()
+  private animationFrameRequest: number | null = null;
+  private beforeFrameHandlers = new Set<FrameCallback>();
   addBeforeFrameHandler(callback: FrameCallback) {
-    this.beforeFrameHandlers.add(callback)
+    this.beforeFrameHandlers.add(callback);
   }
   removeBeforeFrameHandler(callback: FrameCallback) {
-    this.beforeFrameHandlers.delete(callback)
+    this.beforeFrameHandlers.delete(callback);
   }
   requestFrame() {
     if (!this.animationFrameRequest) {
-      this.animationFrameRequest = requestAnimationFrame(this.onBeforeFrame)
+      this.animationFrameRequest = requestAnimationFrame(this.onBeforeFrame);
     }
   }
   private onBeforeFrame = () => {
-    this.animationFrameRequest = null
-    this.gl.setViewport(0, 0, this.gl.renderTargetWidthInPixels, this.gl.renderTargetHeightInPixels)
-    const color = Color.fromCSSHex(this.theme.bgPrimaryColor)
-    this.gl.clear(new Graphics.Color(color.r, color.g, color.b, color.a))
+    this.animationFrameRequest = null;
+    this.gl.setViewport(
+      0,
+      0,
+      this.gl.renderTargetWidthInPixels,
+      this.gl.renderTargetHeightInPixels
+    );
+    const color = Color.fromCSSHex(this.theme.bgPrimaryColor);
+    this.gl.clear(new Graphics.Color(color.r, color.g, color.b, color.a));
 
     for (const handler of this.beforeFrameHandlers) {
-      handler()
+      handler();
     }
-  }
+  };
 
   setViewport(physicalBounds: Rect, cb: () => void): void {
-    const {origin, size} = physicalBounds
-    const viewportBefore = this.gl.viewport
-    this.gl.setViewport(origin.x, origin.y, size.x, size.y)
+    const { origin, size } = physicalBounds;
+    const viewportBefore = this.gl.viewport;
+    this.gl.setViewport(origin.x, origin.y, size.x, size.y);
 
-    cb()
+    cb();
 
-    const {x, y, width, height} = viewportBefore
-    this.gl.setViewport(x, y, width, height)
+    const { x, y, width, height } = viewportBefore;
+    this.gl.setViewport(x, y, width, height);
   }
 
   renderBehind(el: Element, cb: () => void) {
-    const bounds = el.getBoundingClientRect()
+    const bounds = el.getBoundingClientRect();
     const physicalBounds = new Rect(
       new Vec2(bounds.left * window.devicePixelRatio, bounds.top * window.devicePixelRatio),
-      new Vec2(bounds.width * window.devicePixelRatio, bounds.height * window.devicePixelRatio),
-    )
+      new Vec2(bounds.width * window.devicePixelRatio, bounds.height * window.devicePixelRatio)
+    );
 
-    this.setViewport(physicalBounds, cb)
+    this.setViewport(physicalBounds, cb);
   }
 }

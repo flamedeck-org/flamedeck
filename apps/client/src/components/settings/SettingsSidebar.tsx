@@ -1,6 +1,6 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { KeyRound, User } from 'lucide-react';
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { KeyRound, User } from "lucide-react";
 
 const SettingsSidebar: React.FC = () => {
   return (
@@ -41,4 +41,4 @@ const SettingsSidebar: React.FC = () => {
   );
 };
 
-export default SettingsSidebar; 
+export default SettingsSidebar;

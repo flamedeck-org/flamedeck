@@ -1,11 +1,11 @@
-import React, { memo, useCallback, useState } from 'react';
-import { Folder, Search, X, AlertCircle, ChevronRight, Home, Loader2 } from 'lucide-react';
-import { useFolderNavigation } from './hooks/useFolderNavigation';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import React, { memo, useCallback, useState } from "react";
+import { Folder, Search, X, AlertCircle, ChevronRight, Home, Loader2 } from "lucide-react";
+import { useFolderNavigation } from "./hooks/useFolderNavigation";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface FolderSelectProps {
   initialFolderId?: string | null;
@@ -33,25 +33,33 @@ function FolderSelectComponent({
 
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(currentFolderId);
 
-  const handleFolderClick = useCallback((folderId: string) => {
-    navigateToFolder(folderId);
-    setSelectedFolderId(folderId); // Tentatively select navigated folder
-  }, [navigateToFolder]);
+  const handleFolderClick = useCallback(
+    (folderId: string) => {
+      navigateToFolder(folderId);
+      setSelectedFolderId(folderId); // Tentatively select navigated folder
+    },
+    [navigateToFolder]
+  );
 
-  const handleBreadcrumbClick = useCallback((folderId: string | null) => {
-    navigateToFolder(folderId);
-    setSelectedFolderId(folderId); // Tentatively select navigated folder
-  }, [navigateToFolder]);
+  const handleBreadcrumbClick = useCallback(
+    (folderId: string | null) => {
+      navigateToFolder(folderId);
+      setSelectedFolderId(folderId); // Tentatively select navigated folder
+    },
+    [navigateToFolder]
+  );
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
   }, [setSearchQuery]);
 
   const handleSelect = () => {
-      const selectedName = selectedFolderId === null
+    const selectedName =
+      selectedFolderId === null
         ? "Root"
-        : (Array.isArray(folders) ? folders.find(f => f.id === selectedFolderId)?.name : null) || currentFolder?.name;
-      onSelectFolder(selectedFolderId, selectedName || null);
+        : (Array.isArray(folders) ? folders.find((f) => f.id === selectedFolderId)?.name : null) ||
+          currentFolder?.name;
+    onSelectFolder(selectedFolderId, selectedName || null);
   };
 
   const renderBreadcrumbs = () => (
@@ -60,8 +68,8 @@ function FolderSelectComponent({
         onClick={() => handleBreadcrumbClick(null)}
         className={cn(
           "hover:underline flex items-center",
-          'hover:text-primary',
-          selectedFolderId === null && 'text-primary font-medium'
+          "hover:text-primary",
+          selectedFolderId === null && "text-primary font-medium"
         )}
         aria-current={selectedFolderId === null ? "page" : undefined}
       >
@@ -69,23 +77,24 @@ function FolderSelectComponent({
         Root
       </button>
       {/* Only map if path is defined and is an array */}
-      {Array.isArray(path) && path.map((folder, index) => (
-        <React.Fragment key={folder.id}>
-          <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
-          <button
-            onClick={() => handleBreadcrumbClick(folder.id)}
-            className={cn(
-              "hover:underline truncate",
-              'hover:text-primary',
-              selectedFolderId === folder.id && 'text-primary font-medium',
-            )}
-            aria-current={selectedFolderId === folder.id ? "page" : undefined}
-            title={folder.name}
-          >
-            {folder.name}
-          </button>
-        </React.Fragment>
-      ))}
+      {Array.isArray(path) &&
+        path.map((folder, index) => (
+          <React.Fragment key={folder.id}>
+            <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            <button
+              onClick={() => handleBreadcrumbClick(folder.id)}
+              className={cn(
+                "hover:underline truncate",
+                "hover:text-primary",
+                selectedFolderId === folder.id && "text-primary font-medium"
+              )}
+              aria-current={selectedFolderId === folder.id ? "page" : undefined}
+              title={folder.name}
+            >
+              {folder.name}
+            </button>
+          </React.Fragment>
+        ))}
     </nav>
   );
 
@@ -121,14 +130,14 @@ function FolderSelectComponent({
       );
     }
 
-     if (folders.length === 0 && searchQuery) {
-        return (
-          <div className="text-center text-muted-foreground py-6 px-4">
-             <Search className="h-10 w-10 mx-auto mb-2 text-gray-400" />
-            <p>No folders found matching "{searchQuery}".</p>
-          </div>
-        );
-      }
+    if (folders.length === 0 && searchQuery) {
+      return (
+        <div className="text-center text-muted-foreground py-6 px-4">
+          <Search className="h-10 w-10 mx-auto mb-2 text-gray-400" />
+          <p>No folders found matching "{searchQuery}".</p>
+        </div>
+      );
+    }
 
     return (
       <ul className="space-y-1 mt-2">
@@ -137,7 +146,7 @@ function FolderSelectComponent({
             <button
               className={cn(
                 "w-full text-left flex items-center p-2 rounded-md hover:bg-accent",
-                selectedFolderId === folder.id && "bg-accent text-accent-foreground",
+                selectedFolderId === folder.id && "bg-accent text-accent-foreground"
               )}
               onClick={() => handleFolderClick(folder.id)}
               title={folder.name}
@@ -183,22 +192,30 @@ function FolderSelectComponent({
 
       {/* Folder List */}
       <ScrollArea className="flex-grow border rounded-md p-2 mb-4 min-h-[150px]">
-          {renderFolderList()}
+        {renderFolderList()}
       </ScrollArea>
 
       {/* Actions */}
       <div className="flex justify-end space-x-2 pt-2 border-t">
         {onCancel && (
-            <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
         )}
         <Button onClick={handleSelect} disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {/* Safely access path */}
-            Select "{selectedFolderId === null ? 'Root' : (Array.isArray(path) ? path.find(p => p.id === selectedFolderId)?.name : null) || currentFolder?.name || '...'}"
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {/* Safely access path */}
+          Select "
+          {selectedFolderId === null
+            ? "Root"
+            : (Array.isArray(path) ? path.find((p) => p.id === selectedFolderId)?.name : null) ||
+              currentFolder?.name ||
+              "..."}
+          "
         </Button>
       </div>
     </div>
   );
 }
 
-export const FolderSelect = memo(FolderSelectComponent); 
+export const FolderSelect = memo(FolderSelectComponent);

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,23 +15,23 @@ import Upload from "./pages/Upload";
 import NotFound from "./pages/NotFound";
 import TraceViewerPage from "./pages/TraceViewerPage";
 import DocsGettingStartedPage from "./pages/DocsGettingStartedPage";
-import DocsCliUploadPage from './pages/DocsCliUploadPage';
-import DocsNpmUploadPage from './pages/DocsNpmUploadPage';
+import DocsCliUploadPage from "./pages/DocsCliUploadPage";
+import DocsNpmUploadPage from "./pages/DocsNpmUploadPage";
 import DocsLayout from "./components/docs/DocsLayout";
 import { useTheme } from "./components/speedscope-ui/themes/theme";
 import { useAtom } from "./lib/speedscope-core/atom";
 import { glCanvasAtom } from "./lib/speedscope-core/app-state/index";
 import { getCanvasContext } from "./lib/speedscope-core/app-state/getters";
 import { GLCanvas } from "./components/speedscope-ui/application";
-import { SharingModalProvider } from '@/hooks/useSharingModal';
-import { SharingModal } from '@/components/sharing/SharingModal';
-import SettingsLayout from '@/components/settings/SettingsLayout';
-import SettingsPage from './pages/settings/SettingsPage';
+import { SharingModalProvider } from "@/hooks/useSharingModal";
+import { SharingModal } from "@/components/sharing/SharingModal";
+import SettingsLayout from "@/components/settings/SettingsLayout";
+import SettingsPage from "./pages/settings/SettingsPage";
 import Navbar from "./components/Navbar";
-import ProtectedRoute from './components/ProtectedRoute';
-import { Loader2 } from 'lucide-react';
-import UsernameStep from './pages/Onboarding/UsernameStep';
-import AuthCallbackPage from './pages/AuthCallbackPage';
+import ProtectedRoute from "./components/ProtectedRoute";
+import { Loader2 } from "lucide-react";
+import UsernameStep from "./pages/Onboarding/UsernameStep";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -42,10 +42,10 @@ function RootHandler() {
   if (isAuthLoading) {
     // Show spinner covering the main content area while determining auth state
     return (
-       <div className="flex justify-center items-center h-[calc(100vh-var(--header-height))] w-full">
-         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-       </div>
-     );
+      <div className="flex justify-center items-center h-[calc(100vh-var(--header-height))] w-full">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   // If loading is finished and there's no user, show the Index page
@@ -73,7 +73,7 @@ const AppRoutes = () => {
       {/* Other Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
-      
+
       {/* Documentation Routes - accessible to all */}
       <Route path="/docs" element={<DocsLayout />}>
         <Route index element={<Navigate to="/docs/getting-started" replace />} />
@@ -91,12 +91,12 @@ const AppRoutes = () => {
       {/* Protected Routes - NO LONGER includes the root path "/" */}
       <Route element={<ProtectedRoute />}>
         {/* ProtectedRoute now only guards these specific authenticated paths */}
-        <Route path="/traces" element={<Traces />} /> 
+        <Route path="/traces" element={<Traces />} />
         <Route path="/traces/folder/:folderId" element={<Traces />} />
         <Route path="/traces/:id" element={<TraceDetail />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/settings" element={<SettingsLayout />}>
-          <Route index element={<Navigate to="/settings/general" replace />} /> 
+          <Route index element={<Navigate to="/settings/general" replace />} />
           <Route path="general" element={<SettingsPage />} />
           <Route path="api-keys" element={<ApiKeysPage />} />
         </Route>
@@ -109,34 +109,38 @@ const AppRoutes = () => {
 };
 
 const App = () => {
-  const theme = useTheme()
+  const theme = useTheme();
   const glCanvas = useAtom(glCanvasAtom);
   const canvasContext = useMemo(
-    () => (glCanvas ? getCanvasContext({theme, canvas: glCanvas}) : null),
-    [theme, glCanvas],
-  )
+    () => (glCanvas ? getCanvasContext({ theme, canvas: glCanvas }) : null),
+    [theme, glCanvas]
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SharingModalProvider>
           <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <div className="h-full w-full flex flex-col speedscope-app-container relative">
-              <Navbar />
-              <GLCanvas theme={theme} setGLCanvas={glCanvasAtom.set} canvasContext={canvasContext} />
-              <AppRoutes />
-            </div>
-          </BrowserRouter>
-          <SharingModal />
-        </TooltipProvider>
-      </SharingModalProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-  )
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ScrollToTop />
+              <div className="h-full w-full flex flex-col speedscope-app-container relative">
+                <Navbar />
+                <GLCanvas
+                  theme={theme}
+                  setGLCanvas={glCanvasAtom.set}
+                  canvasContext={canvasContext}
+                />
+                <AppRoutes />
+              </div>
+            </BrowserRouter>
+            <SharingModal />
+          </TooltipProvider>
+        </SharingModalProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
 };
 
 export default App;

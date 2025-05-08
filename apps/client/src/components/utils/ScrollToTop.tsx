@@ -9,4 +9,4 @@ export default function ScrollToTop() {
   }, [pathname]); // Dependency array ensures effect runs only when pathname changes
 
   return null; // This component doesn't render anything visual
-} 
+}

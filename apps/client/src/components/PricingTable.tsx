@@ -40,11 +40,7 @@ const PricingTable = () => {
             tier.name === "Pro" && "border-2 border-primary"
           )}
         >
-          {tier.name === "Pro" && (
-            <Badge className="absolute top-4 right-4">
-              Coming Soon
-            </Badge>
-          )}
+          {tier.name === "Pro" && <Badge className="absolute top-4 right-4">Coming Soon</Badge>}
           <CardHeader>
             <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
             <div className="mt-2">

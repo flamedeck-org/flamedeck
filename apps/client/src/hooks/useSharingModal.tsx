@@ -1,5 +1,5 @@
-import type { ReactNode} from 'react';
-import { useState, createContext, useContext, useCallback, useMemo } from 'react';
+import type { ReactNode } from "react";
+import { useState, createContext, useContext, useCallback, useMemo } from "react";
 
 interface SharingModalContextType {
   isOpen: boolean;
@@ -28,24 +28,23 @@ export function SharingModalProvider({ children }: SharingModalProviderProps) {
     setTraceId(null); // Clear traceId when closing
   }, []);
 
-  const value = useMemo(() => ({
-    isOpen,
-    traceId,
-    openModal,
-    closeModal,
-  }), [isOpen, traceId, openModal, closeModal]);
-
-  return (
-    <SharingModalContext.Provider value={value}>
-      {children}
-    </SharingModalContext.Provider>
+  const value = useMemo(
+    () => ({
+      isOpen,
+      traceId,
+      openModal,
+      closeModal,
+    }),
+    [isOpen, traceId, openModal, closeModal]
   );
+
+  return <SharingModalContext.Provider value={value}>{children}</SharingModalContext.Provider>;
 }
 
 export function useSharingModal(): SharingModalContextType {
   const context = useContext(SharingModalContext);
   if (context === undefined) {
-    throw new Error('useSharingModal must be used within a SharingModalProvider');
+    throw new Error("useSharingModal must be used within a SharingModalProvider");
   }
   return context;
-} 
+}

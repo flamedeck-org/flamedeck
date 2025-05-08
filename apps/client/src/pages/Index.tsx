@@ -31,18 +31,14 @@ function Index() {
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Upload, store, and analyze performance traces with powerful visualizations.
-                Debug performance issues faster than ever before.
+                Upload, store, and analyze performance traces with powerful visualizations. Debug
+                performance issues faster than ever before.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-4 justify-center">
               <Link to="/login">
-                <Button
-                  size="lg"
-                  variant="gradient"
-                  className="text-lg px-8"
-                >
+                <Button size="lg" variant="gradient" className="text-lg px-8">
                   Get Started
                 </Button>
               </Link>
@@ -58,24 +54,21 @@ function Index() {
                 <UploadCloud className="h-8 w-8 text-primary mb-2" />
                 <div className="text-2xl font-bold">Upload</div>
                 <p className="text-muted-foreground">
-                  Easily upload Speedscope-compatible JSON trace files with
-                  relevant metadata
+                  Easily upload Speedscope-compatible JSON trace files with relevant metadata
                 </p>
               </div>
               <div className="p-6 border rounded-lg bg-card text-left space-y-3">
                 <Database className="h-8 w-8 text-primary mb-2" />
                 <div className="text-2xl font-bold">Store</div>
                 <p className="text-muted-foreground">
-                  Organize and search through your performance traces with rich
-                  metadata
+                  Organize and search through your performance traces with rich metadata
                 </p>
               </div>
               <div className="p-6 border rounded-lg bg-card text-left space-y-3">
                 <BarChart className="h-8 w-8 text-primary mb-2" />
                 <div className="text-2xl font-bold">Analyze</div>
                 <p className="text-muted-foreground">
-                  Visualize trace data with the powerful Speedscope flame graph
-                  viewer
+                  Visualize trace data with the powerful Speedscope flame graph viewer
                 </p>
               </div>
             </div>
@@ -86,7 +79,9 @@ function Index() {
         <div className="py-24 px-4 bg-secondary/50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Powerful Features for Performance Analysis</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Powerful Features for Performance Analysis
+              </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                 Streamline your performance debugging workflow with tools built for teams.
               </p>
@@ -96,21 +91,24 @@ function Index() {
                 <Search className="h-10 w-10 text-primary mb-3" />
                 <h3 className="text-2xl font-semibold">Centralized Trace Storage</h3>
                 <p className="text-muted-foreground text-lg">
-                  Securely store and organize all your performance traces in one accessible location. Easily search and retrieve profiles when you need them.
+                  Securely store and organize all your performance traces in one accessible
+                  location. Easily search and retrieve profiles when you need them.
                 </p>
               </div>
               <div className="p-8 border rounded-lg bg-card text-left space-y-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <Users className="h-10 w-10 text-primary mb-3" />
                 <h3 className="text-2xl font-semibold">Collaborative Debugging</h3>
                 <p className="text-muted-foreground text-lg">
-                  Dive deep into performance issues with an interactive flamegraph viewer. Share insights and collaborate with your team directly on the trace data.
+                  Dive deep into performance issues with an interactive flamegraph viewer. Share
+                  insights and collaborate with your team directly on the trace data.
                 </p>
               </div>
               <div className="p-8 border rounded-lg bg-card text-left space-y-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <Code className="h-10 w-10 text-primary mb-3" />
                 <h3 className="text-2xl font-semibold">API Integration</h3>
                 <p className="text-muted-foreground text-lg">
-                  Seamlessly integrate trace uploading into your CI/CD pipelines or automated testing frameworks using our simple API.
+                  Seamlessly integrate trace uploading into your CI/CD pipelines or automated
+                  testing frameworks using our simple API.
                 </p>
               </div>
             </div>
@@ -121,15 +119,13 @@ function Index() {
         <div id="pricing" className="py-24 px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-xl text-muted-foreground">
-              Choose the plan that's right for you
-            </p>
+            <p className="text-xl text-muted-foreground">Choose the plan that's right for you</p>
           </div>
           <PricingTable />
         </div>
       </Layout>
     </>
   );
-};
+}
 
 export default memo(Index);

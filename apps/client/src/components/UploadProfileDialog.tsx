@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -26,24 +25,22 @@ const UploadProfileDialog = () => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!e.target.files || !e.target.files[0]) return;
-      
+
       setUploading(true);
       const file = e.target.files[0];
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
       // Upload image to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
       // Since the profiles table was removed, we'll just show a success message
       // but won't update any profile data
@@ -87,9 +84,7 @@ const UploadProfileDialog = () => {
               disabled={uploading}
             />
           </div>
-          {uploading && (
-            <p className="text-sm text-muted-foreground">Uploading...</p>
-          )}
+          {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
         </div>
       </DialogContent>
     </Dialog>

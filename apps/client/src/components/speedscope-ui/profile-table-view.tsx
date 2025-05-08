@@ -1,14 +1,16 @@
-import React, { memo, useCallback, useMemo, useContext } from 'react'
-import type { Profile, Frame } from '../../lib/speedscope-core/profile'
-import { formatPercent } from '../../lib/speedscope-core/lib-utils'
-import { ColorChit } from './color-chit'
-import type { ListItem} from './scrollable-list-view';
-import { ScrollableListView } from './scrollable-list-view'
-import { createGetCSSColorForFrame, getFrameToColorBucket } from '../../lib/speedscope-core/app-state/getters'
-import { SandwichViewContext } from './sandwich-view'
-import { Color } from '../../lib/speedscope-core/color'
-import type {
-  SortMethod} from '../../lib/speedscope-core/app-state';
+import React, { memo, useCallback, useMemo, useContext } from "react";
+import type { Profile, Frame } from "../../lib/speedscope-core/profile";
+import { formatPercent } from "../../lib/speedscope-core/lib-utils";
+import { ColorChit } from "./color-chit";
+import type { ListItem } from "./scrollable-list-view";
+import { ScrollableListView } from "./scrollable-list-view";
+import {
+  createGetCSSColorForFrame,
+  getFrameToColorBucket,
+} from "../../lib/speedscope-core/app-state/getters";
+import { SandwichViewContext } from "./sandwich-view";
+import { Color } from "../../lib/speedscope-core/color";
+import type { SortMethod } from "../../lib/speedscope-core/app-state";
 import {
   SortDirection,
   SortField,
@@ -16,13 +18,13 @@ import {
   tableSortMethodAtom,
   searchIsActiveAtom,
   searchQueryAtom,
-} from '../../lib/speedscope-core/app-state'
-import { useAtom } from '../../lib/speedscope-core/atom'
-import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state'
-import { useTheme } from './themes/theme'
+} from "../../lib/speedscope-core/app-state";
+import { useAtom } from "../../lib/speedscope-core/atom";
+import type { ActiveProfileState } from "../../lib/speedscope-core/app-state/active-profile-state";
+import { useTheme } from "./themes/theme";
 
 interface HBarProps {
-  perc: number
+  perc: number;
 }
 
 function HBarDisplay(props: HBarProps) {
@@ -36,20 +38,20 @@ function HBarDisplay(props: HBarProps) {
         style={{ width: `${props.perc}%` }}
       />
     </div>
-  )
+  );
 }
 
 interface SortIconProps {
-  activeDirection: SortDirection | null
+  activeDirection: SortDirection | null;
 }
 
 function SortIcon(props: SortIconProps) {
-  const activeClass = "text-text dark:text-dark-text"
-  const inactiveClass = "text-text-secondary dark:text-dark-text-secondary"
+  const activeClass = "text-text dark:text-dark-text";
+  const inactiveClass = "text-text-secondary dark:text-dark-text-secondary";
 
-  const { activeDirection } = props
-  const upColorClass = activeDirection === SortDirection.ASCENDING ? activeClass : inactiveClass
-  const downColorClass = activeDirection === SortDirection.DESCENDING ? activeClass : inactiveClass
+  const { activeDirection } = props;
+  const upColorClass = activeDirection === SortDirection.ASCENDING ? activeClass : inactiveClass;
+  const downColorClass = activeDirection === SortDirection.DESCENDING ? activeClass : inactiveClass;
 
   return (
     <svg
@@ -60,36 +62,41 @@ function SortIcon(props: SortIconProps) {
       className={`mr-1.5 inline-block ${upColorClass}`}
     >
       <path d="M0 4L4 0L8 4H0Z" fill="currentColor" />
-      <path d="M0 4L4 0L8 4H0Z" transform="translate(0 10) scale(1 -1)" fill="currentColor" className={downColorClass} />
+      <path
+        d="M0 4L4 0L8 4H0Z"
+        transform="translate(0 10) scale(1 -1)"
+        fill="currentColor"
+        className={downColorClass}
+      />
     </svg>
-  )
+  );
 }
 
 interface ProfileTableRowViewProps {
-  frame: Frame
-  matchedRanges: [number, number][] | null
-  index: number
-  profile: Profile
-  selectedFrame: Frame | null
-  setSelectedFrame: (f: Frame) => void
-  getCSSColorForFrame: (frame: Frame) => string
+  frame: Frame;
+  matchedRanges: [number, number][] | null;
+  index: number;
+  profile: Profile;
+  selectedFrame: Frame | null;
+  setSelectedFrame: (f: Frame) => void;
+  getCSSColorForFrame: (frame: Frame) => string;
 }
 
 function highlightRanges(
   text: string,
   ranges: [number, number][],
-  highlightedClassName: string,
+  highlightedClassName: string
 ): React.ReactElement {
-  const spans: React.ReactNode[] = []
-  let last = 0
+  const spans: React.ReactNode[] = [];
+  let last = 0;
   for (const range of ranges) {
-    spans.push(text.slice(last, range[0]))
-    spans.push(<span className={highlightedClassName}>{text.slice(range[0], range[1])}</span>)
-    last = range[1]
+    spans.push(text.slice(last, range[0]));
+    spans.push(<span className={highlightedClassName}>{text.slice(range[0], range[1])}</span>);
+    last = range[1];
   }
-  spans.push(text.slice(last))
+  spans.push(text.slice(last));
 
-  return <span>{spans}</span>
+  return <span>{spans}</span>;
 }
 
 const ProfileTableRowView = ({
@@ -101,12 +108,12 @@ const ProfileTableRowView = ({
   setSelectedFrame,
   getCSSColorForFrame,
 }: ProfileTableRowViewProps) => {
-  const totalWeight = frame.getTotalWeight()
-  const selfWeight = frame.getSelfWeight()
-  const totalPerc = (100.0 * totalWeight) / profile.getTotalNonIdleWeight()
-  const selfPerc = (100.0 * selfWeight) / profile.getTotalNonIdleWeight()
+  const totalWeight = frame.getTotalWeight();
+  const selfWeight = frame.getSelfWeight();
+  const totalPerc = (100.0 * totalWeight) / profile.getTotalNonIdleWeight();
+  const selfPerc = (100.0 * selfWeight) / profile.getTotalNonIdleWeight();
 
-  const selected = frame === selectedFrame
+  const selected = frame === selectedFrame;
 
   // Base classes applied to all rows
   const baseClasses = [
@@ -126,9 +133,7 @@ const ProfileTableRowView = ({
   } else {
     // Non-selected rows get alternating background + hover using theme colors
     // Use bg-muted for odd rows for a more subtle stripe
-    const bgClass = index % 2 === 0
-      ? "bg-background dark:bg-background"
-      : "bg-muted dark:bg-muted"; // Use muted instead of secondary
+    const bgClass = index % 2 === 0 ? "bg-background dark:bg-background" : "bg-muted dark:bg-muted"; // Use muted instead of secondary
     specificClasses = [bgClass, "hover:bg-accent/20 dark:hover:bg-accent/20"]; // Use accent for hover for better visibility
   }
 
@@ -139,17 +144,15 @@ const ProfileTableRowView = ({
   const matchedSelectedClass = "bg-primary text-primary-foreground rounded-[1px] px-0.5";
   const matchedClassName = selected ? matchedSelectedClass : matchedBaseClass;
 
-  const baseNumericCellClass = "relative text-ellipsis overflow-hidden whitespace-nowrap text-right w-[180px] min-w-[180px] align-top pt-1";
+  const baseNumericCellClass =
+    "relative text-ellipsis overflow-hidden whitespace-nowrap text-right w-[180px] min-w-[180px] align-top pt-1";
   const totalCellClass = `${baseNumericCellClass} pl-2 pr-2`;
   const selfCellClass = `${baseNumericCellClass} pl-4 pr-[30px]`;
-  const textCellBaseClass = "text-ellipsis overflow-hidden whitespace-nowrap w-full max-w-0 align-top pt-1 pl-1";
+  const textCellBaseClass =
+    "text-ellipsis overflow-hidden whitespace-nowrap w-full max-w-0 align-top pt-1 pl-1";
 
   return (
-    <tr
-      key={`${index}`}
-      onClick={() => setSelectedFrame(frame)}
-      className={rowClasses.join(' ')}
-    >
+    <tr key={`${index}`} onClick={() => setSelectedFrame(frame)} className={rowClasses.join(" ")}>
       <td className={totalCellClass}>
         {profile.formatValue(totalWeight)} ({formatPercent(totalPerc)})
         <div className="absolute bottom-0 left-4 right-4 h-0.5">
@@ -164,27 +167,21 @@ const ProfileTableRowView = ({
       </td>
       <td title={frame.file} className={textCellBaseClass}>
         <ColorChit color={getCSSColorForFrame(frame)} />
-        {matchedRanges
-          ? highlightRanges(
-              frame.name,
-              matchedRanges,
-              matchedClassName,
-            )
-          : frame.name}
+        {matchedRanges ? highlightRanges(frame.name, matchedRanges, matchedClassName) : frame.name}
       </td>
     </tr>
-  )
-}
+  );
+};
 
 interface ProfileTableViewProps {
-  profile: Profile
-  selectedFrame: Frame | null
-  getCSSColorForFrame: (frame: Frame) => string
-  sortMethod: SortMethod
-  setSelectedFrame: (frame: Frame | null) => void
-  setSortMethod: (sortMethod: SortMethod) => void
-  searchQuery: string
-  searchIsActive: boolean
+  profile: Profile;
+  selectedFrame: Frame | null;
+  getCSSColorForFrame: (frame: Frame) => string;
+  sortMethod: SortMethod;
+  setSelectedFrame: (frame: Frame | null) => void;
+  setSortMethod: (sortMethod: SortMethod) => void;
+  searchQuery: string;
+  searchIsActive: boolean;
 }
 
 export const ProfileTableView = memo(
@@ -200,7 +197,7 @@ export const ProfileTableView = memo(
   }: ProfileTableViewProps) => {
     const onSortClick = useCallback(
       (field: SortField, ev: React.MouseEvent) => {
-        ev.preventDefault()
+        ev.preventDefault();
 
         if (sortMethod.field == field) {
           setSortMethod({
@@ -209,38 +206,38 @@ export const ProfileTableView = memo(
               sortMethod.direction === SortDirection.ASCENDING
                 ? SortDirection.DESCENDING
                 : SortDirection.ASCENDING,
-          })
+          });
         } else {
           switch (field) {
             case SortField.SYMBOL_NAME: {
-              setSortMethod({ field, direction: SortDirection.ASCENDING })
-              break
+              setSortMethod({ field, direction: SortDirection.ASCENDING });
+              break;
             }
             case SortField.SELF: {
-              setSortMethod({ field, direction: SortDirection.DESCENDING })
-              break
+              setSortMethod({ field, direction: SortDirection.DESCENDING });
+              break;
             }
             case SortField.TOTAL: {
-              setSortMethod({ field, direction: SortDirection.DESCENDING })
-              break
+              setSortMethod({ field, direction: SortDirection.DESCENDING });
+              break;
             }
           }
         }
       },
-      [sortMethod, setSortMethod],
-    )
+      [sortMethod, setSortMethod]
+    );
 
-    const sandwichContext = useContext(SandwichViewContext)
+    const sandwichContext = useContext(SandwichViewContext);
 
     const renderItems = useCallback(
       (firstIndex: number, lastIndex: number): React.ReactElement | null => {
-        if (!sandwichContext) return null
+        if (!sandwichContext) return null;
 
-        const rows: React.ReactElement[] = []
+        const rows: React.ReactElement[] = [];
 
         for (let i = firstIndex; i <= lastIndex; i++) {
-          const frame = sandwichContext.rowList[i]
-          const match = sandwichContext.getSearchMatchForFrame(frame)
+          const frame = sandwichContext.rowList[i];
+          const match = sandwichContext.getSearchMatchForFrame(frame);
           rows.push(
             <ProfileTableRowView
               key={i}
@@ -251,11 +248,11 @@ export const ProfileTableView = memo(
               selectedFrame={selectedFrame}
               setSelectedFrame={setSelectedFrame}
               getCSSColorForFrame={getCSSColorForFrame}
-            />,
-          )
+            />
+          );
         }
 
-        const emptyStateClass = "p-2 text-center font-bold text-text dark:text-dark-text"
+        const emptyStateClass = "p-2 text-center font-bold text-text dark:text-dark-text";
 
         if (rows.length === 0) {
           if (searchIsActive) {
@@ -264,20 +261,22 @@ export const ProfileTableView = memo(
                 <td colSpan={3} className={emptyStateClass}>
                   No symbol names match query "{searchQuery}".
                 </td>
-              </tr>,
-            )
+              </tr>
+            );
           } else {
             rows.push(
               <tr key="empty-nosymbols">
                 <td colSpan={3} className={emptyStateClass}>
                   No symbols found.
                 </td>
-              </tr>,
-            )
+              </tr>
+            );
           }
         }
 
-        return <tbody className="w-full text-[10px] bg-background dark:bg-dark-background">{rows}</tbody>
+        return (
+          <tbody className="w-full text-[10px] bg-background dark:bg-dark-background">{rows}</tbody>
+        );
       },
       [
         sandwichContext,
@@ -287,28 +286,36 @@ export const ProfileTableView = memo(
         getCSSColorForFrame,
         searchIsActive,
         searchQuery,
-      ],
-    )
+      ]
+    );
 
     const listItems: ListItem[] = useMemo(
-      () =>
-        sandwichContext == null
-          ? []
-          : sandwichContext.rowList.map(f => ({ size: 30 })),
-      [sandwichContext],
-    )
+      () => (sandwichContext == null ? [] : sandwichContext.rowList.map((f) => ({ size: 30 }))),
+      [sandwichContext]
+    );
 
-    const onTotalClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.TOTAL, ev), [onSortClick])
-    const onSelfClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SELF, ev), [onSortClick])
-    const onSymbolNameClick = useCallback((ev: React.MouseEvent) => onSortClick(SortField.SYMBOL_NAME, ev), [onSortClick])
+    const onTotalClick = useCallback(
+      (ev: React.MouseEvent) => onSortClick(SortField.TOTAL, ev),
+      [onSortClick]
+    );
+    const onSelfClick = useCallback(
+      (ev: React.MouseEvent) => onSortClick(SortField.SELF, ev),
+      [onSortClick]
+    );
+    const onSymbolNameClick = useCallback(
+      (ev: React.MouseEvent) => onSortClick(SortField.SYMBOL_NAME, ev),
+      [onSortClick]
+    );
 
-    const baseNumericHeaderCellClass = "p-1 w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
+    const baseNumericHeaderCellClass =
+      "p-1 w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono";
     const totalHeaderCellClass = `${baseNumericHeaderCellClass} pr-2`;
     const selfHeaderCellClass = `${baseNumericHeaderCellClass} pr-[30px]`;
 
-    const textHeaderCellClass = "p-1 w-full max-w-0 text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono"
-    const headerFlexContainerClass = "flex items-center cursor-pointer"
-    const numericHeaderFlexContainerClass = `${headerFlexContainerClass} justify-end`
+    const textHeaderCellClass =
+      "p-1 w-full max-w-0 text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono";
+    const headerFlexContainerClass = "flex items-center cursor-pointer";
+    const numericHeaderFlexContainerClass = `${headerFlexContainerClass} justify-end`;
 
     return (
       <div className="flex h-full flex-col bg-background dark:bg-dark-background">
@@ -349,7 +356,7 @@ export const ProfileTableView = memo(
           </thead>
         </table>
         <ScrollableListView
-          axis={'y'}
+          axis={"y"}
           items={listItems}
           className="flex-grow overflow-y-auto overflow-x-hidden bg-background dark:bg-dark-background"
           renderItems={renderItems}
@@ -358,30 +365,30 @@ export const ProfileTableView = memo(
           }
         />
       </div>
-    )
-  },
-)
+    );
+  }
+);
 
 interface ProfileTableViewContainerProps {
-  activeProfileState: ActiveProfileState
+  activeProfileState: ActiveProfileState;
 }
 
 export const ProfileTableViewContainer = memo((ownProps: ProfileTableViewContainerProps) => {
-  const { activeProfileState } = ownProps
-  const { profile, sandwichViewState } = activeProfileState
-  const theme = useTheme()
-  if (!profile) throw new Error('profile missing')
-  const tableSortMethod = useAtom(tableSortMethodAtom)
-  const { callerCallee } = sandwichViewState
-  const selectedFrame = callerCallee ? callerCallee.selectedFrame : null
-  const frameToColorBucket = getFrameToColorBucket(profile)
-  const getCSSColorForFrame = createGetCSSColorForFrame({ theme, frameToColorBucket })
+  const { activeProfileState } = ownProps;
+  const { profile, sandwichViewState } = activeProfileState;
+  const theme = useTheme();
+  if (!profile) throw new Error("profile missing");
+  const tableSortMethod = useAtom(tableSortMethodAtom);
+  const { callerCallee } = sandwichViewState;
+  const selectedFrame = callerCallee ? callerCallee.selectedFrame : null;
+  const frameToColorBucket = getFrameToColorBucket(profile);
+  const getCSSColorForFrame = createGetCSSColorForFrame({ theme, frameToColorBucket });
 
   const setSelectedFrame = useCallback((selectedFrame: Frame | null) => {
-    profileGroupAtom.setSelectedFrame(selectedFrame)
-  }, [])
-  const searchIsActive = useAtom(searchIsActiveAtom)
-  const searchQuery = useAtom(searchQueryAtom)
+    profileGroupAtom.setSelectedFrame(selectedFrame);
+  }, []);
+  const searchIsActive = useAtom(searchIsActiveAtom);
+  const searchQuery = useAtom(searchQueryAtom);
 
   return (
     <ProfileTableView
@@ -394,5 +401,5 @@ export const ProfileTableViewContainer = memo((ownProps: ProfileTableViewContain
       searchIsActive={searchIsActive}
       searchQuery={searchQuery}
     />
-  )
-})
+  );
+});

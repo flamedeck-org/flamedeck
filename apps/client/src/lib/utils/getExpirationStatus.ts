@@ -1,4 +1,4 @@
-import { differenceInDays, parseISO, format } from 'date-fns';
+import { differenceInDays, parseISO, format } from "date-fns";
 
 // Define the structure of the return value for clarity
 export type ExpirationStatus = {
@@ -9,17 +9,14 @@ export type ExpirationStatus = {
 };
 
 // Define the warning threshold
-const EXPIRATION_WARNING_THRESHOLD_DAYS = 100; 
+const EXPIRATION_WARNING_THRESHOLD_DAYS = 100;
 
 /**
  * Calculates the expiration status of a trace based on its expiry date.
  * @param expiresAt - The ISO string representation of the expiration date, or null/undefined.
  * @returns An object containing flags and details about the expiration status.
  */
-export function getExpirationStatus(
-  expiresAt: string | null | undefined
-): ExpirationStatus {
-
+export function getExpirationStatus(expiresAt: string | null | undefined): ExpirationStatus {
   if (!expiresAt) {
     // No expiration date set for this trace
     return {
@@ -38,7 +35,7 @@ export function getExpirationStatus(
 
     // Show warning if within threshold OR if date has passed (until deletion)
     const isExpiring = daysRemaining <= EXPIRATION_WARNING_THRESHOLD_DAYS;
-    const formattedDate = format(expirationDateObj, 'MMM d, yyyy'); // Example format
+    const formattedDate = format(expirationDateObj, "MMM d, yyyy"); // Example format
 
     return {
       isExpiring,
@@ -57,4 +54,4 @@ export function getExpirationStatus(
       formattedExpirationDate: null,
     };
   }
-} 
+}

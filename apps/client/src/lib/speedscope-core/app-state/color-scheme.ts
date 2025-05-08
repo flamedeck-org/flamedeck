@@ -1,4 +1,4 @@
-import {Atom} from '../atom'
+import { Atom } from "../atom";
 
 export const enum ColorScheme {
   // Default: respect prefers-color-schema
@@ -11,25 +11,25 @@ export const enum ColorScheme {
   LIGHT,
 }
 
-const localStorageKey = 'speedscope-color-scheme'
+const localStorageKey = "speedscope-color-scheme";
 
 function getStoredPreference(): ColorScheme {
-  const storedPreference = window.localStorage && window.localStorage[localStorageKey]
-  if (storedPreference === 'DARK') {
-    return ColorScheme.DARK
-  } else if (storedPreference === 'LIGHT') {
-    return ColorScheme.LIGHT
+  const storedPreference = window.localStorage && window.localStorage[localStorageKey];
+  if (storedPreference === "DARK") {
+    return ColorScheme.DARK;
+  } else if (storedPreference === "LIGHT") {
+    return ColorScheme.LIGHT;
   } else {
-    return ColorScheme.SYSTEM
+    return ColorScheme.SYSTEM;
   }
 }
 
 function matchMediaDarkColorScheme(): MediaQueryList {
-  return matchMedia('(prefers-color-scheme: dark)')
+  return matchMedia("(prefers-color-scheme: dark)");
 }
 
 function nextColorScheme(scheme: ColorScheme): ColorScheme {
-  const systemPrefersDarkMode = matchMediaDarkColorScheme().matches
+  const systemPrefersDarkMode = matchMediaDarkColorScheme().matches;
 
   // We'll use a different cycling order for changing the color scheme depending
   // on what the *current* system preference is. This should guarantee that when
@@ -38,25 +38,25 @@ function nextColorScheme(scheme: ColorScheme): ColorScheme {
   if (systemPrefersDarkMode) {
     switch (scheme) {
       case ColorScheme.SYSTEM: {
-        return ColorScheme.LIGHT
+        return ColorScheme.LIGHT;
       }
       case ColorScheme.LIGHT: {
-        return ColorScheme.DARK
+        return ColorScheme.DARK;
       }
       case ColorScheme.DARK: {
-        return ColorScheme.SYSTEM
+        return ColorScheme.SYSTEM;
       }
     }
   } else {
     switch (scheme) {
       case ColorScheme.SYSTEM: {
-        return ColorScheme.DARK
+        return ColorScheme.DARK;
       }
       case ColorScheme.DARK: {
-        return ColorScheme.LIGHT
+        return ColorScheme.LIGHT;
       }
       case ColorScheme.LIGHT: {
-        return ColorScheme.SYSTEM
+        return ColorScheme.SYSTEM;
       }
     }
   }
@@ -64,32 +64,32 @@ function nextColorScheme(scheme: ColorScheme): ColorScheme {
 
 class ColorSchemeAtom extends Atom<ColorScheme> {
   cycleToNextColorScheme = () => {
-    this.set(nextColorScheme(this.get()))
-  }
+    this.set(nextColorScheme(this.get()));
+  };
 }
 
-export const colorSchemeAtom = new ColorSchemeAtom(getStoredPreference(), 'colorScheme')
+export const colorSchemeAtom = new ColorSchemeAtom(getStoredPreference(), "colorScheme");
 
 colorSchemeAtom.subscribe(() => {
-  const value = colorSchemeAtom.get()
+  const value = colorSchemeAtom.get();
 
   switch (value) {
     case ColorScheme.DARK: {
-      window.localStorage[localStorageKey] = 'DARK'
-      break
+      window.localStorage[localStorageKey] = "DARK";
+      break;
     }
     case ColorScheme.LIGHT: {
-      window.localStorage[localStorageKey] = 'LIGHT'
-      break
+      window.localStorage[localStorageKey] = "LIGHT";
+      break;
     }
     case ColorScheme.SYSTEM: {
-      delete window.localStorage[localStorageKey]
-      break
+      delete window.localStorage[localStorageKey];
+      break;
     }
     default: {
-      const _exhaustiveCheck: never = value
-      return _exhaustiveCheck
+      const _exhaustiveCheck: never = value;
+      return _exhaustiveCheck;
     }
   }
-  return value
-})
+  return value;
+});

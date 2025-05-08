@@ -10,11 +10,11 @@ export * from "./types";
 export * from "./comments";
 
 export const traceApi = {
-    ...tracesApi,
-    ...commentApi,
-    ...folderApi,
-    ...userApi,
-    ...directoryListingApi,
-    ...tracePermissionsApi,
-    ...storageApi,
+  ...tracesApi,
+  ...commentApi,
+  ...folderApi,
+  ...userApi,
+  ...directoryListingApi,
+  ...tracePermissionsApi,
+  ...storageApi,
 };

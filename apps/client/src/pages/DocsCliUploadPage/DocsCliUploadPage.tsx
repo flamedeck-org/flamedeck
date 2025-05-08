@@ -1,5 +1,5 @@
-import React from 'react';
-import CliUploadContent from '@/docs/cli-upload.mdx';
+import React from "react";
+import CliUploadContent from "@/docs/cli-upload.mdx";
 
 // It is assumed that your MDX loader setup will provide the necessary components
 // or context for rendering things like headings, code blocks, etc.
@@ -13,4 +13,4 @@ function DocsCliUploadPage() {
   );
 }
 
-export default DocsCliUploadPage; 
+export default DocsCliUploadPage;

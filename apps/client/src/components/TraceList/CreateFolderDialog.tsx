@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, FolderPlus } from 'lucide-react';
+import { Loader2, FolderPlus } from "lucide-react";
 
 interface CreateFolderDialogProps {
   isOpen: boolean;
@@ -35,7 +35,8 @@ function CreateFolderDialogComponent({
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (!isOpen) {
-      setTimeout(() => { // Delay reset to allow animation
+      setTimeout(() => {
+        // Delay reset to allow animation
         setFolderName("");
         setError(null);
       }, 150);
@@ -57,15 +58,15 @@ function CreateFolderDialogComponent({
       return;
     }
     if (trimmedName.length > 255) {
-         setError("Folder name is too long (max 255 characters).");
-         return;
+      setError("Folder name is too long (max 255 characters).");
+      return;
     }
     // Potentially add other validation (e.g., invalid characters) here
     setError(null);
     onSubmit(trimmedName);
     // Keep dialog open while pending, caller should close on success/error if desired
     // or close immediately:
-    // setIsOpen(false); 
+    // setIsOpen(false);
   };
 
   return (
@@ -95,22 +96,24 @@ function CreateFolderDialogComponent({
               />
             </div>
             {error && (
-                <p id="folder-name-error" className="text-sm text-destructive -mt-1">
-                    {error}
-                </p>
+              <p id="folder-name-error" className="text-sm text-destructive -mt-1">
+                {error}
+              </p>
             )}
           </div>
         </form>
         <DialogFooter>
           <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isPending}>
-                Cancel
-              </Button>
+            <Button type="button" variant="outline" disabled={isPending}>
+              Cancel
+            </Button>
           </DialogClose>
-          <Button type="submit" form="create-folder-form" disabled={isPending || !folderName.trim()}>
-            {isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
+          <Button
+            type="submit"
+            form="create-folder-form"
+            disabled={isPending || !folderName.trim()}
+          >
+            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isPending ? "Creating..." : "Create Folder"}
           </Button>
         </DialogFooter>
@@ -119,4 +122,4 @@ function CreateFolderDialogComponent({
   );
 }
 
-export const CreateFolderDialog = memo(CreateFolderDialogComponent); 
+export const CreateFolderDialog = memo(CreateFolderDialogComponent);

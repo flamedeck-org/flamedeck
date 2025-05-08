@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import type { Folder, ApiError } from '@/lib/api';
-import { traceApi } from '@/lib/api';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { Folder, ApiError } from "@/lib/api";
+import { traceApi } from "@/lib/api";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface UseFolderNavigationResult {
   currentFolderId: string | null;
@@ -19,24 +19,29 @@ interface UseFolderNavigationResult {
   refetch: () => void; // Expose refetch
 }
 
-const FOLDER_QUERY_KEY = 'folderListing';
+const FOLDER_QUERY_KEY = "folderListing";
 
-export function useFolderNavigation(initialFolderId: string | null = null): UseFolderNavigationResult {
+export function useFolderNavigation(
+  initialFolderId: string | null = null
+): UseFolderNavigationResult {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId);
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
   const { user } = useAuth();
 
   const { data, isLoading, isFetching, error, refetch } = useQuery<
-    { folders: Folder[], path: Folder[], currentFolder: Folder | null }, // Success data type
+    { folders: Folder[]; path: Folder[]; currentFolder: Folder | null }, // Success data type
     ApiError // Error type
-  >({ // Pass ApiError as the error type
+  >({
+    // Pass ApiError as the error type
     queryKey: [FOLDER_QUERY_KEY, currentFolderId, debouncedSearchQuery],
     queryFn: async () => {
-      console.log(`[useFolderNavigation Query] Fetching for folder: ${currentFolderId || 'root'}, search: '${debouncedSearchQuery}'`);
+      console.log(
+        `[useFolderNavigation Query] Fetching for folder: ${currentFolderId || "root"}, search: '${debouncedSearchQuery}'`
+      );
       const response = await traceApi.getDirectoryListing(currentFolderId, {
         searchQuery: debouncedSearchQuery || null,
-        itemTypeFilter: 'folder',
+        itemTypeFilter: "folder",
         userId: user?.id,
       });
       if (response.error) {
@@ -44,23 +49,23 @@ export function useFolderNavigation(initialFolderId: string | null = null): UseF
         throw response.error; // Throw error for react-query to handle
       }
       if (!response.data) {
-         console.error("[useFolderNavigation Query] API returned no data.");
-         // Throw an error or return a default state if appropriate
-         throw new Error("No data returned from API");
+        console.error("[useFolderNavigation Query] API returned no data.");
+        // Throw an error or return a default state if appropriate
+        throw new Error("No data returned from API");
       }
       console.log("[useFolderNavigation Query] Data received:", response.data);
       // Return only the necessary parts for the query data
-      return { 
-        folders: response.data.folders, 
-        path: response.data.path, 
-        currentFolder: response.data.currentFolder 
+      return {
+        folders: response.data.folders,
+        path: response.data.path,
+        currentFolder: response.data.currentFolder,
       };
     },
     staleTime: 1000 * 60 * 5,
   });
 
   const navigateToFolder = useCallback((folderId: string | null) => {
-    console.log(`[useFolderNavigation] Navigating to folder: ${folderId || 'root'}`);
+    console.log(`[useFolderNavigation] Navigating to folder: ${folderId || "root"}`);
     // Set the new folder ID
     setCurrentFolderId(folderId);
     // Clear the search query when navigating to a new folder
@@ -88,4 +93,4 @@ export function useFolderNavigation(initialFolderId: string | null = null): UseF
     navigateToFolder,
     refetch,
   };
-} 
+}

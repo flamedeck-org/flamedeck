@@ -29,31 +29,31 @@ export function ThemeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem 
-          onClick={() => { 
-            setTheme('light'); 
-            setSpeedscopeColorScheme(ColorScheme.LIGHT); 
-          }} 
+        <DropdownMenuItem
+          onClick={() => {
+            setTheme("light");
+            setSpeedscopeColorScheme(ColorScheme.LIGHT);
+          }}
           className="flex items-center justify-between"
         >
           Light
           {speedscopeColorScheme === ColorScheme.LIGHT && <Check className="h-4 w-4" />}
         </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => { 
-            setTheme('dark'); 
-            setSpeedscopeColorScheme(ColorScheme.DARK); 
-          }} 
+        <DropdownMenuItem
+          onClick={() => {
+            setTheme("dark");
+            setSpeedscopeColorScheme(ColorScheme.DARK);
+          }}
           className="flex items-center justify-between"
         >
           Dark
           {speedscopeColorScheme === ColorScheme.DARK && <Check className="h-4 w-4" />}
         </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => { 
-            setTheme('system'); 
-            setSpeedscopeColorScheme(ColorScheme.SYSTEM); 
-          }} 
+        <DropdownMenuItem
+          onClick={() => {
+            setTheme("system");
+            setSpeedscopeColorScheme(ColorScheme.SYSTEM);
+          }}
           className="flex items-center justify-between"
         >
           System
@@ -62,4 +62,4 @@ export function ThemeToggle() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-} 
+}

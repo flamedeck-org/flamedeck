@@ -20,7 +20,7 @@ export enum Sizes {
 }
 
 export enum Duration {
-  HOVER_CHANGE = '0.07s',
+  HOVER_CHANGE = "0.07s",
 }
 
 export enum ZIndex {

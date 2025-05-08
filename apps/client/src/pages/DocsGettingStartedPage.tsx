@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 // Remove incorrect import: import { MdxComponent } from '@/components/mdx/MdxComponent';
-import GettingStartedContent from '../docs/getting-started.mdx';
+import GettingStartedContent from "../docs/getting-started.mdx";
 
 // MDX content is imported as a component directly
 
@@ -11,4 +11,4 @@ export default function DocsGettingStartedPage() {
       <GettingStartedContent />
     </div>
   );
-} 
+}

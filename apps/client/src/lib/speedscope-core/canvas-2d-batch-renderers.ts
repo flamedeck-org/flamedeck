@@ -7,63 +7,63 @@
 // See FlamechartPanZoomView.renderOverlays for an example of how this is used.
 
 export interface TextArgs {
-  text: string
-  x: number
-  y: number
+  text: string;
+  x: number;
+  y: number;
 }
 
 export class BatchCanvasTextRenderer {
-  private argsBatch: TextArgs[] = []
+  private argsBatch: TextArgs[] = [];
 
   text(args: TextArgs) {
-    this.argsBatch.push(args)
+    this.argsBatch.push(args);
   }
 
   fill(ctx: CanvasRenderingContext2D, color: string) {
-    if (this.argsBatch.length === 0) return
-    ctx.fillStyle = color
+    if (this.argsBatch.length === 0) return;
+    ctx.fillStyle = color;
     for (const args of this.argsBatch) {
-      ctx.fillText(args.text, args.x, args.y)
+      ctx.fillText(args.text, args.x, args.y);
     }
-    this.argsBatch = []
+    this.argsBatch = [];
   }
 }
 
 export interface RectArgs {
-  x: number
-  y: number
-  w: number
-  h: number
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 export class BatchCanvasRectRenderer {
-  private argsBatch: RectArgs[] = []
+  private argsBatch: RectArgs[] = [];
 
   rect(args: RectArgs) {
-    this.argsBatch.push(args)
+    this.argsBatch.push(args);
   }
 
   private drawPath(ctx: CanvasRenderingContext2D) {
-    ctx.beginPath()
+    ctx.beginPath();
     for (const args of this.argsBatch) {
-      ctx.rect(args.x, args.y, args.w, args.h)
+      ctx.rect(args.x, args.y, args.w, args.h);
     }
-    ctx.closePath()
-    this.argsBatch = []
+    ctx.closePath();
+    this.argsBatch = [];
   }
 
   fill(ctx: CanvasRenderingContext2D, color: string) {
-    if (this.argsBatch.length === 0) return
-    ctx.fillStyle = color
-    this.drawPath(ctx)
-    ctx.fill()
+    if (this.argsBatch.length === 0) return;
+    ctx.fillStyle = color;
+    this.drawPath(ctx);
+    ctx.fill();
   }
 
   stroke(ctx: CanvasRenderingContext2D, color: string, lineWidth: number) {
-    if (this.argsBatch.length === 0) return
-    ctx.strokeStyle = color
-    ctx.lineWidth = lineWidth
-    this.drawPath(ctx)
-    ctx.stroke()
+    if (this.argsBatch.length === 0) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    this.drawPath(ctx);
+    ctx.stroke();
   }
 }

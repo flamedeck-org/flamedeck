@@ -1,5 +1,5 @@
-import React from 'react';
-import { cn } from '@/lib/utils'; // Import cn for conditional classes
+import React from "react";
+import { cn } from "@/lib/utils"; // Import cn for conditional classes
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -11,4 +11,4 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, className }) => {
   return <div className={cn("flex flex-col min-h-full w-full", className)}>{children}</div>;
 };
 
-export default PageLayout; 
+export default PageLayout;

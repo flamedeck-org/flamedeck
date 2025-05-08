@@ -7,24 +7,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
-import { ListTree, UploadCloud, LogOut, User as UserIcon, Settings as SettingsIcon, Star } from "lucide-react"; // Add UserIcon, SettingsIcon, and Star
+import {
+  ListTree,
+  UploadCloud,
+  LogOut,
+  User as UserIcon,
+  Settings as SettingsIcon,
+  Star,
+} from "lucide-react"; // Add UserIcon, SettingsIcon, and Star
 import { useQuery } from "@tanstack/react-query"; // Import useQuery
 import { supabase } from "@/integrations/supabase/client"; // Import supabase client
 import type { Database } from "@/integrations/supabase/types"; // Import Database types
 import { UserAvatar } from "@/components/UserAvatar"; // Import the new component
 import { useSubscriptionUsage } from "@/hooks/useSubscriptionUsage"; // Import the new hook
 import { Progress } from "@/components/ui/progress"; // Import Progress component
-import { formatDistanceToNowStrict } from 'date-fns'; // For countdown
+import { formatDistanceToNowStrict } from "date-fns"; // For countdown
 import { useDisplayName } from "@/hooks/useDisplayName"; // Import the new hook
 
-type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
+type UserProfileType = Database["public"]["Tables"]["user_profiles"]["Row"];
 
 interface SidebarProps {
   minimized?: boolean;
@@ -47,42 +49,50 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/'); // Redirect to home page after successful logout
+      navigate("/"); // Redirect to home page after successful logout
     } catch (error) {
       console.error("Error signing out:", error);
     }
   };
 
   // Calculate usage details for display
-  const showMonthlyUsage = usageData && usageData.monthly_upload_limit !== null && usageData.monthly_uploads_used !== null;
+  const showMonthlyUsage =
+    usageData && usageData.monthly_upload_limit !== null && usageData.monthly_uploads_used !== null;
   const monthlyUsagePercent = showMonthlyUsage
     ? (usageData.monthly_uploads_used! / usageData.monthly_upload_limit!) * 100
     : 0;
-  const resetsIn = usageData?.current_period_end && showMonthlyUsage // Only show reset if showing monthly
-    ? formatDistanceToNowStrict(new Date(usageData.current_period_end), { addSuffix: true })
-    : null;
+  const resetsIn =
+    usageData?.current_period_end && showMonthlyUsage // Only show reset if showing monthly
+      ? formatDistanceToNowStrict(new Date(usageData.current_period_end), { addSuffix: true })
+      : null;
 
   // Calculate total usage details only if monthly isn't shown
-  const showTotalUsage = !showMonthlyUsage && usageData && usageData.total_trace_limit !== null && usageData.current_total_traces !== null;
+  const showTotalUsage =
+    !showMonthlyUsage &&
+    usageData &&
+    usageData.total_trace_limit !== null &&
+    usageData.current_total_traces !== null;
   const totalUsagePercent = showTotalUsage
     ? (usageData.current_total_traces! / usageData.total_trace_limit!) * 100
     : 0;
 
   // Helper function to title case plan name
   const formatPlanName = (name: string | null | undefined): string => {
-    if (!name) return '';
+    if (!name) return "";
     return name.charAt(0).toUpperCase() + name.slice(1);
   };
 
   return (
     <TooltipProvider delayDuration={0}>
-      <aside className={`${minimized ? 'w-16' : 'w-64'} border-r bg-background flex flex-col z-10 transition-width duration-200`}>
+      <aside
+        className={`${minimized ? "w-16" : "w-64"} border-r bg-background flex flex-col z-10 transition-width duration-200`}
+      >
         {/* Main Navigation */}
         <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
           <NavLink
             to="/traces"
             className={({ isActive }) =>
-              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${
+              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : "space-x-2 px-3 py-2"} rounded-md text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -105,10 +115,10 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
             {!minimized && <span>Traces</span>}
           </NavLink>
           {/* Settings Link - FIX isActive prop */}
-           <NavLink
+          <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${
+              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : "space-x-2 px-3 py-2"} rounded-md text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -160,7 +170,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                   </span>
                 </div>
                 <Progress value={totalUsagePercent} className="h-2" />
-                 {/* No reset info needed for total limit */}
+                {/* No reset info needed for total limit */}
               </>
             )}
           </div>
@@ -168,15 +178,15 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
         {/* --- End Subscription Usage --- */}
 
         {/* Bottom Section */}
-        <div className={`${minimized ? 'px-2' : 'px-4'} py-4 border-t flex flex-col items-center`}>
+        <div className={`${minimized ? "px-2" : "px-4"} py-4 border-t flex flex-col items-center`}>
           <div className="mb-4 w-full flex justify-center">
             <Tooltip disableHoverableContent={!minimized}>
               <TooltipTrigger asChild>
-                <Link to="/upload" className={minimized ? 'w-full flex justify-center' : 'w-full'}>
-                  <Button 
+                <Link to="/upload" className={minimized ? "w-full flex justify-center" : "w-full"}>
+                  <Button
                     size={minimized ? "icon" : "sm"}
-                    variant="primary-outline" 
-                    className={`${minimized ? MINIMIZED_BUTTON_SIZE : 'w-full space-x-2'} flex items-center justify-center`}
+                    variant="primary-outline"
+                    className={`${minimized ? MINIMIZED_BUTTON_SIZE : "w-full space-x-2"} flex items-center justify-center`}
                     title={minimized ? "Upload Trace" : undefined}
                     aria-label="Upload Trace"
                   >
@@ -195,9 +205,15 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
 
           {/* User Menu - Show loading state or actual menu */}
           {(profileLoading || isUsageLoading) && user ? (
-            <div className={`flex items-center justify-center ${minimized ? MINIMIZED_BUTTON_SIZE : 'space-x-3 px-3 py-2 w-full'}`}>
-               <UserIcon className={ICON_SIZE} />
-               {!minimized && <div className="flex-1"><span className="text-sm text-muted-foreground">Loading...</span></div>}
+            <div
+              className={`flex items-center justify-center ${minimized ? MINIMIZED_BUTTON_SIZE : "space-x-3 px-3 py-2 w-full"}`}
+            >
+              <UserIcon className={ICON_SIZE} />
+              {!minimized && (
+                <div className="flex-1">
+                  <span className="text-sm text-muted-foreground">Loading...</span>
+                </div>
+              )}
             </div>
           ) : (
             <Tooltip disableHoverableContent={!minimized}>
@@ -206,27 +222,25 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className={`${minimized ? `${MINIMIZED_BUTTON_SIZE} justify-center p-0` : 'w-full justify-start px-3 py-2 h-auto'} flex items-center text-left`}
+                      className={`${minimized ? `${MINIMIZED_BUTTON_SIZE} justify-center p-0` : "w-full justify-start px-3 py-2 h-auto"} flex items-center text-left`}
                       aria-label="User menu"
                       title={minimized ? displayName : undefined}
                     >
-                      <UserAvatar 
-                        profile={profile} 
-                        currentUser={user} 
+                      <UserAvatar
+                        profile={profile}
+                        currentUser={user}
                         size="lg"
-                        className={!minimized ? 'mr-2' : ''}
+                        className={!minimized ? "mr-2" : ""}
                       />
                       {!minimized && (
                         <div className="flex-1 overflow-hidden">
-                          <p className="text-sm font-medium truncate">
-                            {displayName}
-                          </p>
+                          <p className="text-sm font-medium truncate">{displayName}</p>
                           {/* Add Plan Name Indicator */}
                           {usageData?.plan_name && (
                             <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <span>{formatPlanName(usageData.plan_name)} plan</span>
                               {/* Add star for pro plan */}
-                              {usageData.plan_name === 'pro' && (
+                              {usageData.plan_name === "pro" && (
                                 <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />
                               )}
                             </div>
@@ -242,12 +256,15 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                   </TooltipContent>
                 )}
                 <DropdownMenuContent align="end" side="right" sideOffset={10} className="w-56 mb-2">
-                  <DropdownMenuItem onClick={() => navigate('/settings/general')}>
+                  <DropdownMenuItem onClick={() => navigate("/settings/general")}>
                     <UserIcon className="mr-2 h-4 w-4" />
                     Manage Account
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50">
-                    <LogOut className="mr-2 h-4 w-4"/>
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -260,4 +277,4 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

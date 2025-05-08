@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo } from "react";
 import {
   Pagination,
   PaginationContent,
@@ -27,10 +27,13 @@ const TracePaginationComponent: React.FC<TracePaginationProps> = ({
     onPageChange(Math.min(totalPages - 1, currentPage + 1));
   }, [currentPage, totalPages, onPageChange]);
 
-  const handlePageClick = useCallback((pageIndex: number) => {
-    onPageChange(pageIndex);
-  }, [onPageChange]);
-  
+  const handlePageClick = useCallback(
+    (pageIndex: number) => {
+      onPageChange(pageIndex);
+    },
+    [onPageChange]
+  );
+
   // Memoize the pagination items to prevent unnecessary re-renders
   const paginationItems = useMemo(() => {
     return Array.from({ length: totalPages }).map((_, i) => (
@@ -45,7 +48,6 @@ const TracePaginationComponent: React.FC<TracePaginationProps> = ({
       </PaginationItem>
     ));
   }, [currentPage, totalPages, handlePageClick]);
-
 
   if (totalPages <= 1) {
     return null; // Don't render pagination if there's only one page or less
@@ -68,7 +70,9 @@ const TracePaginationComponent: React.FC<TracePaginationProps> = ({
           <PaginationItem>
             <PaginationNext
               onClick={handleNext}
-              className={currentPage >= totalPages - 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              className={
+                currentPage >= totalPages - 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+              }
               aria-disabled={currentPage >= totalPages - 1}
             />
           </PaginationItem>
@@ -78,4 +82,4 @@ const TracePaginationComponent: React.FC<TracePaginationProps> = ({
   );
 };
 
-export const TracePagination = memo(TracePaginationComponent); 
+export const TracePagination = memo(TracePaginationComponent);
