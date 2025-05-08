@@ -1,16 +1,16 @@
-import React, { memo, useCallback, useMemo, useContext } from "react";
-import type { Profile, Frame } from "../../lib/speedscope-core/profile";
-import { formatPercent } from "../../lib/speedscope-core/lib-utils";
-import { ColorChit } from "./color-chit";
-import type { ListItem } from "./scrollable-list-view";
-import { ScrollableListView } from "./scrollable-list-view";
+import React, { memo, useCallback, useMemo, useContext } from 'react';
+import type { Profile, Frame } from '../../lib/speedscope-core/profile';
+import { formatPercent } from '../../lib/speedscope-core/lib-utils';
+import { ColorChit } from './color-chit';
+import type { ListItem } from './scrollable-list-view';
+import { ScrollableListView } from './scrollable-list-view';
 import {
   createGetCSSColorForFrame,
   getFrameToColorBucket,
-} from "../../lib/speedscope-core/app-state/getters";
-import { SandwichViewContext } from "./sandwich-view";
-import { Color } from "../../lib/speedscope-core/color";
-import type { SortMethod } from "../../lib/speedscope-core/app-state";
+} from '../../lib/speedscope-core/app-state/getters';
+import { SandwichViewContext } from './sandwich-view';
+import { Color } from '../../lib/speedscope-core/color';
+import type { SortMethod } from '../../lib/speedscope-core/app-state';
 import {
   SortDirection,
   SortField,
@@ -18,18 +18,18 @@ import {
   tableSortMethodAtom,
   searchIsActiveAtom,
   searchQueryAtom,
-} from "../../lib/speedscope-core/app-state";
-import { useAtom } from "../../lib/speedscope-core/atom";
-import type { ActiveProfileState } from "../../lib/speedscope-core/app-state/active-profile-state";
-import { useTheme } from "./themes/theme";
+} from '../../lib/speedscope-core/app-state';
+import { useAtom } from '../../lib/speedscope-core/atom';
+import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
+import { useTheme } from './themes/theme';
 
 interface HBarProps {
   perc: number;
 }
 
 function HBarDisplay(props: HBarProps) {
-  const hBarBgColorClass = "bg-gray-200 dark:bg-gray-700";
-  const hBarFillColorClass = "bg-primary";
+  const hBarBgColorClass = 'bg-gray-200 dark:bg-gray-700';
+  const hBarFillColorClass = 'bg-primary';
 
   return (
     <div className={`relative w-full h-full ${hBarBgColorClass}`}>
@@ -46,8 +46,8 @@ interface SortIconProps {
 }
 
 function SortIcon(props: SortIconProps) {
-  const activeClass = "text-text dark:text-dark-text";
-  const inactiveClass = "text-text-secondary dark:text-dark-text-secondary";
+  const activeClass = 'text-text dark:text-dark-text';
+  const inactiveClass = 'text-text-secondary dark:text-dark-text-secondary';
 
   const { activeDirection } = props;
   const upColorClass = activeDirection === SortDirection.ASCENDING ? activeClass : inactiveClass;
@@ -117,42 +117,42 @@ const ProfileTableRowView = ({
 
   // Base classes applied to all rows
   const baseClasses = [
-    "h-[30px]",
-    "text-text dark:text-dark-text",
-    "font-mono",
-    "relative",
-    "cursor-pointer",
-    "transition-colors duration-100",
+    'h-[30px]',
+    'text-text dark:text-dark-text',
+    'font-mono',
+    'relative',
+    'cursor-pointer',
+    'transition-colors duration-100',
   ];
 
   // Determine specific classes based on selected state and index
   let specificClasses: string[];
   if (selected) {
     // Selected rows use accent colors
-    specificClasses = ["bg-accent text-accent-foreground"];
+    specificClasses = ['bg-accent text-accent-foreground'];
   } else {
     // Non-selected rows get alternating background + hover using theme colors
     // Use bg-muted for odd rows for a more subtle stripe
-    const bgClass = index % 2 === 0 ? "bg-background dark:bg-background" : "bg-muted dark:bg-muted"; // Use muted instead of secondary
-    specificClasses = [bgClass, "hover:bg-accent/20 dark:hover:bg-accent/20"]; // Use accent for hover for better visibility
+    const bgClass = index % 2 === 0 ? 'bg-background dark:bg-background' : 'bg-muted dark:bg-muted'; // Use muted instead of secondary
+    specificClasses = [bgClass, 'hover:bg-accent/20 dark:hover:bg-accent/20']; // Use accent for hover for better visibility
   }
 
   // Combine base and specific classes
   const rowClasses = [...baseClasses, ...specificClasses];
 
-  const matchedBaseClass = "bg-highlight dark:bg-dark-highlight rounded-[1px] px-0.5";
-  const matchedSelectedClass = "bg-primary text-primary-foreground rounded-[1px] px-0.5";
+  const matchedBaseClass = 'bg-highlight dark:bg-dark-highlight rounded-[1px] px-0.5';
+  const matchedSelectedClass = 'bg-primary text-primary-foreground rounded-[1px] px-0.5';
   const matchedClassName = selected ? matchedSelectedClass : matchedBaseClass;
 
   const baseNumericCellClass =
-    "relative text-ellipsis overflow-hidden whitespace-nowrap text-right w-[180px] min-w-[180px] align-top pt-1";
+    'relative text-ellipsis overflow-hidden whitespace-nowrap text-right w-[180px] min-w-[180px] align-top pt-1';
   const totalCellClass = `${baseNumericCellClass} pl-2 pr-2`;
   const selfCellClass = `${baseNumericCellClass} pl-4 pr-[30px]`;
   const textCellBaseClass =
-    "text-ellipsis overflow-hidden whitespace-nowrap w-full max-w-0 align-top pt-1 pl-1";
+    'text-ellipsis overflow-hidden whitespace-nowrap w-full max-w-0 align-top pt-1 pl-1';
 
   return (
-    <tr key={`${index}`} onClick={() => setSelectedFrame(frame)} className={rowClasses.join(" ")}>
+    <tr key={`${index}`} onClick={() => setSelectedFrame(frame)} className={rowClasses.join(' ')}>
       <td className={totalCellClass}>
         {profile.formatValue(totalWeight)} ({formatPercent(totalPerc)})
         <div className="absolute bottom-0 left-4 right-4 h-0.5">
@@ -252,7 +252,7 @@ export const ProfileTableView = memo(
           );
         }
 
-        const emptyStateClass = "p-2 text-center font-bold text-text dark:text-dark-text";
+        const emptyStateClass = 'p-2 text-center font-bold text-text dark:text-dark-text';
 
         if (rows.length === 0) {
           if (searchIsActive) {
@@ -308,13 +308,13 @@ export const ProfileTableView = memo(
     );
 
     const baseNumericHeaderCellClass =
-      "p-1 w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono";
+      'p-1 w-[180px] min-w-[180px] text-right text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono';
     const totalHeaderCellClass = `${baseNumericHeaderCellClass} pr-2`;
     const selfHeaderCellClass = `${baseNumericHeaderCellClass} pr-[30px]`;
 
     const textHeaderCellClass =
-      "p-1 w-full max-w-0 text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono";
-    const headerFlexContainerClass = "flex items-center cursor-pointer";
+      'p-1 w-full max-w-0 text-ellipsis overflow-hidden whitespace-nowrap font-semibold text-text dark:text-dark-text font-mono';
+    const headerFlexContainerClass = 'flex items-center cursor-pointer';
     const numericHeaderFlexContainerClass = `${headerFlexContainerClass} justify-end`;
 
     return (
@@ -356,7 +356,7 @@ export const ProfileTableView = memo(
           </thead>
         </table>
         <ScrollableListView
-          axis={"y"}
+          axis={'y'}
           items={listItems}
           className="flex-grow overflow-y-auto overflow-x-hidden bg-background dark:bg-dark-background"
           renderItems={renderItems}
@@ -377,7 +377,7 @@ export const ProfileTableViewContainer = memo((ownProps: ProfileTableViewContain
   const { activeProfileState } = ownProps;
   const { profile, sandwichViewState } = activeProfileState;
   const theme = useTheme();
-  if (!profile) throw new Error("profile missing");
+  if (!profile) throw new Error('profile missing');
   const tableSortMethod = useAtom(tableSortMethodAtom);
   const { callerCallee } = sandwichViewState;
   const selectedFrame = callerCallee ? callerCallee.selectedFrame : null;

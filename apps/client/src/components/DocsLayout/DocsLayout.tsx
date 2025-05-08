@@ -1,5 +1,5 @@
-import { memo } from "react";
-import Navbar from "@/components/Navbar";
+import { memo } from 'react';
+import Navbar from '@/components/Navbar';
 
 interface DocsLayoutProps {
   children: React.ReactNode;

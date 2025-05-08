@@ -1,26 +1,26 @@
-import { memoizeByShallowEquality, noop } from "../../lib/speedscope-core/lib-utils";
-import type { Profile, Frame } from "../../lib/speedscope-core/profile";
-import { Flamechart } from "../../lib/speedscope-core/flamechart";
+import { memoizeByShallowEquality, noop } from '../../lib/speedscope-core/lib-utils';
+import type { Profile, Frame } from '../../lib/speedscope-core/profile';
+import { Flamechart } from '../../lib/speedscope-core/flamechart';
 import type {
   FlamechartViewContainerProps,
   FlamechartViewHandle,
-} from "./flamechart-view-container";
+} from './flamechart-view-container';
 import {
   createMemoizedFlamechartRenderer,
   useFlamechartSetters,
-} from "./flamechart-view-container";
+} from './flamechart-view-container';
 import {
   getCanvasContext,
   createGetColorBucketForFrame,
   createGetCSSColorForFrame,
   getFrameToColorBucket,
-} from "../../lib/speedscope-core/app-state/getters";
-import { FlamechartWrapper } from "./flamechart-wrapper";
-import React, { memo, forwardRef, useRef, useImperativeHandle } from "react";
-import { useTheme } from "./themes/theme";
-import { FlamechartID } from "../../lib/speedscope-core/app-state/profile-group";
-import { flattenRecursionAtom, glCanvasAtom } from "../../lib/speedscope-core/app-state";
-import { useAtom } from "../../lib/speedscope-core/atom";
+} from '../../lib/speedscope-core/app-state/getters';
+import { FlamechartWrapper } from './flamechart-wrapper';
+import React, { memo, forwardRef, useRef, useImperativeHandle } from 'react';
+import { useTheme } from './themes/theme';
+import { FlamechartID } from '../../lib/speedscope-core/app-state/profile-group';
+import { flattenRecursionAtom, glCanvasAtom } from '../../lib/speedscope-core/app-state';
+import { useAtom } from '../../lib/speedscope-core/atom';
 
 const getCalleeProfile = memoizeByShallowEquality<
   {
@@ -67,10 +67,10 @@ export const CalleeFlamegraphView = memo(
       },
     }));
 
-    if (!profile) throw new Error("profile missing");
-    if (!glCanvas) throw new Error("glCanvas missing");
+    if (!profile) throw new Error('profile missing');
+    if (!glCanvas) throw new Error('glCanvas missing');
     const { callerCallee } = sandwichViewState;
-    if (!callerCallee) throw new Error("callerCallee missing");
+    if (!callerCallee) throw new Error('callerCallee missing');
     const { selectedFrame } = callerCallee;
 
     const frameToColorBucket = getFrameToColorBucket(profile);

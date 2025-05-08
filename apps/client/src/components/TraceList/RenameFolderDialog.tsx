@@ -1,5 +1,5 @@
-import React, { memo, useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
+import React, { memo, useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,17 +7,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Folder } from "@/lib/api";
-import { traceApi } from "@/lib/api";
-import { toast } from "sonner";
-import { FOLDER_VIEW_QUERY_KEY } from "./hooks/useTraces"; // Ensure this query key is correct
-import type { ApiError, ApiResponse } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { Folder } from '@/lib/api';
+import { traceApi } from '@/lib/api';
+import { toast } from 'sonner';
+import { FOLDER_VIEW_QUERY_KEY } from './hooks/useTraces'; // Ensure this query key is correct
+import type { ApiError, ApiResponse } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 interface RenameFolderDialogProps {
   isOpen: boolean;
@@ -50,7 +50,7 @@ function RenameFolderDialogComponent({
     string // Type of the variable passed to mutate function (newName)
   >({
     mutationFn: (updatedName: string) => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error('User not authenticated');
       return traceApi.renameFolder(folderId, updatedName, user.id);
     },
     onSuccess: (response) => {
@@ -71,7 +71,7 @@ function RenameFolderDialogComponent({
   const handleSave = useCallback(() => {
     const trimmedName = newName.trim();
     if (!trimmedName) {
-      toast.error("Folder name cannot be empty.");
+      toast.error('Folder name cannot be empty.');
       return;
     }
     if (trimmedName === currentName) {
@@ -107,7 +107,7 @@ function RenameFolderDialogComponent({
               className="col-span-3"
               disabled={isPending}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !isPending) handleSave();
+                if (e.key === 'Enter' && !isPending) handleSave();
               }}
             />
           </div>

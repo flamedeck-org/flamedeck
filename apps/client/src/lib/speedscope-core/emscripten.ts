@@ -1,7 +1,7 @@
 // Returns `input` with hex escapes expanded (e.g. `\20` becomes ` `.)
 //
 
-import type { Frame, SymbolRemapper } from "./profile";
+import type { Frame, SymbolRemapper } from './profile';
 
 // NOTE: This will fail to ignore escaped backslahes (e.g. `\\20`).
 function unescapeHex(input: string): string {
@@ -17,11 +17,11 @@ function unescapeHex(input: string): string {
 // and then drop the symbol map. After the second drop, the symbols will be remapped to
 // their original names.
 export function importEmscriptenSymbolMap(contents: string): SymbolRemapper | null {
-  const lines = contents.split("\n");
+  const lines = contents.split('\n');
   if (!lines.length) return null;
 
   // Remove a trailing blank line if there is one
-  if (lines[lines.length - 1] === "") lines.pop();
+  if (lines[lines.length - 1] === '') lines.pop();
   if (!lines.length) return null;
 
   const map = new Map<string, string>();

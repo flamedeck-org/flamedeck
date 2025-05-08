@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { useState, createContext, useContext, useCallback, useMemo } from "react";
+import type { ReactNode } from 'react';
+import { useState, createContext, useContext, useCallback, useMemo } from 'react';
 
 interface SharingModalContextType {
   isOpen: boolean;
@@ -44,7 +44,7 @@ export function SharingModalProvider({ children }: SharingModalProviderProps) {
 export function useSharingModal(): SharingModalContextType {
   const context = useContext(SharingModalContext);
   if (context === undefined) {
-    throw new Error("useSharingModal must be used within a SharingModalProvider");
+    throw new Error('useSharingModal must be used within a SharingModalProvider');
   }
   return context;
 }

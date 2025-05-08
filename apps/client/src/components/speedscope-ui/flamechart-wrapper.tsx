@@ -1,12 +1,12 @@
-import React, { useRef, forwardRef, useImperativeHandle } from "react";
-import type { CallTreeNode } from "../../lib/speedscope-core/profile";
-import type { Rect, AffineTransform, Vec2 } from "../../lib/speedscope-core/math";
-import { FlamechartPanZoomView, type HoverPayload } from "./flamechart-pan-zoom-view";
-import { noop, formatPercent } from "../../lib/speedscope-core/lib-utils";
-import type { FlamechartViewProps, FlamechartViewHandle } from "./flamechart-view-container";
-import { FlamechartHover } from "./flamechart-view-container";
-import { ContextMenu, ContextMenuDivider } from "@/components/ui/context-menu";
-import { useState, useEffect } from "react";
+import React, { useRef, forwardRef, useImperativeHandle } from 'react';
+import type { CallTreeNode } from '../../lib/speedscope-core/profile';
+import type { Rect, AffineTransform, Vec2 } from '../../lib/speedscope-core/math';
+import { FlamechartPanZoomView, type HoverPayload } from './flamechart-pan-zoom-view';
+import { noop, formatPercent } from '../../lib/speedscope-core/lib-utils';
+import type { FlamechartViewProps, FlamechartViewHandle } from './flamechart-view-container';
+import { FlamechartHover } from './flamechart-view-container';
+import { ContextMenu, ContextMenuDivider } from '@/components/ui/context-menu';
+import { useState, useEffect } from 'react';
 
 // Change from class component to functional component with forwardRef
 export const FlamechartWrapper = forwardRef<FlamechartViewHandle, FlamechartViewProps>(

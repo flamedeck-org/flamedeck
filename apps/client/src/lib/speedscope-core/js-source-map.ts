@@ -24,11 +24,11 @@
 
 // This is rarely used, so let's load it async to avoid bloating the initial
 // bundle.
-import type { MappingItem, RawSourceMap, SourceMapConsumer } from "source-map";
-const sourceMapModule = import("source-map");
+import type { MappingItem, RawSourceMap, SourceMapConsumer } from 'source-map';
+const sourceMapModule = import('source-map');
 
-import type { Frame, SymbolRemapper } from "./profile";
-import { findIndexBisect } from "./lib-utils";
+import type { Frame, SymbolRemapper } from './profile';
+import { findIndexBisect } from './lib-utils';
 
 const DEBUG = false;
 
@@ -69,14 +69,14 @@ export async function importJavaScriptSourceMapSymbolRemapper(
     sourceMap.SourceMapConsumer.GENERATED_ORDER
   );
 
-  const sourceMapFileNameWithoutExt = sourceMapFileName.replace(/\.[^/]*$/, "");
+  const sourceMapFileNameWithoutExt = sourceMapFileName.replace(/\.[^/]*$/, '');
 
   return (frame: Frame) => {
     let fileMatches = false;
     if (contents?.file && contents?.file === frame.file) {
       fileMatches = true;
     } else if (
-      ("/" + frame.file?.replace(/\.[^/]*$/, "")).endsWith("/" + sourceMapFileNameWithoutExt)
+      ('/' + frame.file?.replace(/\.[^/]*$/, '')).endsWith('/' + sourceMapFileNameWithoutExt)
     ) {
       fileMatches = true;
     }
@@ -152,7 +152,7 @@ export async function importJavaScriptSourceMapSymbolRemapper(
       // throws instead of returning null.
       const content = consumer?.sourceContentFor(sourceMapItem.source, true);
       if (content) {
-        const lines = content.split("\n");
+        const lines = content.split('\n');
         const line = lines[sourceMapItem.originalLine - 1];
         if (line) {
           // It's possible this source map entry will contain stuff other than
@@ -167,17 +167,17 @@ export async function importJavaScriptSourceMapSymbolRemapper(
     }
 
     switch (remappedFrameInfo.name) {
-      case "constructor": {
+      case 'constructor': {
         // If the name was remapped to "constructor", then let's use the
         // original name, since "constructor" isn't very helpful.
         //
         // TODO(jlfwong): Search backwards for the class keyword and see if we
         // can guess the right name.
-        remappedFrameInfo.name = frame.name + " constructor";
+        remappedFrameInfo.name = frame.name + ' constructor';
         break;
       }
 
-      case "function": {
+      case 'function': {
         // If the name is just "function", it probably means we either messed up
         // the remapping, or that we matched an anonymous function. In either
         // case, this isn't helpful, so put this back.
@@ -185,8 +185,8 @@ export async function importJavaScriptSourceMapSymbolRemapper(
         break;
       }
 
-      case "const":
-      case "export": {
+      case 'const':
+      case 'export': {
         // If we got this, we probably just did a bad job leveraging the hack
         // looking through the source code. Let's fall-back to whatever the
         // original name was.
@@ -215,10 +215,10 @@ export async function importJavaScriptSourceMapSymbolRemapper(
 
     if (DEBUG) {
       console.groupCollapsed(`Remapping "${frame.name}" -> "${remappedFrameInfo.name}"`);
-      console.log("before", { ...frame });
-      console.log("item @ index", sourceMapItem);
-      console.log("item @ index + 1", mappingItems[mappingIndex + 1]);
-      console.log("after", remappedFrameInfo);
+      console.log('before', { ...frame });
+      console.log('item @ index', sourceMapItem);
+      console.log('item @ index + 1', mappingItems[mappingIndex + 1]);
+      console.log('after', remappedFrameInfo);
       console.groupEnd();
     }
 

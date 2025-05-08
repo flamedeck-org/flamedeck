@@ -1,7 +1,7 @@
-import { lastOf, KeyedSet } from "./lib-utils";
-import type { ValueFormatter } from "./value-formatters";
-import { RawValueFormatter } from "./value-formatters";
-import type { FileFormat } from "./file-format-spec";
+import { lastOf, KeyedSet } from './lib-utils';
+import type { ValueFormatter } from './value-formatters';
+import { RawValueFormatter } from './value-formatters';
+import type { FileFormat } from './file-format-spec';
 // const demangleCppModule = import('./demangle-cpp') // Commented out for now
 
 export interface FrameInfo {
@@ -75,8 +75,8 @@ export class Frame extends HasWeights {
   }
 
   static root = new Frame({
-    key: "(speedscope root)",
-    name: "(speedscope root)",
+    key: '(speedscope root)',
+    name: '(speedscope root)',
   });
 
   static getOrInsert(set: KeyedSet<Frame>, info: FrameInfo) {
@@ -115,7 +115,7 @@ export interface ProfileGroup {
 }
 
 export class Profile {
-  protected name: string = "";
+  protected name: string = '';
 
   protected totalWeight: number;
 
@@ -448,7 +448,7 @@ export class Profile {
 
 export class StackListProfileBuilder extends Profile {
   _appendSample(stack: Frame[], weight: number, useAppendOrder: boolean) {
-    if (isNaN(weight)) throw new Error("invalid weight");
+    if (isNaN(weight)) throw new Error('invalid weight');
     let node = useAppendOrder ? this.appendOrderCalltreeRoot : this.groupedCalltreeRoot;
 
     const framesInStack = new Set<Frame>();
@@ -504,7 +504,7 @@ export class StackListProfileBuilder extends Profile {
       return;
     }
     if (weight < 0) {
-      throw new Error("Samples must have positive weights");
+      throw new Error('Samples must have positive weights');
     }
 
     const frames = stack.map((fr) => Frame.getOrInsert(this.frames, fr));
@@ -520,7 +520,7 @@ export class StackListProfileBuilder extends Profile {
   appendSampleWithTimestamp(stack: FrameInfo[], timestamp: number) {
     if (this.pendingSample) {
       if (timestamp < this.pendingSample.centralTimestamp) {
-        throw new Error("Timestamps received out of order");
+        throw new Error('Timestamps received out of order');
       }
       const endTimestamp = (timestamp + this.pendingSample.centralTimestamp) / 2;
       this.appendSampleWithWeight(
@@ -691,7 +691,7 @@ export class CallTreeProfileBuilder extends Profile {
     // Each stack is expected to contain a single node which we initialize to be
     // the root node.
     if (this.appendOrderStack.length > 1 || this.groupedOrderStack.length > 1) {
-      throw new Error("Tried to complete profile construction with a non-empty stack");
+      throw new Error('Tried to complete profile construction with a non-empty stack');
     }
     this.sortGroupedCallTree();
     return this;

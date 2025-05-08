@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import type { ProfileType } from "../utils";
-import { processAndPrepareTraceUpload } from "../utils";
+import { useState, useEffect, useRef } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import type { ProfileType } from '../utils';
+import { processAndPrepareTraceUpload } from '../utils';
 
 interface UseTraceProcessorProps {
   file: File | null;
@@ -43,11 +43,11 @@ export function useTraceProcessor({ file }: UseTraceProcessorProps): UseTracePro
 
           if (file === currentFileRef.current) {
             console.log(
-              "Background processing complete:",
+              'Background processing complete:',
               file.name,
-              "Duration:",
+              'Duration:',
               durationMs,
-              "Type:",
+              'Type:',
               detectedType
             );
             setProcessedFile(newProcessedFile);
@@ -60,16 +60,16 @@ export function useTraceProcessor({ file }: UseTraceProcessorProps): UseTracePro
             const errorMessage =
               error instanceof Error
                 ? error.message
-                : "An unknown error occurred during processing.";
-            console.error("Background processing failed:", errorMessage);
+                : 'An unknown error occurred during processing.';
+            console.error('Background processing failed:', errorMessage);
             setProcessingError(errorMessage);
             setProcessedFile(null);
             setProcessedDurationMs(null);
             setProfileType(null);
             toast({
-              title: "Trace Processing Failed",
+              title: 'Trace Processing Failed',
               description: errorMessage,
-              variant: "destructive",
+              variant: 'destructive',
             });
           }
         } finally {

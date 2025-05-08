@@ -1,5 +1,5 @@
-import React from "react";
-import NpmUploadContent from "@/docs/npm-upload.mdx";
+import React from 'react';
+import NpmUploadContent from '@/docs/npm-upload.mdx';
 
 function DocsNpmUploadPage() {
   return (

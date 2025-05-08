@@ -1,5 +1,5 @@
-import { Color } from "../../../../lib/speedscope-core/color.ts";
-import type { FlamegraphTheme } from "../theme.tsx";
+import { Color } from '../../../../lib/speedscope-core/color.ts';
+import type { FlamegraphTheme } from '../theme.tsx';
 
 // Fire theme HCL constants (0-1 scale for C & L, degrees for H)
 const H_MIN = 5.0; // Deeper red
@@ -49,5 +49,5 @@ vec3 colorForBucket(float t) {
 export const fireFlamegraphThemeLight: FlamegraphTheme = {
   colorForBucket,
   colorForBucketGLSL,
-  flamegraphTextColor: "#FFFFFF",
+  flamegraphTextColor: '#FFFFFF',
 };

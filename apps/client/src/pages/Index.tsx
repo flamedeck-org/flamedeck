@@ -1,9 +1,9 @@
-import React, { memo } from "react";
-import { Link } from "react-router-dom";
-import Layout from "@/components/Layout";
-import { Button } from "@/components/ui/button";
-import PricingTable from "@/components/PricingTable";
-import { UploadCloud, Database, BarChart, Search, Users, Code } from "lucide-react";
+import React, { memo } from 'react';
+import { Link } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import { Button } from '@/components/ui/button';
+import PricingTable from '@/components/PricingTable';
+import { UploadCloud, Database, BarChart, Search, Users, Code } from 'lucide-react';
 
 function Index() {
   return (

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -6,14 +6,14 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
-import PageHeader from "@/components/PageHeader";
-import { useAuth } from "@/contexts/AuthContext";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import PageHeader from '@/components/PageHeader';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,11 +24,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { Skeleton } from "@/components/ui/skeleton";
-import { updateUserProfile, deleteUserAccount } from "@/lib/api/users";
+} from '@/components/ui/alert-dialog';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { Skeleton } from '@/components/ui/skeleton';
+import { updateUserProfile, deleteUserAccount } from '@/lib/api/users';
 
 interface UserProfileFormValues {
   username: string;
@@ -56,10 +56,10 @@ function SettingsPage() {
     formState: { errors },
   } = useForm<UserProfileFormValues>({
     defaultValues: {
-      username: "",
-      firstName: "",
-      lastName: "",
-      email: user?.email || "",
+      username: '',
+      firstName: '',
+      lastName: '',
+      email: user?.email || '',
     },
   });
 
@@ -69,17 +69,17 @@ function SettingsPage() {
   useEffect(() => {
     if (profile) {
       reset({
-        username: profile.username || "",
-        firstName: profile.first_name || "",
-        lastName: profile.last_name || "",
-        email: user?.email || "",
+        username: profile.username || '',
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        email: user?.email || '',
       });
     }
   }, [profile, reset, user?.email]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (formData: UserProfileFormValues) => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error('User not authenticated');
 
       const { error } = await updateUserProfile(user.id, {
         username: formData.username,
@@ -91,18 +91,18 @@ function SettingsPage() {
       return true;
     },
     onSuccess: () => {
-      toast.success("Profile updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["userProfile", user?.id] });
+      toast.success('Profile updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['userProfile', user?.id] });
     },
     onError: (error) => {
-      console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
     },
   });
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error('User not authenticated');
 
       const { error } = await deleteUserAccount();
 
@@ -110,11 +110,11 @@ function SettingsPage() {
       return true;
     },
     onSuccess: async () => {
-      toast.success("Your account has been deleted");
+      toast.success('Your account has been deleted');
       await signOut();
     },
     onError: (error) => {
-      console.error("Error deleting account:", error);
+      console.error('Error deleting account:', error);
       toast.error(`Failed to delete account: ${error.message}`);
     },
   });
@@ -171,7 +171,7 @@ function SettingsPage() {
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" {...register("email")} disabled />
+                    <Input id="email" {...register('email')} disabled />
                     <p className="text-sm text-muted-foreground">Email cannot be changed</p>
                   </div>
 
@@ -179,7 +179,7 @@ function SettingsPage() {
                     <Label htmlFor="username">Username</Label>
                     <Input
                       id="username"
-                      {...register("username")}
+                      {...register('username')}
                       placeholder="Username"
                       disabled
                     />
@@ -194,7 +194,7 @@ function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" {...register("firstName")} placeholder="First Name" />
+                      <Input id="firstName" {...register('firstName')} placeholder="First Name" />
                       {errors.firstName && (
                         <p className="text-sm text-destructive">{errors.firstName.message}</p>
                       )}
@@ -202,7 +202,7 @@ function SettingsPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" {...register("lastName")} placeholder="Last Name" />
+                      <Input id="lastName" {...register('lastName')} placeholder="Last Name" />
                       {errors.lastName && (
                         <p className="text-sm text-destructive">{errors.lastName.message}</p>
                       )}

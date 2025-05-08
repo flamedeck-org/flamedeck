@@ -1,8 +1,8 @@
-import type { Profile } from "../../lib/speedscope-core/profile";
-import type { Ref } from "react";
-import { useCallback, useState, useMemo, useEffect, useRef } from "react";
-import { fuzzyMatchStrings } from "../../lib/speedscope-core/fuzzy-find";
-import { sortBy } from "../../lib/speedscope-core/lib-utils";
+import type { Profile } from '../../lib/speedscope-core/profile';
+import type { Ref } from 'react';
+import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
+import { fuzzyMatchStrings } from '../../lib/speedscope-core/fuzzy-find';
+import { sortBy } from '../../lib/speedscope-core/lib-utils';
 
 interface ProfileSelectRowProps {
   setProfileIndexToView: (profileIndex: number) => void;
@@ -64,30 +64,30 @@ export function ProfileSelectRow({
 
   const maxDigits = 1 + Math.floor(Math.log10(profileCount));
 
-  const highlightedClassName = "bg-yellow-200 text-black";
+  const highlightedClassName = 'bg-yellow-200 text-black';
   const highlighted = useMemo(() => {
     const result = highlightRanges(name, matchedRanges, highlightedClassName);
     return result;
   }, [name, matchedRanges, highlightedClassName]);
 
   const rowClasses = [
-    "h-[28px]",
-    "border border-transparent",
-    "text-left",
-    "px-2.5",
-    "bg-white",
-    "overflow-hidden whitespace-nowrap text-ellipsis",
-    "cursor-pointer",
-    indexInFilteredListView % 2 === 0 ? "bg-gray-100" : "",
-    selected ? "bg-blue-500 text-white" : "",
-    hovered ? "border-blue-500" : "",
+    'h-[28px]',
+    'border border-transparent',
+    'text-left',
+    'px-2.5',
+    'bg-white',
+    'overflow-hidden whitespace-nowrap text-ellipsis',
+    'cursor-pointer',
+    indexInFilteredListView % 2 === 0 ? 'bg-gray-100' : '',
+    selected ? 'bg-blue-500 text-white' : '',
+    hovered ? 'border-blue-500' : '',
   ]
     .filter(Boolean)
-    .join(" ");
+    .join(' ');
 
-  const indexClasses = ["inline-block text-right", "text-gray-500", selected ? "text-white" : ""]
+  const indexClasses = ['inline-block text-right', 'text-gray-500', selected ? 'text-white' : '']
     .filter(Boolean)
-    .join(" ");
+    .join(' ');
 
   return (
     <div
@@ -97,9 +97,9 @@ export function ProfileSelectRow({
       title={name}
       className={rowClasses}
     >
-      <span className={indexClasses} style={{ width: maxDigits + "em" }}>
+      <span className={indexClasses} style={{ width: maxDigits + 'em' }}>
         {indexInProfileGroup + 1}:
-      </span>{" "}
+      </span>{' '}
       {highlighted}
     </div>
   );
@@ -147,7 +147,7 @@ export function ProfileSelect({
   visible,
   setProfileIndexToView,
 }: ProfileSelectProps) {
-  const [filterText, setFilterText] = useState("");
+  const [filterText, setFilterText] = useState('');
 
   const onFilterTextChange = useCallback(
     (ev: Event) => {
@@ -182,9 +182,9 @@ export function ProfileSelect({
       setHoveredProfileIndex(null);
       if (selectedNodeRef.current !== null) {
         selectedNodeRef.current.scrollIntoView({
-          behavior: "auto",
-          block: "nearest",
-          inline: "nearest",
+          behavior: 'auto',
+          block: 'nearest',
+          inline: 'nearest',
         });
       }
     }
@@ -197,18 +197,18 @@ export function ProfileSelect({
       let newHoveredIndexInFilteredList: number | null = null;
 
       switch (ev.key) {
-        case "Enter": {
+        case 'Enter': {
           if (hoveredProfileIndex != null) {
             closeProfileSelect();
             setProfileIndexToView(hoveredProfileIndex);
           }
           break;
         }
-        case "Escape": {
+        case 'Escape': {
           closeProfileSelect();
           break;
         }
-        case "ArrowDown": {
+        case 'ArrowDown': {
           ev.preventDefault();
           newHoveredIndexInFilteredList = 0;
           if (hoveredProfileIndex != null) {
@@ -221,7 +221,7 @@ export function ProfileSelect({
           }
           break;
         }
-        case "ArrowUp": {
+        case 'ArrowUp': {
           ev.preventDefault();
           newHoveredIndexInFilteredList = filteredProfiles.length - 1;
           if (hoveredProfileIndex != null) {
@@ -262,9 +262,9 @@ export function ProfileSelect({
     (hoveredNode: HTMLDivElement | null) => {
       if (pendingForcedScroll && hoveredNode) {
         hoveredNode.scrollIntoView({
-          behavior: "auto",
-          block: "nearest",
-          inline: "nearest",
+          behavior: 'auto',
+          block: 'nearest',
+          inline: 'nearest',
         });
         setPendingForcedScroll(false);
       }
@@ -289,7 +289,7 @@ export function ProfileSelect({
             type="text"
             className="text-black bg-gray-100 rounded p-1.25 border-none outline-none focus:border-none focus:outline-none selection:bg-blue-300 selection:text-black"
             ref={focusFilterInput}
-            placeholder={"Filter..."}
+            placeholder={'Filter...'}
             value={filterText}
             onInput={onFilterTextChange}
             onKeyDown={onFilterKeyUp}

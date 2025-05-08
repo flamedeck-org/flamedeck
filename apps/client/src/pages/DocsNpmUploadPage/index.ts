@@ -1,1 +1,1 @@
-export { default } from "./DocsNpmUploadPage";
+export { default } from './DocsNpmUploadPage';

@@ -1,14 +1,14 @@
-import type { Database } from "@/integrations/supabase/types";
-import type { TraceComment, TraceMetadata } from "@/types";
+import type { Database } from '@/integrations/supabase/types';
+import type { TraceComment, TraceMetadata } from '@/types';
 
 // Define the profile type using the generated table type
-type UserProfileType = Database["public"]["Tables"]["user_profiles"]["Row"];
+type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
 
 // Define types for comment data
 export interface TraceCommentWithAuthor extends TraceComment {
   author: Pick<
     UserProfileType,
-    "id" | "username" | "avatar_url" | "first_name" | "last_name"
+    'id' | 'username' | 'avatar_url' | 'first_name' | 'last_name'
   > | null;
   comment_type: string;
   comment_identifier: string | null;
@@ -19,14 +19,14 @@ export interface TraceCommentWithAuthor extends TraceComment {
 }
 
 // Define types for permission data
-export type TracePermissionRow = Database["public"]["Tables"]["trace_permissions"]["Row"];
-export type TraceRole = Database["public"]["Enums"]["trace_role"];
+export type TracePermissionRow = Database['public']['Tables']['trace_permissions']['Row'];
+export type TraceRole = Database['public']['Enums']['trace_role'];
 
-export interface TracePermissionWithUser extends Omit<TracePermissionRow, "user_id"> {
-  user: Pick<UserProfileType, "id" | "username" | "avatar_url" | "first_name" | "last_name"> | null; // User details (null for public)
+export interface TracePermissionWithUser extends Omit<TracePermissionRow, 'user_id'> {
+  user: Pick<UserProfileType, 'id' | 'username' | 'avatar_url' | 'first_name' | 'last_name'> | null; // User details (null for public)
 }
 
-export type NewTraceComment = Omit<TraceComment, "id" | "created_at" | "user_id" | "updated_at"> & {
+export type NewTraceComment = Omit<TraceComment, 'id' | 'created_at' | 'user_id' | 'updated_at'> & {
   comment_type: string;
   comment_identifier: string | null;
 };
@@ -38,14 +38,14 @@ export interface PaginatedTracesResponse {
 }
 
 // --- NEW: Folder Types ---
-type FolderRow = Database["public"]["Tables"]["folders"]["Row"];
+type FolderRow = Database['public']['Tables']['folders']['Row'];
 
 // Use type alias instead of interface extending directly
 export type Folder = FolderRow;
 
 // Interface for items listed within a folder (could be a folder or a trace)
 export interface DirectoryItem {
-  type: "folder" | "trace";
+  type: 'folder' | 'trace';
   id: string;
   name: string; // Use trace scenario or folder name
   updated_at: string; // Or created_at
@@ -81,6 +81,6 @@ export interface DirectoryListingOptions {
   page?: number;
   limit?: number;
   searchQuery?: string | null;
-  itemTypeFilter?: "folder" | "trace" | "all";
+  itemTypeFilter?: 'folder' | 'trace' | 'all';
   // searchScope?: 'current' | 'global'; // Future enhancement: Allow global search
 }

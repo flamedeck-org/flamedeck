@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { traceApi } from "@/lib/api";
-import type { TraceMetadata, ApiError } from "@/types";
+import { useQuery } from '@tanstack/react-query';
+import { traceApi } from '@/lib/api';
+import type { TraceMetadata, ApiError } from '@/types';
 
 /**
  * Custom hook to fetch trace metadata.
@@ -13,7 +13,7 @@ export function useTraceDetails(traceId: string | null | undefined) {
     TraceMetadata | null, // Type for successful data
     ApiError // Type for error - use our structured error type
   >({
-    queryKey: ["traceDetails", traceId], // Unique query key including the traceId
+    queryKey: ['traceDetails', traceId], // Unique query key including the traceId
     queryFn: async () => {
       if (!traceId) {
         // Return null if traceId is not provided, consistent with enabled flag
@@ -32,7 +32,7 @@ export function useTraceDetails(traceId: string | null | undefined) {
     refetchOnWindowFocus: false, // Optional: prevent refetch on window focus
     retry: (failureCount, error) => {
       // Prevent retrying if the error indicates not found/no permission (PGRST116)
-      if (error.code === "PGRST116") {
+      if (error.code === 'PGRST116') {
         return false;
       }
       // Default retry behavior for other errors (e.g., network issues)

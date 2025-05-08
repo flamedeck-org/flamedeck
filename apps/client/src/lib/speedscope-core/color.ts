@@ -1,4 +1,4 @@
-import { clamp } from "./math";
+import { clamp } from './math';
 
 export class Color {
   constructor(
@@ -35,7 +35,7 @@ export class Color {
   }
 
   static fromCSSHex(hex: string) {
-    if (hex.length !== 7 || hex[0] !== "#") {
+    if (hex.length !== 7 || hex[0] !== '#') {
       throw new Error(`Invalid color input ${hex}`);
     }
     const r = parseInt(hex.substr(1, 2), 16) / 255;

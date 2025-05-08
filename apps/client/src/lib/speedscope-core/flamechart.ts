@@ -1,7 +1,7 @@
-import type { Frame, CallTreeNode } from "./profile";
+import type { Frame, CallTreeNode } from './profile';
 
-import { lastOf } from "./lib-utils";
-import { clamp, Rect, Vec2 } from "./math";
+import { lastOf } from './lib-utils';
+import { clamp, Rect, Vec2 } from './math';
 
 export interface FlamechartFrame {
   node: CallTreeNode;

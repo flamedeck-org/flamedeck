@@ -1,25 +1,25 @@
-import { Rect, AffineTransform, Vec2, clamp } from "../../lib/speedscope-core/math.ts";
-import type { CallTreeNode } from "../../lib/speedscope-core/profile.ts";
-import type { Flamechart, FlamechartFrame } from "../../lib/speedscope-core/flamechart.ts";
-import type { CanvasContext } from "../../lib/speedscope-gl/canvas-context.ts";
-import type { FlamechartRenderer } from "../../lib/speedscope-gl/flamechart-renderer.ts";
-import { Sizes, FontSize, FontFamily } from "./style.ts";
+import { Rect, AffineTransform, Vec2, clamp } from '../../lib/speedscope-core/math.ts';
+import type { CallTreeNode } from '../../lib/speedscope-core/profile.ts';
+import type { Flamechart, FlamechartFrame } from '../../lib/speedscope-core/flamechart.ts';
+import type { CanvasContext } from '../../lib/speedscope-gl/canvas-context.ts';
+import type { FlamechartRenderer } from '../../lib/speedscope-gl/flamechart-renderer.ts';
+import { Sizes, FontSize, FontFamily } from './style.ts';
 import {
   cachedMeasureTextWidth,
   ELLIPSIS,
   trimTextMid,
   remapRangesToTrimmedText,
-} from "../../lib/speedscope-core/text-utils.ts";
-import type { MouseEvent as ReactMouseEvent } from "react";
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
-import type { ProfileSearchResults } from "../../lib/speedscope-core/profile-search.ts";
+} from '../../lib/speedscope-core/text-utils.ts';
+import type { MouseEvent as ReactMouseEvent } from 'react';
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+import type { ProfileSearchResults } from '../../lib/speedscope-core/profile-search.ts';
 import {
   BatchCanvasTextRenderer,
   BatchCanvasRectRenderer,
-} from "../../lib/speedscope-core/canvas-2d-batch-renderers.ts";
-import { Color } from "../../lib/speedscope-core/color.ts";
-import type { Theme } from "./themes/theme.tsx";
+} from '../../lib/speedscope-core/canvas-2d-batch-renderers.ts';
+import { Color } from '../../lib/speedscope-core/color.ts';
+import type { Theme } from './themes/theme.tsx';
 
 interface FlamechartFrameLabel {
   configSpaceBounds: Rect;
@@ -116,7 +116,7 @@ export class FlamechartPanZoomView extends Component<
   private overlayCanvasRef = (element: Element | null) => {
     if (element) {
       this.overlayCanvas = element as HTMLCanvasElement;
-      this.overlayCtx = this.overlayCanvas.getContext("2d");
+      this.overlayCtx = this.overlayCanvas.getContext('2d');
       this.renderCanvas();
     } else {
       this.overlayCanvas = null;
@@ -214,8 +214,8 @@ export class FlamechartPanZoomView extends Component<
 
     // Pre-calculate minimum widths needed for rendering based on the target context
     targetCtx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`;
-    targetCtx.textBaseline = "alphabetic"; // Ensure consistent baseline
-    const minWidthToRender = cachedMeasureTextWidth(targetCtx, "M" + ELLIPSIS + "M");
+    targetCtx.textBaseline = 'alphabetic'; // Ensure consistent baseline
+    const minWidthToRender = cachedMeasureTextWidth(targetCtx, 'M' + ELLIPSIS + 'M');
     const minConfigSpaceWidthToRender = (
       configToPhysical.inverseTransformVector(new Vec2(minWidthToRender, 0)) || new Vec2(0, 0)
     ).x;
@@ -266,7 +266,7 @@ export class FlamechartPanZoomView extends Component<
 
     // Set font properties on the target context
     ctx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`;
-    ctx.textBaseline = "alphabetic";
+    ctx.textBaseline = 'alphabetic';
 
     const labelBatch = new BatchCanvasTextRenderer();
     const fadedLabelBatch = new BatchCanvasTextRenderer();
@@ -438,7 +438,7 @@ export class FlamechartPanZoomView extends Component<
 
     matchedFrameBatch.fill(ctx, theme.searchMatchPrimaryColor);
     matchedTextHighlightBatch.fill(ctx, theme.searchMatchSecondaryColor);
-    commentedFrameBatch.stroke(ctx, "#FFD700", frameOutlineWidth * 1.5);
+    commentedFrameBatch.stroke(ctx, '#FFD700', frameOutlineWidth * 1.5);
     fadedLabelBatch.fill(ctx, theme.fgSecondaryColor);
     labelBatch.fill(
       ctx,
@@ -506,7 +506,7 @@ export class FlamechartPanZoomView extends Component<
 
       // Set font properties on the target context
       ctx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`;
-      ctx.textBaseline = "top"; // Ensure consistent baseline
+      ctx.textBaseline = 'top'; // Ensure consistent baseline
 
       ctx.fillStyle = Color.fromCSSHex(theme.bgPrimaryColor).withAlpha(0.8).toCSS();
       ctx.fillRect(0, y, physicalViewSize.x, physicalViewSpaceFrameHeight);
@@ -537,8 +537,8 @@ export class FlamechartPanZoomView extends Component<
 
     // Calculate minimum widths using the component's overlayCtx
     ctx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`;
-    ctx.textBaseline = "alphabetic";
-    const minWidthToRender = cachedMeasureTextWidth(ctx, "M" + ELLIPSIS + "M");
+    ctx.textBaseline = 'alphabetic';
+    const minWidthToRender = cachedMeasureTextWidth(ctx, 'M' + ELLIPSIS + 'M');
     const minConfigSpaceWidthToRender = (
       configToPhysical.inverseTransformVector(new Vec2(minWidthToRender, 0)) || new Vec2(0, 0)
     ).x;
@@ -641,7 +641,7 @@ export class FlamechartPanZoomView extends Component<
   // prevents us from accidentally switching between panning & zooming.
   private frameHadWheelEvent = false;
   private framesWithoutWheelEvents = 0;
-  private interactionLock: "pan" | "zoom" | null = null;
+  private interactionLock: 'pan' | 'zoom' | null = null;
   private maybeClearInteractionLock = () => {
     if (this.interactionLock) {
       if (!this.frameHadWheelEvent) {
@@ -668,7 +668,7 @@ export class FlamechartPanZoomView extends Component<
   };
 
   private pan(logicalViewSpaceDelta: Vec2) {
-    this.interactionLock = "pan";
+    this.interactionLock = 'pan';
 
     const physicalDelta = this.logicalToPhysicalViewSpace().transformVector(logicalViewSpaceDelta);
     const configDelta = this.configSpaceToPhysicalViewSpace().inverseTransformVector(physicalDelta);
@@ -682,7 +682,7 @@ export class FlamechartPanZoomView extends Component<
   }
 
   private zoom(logicalViewSpaceCenter: Vec2, multiplier: number) {
-    this.interactionLock = "zoom";
+    this.interactionLock = 'zoom';
 
     const physicalCenter =
       this.logicalToPhysicalViewSpace().transformPosition(logicalViewSpaceCenter);
@@ -702,7 +702,7 @@ export class FlamechartPanZoomView extends Component<
   private onMouseDown = (ev: ReactMouseEvent<HTMLDivElement>) => {
     this.mouseDownPos = this.lastDragPos = new Vec2(ev.clientX, ev.clientY);
     this.updateCursor();
-    window.addEventListener("mouseup", this.onWindowMouseUp);
+    window.addEventListener('mouseup', this.onWindowMouseUp);
   };
 
   private onMouseDrag = (ev: ReactMouseEvent<HTMLDivElement>) => {
@@ -754,17 +754,17 @@ export class FlamechartPanZoomView extends Component<
 
   private updateCursor() {
     if (this.lastDragPos) {
-      document.body.style.cursor = "grabbing";
-      document.body.style.cursor = "-webkit-grabbing";
+      document.body.style.cursor = 'grabbing';
+      document.body.style.cursor = '-webkit-grabbing';
     } else {
-      document.body.style.cursor = "default";
+      document.body.style.cursor = 'default';
     }
   }
 
   private onWindowMouseUp = (ev: MouseEvent) => {
     this.lastDragPos = null;
     this.updateCursor();
-    window.removeEventListener("mouseup", this.onWindowMouseUp);
+    window.removeEventListener('mouseup', this.onWindowMouseUp);
   };
 
   private onMouseMove = (ev: ReactMouseEvent<HTMLDivElement>) => {
@@ -877,7 +877,7 @@ export class FlamechartPanZoomView extends Component<
       deltaX *= this.LOGICAL_VIEW_SPACE_FRAME_HEIGHT;
     }
 
-    if (isZoom && this.interactionLock !== "pan") {
+    if (isZoom && this.interactionLock !== 'pan') {
       let multiplier = 1 + deltaY / 100;
 
       // On Chrome & Firefox, pinch-to-zoom maps to
@@ -896,7 +896,7 @@ export class FlamechartPanZoomView extends Component<
 
       // Use relative coordinates for zoom center
       this.zoom(new Vec2(offsetX, offsetY), multiplier);
-    } else if (this.interactionLock !== "zoom") {
+    } else if (this.interactionLock !== 'zoom') {
       this.pan(new Vec2(deltaX, deltaY));
     }
 
@@ -912,10 +912,10 @@ export class FlamechartPanZoomView extends Component<
     if (!this.container) return;
     const { width, height } = this.container.getBoundingClientRect();
 
-    if (ev.key === "=" || ev.key === "+") {
+    if (ev.key === '=' || ev.key === '+') {
       this.zoom(new Vec2(width / 2, height / 2), 0.5);
       ev.preventDefault();
-    } else if (ev.key === "-" || ev.key === "_") {
+    } else if (ev.key === '-' || ev.key === '_') {
       this.zoom(new Vec2(width / 2, height / 2), 2);
       ev.preventDefault();
     }
@@ -928,17 +928,17 @@ export class FlamechartPanZoomView extends Component<
     // if the keyboard layout is not QWERTY.
     //
     // See: https://github.com/jlfwong/speedscope/pull/184
-    if (ev.key === "0") {
+    if (ev.key === '0') {
       this.zoom(new Vec2(width / 2, height / 2), 1e9);
-    } else if (ev.key === "ArrowRight" || ev.code === "KeyD") {
+    } else if (ev.key === 'ArrowRight' || ev.code === 'KeyD') {
       this.pan(new Vec2(100, 0));
-    } else if (ev.key === "ArrowLeft" || ev.code === "KeyA") {
+    } else if (ev.key === 'ArrowLeft' || ev.code === 'KeyA') {
       this.pan(new Vec2(-100, 0));
-    } else if (ev.key === "ArrowUp" || ev.code === "KeyW") {
+    } else if (ev.key === 'ArrowUp' || ev.code === 'KeyW') {
       this.pan(new Vec2(0, -100));
-    } else if (ev.key === "ArrowDown" || ev.code === "KeyS") {
+    } else if (ev.key === 'ArrowDown' || ev.code === 'KeyS') {
       this.pan(new Vec2(0, 100));
-    } else if (ev.key === "Escape") {
+    } else if (ev.key === 'Escape') {
       // Keep escape for deselecting node, as the comment form handles its own escape
       this.props.onNodeSelect(null, null);
       this.renderCanvas();
@@ -970,20 +970,20 @@ export class FlamechartPanZoomView extends Component<
   }
   override componentDidMount() {
     this.props.canvasContext.addBeforeFrameHandler(this.onBeforeFrame);
-    window.addEventListener("resize", this.onWindowResize);
-    window.addEventListener("keydown", this.onWindowKeyPress);
+    window.addEventListener('resize', this.onWindowResize);
+    window.addEventListener('keydown', this.onWindowKeyPress);
     // Manually add wheel listener with passive: false
     if (this.container) {
-      this.container.addEventListener("wheel", this.onWheel as EventListener, { passive: false });
+      this.container.addEventListener('wheel', this.onWheel as EventListener, { passive: false });
     }
   }
   override componentWillUnmount() {
     this.props.canvasContext.removeBeforeFrameHandler(this.onBeforeFrame);
-    window.removeEventListener("resize", this.onWindowResize);
-    window.removeEventListener("keydown", this.onWindowKeyPress);
+    window.removeEventListener('resize', this.onWindowResize);
+    window.removeEventListener('keydown', this.onWindowKeyPress);
     // Remove manually added wheel listener
     if (this.container) {
-      this.container.removeEventListener("wheel", this.onWheel as EventListener);
+      this.container.removeEventListener('wheel', this.onWheel as EventListener);
     }
   }
 

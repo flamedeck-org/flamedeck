@@ -1,5 +1,5 @@
-import { memo, useState, useEffect, useCallback, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { memo, useState, useEffect, useCallback, useRef } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -7,8 +7,8 @@ import {
   TableHeader,
   TableRow,
   TableCell,
-} from "@/components/ui/table";
-import { Link, useNavigate } from "react-router-dom";
+} from '@/components/ui/table';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FileJson,
   UploadCloud,
@@ -17,32 +17,32 @@ import {
   Folder as FolderIcon,
   FolderPlus,
   Loader2,
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import PageLayout from "../PageLayout";
-import PageHeader from "../PageHeader";
-import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTraces } from "./hooks/useTraces";
-import { TraceListItem } from "./TraceListItem";
-import { FolderItem } from "./FolderItem";
-import { useDebounce } from "@/hooks/useDebounce";
-import { Breadcrumbs } from "./Breadcrumbs";
-import { CreateFolderDialog } from "./CreateFolderDialog";
-import { useInView } from "react-intersection-observer";
-import { useToast } from "@/components/ui/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { UploadDialog } from "@/components/UploadDialog";
-import { DraggableArea } from "@/components/DraggableArea";
-import type { Folder } from "@/lib/api/types";
-import type { PostgrestError } from "@supabase/supabase-js";
-import type { ApiResponse } from "@/types";
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import PageLayout from '../PageLayout';
+import PageHeader from '../PageHeader';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTraces } from './hooks/useTraces';
+import { TraceListItem } from './TraceListItem';
+import { FolderItem } from './FolderItem';
+import { useDebounce } from '@/hooks/useDebounce';
+import { Breadcrumbs } from './Breadcrumbs';
+import { CreateFolderDialog } from './CreateFolderDialog';
+import { useInView } from 'react-intersection-observer';
+import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { UploadDialog } from '@/components/UploadDialog';
+import { DraggableArea } from '@/components/DraggableArea';
+import type { Folder } from '@/lib/api/types';
+import type { PostgrestError } from '@supabase/supabase-js';
+import type { ApiResponse } from '@/types';
 
 function TraceListComponent() {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const [localSearchQuery, setLocalSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
   const [isCreateFolderDialogOpen, setIsCreateFolderDialogOpen] = useState(false);
 
@@ -83,11 +83,11 @@ function TraceListComponent() {
 
   const handleNavigate = useCallback(
     (folderId: string | null) => {
-      setLocalSearchQuery("");
-      setSearchQuery("");
+      setLocalSearchQuery('');
+      setSearchQuery('');
       window.scrollTo(0, 0);
       if (folderId === null) {
-        navigate("/traces");
+        navigate('/traces');
       } else {
         navigate(`/traces/folder/${folderId}`);
       }
@@ -116,15 +116,15 @@ function TraceListComponent() {
             if (response.data) {
               handleNavigate(response.data.id);
             } else {
-              console.warn("Folder creation succeeded but no data returned.");
+              console.warn('Folder creation succeeded but no data returned.');
             }
           },
           onError: (error: PostgrestError) => {
-            console.error("Error creating folder:", error);
+            console.error('Error creating folder:', error);
             toast({
-              title: "Error creating folder",
+              title: 'Error creating folder',
               description: error.message,
-              variant: "destructive",
+              variant: 'destructive',
             });
           },
         }
@@ -144,8 +144,8 @@ function TraceListComponent() {
   }, []);
 
   const handleClearSearch = useCallback(() => {
-    setLocalSearchQuery("");
-    setSearchQuery("");
+    setLocalSearchQuery('');
+    setSearchQuery('');
   }, [setSearchQuery]);
 
   // --- Drag and Drop Handlers ---
@@ -172,9 +172,9 @@ function TraceListComponent() {
         const file = files[0];
         if (file.size > 100 * 1024 * 1024) {
           toast({
-            title: "File too large",
-            description: "Maximum file size is 100MB.",
-            variant: "destructive",
+            title: 'File too large',
+            description: 'Maximum file size is 100MB.',
+            variant: 'destructive',
           });
           return;
         }
@@ -226,8 +226,8 @@ function TraceListComponent() {
 
   const breadcrumbElement = <Breadcrumbs path={path} onNavigate={handleNavigate} />;
   const headerTitle = currentFolderId
-    ? currentFolder?.name || "Loading folder..."
-    : "Performance Traces";
+    ? currentFolder?.name || 'Loading folder...'
+    : 'Performance Traces';
   const headerSubtitle = isLoading ? <Skeleton className="h-5 w-64 mt-1" /> : breadcrumbElement;
 
   // --- Conditional Content Rendering Logic ---
@@ -331,7 +331,7 @@ function TraceListComponent() {
             className="pt-12 pb-12 text-center flex flex-col justify-center items-center"
           >
             <CardContent className="p-0">
-              {" "}
+              {' '}
               {/* Remove padding from CardContent itself */}
               {isSearchingAndEmpty ? (
                 <Search className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
@@ -342,17 +342,17 @@ function TraceListComponent() {
               )}
               <h3 className="text-xl font-medium mb-2">
                 {isSearchingAndEmpty
-                  ? "No Results Found"
+                  ? 'No Results Found'
                   : currentFolderId
-                    ? "Folder is Empty"
-                    : "No Items Yet"}
+                    ? 'Folder is Empty'
+                    : 'No Items Yet'}
               </h3>
               <p className="text-muted-foreground mb-6">
                 {isSearchingAndEmpty
                   ? `Your search for "${searchQuery}" did not match any items.`
                   : currentFolderId
                     ? "This folder doesn\'t contain any traces or subfolders."
-                    : "Create a folder or upload your first trace."}
+                    : 'Create a folder or upload your first trace.'}
               </p>
               {isSearchingAndEmpty ? (
                 <Button onClick={handleClearSearch} variant="outline" size="sm">

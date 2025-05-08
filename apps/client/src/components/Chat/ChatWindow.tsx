@@ -5,16 +5,16 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useCallback,
-} from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, X } from "lucide-react";
+} from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Send, X } from 'lucide-react';
 
 // Define message types for clarity
 export interface ChatMessage {
   id: string; // Use unique IDs for keys
-  sender: "user" | "model" | "system" | "error";
+  sender: 'user' | 'model' | 'system' | 'error';
   text: string;
 }
 
@@ -36,7 +36,7 @@ export interface ChatWindowHandle {
 // Use forwardRef to accept a ref from the parent
 export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
   ({ isOpen, onClose, messages, sendMessage, isLoading, isStreaming, error }, ref) => {
-    const [input, setInput] = useState("");
+    const [input, setInput] = useState('');
     const internalScrollAreaRef = useRef<HTMLDivElement>(null);
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
     const userHasScrolledUpRef = useRef(userHasScrolledUp); // <-- Ref to track the value
@@ -46,7 +46,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     // --- Scroll Handler ---
     const handleScroll = useCallback(() => {
       const viewport = internalScrollAreaRef.current?.querySelector(
-        ":scope > [data-radix-scroll-area-viewport]"
+        ':scope > [data-radix-scroll-area-viewport]'
       ) as HTMLElement | null;
       if (viewport) {
         const { scrollTop, scrollHeight, clientHeight } = viewport;
@@ -67,15 +67,15 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
         }
         if (internalScrollAreaRef.current) {
           const viewport = internalScrollAreaRef.current.querySelector(
-            ":scope > [data-radix-scroll-area-viewport]"
+            ':scope > [data-radix-scroll-area-viewport]'
           ) as HTMLElement;
           if (viewport) {
             setTimeout(() => {
               const vp = internalScrollAreaRef.current?.querySelector(
-                ":scope > [data-radix-scroll-area-viewport]"
+                ':scope > [data-radix-scroll-area-viewport]'
               ) as HTMLElement | null;
               if (vp) {
-                vp.scrollTo({ top: vp.scrollHeight, behavior: force ? "auto" : "smooth" });
+                vp.scrollTo({ top: vp.scrollHeight, behavior: force ? 'auto' : 'smooth' });
                 if (force) {
                   setUserHasScrolledUp(false);
                   userHasScrolledUpRef.current = false;
@@ -94,7 +94,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
           if (internalScrollAreaRef.current) {
             internalScrollAreaRef.current.scrollTo({
               top: internalScrollAreaRef.current.scrollHeight,
-              behavior: "smooth",
+              behavior: 'smooth',
             });
           }
         }, 0);
@@ -104,15 +104,15 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     // --- Effect to attach scroll listener manually ---
     useEffect(() => {
       const viewport = internalScrollAreaRef.current?.querySelector(
-        ":scope > [data-radix-scroll-area-viewport]"
+        ':scope > [data-radix-scroll-area-viewport]'
       ) as HTMLElement | null;
 
       if (viewport) {
-        viewport.addEventListener("scroll", handleScroll);
+        viewport.addEventListener('scroll', handleScroll);
 
         // Cleanup function to remove listener
         return () => {
-          viewport.removeEventListener("scroll", handleScroll);
+          viewport.removeEventListener('scroll', handleScroll);
         };
       }
     }, [handleScroll]); // Rerun if handleScroll identity changes (it shouldn't with useCallback)
@@ -120,7 +120,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     const handleSend = () => {
       if (input.trim() && !isLoading) {
         sendMessage(input.trim());
-        setInput("");
+        setInput('');
       }
     };
 
@@ -129,7 +129,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault(); // Prevent newline in input
         handleSend();
       }
@@ -155,15 +155,15 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
                   className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${
-                    msg.sender === "user"
-                      ? "bg-blue-500 text-white"
-                      : msg.sender === "error"
-                        ? "bg-red-100 text-red-700 border border-red-300"
-                        : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100"
+                    msg.sender === 'user'
+                      ? 'bg-blue-500 text-white'
+                      : msg.sender === 'error'
+                        ? 'bg-red-100 text-red-700 border border-red-300'
+                        : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
                   }`}
                 >
                   {msg.text}
@@ -213,4 +213,4 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
 );
 
 // Add display name for React DevTools
-ChatWindow.displayName = "ChatWindow";
+ChatWindow.displayName = 'ChatWindow';

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import type { TraceCommentWithAuthor } from "@/lib/api";
-import { formatDistanceToNow } from "date-fns";
-import CommentForm from "./CommentForm";
-import { MessageSquare, ChevronDown, ChevronRight } from "lucide-react"; // Added Chevron icons
+import React, { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import type { TraceCommentWithAuthor } from '@/lib/api';
+import { formatDistanceToNow } from 'date-fns';
+import CommentForm from './CommentForm';
+import { MessageSquare, ChevronDown, ChevronRight } from 'lucide-react'; // Added Chevron icons
 
 // Define recursive type for structured comments
 interface StructuredComment extends TraceCommentWithAuthor {
@@ -28,16 +28,16 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [isExpanded, setIsExpanded] = useState(currentDepth === 0); // Expand only first level by default
 
   // Use username or first_name for display name
-  const authorName = comment.author?.username || comment.author?.first_name || "Anonymous";
+  const authorName = comment.author?.username || comment.author?.first_name || 'Anonymous';
   const avatarUrl = comment.author?.avatar_url;
   // Update fallback to use first_name initial if available
   const avatarFallback =
-    comment.author?.username?.charAt(0) || comment.author?.first_name?.charAt(0) || "A"; // Fallback for anonymous
+    comment.author?.username?.charAt(0) || comment.author?.first_name?.charAt(0) || 'A'; // Fallback for anonymous
 
   // Format timestamp (TODO: Implement linking)
   const timestampText = comment.trace_timestamp_ms
     ? ` @ ${(comment.trace_timestamp_ms / 1000).toFixed(2)}s`
-    : "";
+    : '';
 
   const canReply = currentDepth < maxDepth - 1;
 
@@ -108,7 +108,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             ) : (
               <ChevronRight className="h-3 w-3 mr-1" />
             )}
-            {comment.replies.length} {comment.replies.length === 1 ? "Reply" : "Replies"}
+            {comment.replies.length} {comment.replies.length === 1 ? 'Reply' : 'Replies'}
           </Button>
         )}
 

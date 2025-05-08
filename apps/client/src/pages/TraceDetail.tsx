@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
-import Layout from "@/components/Layout";
-import AuthGuard from "@/components/AuthGuard";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/use-toast";
-import { traceApi } from "@/lib/api";
-import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle } from "lucide-react";
-import PageLayout from "@/components/PageLayout";
-import PageHeader from "@/components/PageHeader";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useMemo, useState } from 'react';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import AuthGuard from '@/components/AuthGuard';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/use-toast';
+import { traceApi } from '@/lib/api';
+import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle } from 'lucide-react';
+import PageLayout from '@/components/PageLayout';
+import PageHeader from '@/components/PageHeader';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,50 +21,50 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import CommentForm from "@/components/CommentForm";
-import type { StructuredComment } from "@/components/comments";
-import { CommentItem } from "@/components/comments";
-import { Separator } from "@/components/ui/separator";
-import { buttonVariants } from "@/components/ui/button";
-import type { ProfileType } from "@trace-view-pilot/shared-importer";
-import type { SpeedscopeViewType } from "@/components/SpeedscopeViewer";
-import { useSharingModal } from "@/hooks/useSharingModal";
-import { useTraceDetails } from "@/hooks/useTraceDetails";
-import { useTraceComments } from "@/hooks/useTraceComments";
-import { useAuth } from "@/contexts/AuthContext";
-import { formatDuration } from "@/lib/utils";
-import type { TraceCommentWithAuthor } from "@/lib/api";
-import { useCommentManagement } from "@/hooks/useCommentManagement";
-import { UserAvatar } from "@/components/UserAvatar";
-import { getExpirationStatus } from "@/lib/utils/getExpirationStatus";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { format } from "date-fns";
+} from '@/components/ui/alert-dialog';
+import CommentForm from '@/components/CommentForm';
+import type { StructuredComment } from '@/components/comments';
+import { CommentItem } from '@/components/comments';
+import { Separator } from '@/components/ui/separator';
+import { buttonVariants } from '@/components/ui/button';
+import type { ProfileType } from '@trace-view-pilot/shared-importer';
+import type { SpeedscopeViewType } from '@/components/SpeedscopeViewer';
+import { useSharingModal } from '@/hooks/useSharingModal';
+import { useTraceDetails } from '@/hooks/useTraceDetails';
+import { useTraceComments } from '@/hooks/useTraceComments';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatDuration } from '@/lib/utils';
+import type { TraceCommentWithAuthor } from '@/lib/api';
+import { useCommentManagement } from '@/hooks/useCommentManagement';
+import { UserAvatar } from '@/components/UserAvatar';
+import { getExpirationStatus } from '@/lib/utils/getExpirationStatus';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { format } from 'date-fns';
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
-  if (!profileType) return "Unknown";
+  if (!profileType) return 'Unknown';
 
   const typeMap: Record<ProfileType | string, string> = {
-    speedscope: "Speedscope",
-    pprof: "pprof (Go/Protobuf)",
-    "chrome-timeline": "Chrome Timeline",
-    "chrome-cpuprofile": "Chrome CPU Profile",
-    "chrome-cpuprofile-old": "Chrome CPU Profile (Old)",
-    "chrome-heap-profile": "Chrome Heap Profile",
-    stackprof: "Stackprof (Ruby)",
-    "instruments-deepcopy": "Instruments Deep Copy (macOS)",
-    "instruments-trace": "Instruments Trace (macOS)",
-    "linux-perf": "Linux Perf",
-    "collapsed-stack": "Collapsed Stack",
-    "v8-prof-log": "V8 Log",
-    firefox: "Firefox Profile",
-    safari: "Safari Profile",
-    haskell: "Haskell GHC Profile",
-    "trace-event": "Trace Event",
-    callgrind: "Callgrind",
-    papyrus: "Papyrus (Skyrim)",
-    unknown: "Unknown",
+    speedscope: 'Speedscope',
+    pprof: 'pprof (Go/Protobuf)',
+    'chrome-timeline': 'Chrome Timeline',
+    'chrome-cpuprofile': 'Chrome CPU Profile',
+    'chrome-cpuprofile-old': 'Chrome CPU Profile (Old)',
+    'chrome-heap-profile': 'Chrome Heap Profile',
+    stackprof: 'Stackprof (Ruby)',
+    'instruments-deepcopy': 'Instruments Deep Copy (macOS)',
+    'instruments-trace': 'Instruments Trace (macOS)',
+    'linux-perf': 'Linux Perf',
+    'collapsed-stack': 'Collapsed Stack',
+    'v8-prof-log': 'V8 Log',
+    firefox: 'Firefox Profile',
+    safari: 'Safari Profile',
+    haskell: 'Haskell GHC Profile',
+    'trace-event': 'Trace Event',
+    callgrind: 'Callgrind',
+    papyrus: 'Papyrus (Skyrim)',
+    unknown: 'Unknown',
   };
 
   return typeMap[profileType] || profileType; // Return mapped name or the original string if not in map
@@ -73,12 +73,12 @@ const getProfileTypeName = (profileType: ProfileType | string | undefined): stri
 // Helper to map comment type to SpeedscopeViewType
 const commentTypeToViewType = (commentType: string): SpeedscopeViewType | null => {
   switch (commentType) {
-    case "chrono":
-      return "time_ordered";
-    case "left_heavy":
-      return "left_heavy";
-    case "sandwich":
-      return "sandwich";
+    case 'chrono':
+      return 'time_ordered';
+    case 'left_heavy':
+      return 'left_heavy';
+    case 'sandwich':
+      return 'sandwich';
     default:
       return null;
   }
@@ -87,14 +87,14 @@ const commentTypeToViewType = (commentType: string): SpeedscopeViewType | null =
 // Helper to get a display name for the comment type section
 const getCommentSectionTitle = (commentType: string): string => {
   switch (commentType) {
-    case "overview":
-      return "General Comments";
-    case "chrono":
-      return "Timeline View Comments";
-    case "left_heavy":
-      return "Left Heavy View Comments";
-    case "sandwich":
-      return "Sandwich View Comments";
+    case 'overview':
+      return 'General Comments';
+    case 'chrono':
+      return 'Timeline View Comments';
+    case 'left_heavy':
+      return 'Left Heavy View Comments';
+    case 'sandwich':
+      return 'Sandwich View Comments';
     default:
       return `Comments (${commentType})`;
   }
@@ -134,7 +134,7 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
 // ---------------------------------------------------------
 
 const TraceDetail: React.FC = () => {
-  const { id = "" } = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -159,7 +159,7 @@ const TraceDetail: React.FC = () => {
     if (!structuredComments) return {};
     // Group only the ROOT comments
     return structuredComments.reduce<Record<string, StructuredComment[]>>((acc, comment) => {
-      const type = comment.comment_type || "unknown";
+      const type = comment.comment_type || 'unknown';
       if (!acc[type]) {
         acc[type] = [];
       }
@@ -171,16 +171,16 @@ const TraceDetail: React.FC = () => {
   const commentTypes = useMemo(() => {
     const types = Object.keys(groupedComments);
     return types.sort((a, b) => {
-      if (a === "overview") return -1;
-      if (b === "overview") return 1;
+      if (a === 'overview') return -1;
+      if (b === 'overview') return 1;
       return a.localeCompare(b);
     });
   }, [groupedComments]);
 
   useEffect(() => {
-    if (traceError?.code === "PGRST116") {
-      console.log("Trace not found or permission denied (PGRST116), navigating to /404");
-      navigate("/404", { replace: true });
+    if (traceError?.code === 'PGRST116') {
+      console.log('Trace not found or permission denied (PGRST116), navigating to /404');
+      navigate('/404', { replace: true });
     }
   }, [traceError, navigate]);
 
@@ -188,31 +188,31 @@ const TraceDetail: React.FC = () => {
     mutationFn: (traceId: string) => traceApi.deleteTrace(traceId),
     onSuccess: () => {
       toast({
-        title: "Trace deleted successfully",
+        title: 'Trace deleted successfully',
       });
-      queryClient.invalidateQueries({ queryKey: ["traces"] });
-      navigate("/traces");
+      queryClient.invalidateQueries({ queryKey: ['traces'] });
+      navigate('/traces');
     },
     onError: (error) => {
       toast({
-        title: "Error deleting trace",
+        title: 'Error deleting trace',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });
 
   const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "Unknown";
+    if (!dateString) return 'Unknown';
     const date = new Date(dateString);
     const dateOptions: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     };
     const timeOptions: Intl.DateTimeFormatOptions = {
-      hour: "numeric",
-      minute: "2-digit",
+      hour: 'numeric',
+      minute: '2-digit',
       hour12: true,
     };
     return `${date.toLocaleDateString(undefined, dateOptions)} ${date.toLocaleTimeString(undefined, timeOptions)}`;
@@ -222,7 +222,7 @@ const TraceDetail: React.FC = () => {
     if (id) {
       openModal(id);
     } else {
-      console.error("Trace ID is undefined, cannot open sharing modal.");
+      console.error('Trace ID is undefined, cannot open sharing modal.');
     }
   };
 
@@ -231,7 +231,7 @@ const TraceDetail: React.FC = () => {
       <Link
         to={`/traces/${id}/view`}
         state={{ blobPath: trace?.blob_path }}
-        className={buttonVariants({ variant: "gradient", size: "sm" })}
+        className={buttonVariants({ variant: 'gradient', size: 'sm' })}
       >
         <Eye className="mr-2 h-4 w-4" /> Explore Trace
       </Link>
@@ -255,7 +255,7 @@ const TraceDetail: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the trace{" "}
+              This action cannot be undone. This will permanently delete the trace{' '}
               <strong>{trace?.scenario || `ID: ${trace?.id?.substring(0, 7)}`}</strong> and all
               associated data.
             </AlertDialogDescription>
@@ -267,13 +267,13 @@ const TraceDetail: React.FC = () => {
               disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <Link to="/traces" className={buttonVariants({ variant: "outline", size: "sm" })}>
+      <Link to="/traces" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Traces
       </Link>
@@ -285,11 +285,11 @@ const TraceDetail: React.FC = () => {
 
   const ownerDisplayName = useMemo(() => {
     const isOwnerCurrentUser = currentUser && owner?.id === currentUser.id;
-    if (isOwnerCurrentUser) return "me";
+    if (isOwnerCurrentUser) return 'me';
     return (
       owner?.username ||
-      `${owner?.first_name || ""} ${owner?.last_name || ""}`.trim() ||
-      "Unknown Owner"
+      `${owner?.first_name || ''} ${owner?.last_name || ''}`.trim() ||
+      'Unknown Owner'
     );
   }, [owner, currentUser]);
 
@@ -327,13 +327,13 @@ const TraceDetail: React.FC = () => {
   }
 
   if (traceError || !trace) {
-    console.error("Failed to load trace details:", traceError);
+    console.error('Failed to load trace details:', traceError);
     return (
       <AuthGuard>
         <Layout>
           <div className="text-center py-12 space-y-6">
             <p className="text-destructive">
-              {traceError?.message || "Trace data could not be loaded."}
+              {traceError?.message || 'Trace data could not be loaded.'}
             </p>
             <Link to="/traces">
               <Button>Back to Traces</Button>
@@ -354,7 +354,7 @@ const TraceDetail: React.FC = () => {
       <Layout>
         <PageLayout>
           <PageHeader
-            title={trace.scenario || "Trace Details"}
+            title={trace.scenario || 'Trace Details'}
             subtitle={ownerSubtitle}
             actions={headerActions}
           />
@@ -365,13 +365,13 @@ const TraceDetail: React.FC = () => {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Deletion Scheduled</AlertTitle>
               <AlertDescription className="mt-2 mb-2">
-                This trace will be automatically deleted in approximately{" "}
+                This trace will be automatically deleted in approximately{' '}
                 <strong>
-                  {expirationStatus.daysRemaining}{" "}
-                  {expirationStatus.daysRemaining === 1 ? "day" : "days"}
+                  {expirationStatus.daysRemaining}{' '}
+                  {expirationStatus.daysRemaining === 1 ? 'day' : 'days'}
                 </strong>
                 {expirationStatus.formattedExpirationDate &&
-                  ` (on ${expirationStatus.formattedExpirationDate})`}{" "}
+                  ` (on ${expirationStatus.formattedExpirationDate})`}{' '}
                 due to the configured data retention policy.
               </AlertDescription>
             </Alert>
@@ -382,7 +382,7 @@ const TraceDetail: React.FC = () => {
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground">Scenario</div>
                 <div className="text-lg font-medium truncate" title={trace?.scenario}>
-                  {trace?.scenario || "N/A"}
+                  {trace?.scenario || 'N/A'}
                 </div>
               </CardContent>
             </Card>
@@ -398,7 +398,7 @@ const TraceDetail: React.FC = () => {
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground">Commit</div>
                 <div className="text-lg font-medium font-mono truncate" title={trace?.commit_sha}>
-                  {trace?.commit_sha || "N/A"}
+                  {trace?.commit_sha || 'N/A'}
                 </div>
                 {trace?.branch && (
                   <div className="text-sm text-muted-foreground mt-1 truncate" title={trace.branch}>
@@ -456,13 +456,13 @@ const TraceDetail: React.FC = () => {
                   {/* --- Render Overview Section First --- */}
                   <div key="overview">
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-md font-medium">{getCommentSectionTitle("overview")}</h3>
+                      <h3 className="text-md font-medium">{getCommentSectionTitle('overview')}</h3>
                       {/* No context link for overview */}
                     </div>
                     <div className="border rounded-md px-4">
                       {/* Render existing overview comments or empty state */}
-                      {groupedComments["overview"] && groupedComments["overview"].length > 0 ? (
-                        groupedComments["overview"].map((comment) => (
+                      {groupedComments['overview'] && groupedComments['overview'].length > 0 ? (
+                        groupedComments['overview'].map((comment) => (
                           <CommentItem
                             key={comment.id}
                             traceId={traceIdForComments}
@@ -492,7 +492,7 @@ const TraceDetail: React.FC = () => {
 
                   {/* --- Render Other Comment Sections --- */}
                   {commentTypes
-                    .filter((type) => type !== "overview") // Exclude overview as it's handled above
+                    .filter((type) => type !== 'overview') // Exclude overview as it's handled above
                     .map((commentType) => {
                       const commentsInSection = groupedComments[commentType];
                       const viewType = commentTypeToViewType(commentType);
@@ -515,8 +515,8 @@ const TraceDetail: React.FC = () => {
                                   blobPath: trace.blob_path,
                                 }}
                                 className={
-                                  buttonVariants({ variant: "outline", size: "xs" }) +
-                                  " flex items-center"
+                                  buttonVariants({ variant: 'outline', size: 'xs' }) +
+                                  ' flex items-center'
                                 }
                               >
                                 View in Context <ExternalLink className="ml-1.5 h-3 w-3" />

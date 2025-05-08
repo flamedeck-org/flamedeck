@@ -1,11 +1,11 @@
-import { Graphics, WebGL } from "./graphics";
-import { RectangleBatchRenderer } from "./rectangle-batch-renderer";
-import { TextureRenderer } from "./texture-renderer";
-import { Rect, Vec2 } from "@/lib/speedscope-core/math";
-import { ViewportRectangleRenderer } from "./overlay-rectangle-renderer";
-import { FlamechartColorPassRenderer } from "./flamechart-color-pass-renderer";
-import { Color } from "@/lib/speedscope-core/color";
-import type { Theme } from "@/components/speedscope-ui/themes/theme";
+import { Graphics, WebGL } from './graphics';
+import { RectangleBatchRenderer } from './rectangle-batch-renderer';
+import { TextureRenderer } from './texture-renderer';
+import { Rect, Vec2 } from '@/lib/speedscope-core/math';
+import { ViewportRectangleRenderer } from './overlay-rectangle-renderer';
+import { FlamechartColorPassRenderer } from './flamechart-color-pass-renderer';
+import { Color } from '@/lib/speedscope-core/color';
+import type { Theme } from '@/components/speedscope-ui/themes/theme';
 
 type FrameCallback = () => void;
 
@@ -35,7 +35,7 @@ export class CanvasContext {
         `WebGL initialized. renderer: ${webGLInfo.renderer}, vendor: ${webGLInfo.vendor}, version: ${webGLInfo.version}`
       );
     }
-    (window as any)["testContextLoss"] = () => {
+    (window as any)['testContextLoss'] = () => {
       this.gl.testContextLoss();
     };
   }

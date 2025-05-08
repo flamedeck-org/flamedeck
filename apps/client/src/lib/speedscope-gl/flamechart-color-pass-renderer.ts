@@ -1,11 +1,11 @@
-import { Vec2, Rect, AffineTransform } from "@/lib/speedscope-core/math";
-import type { Theme } from "@/components/speedscope-ui/themes/theme";
-import { Graphics } from "./graphics";
-import { setUniformAffineTransform } from "./utils";
+import { Vec2, Rect, AffineTransform } from '@/lib/speedscope-core/math';
+import type { Theme } from '@/components/speedscope-ui/themes/theme';
+import { Graphics } from './graphics';
+import { setUniformAffineTransform } from './utils';
 
 const vertexFormat = new Graphics.VertexFormat();
-vertexFormat.add("position", Graphics.AttributeType.FLOAT, 2);
-vertexFormat.add("uv", Graphics.AttributeType.FLOAT, 2);
+vertexFormat.add('position', Graphics.AttributeType.FLOAT, 2);
+vertexFormat.add('uv', Graphics.AttributeType.FLOAT, 2);
 
 const vert = `
   uniform mat3 uvTransform;
@@ -151,11 +151,11 @@ export class FlamechartColorPassRenderer {
       new Vec2(props.rectInfoTexture.width, props.rectInfoTexture.height)
     );
 
-    this.material.setUniformSampler("colorTexture", props.rectInfoTexture, 0);
-    setUniformAffineTransform(this.material, "uvTransform", uvTransform);
-    this.material.setUniformFloat("renderOutlines", props.renderOutlines ? 1.0 : 0.0);
-    this.material.setUniformVec2("uvSpacePixelSize", uvSpacePixelSize.x, uvSpacePixelSize.y);
-    setUniformAffineTransform(this.material, "positionTransform", positionTransform);
+    this.material.setUniformSampler('colorTexture', props.rectInfoTexture, 0);
+    setUniformAffineTransform(this.material, 'uvTransform', uvTransform);
+    this.material.setUniformFloat('renderOutlines', props.renderOutlines ? 1.0 : 0.0);
+    this.material.setUniformVec2('uvSpacePixelSize', uvSpacePixelSize.x, uvSpacePixelSize.y);
+    setUniformAffineTransform(this.material, 'positionTransform', positionTransform);
 
     this.gl.setUnpremultipliedBlendState();
     this.gl.draw(Graphics.Primitive.TRIANGLE_STRIP, this.material, this.buffer);

@@ -1,20 +1,20 @@
-import React, { memo, useState, useCallback } from "react";
-import { Folder as FolderIcon, Trash2, Edit, Move, MoreVertical, Eye } from "lucide-react";
-import { TableRow, TableCell } from "@/components/ui/table";
-import type { Folder } from "@/lib/api"; // Assuming Folder type is exported from api.ts
-import { formatRelativeDate } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ContextMenu, ContextMenuItem, ContextMenuDivider } from "@/components/ui/context-menu";
-import { MoveItemDialog } from "./MoveItemDialog";
-import { RenameFolderDialog } from "./RenameFolderDialog"; // Import the rename dialog
-import { cn } from "@/lib/utils"; // Import cn utility
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { traceApi } from "@/lib/api"; // Import Folder type too
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import { FOLDER_VIEW_QUERY_KEY } from "./hooks/useTraces";
-import { DeleteFolderDialog } from "./DeleteFolderDialog";
-import type { RecursiveFolderContents, ApiError, ApiResponse } from "@/types"; // Import needed types
+import React, { memo, useState, useCallback } from 'react';
+import { Folder as FolderIcon, Trash2, Edit, Move, MoreVertical, Eye } from 'lucide-react';
+import { TableRow, TableCell } from '@/components/ui/table';
+import type { Folder } from '@/lib/api'; // Assuming Folder type is exported from api.ts
+import { formatRelativeDate } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { ContextMenu, ContextMenuItem, ContextMenuDivider } from '@/components/ui/context-menu';
+import { MoveItemDialog } from './MoveItemDialog';
+import { RenameFolderDialog } from './RenameFolderDialog'; // Import the rename dialog
+import { cn } from '@/lib/utils'; // Import cn utility
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { traceApi } from '@/lib/api'; // Import Folder type too
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { FOLDER_VIEW_QUERY_KEY } from './hooks/useTraces';
+import { DeleteFolderDialog } from './DeleteFolderDialog';
+import type { RecursiveFolderContents, ApiError, ApiResponse } from '@/types'; // Import needed types
 
 interface FolderItemProps {
   folder: Folder;
@@ -36,7 +36,7 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
     RecursiveFolderContents // Accepts the contents object
   >({
     mutationFn: (contents: RecursiveFolderContents) => {
-      if (!user) throw new Error("Authentication required.");
+      if (!user) throw new Error('Authentication required.');
       // Call the second-stage delete function
       return traceApi.confirmAndDeleteFolderContents({
         folderIdsToDelete: contents.folder_ids,
@@ -130,7 +130,7 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
         onClick={onClick}
         tabIndex={0}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") onClick();
+          if (e.key === 'Enter' || e.key === ' ') onClick();
         }}
         onContextMenu={handleContextMenu} // Add context menu handler to the row
       >
@@ -172,20 +172,20 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
             onClick={!isDeleting ? handleOpenStub : undefined}
             icon={<FolderIcon className="h-4 w-4" />}
           >
-            <span className={isDeleting ? "opacity-50 cursor-not-allowed" : ""}>Open Folder</span>
+            <span className={isDeleting ? 'opacity-50 cursor-not-allowed' : ''}>Open Folder</span>
           </ContextMenuItem>
           <ContextMenuDivider />
           <ContextMenuItem
             onClick={!isDeleting ? handleRenameStub : undefined}
             icon={<Edit className="h-4 w-4" />}
           >
-            <span className={isDeleting ? "opacity-50 cursor-not-allowed" : ""}>Rename</span>
+            <span className={isDeleting ? 'opacity-50 cursor-not-allowed' : ''}>Rename</span>
           </ContextMenuItem>
           <ContextMenuItem
             onClick={!isDeleting ? handleMoveStub : undefined}
             icon={<Move className="h-4 w-4" />}
           >
-            <span className={isDeleting ? "opacity-50 cursor-not-allowed" : ""}>Move</span>
+            <span className={isDeleting ? 'opacity-50 cursor-not-allowed' : ''}>Move</span>
           </ContextMenuItem>
           <ContextMenuDivider />
           <ContextMenuItem
@@ -194,7 +194,7 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
           >
             <span
               className={
-                isDeleting ? "opacity-50 cursor-not-allowed text-destructive" : "text-destructive"
+                isDeleting ? 'opacity-50 cursor-not-allowed text-destructive' : 'text-destructive'
               }
             >
               Delete

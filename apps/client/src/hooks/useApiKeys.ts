@@ -1,11 +1,11 @@
 // src/hooks/useApiKeys.ts
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ApiKeyDisplayData } from "@/lib/api/apiKeys";
-import { listUserApiKeys, createApiKeyViaRpc } from "@/lib/api/apiKeys";
-import { useAuth } from "@/contexts/AuthContext";
-import type { ApiError } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ApiKeyDisplayData } from '@/lib/api/apiKeys';
+import { listUserApiKeys, createApiKeyViaRpc } from '@/lib/api/apiKeys';
+import { useAuth } from '@/contexts/AuthContext';
+import type { ApiError } from '@/lib/api';
 
-const API_KEYS_QUERY_KEY = "apiKeys";
+const API_KEYS_QUERY_KEY = 'apiKeys';
 
 // Hook to fetch the list of API keys for the current user
 export function useUserApiKeys() {
@@ -45,7 +45,7 @@ export function useCreateApiKey() {
       const callRpc = async () => {
         const { data, error } = await createApiKeyViaRpc(description, scopes);
         if (error) throw error; // Throw error for React Query to catch
-        if (!data) throw new Error("API key creation did not return data."); // Handle case where data is null despite no error
+        if (!data) throw new Error('API key creation did not return data.'); // Handle case where data is null despite no error
         return data;
       };
       return callRpc(); // Return the promise

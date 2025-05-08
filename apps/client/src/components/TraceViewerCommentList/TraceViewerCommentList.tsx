@@ -1,7 +1,7 @@
-import React, { useMemo } from "react";
-import { useTraceComments } from "@/hooks/useTraceComments";
-import type { SpeedscopeViewType } from "../SpeedscopeViewer"; // Assuming SpeedscopeViewType is exported
-import { CommentList } from "@/components/comments"; // Import the new CommentList
+import React, { useMemo } from 'react';
+import { useTraceComments } from '@/hooks/useTraceComments';
+import type { SpeedscopeViewType } from '../SpeedscopeViewer'; // Assuming SpeedscopeViewType is exported
+import { CommentList } from '@/components/comments'; // Import the new CommentList
 
 interface TraceViewerCommentListProps {
   traceId: string;
@@ -11,9 +11,9 @@ interface TraceViewerCommentListProps {
 
 // Map Speedscope view types to comment_type used in the database
 const viewTypeToCommentType: Record<SpeedscopeViewType, string | null> = {
-  time_ordered: "chrono",
-  left_heavy: "left_heavy",
-  sandwich: "sandwich",
+  time_ordered: 'chrono',
+  left_heavy: 'left_heavy',
+  sandwich: 'sandwich',
 };
 
 export function TraceViewerCommentList({ traceId, activeView }: TraceViewerCommentListProps) {
@@ -33,7 +33,7 @@ export function TraceViewerCommentList({ traceId, activeView }: TraceViewerComme
     );
   }, [allComments, targetCommentType]);
 
-  const emptyMessage = `No comments for the '${activeView.replace("_", " ")}' view yet.`;
+  const emptyMessage = `No comments for the '${activeView.replace('_', ' ')}' view yet.`;
 
   return (
     <CommentList

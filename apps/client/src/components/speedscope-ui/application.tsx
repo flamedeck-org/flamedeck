@@ -1,32 +1,32 @@
-import React, { Component } from "react";
+import React, { Component } from 'react';
 
-import type { ProfileGroup } from "../../lib/speedscope-core/profile";
-import { SymbolRemapper, Profile } from "../../lib/speedscope-core/profile";
-import { FontFamily, FontSize, Duration } from "./style";
-import { importEmscriptenSymbolMap as importEmscriptenSymbolRemapper } from "../../lib/speedscope-core/emscripten";
-import { SandwichViewContainer } from "./sandwich-view";
-import { saveToFile } from "../../lib/speedscope-core/file-format";
-import type { ActiveProfileState } from "../../lib/speedscope-core/app-state/active-profile-state";
-import { LeftHeavyFlamechartView, ChronoFlamechartView } from "./flamechart-view-container";
-import type { CanvasContext } from "../../lib/speedscope-gl/canvas-context";
-import { Toolbar } from "./toolbar";
-import { importJavaScriptSourceMapSymbolRemapper } from "../../lib/speedscope-core/js-source-map";
-import type { Theme } from "./themes/theme";
-import { ViewMode } from "../../lib/speedscope-core/view-mode";
-import { canUseXHR } from "../../lib/speedscope-core/app-state";
-import type { ProfileGroupState } from "../../lib/speedscope-core/app-state/profile-group";
-import type { HashParams } from "../../lib/speedscope-core/hash-params";
-import { FlamechartID } from "../../lib/speedscope-core/app-state/profile-group";
+import type { ProfileGroup } from '../../lib/speedscope-core/profile';
+import { SymbolRemapper, Profile } from '../../lib/speedscope-core/profile';
+import { FontFamily, FontSize, Duration } from './style';
+import { importEmscriptenSymbolMap as importEmscriptenSymbolRemapper } from '../../lib/speedscope-core/emscripten';
+import { SandwichViewContainer } from './sandwich-view';
+import { saveToFile } from '../../lib/speedscope-core/file-format';
+import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
+import { LeftHeavyFlamechartView, ChronoFlamechartView } from './flamechart-view-container';
+import type { CanvasContext } from '../../lib/speedscope-gl/canvas-context';
+import { Toolbar } from './toolbar';
+import { importJavaScriptSourceMapSymbolRemapper } from '../../lib/speedscope-core/js-source-map';
+import type { Theme } from './themes/theme';
+import { ViewMode } from '../../lib/speedscope-core/view-mode';
+import { canUseXHR } from '../../lib/speedscope-core/app-state';
+import type { ProfileGroupState } from '../../lib/speedscope-core/app-state/profile-group';
+import type { HashParams } from '../../lib/speedscope-core/hash-params';
+import { FlamechartID } from '../../lib/speedscope-core/app-state/profile-group';
 
-const importModule = import("@trace-view-pilot/shared-importer");
+const importModule = import('@trace-view-pilot/shared-importer');
 
 // Force eager loading of a few code-split modules.
 //
 // We put them all in one place so we can directly control the relative priority
 // of these.
 importModule.then(() => {});
-import("../../lib/speedscope-core/demangle-cpp").then(() => {});
-import("source-map").then(() => {});
+import('../../lib/speedscope-core/demangle-cpp').then(() => {});
+import('source-map').then(() => {});
 
 async function importProfilesFromText(
   fileName: string,
@@ -123,7 +123,7 @@ export class GLCanvas extends Component<GLCanvasProps> {
     }
   }
   componentDidMount() {
-    window.addEventListener("resize", this.onWindowResize);
+    window.addEventListener('resize', this.onWindowResize);
     this.maybeResize();
     if (this.props.canvasContext) {
       this.props.canvasContext.addBeforeFrameHandler(this.maybeResize);
@@ -134,7 +134,7 @@ export class GLCanvas extends Component<GLCanvasProps> {
     if (this.props.canvasContext) {
       this.props.canvasContext.removeBeforeFrameHandler(this.maybeResize);
     }
-    window.removeEventListener("resize", this.onWindowResize);
+    window.removeEventListener('resize', this.onWindowResize);
   }
   render() {
     // TODO: Fix theme styling
@@ -173,21 +173,21 @@ export type ApplicationProps = {
 
 export class Application extends Component<ApplicationProps> {
   onWindowKeyPress = async (ev: KeyboardEvent) => {
-    if (ev.key === "1") {
+    if (ev.key === '1') {
       this.props.setViewMode(ViewMode.CHRONO_FLAME_CHART);
-    } else if (ev.key === "2") {
+    } else if (ev.key === '2') {
       this.props.setViewMode(ViewMode.LEFT_HEAVY_FLAME_GRAPH);
-    } else if (ev.key === "3") {
+    } else if (ev.key === '3') {
       this.props.setViewMode(ViewMode.SANDWICH_VIEW);
-    } else if (ev.key === "r") {
+    } else if (ev.key === 'r') {
       const { flattenRecursion } = this.props;
       this.props.setFlattenRecursion(!flattenRecursion);
-    } else if (ev.key === "n") {
+    } else if (ev.key === 'n') {
       const { activeProfileState } = this.props;
       if (activeProfileState) {
         this.props.setProfileIndexToView(activeProfileState.index + 1);
       }
-    } else if (ev.key === "p") {
+    } else if (ev.key === 'p') {
       const { activeProfileState } = this.props;
       if (activeProfileState) {
         this.props.setProfileIndexToView(activeProfileState.index - 1);
@@ -196,11 +196,11 @@ export class Application extends Component<ApplicationProps> {
   };
 
   componentDidMount() {
-    window.addEventListener("keypress", this.onWindowKeyPress);
+    window.addEventListener('keypress', this.onWindowKeyPress);
   }
 
   componentWillUnmount() {
-    window.removeEventListener("keypress", this.onWindowKeyPress);
+    window.removeEventListener('keypress', this.onWindowKeyPress);
   }
 
   renderContent() {

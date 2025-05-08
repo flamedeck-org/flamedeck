@@ -1,7 +1,7 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { ArrowRight } from 'lucide-react';
 
 interface DocsPagerProps {
   title: string;
@@ -14,8 +14,8 @@ export function DocsPager({ title, href }: DocsPagerProps) {
       <Link
         to={href}
         className={cn(
-          "relative flex flex-col items-end rounded-lg border p-4 hover:bg-muted transition-colors",
-          "text-foreground no-underline hover:no-underline"
+          'relative flex flex-col items-end rounded-lg border p-4 hover:bg-muted transition-colors',
+          'text-foreground no-underline hover:no-underline'
         )}
       >
         <span className="text-xs text-muted-foreground mb-1">Next</span>

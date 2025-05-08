@@ -1,1 +1,1 @@
-export { FolderSelect } from "./FolderSelect";
+export { FolderSelect } from './FolderSelect';

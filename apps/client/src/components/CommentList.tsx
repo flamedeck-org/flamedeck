@@ -1,10 +1,10 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { TraceCommentWithAuthor } from "@/lib/api";
-import { traceApi } from "@/lib/api";
-import CommentItem from "./CommentItem";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, MessageSquare } from "lucide-react";
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import type { TraceCommentWithAuthor } from '@/lib/api';
+import { traceApi } from '@/lib/api';
+import CommentItem from './CommentItem';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertCircle, MessageSquare } from 'lucide-react';
 
 // Type for structured comment including potentially nested replies
 type StructuredComment = TraceCommentWithAuthor & { replies: StructuredComment[] };
@@ -33,8 +33,8 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
 
   // Sort root comments: specific comments first, grouped, then general comments
   rootComments.sort((a, b) => {
-    const isAOverview = a.comment_type === "overview";
-    const isBOverview = b.comment_type === "overview";
+    const isAOverview = a.comment_type === 'overview';
+    const isBOverview = b.comment_type === 'overview';
 
     // If both are overview or both are specific, sort by date (newest first)
     if (isAOverview === isBOverview) {
@@ -45,8 +45,8 @@ const structureComments = (comments: TraceCommentWithAuthor[]): StructuredCommen
       // If they are specific with different identifiers, sort by identifier (grouping)
       if (!isAOverview) {
         // Handle null identifiers just in case, though should be non-null for non-overview
-        const idA = String(a.comment_identifier ?? "");
-        const idB = String(b.comment_identifier ?? "");
+        const idA = String(a.comment_identifier ?? '');
+        const idB = String(b.comment_identifier ?? '');
         if (idA !== idB) {
           return idA.localeCompare(idB);
         }
@@ -68,7 +68,7 @@ const groupCommentsByTypeAndIdentifier = (comments: StructuredComment[]) => {
   const generalComments: StructuredComment[] = [];
 
   comments.forEach((comment) => {
-    if (comment.comment_type !== "overview" && comment.comment_identifier) {
+    if (comment.comment_type !== 'overview' && comment.comment_identifier) {
       const key = `${comment.comment_type}-${comment.comment_identifier}`;
       if (!specificGroups[key]) {
         specificGroups[key] = { type: comment.comment_type, comments: [] };
@@ -89,7 +89,7 @@ const CommentList: React.FC<CommentListProps> = ({ traceId }) => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["traceComments", traceId],
+    queryKey: ['traceComments', traceId],
     queryFn: async () => {
       const response = await traceApi.getTraceComments(traceId);
       if (response.error) throw new Error(response.error.message);

@@ -1,10 +1,10 @@
-import React from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import type { StructuredComment } from "./CommentItem";
-import { CommentItem } from "./CommentItem";
-import type { TraceCommentWithAuthor } from "@/lib/api"; // Using this type for now
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import type { StructuredComment } from './CommentItem';
+import { CommentItem } from './CommentItem';
+import type { TraceCommentWithAuthor } from '@/lib/api'; // Using this type for now
+import { cn } from '@/lib/utils';
 
 interface CommentListProps {
   comments: StructuredComment[];
@@ -31,14 +31,14 @@ export function CommentList({
   onCancelReply,
   onCommentUpdated,
   showReplyButton,
-  emptyStateMessage = "No comments yet.",
+  emptyStateMessage = 'No comments yet.',
   className,
   scrollAreaClassName,
 }: CommentListProps) {
   if (isLoading) {
     return (
-      <div className={cn("p-4 space-y-3", className)}>
-        {" "}
+      <div className={cn('p-4 space-y-3', className)}>
+        {' '}
         {/* Apply className here */}
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
@@ -49,8 +49,8 @@ export function CommentList({
 
   if (error) {
     return (
-      <div className={cn("p-4 text-sm text-destructive", className)}>
-        {" "}
+      <div className={cn('p-4 text-sm text-destructive', className)}>
+        {' '}
         {/* Apply className here */}
         Error loading comments: {error.message}
       </div>
@@ -59,10 +59,10 @@ export function CommentList({
 
   return (
     <ScrollArea className={cn(scrollAreaClassName)}>
-      {" "}
+      {' '}
       {/* Apply scrollAreaClassName here */}
-      <div className={cn("flex flex-col px-4", className)}>
-        {" "}
+      <div className={cn('flex flex-col px-4', className)}>
+        {' '}
         {/* Apply className here */}
         {comments.length === 0 ? (
           <div className="px-4 py-8 text-sm text-muted-foreground text-center">

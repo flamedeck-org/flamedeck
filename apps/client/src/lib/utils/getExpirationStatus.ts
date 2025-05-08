@@ -1,4 +1,4 @@
-import { differenceInDays, parseISO, format } from "date-fns";
+import { differenceInDays, parseISO, format } from 'date-fns';
 
 // Define the structure of the return value for clarity
 export type ExpirationStatus = {
@@ -35,7 +35,7 @@ export function getExpirationStatus(expiresAt: string | null | undefined): Expir
 
     // Show warning if within threshold OR if date has passed (until deletion)
     const isExpiring = daysRemaining <= EXPIRATION_WARNING_THRESHOLD_DAYS;
-    const formattedDate = format(expirationDateObj, "MMM d, yyyy"); // Example format
+    const formattedDate = format(expirationDateObj, 'MMM d, yyyy'); // Example format
 
     return {
       isExpiring,
@@ -45,7 +45,7 @@ export function getExpirationStatus(expiresAt: string | null | undefined): Expir
       formattedExpirationDate: formattedDate,
     };
   } catch (error) {
-    console.error("Error parsing expiresAt date:", expiresAt, error);
+    console.error('Error parsing expiresAt date:', expiresAt, error);
     // Handle potential invalid date format
     return {
       isExpiring: false, // Treat as non-expiring if date is invalid

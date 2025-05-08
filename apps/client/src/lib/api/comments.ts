@@ -1,13 +1,13 @@
-import type { ApiError } from "@/types";
+import type { ApiError } from '@/types';
 
-import type { TraceComment } from "@/types";
+import type { TraceComment } from '@/types';
 
-import type { ApiResponse } from "@/types";
+import type { ApiResponse } from '@/types';
 
-import type { NewTraceComment, TraceCommentWithAuthor } from "./types";
+import type { NewTraceComment, TraceCommentWithAuthor } from './types';
 
-import { supabase } from "@/integrations/supabase/client";
-import type { PostgrestError } from "@supabase/supabase-js";
+import { supabase } from '@/integrations/supabase/client';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 // Get comments for a specific trace
 export async function getTraceComments(
@@ -15,7 +15,7 @@ export async function getTraceComments(
 ): Promise<ApiResponse<TraceCommentWithAuthor[]>> {
   try {
     const { data, error } = await supabase
-      .from("trace_comments")
+      .from('trace_comments')
       .select<string, TraceCommentWithAuthor>(
         `
           id,
@@ -34,8 +34,8 @@ export async function getTraceComments(
           author: user_profiles ( id, username, avatar_url, first_name, last_name )
         `
       )
-      .eq("trace_id", traceId)
-      .order("created_at", { ascending: true });
+      .eq('trace_id', traceId)
+      .order('created_at', { ascending: true });
 
     if (error) throw error;
 
@@ -45,7 +45,7 @@ export async function getTraceComments(
   } catch (error) {
     console.error(`Error fetching comments for trace ${traceId}:`, error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to fetch comments",
+      message: error instanceof Error ? error.message : 'Failed to fetch comments',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
@@ -60,10 +60,10 @@ export async function createTraceComment(
   userId: string
 ): Promise<ApiResponse<TraceComment>> {
   try {
-    if (!userId) throw new Error("User ID required to comment.");
+    if (!userId) throw new Error('User ID required to comment.');
 
     const { data, error } = await supabase
-      .from("trace_comments")
+      .from('trace_comments')
       .insert({
         trace_id: commentData.trace_id,
         content: commentData.content,
@@ -73,17 +73,17 @@ export async function createTraceComment(
         comment_identifier: commentData.comment_identifier,
         user_id: userId,
       })
-      .select("*")
+      .select('*')
       .single();
 
     if (error) throw error;
-    if (!data) throw new Error("Comment created but data not returned.");
+    if (!data) throw new Error('Comment created but data not returned.');
 
     return { data: data as TraceComment, error: null };
   } catch (error) {
-    console.error("Error creating trace comment:", error);
+    console.error('Error creating trace comment:', error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to create comment",
+      message: error instanceof Error ? error.message : 'Failed to create comment',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
@@ -99,18 +99,18 @@ export async function updateTraceComment(
 ): Promise<ApiResponse<TraceComment>> {
   try {
     const { data, error } = await supabase
-      .from("trace_comments")
+      .from('trace_comments')
       .update({
         content: newContent,
         is_edited: true,
         last_edited_at: new Date().toISOString(),
       })
-      .eq("id", commentId)
-      .select("*")
+      .eq('id', commentId)
+      .select('*')
       .single();
 
     if (error) throw error;
-    if (!data) throw new Error("Comment updated but data not returned.");
+    if (!data) throw new Error('Comment updated but data not returned.');
 
     // You might need RLS policies in Supabase to ensure users can only update their own comments
 
@@ -118,7 +118,7 @@ export async function updateTraceComment(
   } catch (error) {
     console.error(`Error updating comment ${commentId}:`, error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to update comment",
+      message: error instanceof Error ? error.message : 'Failed to update comment',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
@@ -132,12 +132,12 @@ export async function deleteTraceCommentLogically(commentId: string): Promise<Ap
   // Return null on success
   try {
     const { error } = await supabase
-      .from("trace_comments")
+      .from('trace_comments')
       .update({
         is_deleted: true,
-        content: "", // Set content to empty string
+        content: '', // Set content to empty string
       })
-      .eq("id", commentId);
+      .eq('id', commentId);
 
     if (error) throw error;
 
@@ -145,7 +145,7 @@ export async function deleteTraceCommentLogically(commentId: string): Promise<Ap
   } catch (error) {
     console.error(`Error marking comment ${commentId} as deleted:`, error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to delete comment",
+      message: error instanceof Error ? error.message : 'Failed to delete comment',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,

@@ -6,13 +6,13 @@ import React, {
   useMemo,
   memo,
   Fragment,
-} from "react";
-import { ProfileSearchResults } from "../../lib/speedscope-core/profile-search";
-import type { Profile } from "../../lib/speedscope-core/profile";
-import { useActiveProfileState } from "../../lib/speedscope-core/app-state/active-profile-state";
-import { searchIsActiveAtom, searchQueryAtom } from "../../lib/speedscope-core/app-state";
-import { useAtom } from "../../lib/speedscope-core/atom";
-import { Search, ChevronLeft, ChevronRight, X } from "lucide-react";
+} from 'react';
+import { ProfileSearchResults } from '../../lib/speedscope-core/profile-search';
+import type { Profile } from '../../lib/speedscope-core/profile';
+import { useActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
+import { searchIsActiveAtom, searchQueryAtom } from '../../lib/speedscope-core/app-state';
+import { useAtom } from '../../lib/speedscope-core/atom';
+import { Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 function stopPropagation(ev: React.KeyboardEvent | React.MouseEvent) {
   ev.stopPropagation();
@@ -79,15 +79,15 @@ export const SearchView = memo(
       (ev: React.KeyboardEvent<HTMLInputElement>) => {
         stopPropagation(ev);
 
-        if (ev.key === "Escape") {
+        if (ev.key === 'Escape') {
           setSearchIsActive(false);
         }
 
-        if (ev.key === "Enter") {
+        if (ev.key === 'Enter') {
           selectPrevOrNextResult(ev);
         }
 
-        if (ev.key == "f" && (ev.metaKey || ev.ctrlKey)) {
+        if (ev.key == 'f' && (ev.metaKey || ev.ctrlKey)) {
           if (inputRef.current) {
             inputRef.current.select();
           }
@@ -99,7 +99,7 @@ export const SearchView = memo(
 
     useEffect(() => {
       const onWindowKeyDown = (ev: KeyboardEvent) => {
-        if (ev.key == "f" && (ev.metaKey || ev.ctrlKey)) {
+        if (ev.key == 'f' && (ev.metaKey || ev.ctrlKey)) {
           ev.preventDefault();
           if (inputRef.current) {
             inputRef.current.select();
@@ -114,23 +114,23 @@ export const SearchView = memo(
         }
       };
 
-      window.addEventListener("keydown", onWindowKeyDown);
+      window.addEventListener('keydown', onWindowKeyDown);
       return () => {
-        window.removeEventListener("keydown", onWindowKeyDown);
+        window.removeEventListener('keydown', onWindowKeyDown);
       };
     }, [setSearchIsActive]);
 
     if (!searchIsActive) return null;
 
     // Override containerBg to force opaque background
-    const containerBg = "bg-gray-100 dark:bg-gray-800"; // Force opaque light/dark gray
-    const containerText = "text-text-alt dark:text-dark-text-alt";
-    const containerBorder = "border-text-alt dark:border-dark-text-alt";
-    const inputSelectionBg = "selection:bg-selection dark:selection:bg-dark-selection";
-    const inputSelectionText = "selection:text-text-alt dark:selection:text-dark-text-alt";
-    const iconColor = "text-text-alt dark:text-dark-text-alt";
-    const buttonHoverBg = "hover:bg-black/10 dark:hover:bg-white/10";
-    const resultCountColor = "text-gray-500 dark:text-gray-400";
+    const containerBg = 'bg-gray-100 dark:bg-gray-800'; // Force opaque light/dark gray
+    const containerText = 'text-text-alt dark:text-dark-text-alt';
+    const containerBorder = 'border-text-alt dark:border-dark-text-alt';
+    const inputSelectionBg = 'selection:bg-selection dark:selection:bg-dark-selection';
+    const inputSelectionText = 'selection:text-text-alt dark:selection:text-dark-text-alt';
+    const iconColor = 'text-text-alt dark:text-dark-text-alt';
+    const buttonHoverBg = 'hover:bg-black/10 dark:hover:bg-white/10';
+    const resultCountColor = 'text-gray-500 dark:text-gray-400';
 
     return (
       <div
@@ -153,7 +153,7 @@ export const SearchView = memo(
         {numResults != null && (
           <span className={`flex items-center h-full ml-auto`}>
             <span className={`align-middle px-2 ${resultCountColor}`}>
-              {resultIndex == null ? "?" : resultIndex + 1}/{numResults}
+              {resultIndex == null ? '?' : resultIndex + 1}/{numResults}
             </span>
             <button
               className={`inline-flex items-center justify-center flex-shrink-0 h-full w-7 rounded-sm p-0 focus:outline-none ${iconColor} ${buttonHoverBg}`}

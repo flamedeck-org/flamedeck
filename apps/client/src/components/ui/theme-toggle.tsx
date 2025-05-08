@@ -1,17 +1,17 @@
-import * as React from "react";
-import { Moon, Sun, Check } from "lucide-react";
-import { useAtom } from "@/lib/speedscope-core/atom"; // Adjusted path
-import { colorSchemeAtom } from "@/components/speedscope-ui/themes/theme"; // Adjusted path
-import { ColorScheme } from "@/lib/speedscope-core/app-state/color-scheme"; // Adjusted path
-import { useTheme } from "next-themes"; // Import useTheme
+import * as React from 'react';
+import { Moon, Sun, Check } from 'lucide-react';
+import { useAtom } from '@/lib/speedscope-core/atom'; // Adjusted path
+import { colorSchemeAtom } from '@/components/speedscope-ui/themes/theme'; // Adjusted path
+import { ColorScheme } from '@/lib/speedscope-core/app-state/color-scheme'; // Adjusted path
+import { useTheme } from 'next-themes'; // Import useTheme
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
 export function ThemeToggle() {
   const { setTheme } = useTheme(); // Use next-themes hook
@@ -31,7 +31,7 @@ export function ThemeToggle() {
       <DropdownMenuContent align="end">
         <DropdownMenuItem
           onClick={() => {
-            setTheme("light");
+            setTheme('light');
             setSpeedscopeColorScheme(ColorScheme.LIGHT);
           }}
           className="flex items-center justify-between"
@@ -41,7 +41,7 @@ export function ThemeToggle() {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            setTheme("dark");
+            setTheme('dark');
             setSpeedscopeColorScheme(ColorScheme.DARK);
           }}
           className="flex items-center justify-between"
@@ -51,7 +51,7 @@ export function ThemeToggle() {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            setTheme("system");
+            setTheme('system');
             setSpeedscopeColorScheme(ColorScheme.SYSTEM);
           }}
           className="flex items-center justify-between"

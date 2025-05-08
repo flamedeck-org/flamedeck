@@ -1,5 +1,5 @@
-import { Color } from "../../../../lib/speedscope-core/color.ts";
-import type { FlamegraphTheme } from "../theme.tsx";
+import { Color } from '../../../../lib/speedscope-core/color.ts';
+import type { FlamegraphTheme } from '../theme.tsx';
 
 // Peach theme HCL constants (0-1 scale for C & L, degrees for H)
 // These values produce a peach/orange/yellow palette

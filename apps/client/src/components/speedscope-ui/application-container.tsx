@@ -1,7 +1,7 @@
-import React, { memo, useMemo } from "react";
-import { getCanvasContext } from "../../lib/speedscope-core/app-state/getters";
-import { useActiveProfileState } from "../../lib/speedscope-core/app-state/active-profile-state";
-import { useTheme } from "./themes/theme";
+import React, { memo, useMemo } from 'react';
+import { getCanvasContext } from '../../lib/speedscope-core/app-state/getters';
+import { useActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
+import { useTheme } from './themes/theme';
 import {
   dragActiveAtom,
   errorAtom,
@@ -11,10 +11,10 @@ import {
   loadingAtom,
   profileGroupAtom,
   viewModeAtom,
-} from "../../lib/speedscope-core/app-state";
-import { useAtom } from "../../lib/speedscope-core/atom";
-import { ProfileSearchContextProvider } from "./search-view";
-import { Application } from "./application";
+} from '../../lib/speedscope-core/app-state';
+import { useAtom } from '../../lib/speedscope-core/atom';
+import { ProfileSearchContextProvider } from './search-view';
+import { Application } from './application';
 
 export const ApplicationContainer = memo(() => {
   const canvas = useAtom(glCanvasAtom);

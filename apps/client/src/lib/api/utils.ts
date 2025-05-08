@@ -1,5 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { Folder } from "./types";
+import { supabase } from '@/integrations/supabase/client';
+import type { Folder } from './types';
 
 // Helper function to get breadcrumb path (iterative approach)
 export async function getFolderPath(startFolderId: string): Promise<Folder[]> {
@@ -11,9 +11,9 @@ export async function getFolderPath(startFolderId: string): Promise<Folder[]> {
   while (currentId && depth < MAX_DEPTH) {
     try {
       const { data: folder, error } = await supabase
-        .from("folders")
-        .select("*")
-        .eq("id", currentId)
+        .from('folders')
+        .select('*')
+        .eq('id', currentId)
         .maybeSingle(); // Use maybeSingle to handle potential nulls/errors gracefully
 
       if (error) {

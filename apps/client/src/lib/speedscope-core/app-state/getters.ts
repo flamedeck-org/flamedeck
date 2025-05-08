@@ -1,9 +1,9 @@
-import type { Frame, Profile } from "../profile";
-import { memoizeByReference, memoizeByShallowEquality } from "../lib-utils";
-import { RowAtlas } from "../../speedscope-gl/row-atlas";
-import { CanvasContext } from "../../speedscope-gl/canvas-context";
-import type { FlamechartRowAtlasKey } from "../../speedscope-gl/flamechart-renderer";
-import type { Theme } from "@/components/speedscope-ui/themes/theme";
+import type { Frame, Profile } from '../profile';
+import { memoizeByReference, memoizeByShallowEquality } from '../lib-utils';
+import { RowAtlas } from '../../speedscope-gl/row-atlas';
+import { CanvasContext } from '../../speedscope-gl/canvas-context';
+import type { FlamechartRowAtlasKey } from '../../speedscope-gl/flamechart-renderer';
+import type { Theme } from '@/components/speedscope-ui/themes/theme';
 
 export const createGetColorBucketForFrame = memoizeByReference(
   (frameToColorBucket: Map<number | string, number>) => {
@@ -53,7 +53,7 @@ export const getFrameToColorBucket = memoizeByReference(
     const frames: Frame[] = [];
     profile.forEachFrame((f) => frames.push(f));
     function key(f: Frame) {
-      return (f.file || "") + f.name;
+      return (f.file || '') + f.name;
     }
     function compare(a: Frame, b: Frame) {
       return key(a) > key(b) ? 1 : -1;

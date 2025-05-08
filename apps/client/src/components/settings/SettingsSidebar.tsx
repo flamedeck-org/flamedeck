@@ -1,6 +1,6 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
-import { KeyRound, User } from "lucide-react";
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { KeyRound, User } from 'lucide-react';
 
 const SettingsSidebar: React.FC = () => {
   return (
@@ -12,8 +12,8 @@ const SettingsSidebar: React.FC = () => {
           className={({ isActive }) =>
             `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               isActive
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             }`
           }
           aria-label="General Settings"
@@ -26,8 +26,8 @@ const SettingsSidebar: React.FC = () => {
           className={({ isActive }) =>
             `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               isActive
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             }`
           }
           aria-label="API Keys"

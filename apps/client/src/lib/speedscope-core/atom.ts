@@ -55,7 +55,7 @@
 //
 // This library is inspired by https://recoiljs.org/
 
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from 'react';
 
 type AtomListener = () => void;
 
@@ -64,8 +64,8 @@ let hotReloadStash: Map<string, any> | null = null;
 
 declare const module: any;
 // Use Vite env variable and check for module/module.hot existence
-if (import.meta.env.DEV && typeof module !== "undefined" && module.hot) {
-  (window as any)["Atom"] = AtomDev = {};
+if (import.meta.env.DEV && typeof module !== 'undefined' && module.hot) {
+  (window as any)['Atom'] = AtomDev = {};
 
   module.hot.dispose(() => {
     if (AtomDev) {
@@ -75,10 +75,10 @@ if (import.meta.env.DEV && typeof module !== "undefined" && module.hot) {
       }
     }
 
-    (window as any)["Atom_hotReloadStash"] = hotReloadStash;
+    (window as any)['Atom_hotReloadStash'] = hotReloadStash;
   });
 
-  hotReloadStash = (window as any)["Atom_hotReloadStash"] || null;
+  hotReloadStash = (window as any)['Atom_hotReloadStash'] || null;
 }
 
 export class Atom<T> {
@@ -87,7 +87,7 @@ export class Atom<T> {
     protected state: T,
     debugKey: string
   ) {
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV === 'development') {
       if (hotReloadStash?.has(debugKey)) {
         // If we have a stored value from a previous hot reload, use that
         // instead of whatever was passed to the constructor.

@@ -1,19 +1,19 @@
-import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
-import type { TraceMetadata, UserProfile } from "@/types";
-import { gzipCompress, gzipDecompress } from "../utils/compress"; // Import compression utilities
-import type { PostgrestError } from "@supabase/supabase-js"; // Import PostgrestError
+import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
+import type { TraceMetadata, UserProfile } from '@/types';
+import { gzipCompress, gzipDecompress } from '../utils/compress'; // Import compression utilities
+import type { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
 
 // Upload a trace file to Supabase storage
 export const uploadTraceFile = async (file: File): Promise<{ path: string; size: number }> => {
   try {
     const session = await supabase.auth.getSession();
     if (!session.data.session) {
-      throw new Error("Authentication required to upload files");
+      throw new Error('Authentication required to upload files');
     }
 
     // Create a unique filename for the trace
-    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "/");
+    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
     const fileName = `${uuidv4()}.speedscope.json`;
     const filePath = `${timestamp}/${fileName}`;
 
@@ -21,26 +21,26 @@ export const uploadTraceFile = async (file: File): Promise<{ path: string; size:
 
     // Upload the file to Supabase storage
     const { error: uploadError, data } = await supabase.storage
-      .from("traces")
+      .from('traces')
       .upload(filePath, file, {
-        contentType: "application/json",
-        cacheControl: "3600",
+        contentType: 'application/json',
+        cacheControl: '3600',
         upsert: false,
       });
 
     if (uploadError) {
-      console.error("Error uploading trace file:", uploadError);
+      console.error('Error uploading trace file:', uploadError);
       throw new Error(`Failed to upload trace file: ${uploadError.message}`);
     }
 
-    console.log("File uploaded successfully:", data);
+    console.log('File uploaded successfully:', data);
 
     return {
       path: `traces/${filePath}`,
       size: file.size,
     };
   } catch (error) {
-    console.error("Error in uploadTraceFile:", error);
+    console.error('Error in uploadTraceFile:', error);
     throw error;
   }
 };
@@ -51,31 +51,31 @@ export const getTraceFile = async (path: string): Promise<unknown> => {
   try {
     const session = await supabase.auth.getSession();
     if (!session.data.session) {
-      throw new Error("Authentication required to download files");
+      throw new Error('Authentication required to download files');
     }
 
     // Extract bucket and file path from the full path
-    const [bucket, ...pathParts] = path.split("/");
-    const filePath = pathParts.join("/");
+    const [bucket, ...pathParts] = path.split('/');
+    const filePath = pathParts.join('/');
 
     console.log(`Attempting to download file from bucket: ${bucket}, path: ${filePath}`);
 
     const { data, error } = await supabase.storage.from(bucket).download(filePath);
 
     if (error) {
-      console.error("Error downloading trace file:", error);
+      console.error('Error downloading trace file:', error);
       throw new Error(`Failed to download trace file: ${error.message}`);
     }
 
     if (!data) {
-      throw new Error("File not found");
+      throw new Error('File not found');
     }
 
     // Parse and return the JSON data
     const text = await data.text();
     return JSON.parse(text);
   } catch (error) {
-    console.error("Error in getTraceFile:", error);
+    console.error('Error in getTraceFile:', error);
     throw error;
   }
 };
@@ -87,12 +87,12 @@ export const getTraceBlob = async (
   try {
     // Extract bucket and file path from the full path
     // Assumes path format like "bucket_name/folder/subfolder/file.ext"
-    const pathParts = path.split("/");
+    const pathParts = path.split('/');
     if (pathParts.length < 2) {
-      throw new Error("Invalid blob path format. Expected bucket_name/path/to/file");
+      throw new Error('Invalid blob path format. Expected bucket_name/path/to/file');
     }
     const bucket = pathParts[0];
-    const filePath = pathParts.slice(1).join("/");
+    const filePath = pathParts.slice(1).join('/');
     const fileName = pathParts[pathParts.length - 1]; // Extract filename from path
 
     console.log(`[storage] Attempting download: bucket=${bucket}, path=${filePath}`);
@@ -100,12 +100,12 @@ export const getTraceBlob = async (
     const { data, error } = await supabase.storage.from(bucket).download(filePath);
 
     if (error) {
-      console.error("[storage] Error downloading trace blob:", error);
+      console.error('[storage] Error downloading trace blob:', error);
       throw new Error(`Failed to download trace blob: ${error.message}`);
     }
 
     if (!data) {
-      throw new Error("Trace blob not found in storage");
+      throw new Error('Trace blob not found in storage');
     }
 
     // Supabase download returns a Blob, convert to ArrayBuffer
@@ -114,7 +114,7 @@ export const getTraceBlob = async (
 
     return { data: arrayBuffer, fileName };
   } catch (error) {
-    console.error("Error in getTraceBlob:", error);
+    console.error('Error in getTraceBlob:', error);
     throw error; // Re-throw the error for React Query to handle
   }
 };
@@ -132,8 +132,8 @@ export const listUserTraces = async (
       error: sessionError,
     } = await supabase.auth.getSession();
     if (sessionError || !session) {
-      console.error("Session error in listUserTraces:", sessionError);
-      throw new Error("Authentication required to list traces");
+      console.error('Session error in listUserTraces:', sessionError);
+      throw new Error('Authentication required to list traces');
     }
     const userId = session.user.id;
 
@@ -155,7 +155,7 @@ export const listUserTraces = async (
     // )
 
     console.log(
-      `Calling RPCs for user ${userId}, page ${page}, limit ${limit}, search: '${searchQuery || ""}', folder: '${folderId || "root"}'`
+      `Calling RPCs for user ${userId}, page ${page}, limit ${limit}, search: '${searchQuery || ''}', folder: '${folderId || 'root'}'`
     );
 
     // Call the RPC function for data
@@ -163,58 +163,58 @@ export const listUserTraces = async (
       p_user_id: userId,
       p_offset: from,
       p_limit: limit,
-      p_search_query: searchQuery || "",
+      p_search_query: searchQuery || '',
       p_folder_id: folderId, // <-- Pass folderId
     };
-    console.log("RPC params (data):", rpcParamsData);
+    console.log('RPC params (data):', rpcParamsData);
     const { data: rpcData, error: rpcError } = await supabase.rpc(
-      "get_user_accessible_traces",
+      'get_user_accessible_traces',
       rpcParamsData
     );
 
     // Call the RPC function for count
     const rpcParamsCount = {
       p_user_id: userId,
-      p_search_query: searchQuery || "",
+      p_search_query: searchQuery || '',
       p_folder_id: folderId, // <-- Pass folderId
     };
-    console.log("RPC params (count):", rpcParamsCount);
+    console.log('RPC params (count):', rpcParamsCount);
     const { data: countData, error: countError } = await supabase
-      .rpc("get_user_accessible_traces_count", rpcParamsCount)
+      .rpc('get_user_accessible_traces_count', rpcParamsCount)
       .single(); // Expect a single number
 
     if (rpcError) {
-      console.error("Error calling get_user_accessible_traces RPC:", rpcError);
+      console.error('Error calling get_user_accessible_traces RPC:', rpcError);
       throw new Error(`Failed to list traces via RPC: ${rpcError.message}`);
     }
     if (countError) {
-      console.error("Error calling get_user_accessible_traces_count RPC:", countError);
+      console.error('Error calling get_user_accessible_traces_count RPC:', countError);
       // Proceed without count if necessary, or throw
       throw new Error(`Failed to get trace count via RPC: ${countError.message}`);
     }
 
     // Process results - RPC might return owner as JSON string or object
     // Define an expected structure for items returned by the RPC
-    type RpcTraceItem = Omit<TraceMetadata, "owner"> & { owner: string | UserProfile | null };
+    type RpcTraceItem = Omit<TraceMetadata, 'owner'> & { owner: string | UserProfile | null };
 
     const traces = ((rpcData as RpcTraceItem[]) || []).map((item) => {
       const processedItem = { ...item }; // Use const as it's not reassigned directly
       // Ensure owner is parsed if returned as JSON string and is not null
-      if (processedItem.owner && typeof processedItem.owner === "string") {
+      if (processedItem.owner && typeof processedItem.owner === 'string') {
         try {
           // Use UserProfile to match the imported type
           const parsedOwner = JSON.parse(processedItem.owner) as UserProfile;
           // Assign properties to the const object (this is allowed)
           processedItem.owner = parsedOwner;
         } catch (e) {
-          console.error("Failed to parse owner JSON from RPC for trace:", processedItem.id, e);
+          console.error('Failed to parse owner JSON from RPC for trace:', processedItem.id, e);
           // Assign null to the property on the const object
           processedItem.owner = null;
         }
-      } else if (processedItem.owner && typeof processedItem.owner !== "object") {
+      } else if (processedItem.owner && typeof processedItem.owner !== 'object') {
         // Handle cases where owner might be something unexpected after the join/CASE
         console.warn(
-          "Unexpected owner type from RPC for trace:",
+          'Unexpected owner type from RPC for trace:',
           processedItem.id,
           typeof processedItem.owner
         );
@@ -226,19 +226,19 @@ export const listUserTraces = async (
     });
 
     // Ensure count is a number, default to 0 if null/undefined or invalid
-    const totalCount = typeof countData === "number" && !isNaN(countData) ? countData : 0;
+    const totalCount = typeof countData === 'number' && !isNaN(countData) ? countData : 0;
 
     console.log(`RPC returned ${traces.length} traces, total count: ${totalCount}`);
 
     return { data: traces, count: totalCount };
   } catch (error) {
-    console.error("Error in listUserTraces:", error);
+    console.error('Error in listUserTraces:', error);
     // Ensure we throw an actual Error object
     const err = error instanceof Error ? error : new Error(String(error));
     // Optionally check for specific PostgrestError details if needed
     if (
       (error as PostgrestError)?.message?.includes(
-        "function get_user_accessible_traces(p_user_id => uuid, p_offset => integer, p_limit => integer, p_search_query => text) does not exist"
+        'function get_user_accessible_traces(p_user_id => uuid, p_offset => integer, p_limit => integer, p_search_query => text) does not exist'
       )
     ) {
       console.error(
@@ -275,28 +275,28 @@ export async function uploadJson(
     const compressedBuffer = await gzipCompress(uint8Array.buffer);
 
     // 4. Create a Blob from the compressed data, matching the contentType option
-    const blob = new Blob([compressedBuffer], { type: "application/json" });
+    const blob = new Blob([compressedBuffer], { type: 'application/json' });
 
     // 5. Upload the Blob
     const { data, error: uploadError } = await supabase.storage.from(bucket).upload(path, blob, {
-      contentType: "application/json", // Blob type implies gzip, but content type is underlying data
-      cacheControl: "public,max-age=31536000", // Cache immutable data
+      contentType: 'application/json', // Blob type implies gzip, but content type is underlying data
+      cacheControl: 'public,max-age=31536000', // Cache immutable data
       upsert: true, // Overwrite if exists
       // Pass custom headers like Content-Encoding here
       headers: {
-        "Content-Encoding": "gzip", // Use standard HTTP header format
+        'Content-Encoding': 'gzip', // Use standard HTTP header format
       },
     });
 
     if (uploadError) {
-      console.error("Error uploading compressed JSON:", uploadError);
+      console.error('Error uploading compressed JSON:', uploadError);
       throw new Error(`Failed to upload compressed JSON: ${uploadError.message}`);
     }
 
-    console.log("Compressed JSON uploaded successfully:", data);
+    console.log('Compressed JSON uploaded successfully:', data);
     return { path: data.path };
   } catch (error) {
-    console.error("Error in uploadJson:", error);
+    console.error('Error in uploadJson:', error);
     return { error: error instanceof Error ? error : new Error(String(error)) };
   }
 }
@@ -318,12 +318,12 @@ export async function downloadJson<T = unknown>(
     const { data: blob, error: downloadError } = await supabase.storage.from(bucket).download(path);
 
     if (downloadError) {
-      console.error("Error downloading gzipped JSON:", downloadError);
+      console.error('Error downloading gzipped JSON:', downloadError);
       throw new Error(`Failed to download gzipped JSON: ${downloadError.message}`);
     }
 
     if (!blob) {
-      throw new Error("Downloaded file blob is null.");
+      throw new Error('Downloaded file blob is null.');
     }
 
     // 2. Get ArrayBuffer from Blob
@@ -341,7 +341,7 @@ export async function downloadJson<T = unknown>(
 
     return { data, error: null };
   } catch (error) {
-    console.error("Error in downloadJson:", error);
+    console.error('Error in downloadJson:', error);
     return {
       data: null,
       error: error instanceof Error ? error : new Error(String(error)),
