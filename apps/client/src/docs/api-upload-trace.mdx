@@ -20,6 +20,7 @@ Requires a valid Supabase API key with the `trace:upload` scope passed in the `A
 - `branch` (string, optional): Git branch associated with the trace.
 - `notes` (string, optional): User-provided notes for the trace.
 - `folderId` (string, optional, UUID): The ID of the folder to place the trace in.
+- `public` (boolean, optional, default: false): If `true`, makes the uploaded trace publicly viewable.
 
 ## Request Body
 
@@ -44,7 +45,7 @@ FILE_PATH="/path/to/your/trace.file"
 
 # --- Query Parameters --- 
 # Note: Ensure values are URL-encoded if they contain special characters
-PARAMS="fileName=my-test-trace.json&scenario=Curl%20Test%202&commitSha=abcdef123&branch=main&notes=Testing%20API%20upload&folderId=5e027ceb-9c66-490f-a128-9a7aa1281e5a"
+PARAMS="fileName=my-test-trace.json&scenario=Curl%20Test%202&commitSha=abcdef123&branch=main&notes=Testing%20API%20upload&folderId=5e027ceb-9c66-490f-a128-9a7aa1281e5a&public=true"
 
 # --- Construct URL --- 
 FULL_URL="${BASE_URL}/api-upload-trace?${PARAMS}"
@@ -80,6 +81,7 @@ const params = new URLSearchParams({
   branch: 'main',
   notes: 'Testing API upload from Node.js using node-fetch',
   folderId: '5e027ceb-9c66-490f-a128-9a7aa1281e5a',
+  public: 'true',
 });
 
 const requestUrl = `${baseUrl}/api-upload-trace?${params.toString()}`;

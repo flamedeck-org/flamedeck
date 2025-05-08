@@ -42,6 +42,26 @@ function DocsSidebarNav({ className, onLinkClick, ...props }: DocsSidebarNavProp
         Getting Started
       </NavLink>
       <NavLink
+        to="/docs/cli-upload"
+        onClick={handleLinkClick}
+        className={({ isActive }) => cn(
+          "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-10 px-4 py-2 justify-start",
+          isActive ? "bg-muted hover:bg-muted" : "hover:bg-transparent hover:underline"
+        )}
+      >
+        CLI Upload
+      </NavLink>
+      <NavLink
+        to="/docs/npm-upload"
+        onClick={handleLinkClick}
+        className={({ isActive }) => cn(
+          "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-10 px-4 py-2 justify-start",
+          isActive ? "bg-muted hover:bg-muted" : "hover:bg-transparent hover:underline"
+        )}
+      >
+        NPM Package Upload
+      </NavLink>
+      <NavLink
         to="/docs/api"
         onClick={handleLinkClick}
         className={({ isActive }) => cn(

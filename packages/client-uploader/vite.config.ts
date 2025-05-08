@@ -31,6 +31,7 @@ export default defineConfig({
     dts({ // Generate declaration files
       insertTypesEntry: true, // Create a single index.d.ts entry file
       tsconfigPath: resolve(__dirname, 'tsconfig.lib.json'), // Use the library tsconfig
+      rollupTypes: true, // Add this to attempt to bundle types from dependencies
     }),
   ],
 }); 

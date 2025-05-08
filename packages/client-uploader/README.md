@@ -18,26 +18,24 @@ Import the `uploadTraceToApi` function and required types:
 import { uploadTraceToApi, UploadError, type UploadOptions } from '@flamedeck/upload';
 
 async function handleFileUpload(file: File) {
-  const apiKey = 'YOUR_FLAMEDECK_API_KEY'; // Get key from user/config
+  const apiKey = 'YOUR_FLAMEDECK_API_KEY'; // Get key from flamdeck settings
 
   const options: UploadOptions = {
     apiKey: apiKey,
     traceData: file, // Pass a File or Blob object
     fileName: file.name,
-    scenario: 'Browser Upload Example',
+    scenario: 'Javascript Upload Example',
     // Add other optional metadata if needed
     commitSha: 'abcdef1',
-    metadata: { client: 'web', timestamp: Date.now() } 
+    metadata: { client: 'web', userId: 'some_user_id' } 
   };
 
   try {
     const result = await uploadTraceToApi(options);
     console.log('Upload successful! View URL:', result.viewUrl);
-    // Redirect user or display link
   } catch (error) {
     if (error instanceof UploadError) {
       console.error(`Upload failed (${error.status}): ${error.message}`, error.details);
-      // Show error message to user
     } else {
       console.error('An unexpected error occurred:', error);
     }
