@@ -145,7 +145,7 @@ function partitionByPidTid<T extends { tid: number | string; pid: number | strin
 ): Map<string, T[]> {
   const map = new Map<string, T[]>();
 
-  for (const ev of events) {
+  for (let ev of events) {
     const list = getOrInsert(map, pidTidKey(Number(ev.pid), Number(ev.tid)), () => []);
     list.push(ev);
   }
@@ -190,17 +190,17 @@ function convertToEventQueues(events: ImportableTraceEvent[]): [BTraceEvent[], E
   // Rebase all of the timestamps on the lowest timestamp
   if (events.length > 0) {
     let firstTs = Number.MAX_SAFE_INTEGER;
-    for (const ev of events) {
+    for (let ev of events) {
       firstTs = Math.min(firstTs, ev.ts);
     }
-    for (const ev of events) {
+    for (let ev of events) {
       ev.ts -= firstTs;
     }
   }
 
   // Next, combine B, E, and X events into two timestamp ordered queues.
   const xEvents: XTraceEvent[] = [];
-  for (const ev of events) {
+  for (let ev of events) {
     switch (ev.ph) {
       case 'B': {
         beginEvents.push(ev);
@@ -245,7 +245,7 @@ function convertToEventQueues(events: ImportableTraceEvent[]): [BTraceEvent[], E
     return 0;
   });
 
-  for (const x of xEvents) {
+  for (let x of xEvents) {
     const xDur = dur(x);
     beginEvents.push({ ...x, ph: 'B' } as BTraceEvent);
     endEvents.push({ ...x, ph: 'E', ts: x.ts + xDur } as ETraceEvent);
@@ -268,7 +268,7 @@ function convertToEventQueues(events: ImportableTraceEvent[]): [BTraceEvent[], E
 
 function filterIgnoredEventTypes(events: TraceEvent[]): ImportableTraceEvent[] {
   const ret: ImportableTraceEvent[] = [];
-  for (const ev of events) {
+  for (let ev of events) {
     switch (ev.ph) {
       case 'B':
       case 'E':
@@ -281,7 +281,7 @@ function filterIgnoredEventTypes(events: TraceEvent[]): ImportableTraceEvent[] {
 
 function getProcessNamesByPid(events: TraceEvent[]): Map<number, string> {
   const processNamesByPid = new Map<number, string>();
-  for (const ev of events) {
+  for (let ev of events) {
     if (ev.ph === 'M' && ev.name === 'process_name' && ev.args && ev.args.name) {
       processNamesByPid.set(ev.pid, ev.args.name);
     }
@@ -292,7 +292,7 @@ function getProcessNamesByPid(events: TraceEvent[]): Map<number, string> {
 function getThreadNamesByPidTid(events: TraceEvent[]): Map<string, string> {
   const threadNameByPidTid = new Map<string, string>();
 
-  for (const ev of events) {
+  for (let ev of events) {
     if (ev.ph === 'M' && ev.name === 'thread_name' && ev.args && ev.args.name) {
       threadNameByPidTid.set(pidTidKey(ev.pid, ev.tid), ev.args.name);
     }
@@ -325,7 +325,12 @@ function frameInfoForEvent(
   // In Hermes profiles we have additional guaranteed metadata we can use to
   // more accurately populate profiles with info such as line + col number
   if (exporterSource === ExporterSource.HERMES) {
-    const hermesFrameKey = `${event.name}:${event.args.url}:${event.args.line}:${event.args.column}`;
+    // For some reason line numbers in hermes move around a lot...might be a bug in
+    // the engine itself. For now if we have a function name, then don't include the
+    // line and column number in the frame key
+    const hermesFrameKey = ['anonymous', '(unnamed)'].includes(event.name || '')
+      ? `${event.name}:${event.args.url}:${event.args.line}:${event.args.column}`
+      : `${event.name}:${event.args.url}`;
 
     return {
       name: getEventName(event),
@@ -424,7 +429,8 @@ function eventListToProfile(
 
     if (b == null) {
       console.warn(
-        `Tried to end frame "${frameInfoForEvent(e, exporterSource).key
+        `Tried to end frame "${
+          frameInfoForEvent(e, exporterSource).key
         }", but the stack was empty. Doing nothing instead.`
       );
       return;
@@ -644,44 +650,28 @@ function sampleListToProfileGroup(contents: TraceWithSamples): ProfileGroup {
   const importableEvents = filterIgnoredEventTypes(contents.traceEvents);
   const partitionedTraceEvents = partitionByPidTid(importableEvents);
   const partitionedSamples = partitionByPidTid(contents.samples);
-
   const profileNamesByPidTid = getProfileNameByPidTid(contents.traceEvents, partitionedTraceEvents);
 
   const profilePairs: [string, Profile][] = [];
 
-  partitionedSamples.forEach((samplesForThisKey, sampleKey) => {
-    if (samplesForThisKey.length === 0) {
+  profileNamesByPidTid.forEach((name, profileKey) => {
+    const samplesForPidTid = partitionedSamples.get(profileKey);
+
+    if (!samplesForPidTid) {
+      throw new Error(`Could not find samples for key: ${samplesForPidTid}`);
+    }
+
+    if (samplesForPidTid.length === 0) {
       return;
     }
 
-    let name = profileNamesByPidTid.get(sampleKey);
-
-    if (!name) {
-      const { pid: samplePidNum, tid: sampleTidStr } = samplesForThisKey[0];
-      const samplePid = Number(samplePidNum);
-      const sampleTid = Number(sampleTidStr);
-
-      const processNamesByPid = getProcessNamesByPid(contents.traceEvents);
-      const threadNamesByPidTid = getThreadNamesByPidTid(contents.traceEvents);
-
-      const processName = processNamesByPid.get(samplePid);
-      const threadName = threadNamesByPidTid.get(sampleKey);
-
-      if (processName && threadName) {
-        name = `${processName} (pid ${samplePid}), ${threadName} (tid ${sampleTid})`;
-      } else if (processName) {
-        name = `${processName} (pid ${samplePid}, tid ${sampleTid})`;
-      } else if (threadName) {
-        name = `${threadName} (pid ${samplePid}, tid ${sampleTid})`;
-      } else {
-        name = `pid ${samplePid}, tid ${sampleTid}`;
-      }
-      console.warn(`No specific profile name found in traceEvents for sample key ${sampleKey}. Using generated name: "${name}"`);
-    }
-
-    profilePairs.push([sampleKey, sampleListToProfile(contents, samplesForThisKey, name)]);
+    profilePairs.push([profileKey, sampleListToProfile(contents, samplesForPidTid, name)]);
   });
 
+  // For now, we just sort processes by pid & tid.
+  // TODO: The standard specifies that metadata events with the name
+  // "process_sort_index" and "thread_sort_index" can be used to influence the
+  // order, but for simplicity we'll ignore that until someone complains :)
   sortBy(profilePairs, (p) => p[0]);
 
   return {
@@ -698,7 +688,7 @@ function isTraceEventList(maybeEventList: any): maybeEventList is TraceEvent[] {
   // Both ph and ts should be provided for every event. In theory, many other
   // fields are mandatory, but without these fields, we won't usefully be able
   // to import the data, so we'll rely upon these.
-  for (const el of maybeEventList) {
+  for (let el of maybeEventList) {
     if (!('ph' in el)) {
       return false;
     }
