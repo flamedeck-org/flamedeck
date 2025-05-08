@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "exporter": "dummy-trace-generator@1.0.0",
+  "$schema": "https://www.speedscope.app/file-format-schema.json",
+  "shared": {
+    "frames": [
+      { "name": "main", "file": "script.js", "line": 1, "col": 1 },
+      { "name": "foo", "file": "script.js", "line": 10, "col": 1 },
+      { "name": "bar", "file": "script.js", "line": 20, "col": 1 }
+    ]
+  },
+  "profiles": [
+    {
+      "type": "sampled",
+      "name": "CPU Profile",
+      "unit": "milliseconds",
+      "startValue": 0,
+      "endValue": 100,
+      "weights": [10, 20, 70],
+      "samples": [
+        [0, 1, 2],
+        [0, 1],
+        [0]
+      ]
+    }
+  ]
+} 

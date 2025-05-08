@@ -1,6 +1,6 @@
 {
   "name": "@flamedeck/upload",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Client library for uploading traces to Flamedeck.",
   "type": "module",
   "main": "./dist/flamedeck-upload.umd.js",
@@ -31,6 +31,7 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "ts-node": "^10.9.2",
     "vite": "^5.0.0",
     "vite-plugin-dts": "^4.5.3"
   }

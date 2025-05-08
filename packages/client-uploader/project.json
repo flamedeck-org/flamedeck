@@ -34,6 +34,13 @@
       "options": {
         "packageRoot": "packages/client-uploader/dist"
       }
+    },
+    "example:node-upload": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node packages/client-uploader/examples/node-upload/upload-test.js",
+        "cwd": "."
+      }
     }
   }
 }

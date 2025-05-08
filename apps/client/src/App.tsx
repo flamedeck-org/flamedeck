@@ -16,6 +16,8 @@ import NotFound from "./pages/NotFound";
 import TraceViewerPage from "./pages/TraceViewerPage";
 import DocsApiPage from "./pages/DocsApiPage/DocsApiPage";
 import DocsGettingStartedPage from "./pages/DocsGettingStartedPage";
+import DocsCliUploadPage from './pages/DocsCliUploadPage';
+import DocsNpmUploadPage from './pages/DocsNpmUploadPage';
 import DocsLayout from "./components/docs/DocsLayout";
 import { useTheme } from "./components/speedscope-ui/themes/theme";
 import { useAtom } from "./lib/speedscope-core/atom";
@@ -77,6 +79,8 @@ const AppRoutes = () => {
       <Route path="/docs" element={<DocsLayout />}>
         <Route index element={<Navigate to="/docs/getting-started" replace />} />
         <Route path="getting-started" element={<DocsGettingStartedPage />} />
+        <Route path="cli-upload" element={<DocsCliUploadPage />} />
+        <Route path="npm-upload" element={<DocsNpmUploadPage />} />
         <Route path="api" element={<DocsApiPage />} />
       </Route>
 
