@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsup';
 import fs from 'fs-extra'; // Make sure fs-extra is in devDependencies
-import path from 'path';    // path is a Node.js built-in
+import path from 'path'; // path is a Node.js built-in
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -42,13 +42,14 @@ export default defineConfig({
             require: './index.cjs', // CJS entry
           },
         },
-        files: [ // Explicitly list files in dist that are part of the package
+        files: [
+          // Explicitly list files in dist that are part of the package
           'index.js',
           'index.js.map',
           'index.cjs',
           'index.cjs.map',
           'index.d.ts',
-          'index.d.cts' // For CJS types if generated
+          'index.d.cts', // For CJS types if generated
         ],
         keywords: packageJsonContent.keywords,
         author: packageJsonContent.author,
@@ -61,11 +62,10 @@ export default defineConfig({
       await fs.ensureDir(distDir);
       await fs.writeJson(distPackageJsonPath, distPackageJson, { spaces: 2 });
       console.log('Successfully created package.json in dist');
-
     } catch (error) {
       console.error('Error creating dist package.json:', error);
       throw error; // Fail the build if package.json creation fails
     }
     // --- End package.json generation ---
   },
-}); 
+});

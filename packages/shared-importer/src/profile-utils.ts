@@ -3,12 +3,19 @@
 // Define minimal interfaces needed for duration calculation
 // Ensures we don't depend on client-specific complex types here.
 interface MinimalProfile {
-    getTotalWeight(): number;
-    getWeightUnit(): 'nanoseconds' | 'microseconds' | 'milliseconds' | 'seconds' | 'bytes' | 'none' | string; // Add string for safety
+  getTotalWeight(): number;
+  getWeightUnit():
+    | 'nanoseconds'
+    | 'microseconds'
+    | 'milliseconds'
+    | 'seconds'
+    | 'bytes'
+    | 'none'
+    | string; // Add string for safety
 }
 
 interface MinimalProfileGroup {
-    profiles: MinimalProfile[];
+  profiles: MinimalProfile[];
 }
 
 /**
@@ -27,13 +34,16 @@ export function getDurationMsFromProfileGroup(profileGroup: MinimalProfileGroup)
   // Use optional chaining for safer access
   const firstProfile = profileGroup.profiles[0];
   if (!firstProfile) {
-      return null;
+    return null;
   }
-  
+
   // Check if methods exist (basic runtime check for safety)
-  if (typeof firstProfile.getTotalWeight !== 'function' || typeof firstProfile.getWeightUnit !== 'function') {
-      console.error("Profile object missing required methods for duration calculation.");
-      return null; 
+  if (
+    typeof firstProfile.getTotalWeight !== 'function' ||
+    typeof firstProfile.getWeightUnit !== 'function'
+  ) {
+    console.error('Profile object missing required methods for duration calculation.');
+    return null;
   }
 
   const totalWeight = firstProfile.getTotalWeight();
@@ -55,7 +65,7 @@ export function getDurationMsFromProfileGroup(profileGroup: MinimalProfileGroup)
       break;
     // If unit is 'bytes' or 'none', durationMs remains null
   }
-  
+
   // Return rounded integer if duration is calculated, otherwise null
   return durationMs !== null ? Math.round(durationMs) : null;
-} 
+}

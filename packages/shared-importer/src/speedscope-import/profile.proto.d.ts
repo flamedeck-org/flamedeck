@@ -5,7 +5,7 @@
 //    node node_modules/protobufjs/cli/bin/pbts -o src/import/profile.proto.d.ts src/import/profile.proto.j
 //
 // Then prepend this comment to the result.
-import type * as $protobuf from 'protobufjs'
+import type * as $protobuf from 'protobufjs';
 /** Namespace perftools. */
 export namespace perftools {
   /** Namespace profiles. */
@@ -13,46 +13,46 @@ export namespace perftools {
     /** Properties of a Profile. */
     interface IProfile {
       /** Profile sampleType */
-      sampleType?: perftools.profiles.IValueType[] | null
+      sampleType?: perftools.profiles.IValueType[] | null;
 
       /** Profile sample */
-      sample?: perftools.profiles.ISample[] | null
+      sample?: perftools.profiles.ISample[] | null;
 
       /** Profile mapping */
-      mapping?: perftools.profiles.IMapping[] | null
+      mapping?: perftools.profiles.IMapping[] | null;
 
       /** Profile location */
-      location?: perftools.profiles.ILocation[] | null
+      location?: perftools.profiles.ILocation[] | null;
 
       /** Profile function */
-      function?: perftools.profiles.IFunction[] | null
+      function?: perftools.profiles.IFunction[] | null;
 
       /** Profile stringTable */
-      stringTable?: string[] | null
+      stringTable?: string[] | null;
 
       /** Profile dropFrames */
-      dropFrames?: number | Long | null
+      dropFrames?: number | Long | null;
 
       /** Profile keepFrames */
-      keepFrames?: number | Long | null
+      keepFrames?: number | Long | null;
 
       /** Profile timeNanos */
-      timeNanos?: number | Long | null
+      timeNanos?: number | Long | null;
 
       /** Profile durationNanos */
-      durationNanos?: number | Long | null
+      durationNanos?: number | Long | null;
 
       /** Profile periodType */
-      periodType?: perftools.profiles.IValueType | null
+      periodType?: perftools.profiles.IValueType | null;
 
       /** Profile period */
-      period?: number | Long | null
+      period?: number | Long | null;
 
       /** Profile comment */
-      comment?: (number | Long)[] | null
+      comment?: (number | Long)[] | null;
 
       /** Profile defaultSampleType */
-      defaultSampleType?: number | Long | null
+      defaultSampleType?: number | Long | null;
     }
 
     /** Represents a Profile. */
@@ -61,56 +61,56 @@ export namespace perftools {
        * Constructs a new Profile.
        * @param [properties] Properties to set
        */
-      constructor(properties?: perftools.profiles.IProfile)
+      constructor(properties?: perftools.profiles.IProfile);
 
       /** Profile sampleType. */
-      public sampleType: perftools.profiles.IValueType[]
+      public sampleType: perftools.profiles.IValueType[];
 
       /** Profile sample. */
-      public sample: perftools.profiles.ISample[]
+      public sample: perftools.profiles.ISample[];
 
       /** Profile mapping. */
-      public mapping: perftools.profiles.IMapping[]
+      public mapping: perftools.profiles.IMapping[];
 
       /** Profile location. */
-      public location: perftools.profiles.ILocation[]
+      public location: perftools.profiles.ILocation[];
 
       /** Profile function. */
-      public function: perftools.profiles.IFunction[]
+      public function: perftools.profiles.IFunction[];
 
       /** Profile stringTable. */
-      public stringTable: string[]
+      public stringTable: string[];
 
       /** Profile dropFrames. */
-      public dropFrames: number | Long
+      public dropFrames: number | Long;
 
       /** Profile keepFrames. */
-      public keepFrames: number | Long
+      public keepFrames: number | Long;
 
       /** Profile timeNanos. */
-      public timeNanos: number | Long
+      public timeNanos: number | Long;
 
       /** Profile durationNanos. */
-      public durationNanos: number | Long
+      public durationNanos: number | Long;
 
       /** Profile periodType. */
-      public periodType?: perftools.profiles.IValueType | null
+      public periodType?: perftools.profiles.IValueType | null;
 
       /** Profile period. */
-      public period: number | Long
+      public period: number | Long;
 
       /** Profile comment. */
-      public comment: (number | Long)[]
+      public comment: (number | Long)[];
 
       /** Profile defaultSampleType. */
-      public defaultSampleType: number | Long
+      public defaultSampleType: number | Long;
 
       /**
        * Creates a new Profile instance using the specified properties.
        * @param [properties] Properties to set
        * @returns Profile instance
        */
-      public static create(properties?: perftools.profiles.IProfile): perftools.profiles.Profile
+      public static create(properties?: perftools.profiles.IProfile): perftools.profiles.Profile;
 
       /**
        * Encodes the specified Profile message. Does not implicitly {@link perftools.profiles.Profile.verify|verify} messages.
@@ -120,8 +120,8 @@ export namespace perftools {
        */
       public static encode(
         message: perftools.profiles.IProfile,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Encodes the specified Profile message, length delimited. Does not implicitly {@link perftools.profiles.Profile.verify|verify} messages.
@@ -131,8 +131,8 @@ export namespace perftools {
        */
       public static encodeDelimited(
         message: perftools.profiles.IProfile,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Decodes a Profile message from the specified reader or buffer.
@@ -144,8 +144,8 @@ export namespace perftools {
        */
       public static decode(
         reader: $protobuf.Reader | Uint8Array,
-        length?: number,
-      ): perftools.profiles.Profile
+        length?: number
+      ): perftools.profiles.Profile;
 
       /**
        * Decodes a Profile message from the specified reader or buffer, length delimited.
@@ -155,22 +155,22 @@ export namespace perftools {
        * @throws {$protobuf.util.ProtocolError} If required fields are missing
        */
       public static decodeDelimited(
-        reader: $protobuf.Reader | Uint8Array,
-      ): perftools.profiles.Profile
+        reader: $protobuf.Reader | Uint8Array
+      ): perftools.profiles.Profile;
 
       /**
        * Verifies a Profile message.
        * @param message Plain object to verify
        * @returns `null` if valid, otherwise the reason why it is not
        */
-      public static verify(message: {[k: string]: any}): string | null
+      public static verify(message: { [k: string]: any }): string | null;
 
       /**
        * Creates a Profile message from a plain object. Also converts values to their respective internal types.
        * @param object Plain object
        * @returns Profile
        */
-      public static fromObject(object: {[k: string]: any}): perftools.profiles.Profile
+      public static fromObject(object: { [k: string]: any }): perftools.profiles.Profile;
 
       /**
        * Creates a plain object from a Profile message. Also converts values to other types if specified.
@@ -180,23 +180,23 @@ export namespace perftools {
        */
       public static toObject(
         message: perftools.profiles.Profile,
-        options?: $protobuf.IConversionOptions,
-      ): {[k: string]: any}
+        options?: $protobuf.IConversionOptions
+      ): { [k: string]: any };
 
       /**
        * Converts this Profile to JSON.
        * @returns JSON object
        */
-      public toJSON(): {[k: string]: any}
+      public toJSON(): { [k: string]: any };
     }
 
     /** Properties of a ValueType. */
     interface IValueType {
       /** ValueType type */
-      type?: number | Long | null
+      type?: number | Long | null;
 
       /** ValueType unit */
-      unit?: number | Long | null
+      unit?: number | Long | null;
     }
 
     /** Represents a ValueType. */
@@ -205,20 +205,22 @@ export namespace perftools {
        * Constructs a new ValueType.
        * @param [properties] Properties to set
        */
-      constructor(properties?: perftools.profiles.IValueType)
+      constructor(properties?: perftools.profiles.IValueType);
 
       /** ValueType type. */
-      public type: number | Long
+      public type: number | Long;
 
       /** ValueType unit. */
-      public unit: number | Long
+      public unit: number | Long;
 
       /**
        * Creates a new ValueType instance using the specified properties.
        * @param [properties] Properties to set
        * @returns ValueType instance
        */
-      public static create(properties?: perftools.profiles.IValueType): perftools.profiles.ValueType
+      public static create(
+        properties?: perftools.profiles.IValueType
+      ): perftools.profiles.ValueType;
 
       /**
        * Encodes the specified ValueType message. Does not implicitly {@link perftools.profiles.ValueType.verify|verify} messages.
@@ -228,8 +230,8 @@ export namespace perftools {
        */
       public static encode(
         message: perftools.profiles.IValueType,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Encodes the specified ValueType message, length delimited. Does not implicitly {@link perftools.profiles.ValueType.verify|verify} messages.
@@ -239,8 +241,8 @@ export namespace perftools {
        */
       public static encodeDelimited(
         message: perftools.profiles.IValueType,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Decodes a ValueType message from the specified reader or buffer.
@@ -252,8 +254,8 @@ export namespace perftools {
        */
       public static decode(
         reader: $protobuf.Reader | Uint8Array,
-        length?: number,
-      ): perftools.profiles.ValueType
+        length?: number
+      ): perftools.profiles.ValueType;
 
       /**
        * Decodes a ValueType message from the specified reader or buffer, length delimited.
@@ -263,22 +265,22 @@ export namespace perftools {
        * @throws {$protobuf.util.ProtocolError} If required fields are missing
        */
       public static decodeDelimited(
-        reader: $protobuf.Reader | Uint8Array,
-      ): perftools.profiles.ValueType
+        reader: $protobuf.Reader | Uint8Array
+      ): perftools.profiles.ValueType;
 
       /**
        * Verifies a ValueType message.
        * @param message Plain object to verify
        * @returns `null` if valid, otherwise the reason why it is not
        */
-      public static verify(message: {[k: string]: any}): string | null
+      public static verify(message: { [k: string]: any }): string | null;
 
       /**
        * Creates a ValueType message from a plain object. Also converts values to their respective internal types.
        * @param object Plain object
        * @returns ValueType
        */
-      public static fromObject(object: {[k: string]: any}): perftools.profiles.ValueType
+      public static fromObject(object: { [k: string]: any }): perftools.profiles.ValueType;
 
       /**
        * Creates a plain object from a ValueType message. Also converts values to other types if specified.
@@ -288,26 +290,26 @@ export namespace perftools {
        */
       public static toObject(
         message: perftools.profiles.ValueType,
-        options?: $protobuf.IConversionOptions,
-      ): {[k: string]: any}
+        options?: $protobuf.IConversionOptions
+      ): { [k: string]: any };
 
       /**
        * Converts this ValueType to JSON.
        * @returns JSON object
        */
-      public toJSON(): {[k: string]: any}
+      public toJSON(): { [k: string]: any };
     }
 
     /** Properties of a Sample. */
     interface ISample {
       /** Sample locationId */
-      locationId?: (number | Long)[] | null
+      locationId?: (number | Long)[] | null;
 
       /** Sample value */
-      value?: (number | Long)[] | null
+      value?: (number | Long)[] | null;
 
       /** Sample label */
-      label?: perftools.profiles.ILabel[] | null
+      label?: perftools.profiles.ILabel[] | null;
     }
 
     /** Represents a Sample. */
@@ -316,23 +318,23 @@ export namespace perftools {
        * Constructs a new Sample.
        * @param [properties] Properties to set
        */
-      constructor(properties?: perftools.profiles.ISample)
+      constructor(properties?: perftools.profiles.ISample);
 
       /** Sample locationId. */
-      public locationId: (number | Long)[]
+      public locationId: (number | Long)[];
 
       /** Sample value. */
-      public value: (number | Long)[]
+      public value: (number | Long)[];
 
       /** Sample label. */
-      public label: perftools.profiles.ILabel[]
+      public label: perftools.profiles.ILabel[];
 
       /**
        * Creates a new Sample instance using the specified properties.
        * @param [properties] Properties to set
        * @returns Sample instance
        */
-      public static create(properties?: perftools.profiles.ISample): perftools.profiles.Sample
+      public static create(properties?: perftools.profiles.ISample): perftools.profiles.Sample;
 
       /**
        * Encodes the specified Sample message. Does not implicitly {@link perftools.profiles.Sample.verify|verify} messages.
@@ -342,8 +344,8 @@ export namespace perftools {
        */
       public static encode(
         message: perftools.profiles.ISample,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Encodes the specified Sample message, length delimited. Does not implicitly {@link perftools.profiles.Sample.verify|verify} messages.
@@ -353,8 +355,8 @@ export namespace perftools {
        */
       public static encodeDelimited(
         message: perftools.profiles.ISample,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Decodes a Sample message from the specified reader or buffer.
@@ -366,8 +368,8 @@ export namespace perftools {
        */
       public static decode(
         reader: $protobuf.Reader | Uint8Array,
-        length?: number,
-      ): perftools.profiles.Sample
+        length?: number
+      ): perftools.profiles.Sample;
 
       /**
        * Decodes a Sample message from the specified reader or buffer, length delimited.
@@ -377,22 +379,22 @@ export namespace perftools {
        * @throws {$protobuf.util.ProtocolError} If required fields are missing
        */
       public static decodeDelimited(
-        reader: $protobuf.Reader | Uint8Array,
-      ): perftools.profiles.Sample
+        reader: $protobuf.Reader | Uint8Array
+      ): perftools.profiles.Sample;
 
       /**
        * Verifies a Sample message.
        * @param message Plain object to verify
        * @returns `null` if valid, otherwise the reason why it is not
        */
-      public static verify(message: {[k: string]: any}): string | null
+      public static verify(message: { [k: string]: any }): string | null;
 
       /**
        * Creates a Sample message from a plain object. Also converts values to their respective internal types.
        * @param object Plain object
        * @returns Sample
        */
-      public static fromObject(object: {[k: string]: any}): perftools.profiles.Sample
+      public static fromObject(object: { [k: string]: any }): perftools.profiles.Sample;
 
       /**
        * Creates a plain object from a Sample message. Also converts values to other types if specified.
@@ -402,29 +404,29 @@ export namespace perftools {
        */
       public static toObject(
         message: perftools.profiles.Sample,
-        options?: $protobuf.IConversionOptions,
-      ): {[k: string]: any}
+        options?: $protobuf.IConversionOptions
+      ): { [k: string]: any };
 
       /**
        * Converts this Sample to JSON.
        * @returns JSON object
        */
-      public toJSON(): {[k: string]: any}
+      public toJSON(): { [k: string]: any };
     }
 
     /** Properties of a Label. */
     interface ILabel {
       /** Label key */
-      key?: number | Long | null
+      key?: number | Long | null;
 
       /** Label str */
-      str?: number | Long | null
+      str?: number | Long | null;
 
       /** Label num */
-      num?: number | Long | null
+      num?: number | Long | null;
 
       /** Label numUnit */
-      numUnit?: number | Long | null
+      numUnit?: number | Long | null;
     }
 
     /** Represents a Label. */
@@ -433,26 +435,26 @@ export namespace perftools {
        * Constructs a new Label.
        * @param [properties] Properties to set
        */
-      constructor(properties?: perftools.profiles.ILabel)
+      constructor(properties?: perftools.profiles.ILabel);
 
       /** Label key. */
-      public key: number | Long
+      public key: number | Long;
 
       /** Label str. */
-      public str: number | Long
+      public str: number | Long;
 
       /** Label num. */
-      public num: number | Long
+      public num: number | Long;
 
       /** Label numUnit. */
-      public numUnit: number | Long
+      public numUnit: number | Long;
 
       /**
        * Creates a new Label instance using the specified properties.
        * @param [properties] Properties to set
        * @returns Label instance
        */
-      public static create(properties?: perftools.profiles.ILabel): perftools.profiles.Label
+      public static create(properties?: perftools.profiles.ILabel): perftools.profiles.Label;
 
       /**
        * Encodes the specified Label message. Does not implicitly {@link perftools.profiles.Label.verify|verify} messages.
@@ -462,8 +464,8 @@ export namespace perftools {
        */
       public static encode(
         message: perftools.profiles.ILabel,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Encodes the specified Label message, length delimited. Does not implicitly {@link perftools.profiles.Label.verify|verify} messages.
@@ -473,8 +475,8 @@ export namespace perftools {
        */
       public static encodeDelimited(
         message: perftools.profiles.ILabel,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Decodes a Label message from the specified reader or buffer.
@@ -486,8 +488,8 @@ export namespace perftools {
        */
       public static decode(
         reader: $protobuf.Reader | Uint8Array,
-        length?: number,
-      ): perftools.profiles.Label
+        length?: number
+      ): perftools.profiles.Label;
 
       /**
        * Decodes a Label message from the specified reader or buffer, length delimited.
@@ -496,21 +498,23 @@ export namespace perftools {
        * @throws {Error} If the payload is not a reader or valid buffer
        * @throws {$protobuf.util.ProtocolError} If required fields are missing
        */
-      public static decodeDelimited(reader: $protobuf.Reader | Uint8Array): perftools.profiles.Label
+      public static decodeDelimited(
+        reader: $protobuf.Reader | Uint8Array
+      ): perftools.profiles.Label;
 
       /**
        * Verifies a Label message.
        * @param message Plain object to verify
        * @returns `null` if valid, otherwise the reason why it is not
        */
-      public static verify(message: {[k: string]: any}): string | null
+      public static verify(message: { [k: string]: any }): string | null;
 
       /**
        * Creates a Label message from a plain object. Also converts values to their respective internal types.
        * @param object Plain object
        * @returns Label
        */
-      public static fromObject(object: {[k: string]: any}): perftools.profiles.Label
+      public static fromObject(object: { [k: string]: any }): perftools.profiles.Label;
 
       /**
        * Creates a plain object from a Label message. Also converts values to other types if specified.
@@ -520,47 +524,47 @@ export namespace perftools {
        */
       public static toObject(
         message: perftools.profiles.Label,
-        options?: $protobuf.IConversionOptions,
-      ): {[k: string]: any}
+        options?: $protobuf.IConversionOptions
+      ): { [k: string]: any };
 
       /**
        * Converts this Label to JSON.
        * @returns JSON object
        */
-      public toJSON(): {[k: string]: any}
+      public toJSON(): { [k: string]: any };
     }
 
     /** Properties of a Mapping. */
     interface IMapping {
       /** Mapping id */
-      id?: number | Long | null
+      id?: number | Long | null;
 
       /** Mapping memoryStart */
-      memoryStart?: number | Long | null
+      memoryStart?: number | Long | null;
 
       /** Mapping memoryLimit */
-      memoryLimit?: number | Long | null
+      memoryLimit?: number | Long | null;
 
       /** Mapping fileOffset */
-      fileOffset?: number | Long | null
+      fileOffset?: number | Long | null;
 
       /** Mapping filename */
-      filename?: number | Long | null
+      filename?: number | Long | null;
 
       /** Mapping buildId */
-      buildId?: number | Long | null
+      buildId?: number | Long | null;
 
       /** Mapping hasFunctions */
-      hasFunctions?: boolean | null
+      hasFunctions?: boolean | null;
 
       /** Mapping hasFilenames */
-      hasFilenames?: boolean | null
+      hasFilenames?: boolean | null;
 
       /** Mapping hasLineNumbers */
-      hasLineNumbers?: boolean | null
+      hasLineNumbers?: boolean | null;
 
       /** Mapping hasInlineFrames */
-      hasInlineFrames?: boolean | null
+      hasInlineFrames?: boolean | null;
     }
 
     /** Represents a Mapping. */
@@ -569,44 +573,44 @@ export namespace perftools {
        * Constructs a new Mapping.
        * @param [properties] Properties to set
        */
-      constructor(properties?: perftools.profiles.IMapping)
+      constructor(properties?: perftools.profiles.IMapping);
 
       /** Mapping id. */
-      public id: number | Long
+      public id: number | Long;
 
       /** Mapping memoryStart. */
-      public memoryStart: number | Long
+      public memoryStart: number | Long;
 
       /** Mapping memoryLimit. */
-      public memoryLimit: number | Long
+      public memoryLimit: number | Long;
 
       /** Mapping fileOffset. */
-      public fileOffset: number | Long
+      public fileOffset: number | Long;
 
       /** Mapping filename. */
-      public filename: number | Long
+      public filename: number | Long;
 
       /** Mapping buildId. */
-      public buildId: number | Long
+      public buildId: number | Long;
 
       /** Mapping hasFunctions. */
-      public hasFunctions: boolean
+      public hasFunctions: boolean;
 
       /** Mapping hasFilenames. */
-      public hasFilenames: boolean
+      public hasFilenames: boolean;
 
       /** Mapping hasLineNumbers. */
-      public hasLineNumbers: boolean
+      public hasLineNumbers: boolean;
 
       /** Mapping hasInlineFrames. */
-      public hasInlineFrames: boolean
+      public hasInlineFrames: boolean;
 
       /**
        * Creates a new Mapping instance using the specified properties.
        * @param [properties] Properties to set
        * @returns Mapping instance
        */
-      public static create(properties?: perftools.profiles.IMapping): perftools.profiles.Mapping
+      public static create(properties?: perftools.profiles.IMapping): perftools.profiles.Mapping;
 
       /**
        * Encodes the specified Mapping message. Does not implicitly {@link perftools.profiles.Mapping.verify|verify} messages.
@@ -616,8 +620,8 @@ export namespace perftools {
        */
       public static encode(
         message: perftools.profiles.IMapping,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Encodes the specified Mapping message, length delimited. Does not implicitly {@link perftools.profiles.Mapping.verify|verify} messages.
@@ -627,8 +631,8 @@ export namespace perftools {
        */
       public static encodeDelimited(
         message: perftools.profiles.IMapping,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Decodes a Mapping message from the specified reader or buffer.
@@ -640,8 +644,8 @@ export namespace perftools {
        */
       public static decode(
         reader: $protobuf.Reader | Uint8Array,
-        length?: number,
-      ): perftools.profiles.Mapping
+        length?: number
+      ): perftools.profiles.Mapping;
 
       /**
        * Decodes a Mapping message from the specified reader or buffer, length delimited.
@@ -651,22 +655,22 @@ export namespace perftools {
        * @throws {$protobuf.util.ProtocolError} If required fields are missing
        */
       public static decodeDelimited(
-        reader: $protobuf.Reader | Uint8Array,
-      ): perftools.profiles.Mapping
+        reader: $protobuf.Reader | Uint8Array
+      ): perftools.profiles.Mapping;
 
       /**
        * Verifies a Mapping message.
        * @param message Plain object to verify
        * @returns `null` if valid, otherwise the reason why it is not
        */
-      public static verify(message: {[k: string]: any}): string | null
+      public static verify(message: { [k: string]: any }): string | null;
 
       /**
        * Creates a Mapping message from a plain object. Also converts values to their respective internal types.
        * @param object Plain object
        * @returns Mapping
        */
-      public static fromObject(object: {[k: string]: any}): perftools.profiles.Mapping
+      public static fromObject(object: { [k: string]: any }): perftools.profiles.Mapping;
 
       /**
        * Creates a plain object from a Mapping message. Also converts values to other types if specified.
@@ -676,32 +680,32 @@ export namespace perftools {
        */
       public static toObject(
         message: perftools.profiles.Mapping,
-        options?: $protobuf.IConversionOptions,
-      ): {[k: string]: any}
+        options?: $protobuf.IConversionOptions
+      ): { [k: string]: any };
 
       /**
        * Converts this Mapping to JSON.
        * @returns JSON object
        */
-      public toJSON(): {[k: string]: any}
+      public toJSON(): { [k: string]: any };
     }
 
     /** Properties of a Location. */
     interface ILocation {
       /** Location id */
-      id?: number | Long | null
+      id?: number | Long | null;
 
       /** Location mappingId */
-      mappingId?: number | Long | null
+      mappingId?: number | Long | null;
 
       /** Location address */
-      address?: number | Long | null
+      address?: number | Long | null;
 
       /** Location line */
-      line?: perftools.profiles.ILine[] | null
+      line?: perftools.profiles.ILine[] | null;
 
       /** Location isFolded */
-      isFolded?: boolean | null
+      isFolded?: boolean | null;
     }
 
     /** Represents a Location. */
@@ -710,29 +714,29 @@ export namespace perftools {
        * Constructs a new Location.
        * @param [properties] Properties to set
        */
-      constructor(properties?: perftools.profiles.ILocation)
+      constructor(properties?: perftools.profiles.ILocation);
 
       /** Location id. */
-      public id: number | Long
+      public id: number | Long;
 
       /** Location mappingId. */
-      public mappingId: number | Long
+      public mappingId: number | Long;
 
       /** Location address. */
-      public address: number | Long
+      public address: number | Long;
 
       /** Location line. */
-      public line: perftools.profiles.ILine[]
+      public line: perftools.profiles.ILine[];
 
       /** Location isFolded. */
-      public isFolded: boolean
+      public isFolded: boolean;
 
       /**
        * Creates a new Location instance using the specified properties.
        * @param [properties] Properties to set
        * @returns Location instance
        */
-      public static create(properties?: perftools.profiles.ILocation): perftools.profiles.Location
+      public static create(properties?: perftools.profiles.ILocation): perftools.profiles.Location;
 
       /**
        * Encodes the specified Location message. Does not implicitly {@link perftools.profiles.Location.verify|verify} messages.
@@ -742,8 +746,8 @@ export namespace perftools {
        */
       public static encode(
         message: perftools.profiles.ILocation,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Encodes the specified Location message, length delimited. Does not implicitly {@link perftools.profiles.Location.verify|verify} messages.
@@ -753,8 +757,8 @@ export namespace perftools {
        */
       public static encodeDelimited(
         message: perftools.profiles.ILocation,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Decodes a Location message from the specified reader or buffer.
@@ -766,8 +770,8 @@ export namespace perftools {
        */
       public static decode(
         reader: $protobuf.Reader | Uint8Array,
-        length?: number,
-      ): perftools.profiles.Location
+        length?: number
+      ): perftools.profiles.Location;
 
       /**
        * Decodes a Location message from the specified reader or buffer, length delimited.
@@ -777,22 +781,22 @@ export namespace perftools {
        * @throws {$protobuf.util.ProtocolError} If required fields are missing
        */
       public static decodeDelimited(
-        reader: $protobuf.Reader | Uint8Array,
-      ): perftools.profiles.Location
+        reader: $protobuf.Reader | Uint8Array
+      ): perftools.profiles.Location;
 
       /**
        * Verifies a Location message.
        * @param message Plain object to verify
        * @returns `null` if valid, otherwise the reason why it is not
        */
-      public static verify(message: {[k: string]: any}): string | null
+      public static verify(message: { [k: string]: any }): string | null;
 
       /**
        * Creates a Location message from a plain object. Also converts values to their respective internal types.
        * @param object Plain object
        * @returns Location
        */
-      public static fromObject(object: {[k: string]: any}): perftools.profiles.Location
+      public static fromObject(object: { [k: string]: any }): perftools.profiles.Location;
 
       /**
        * Creates a plain object from a Location message. Also converts values to other types if specified.
@@ -802,23 +806,23 @@ export namespace perftools {
        */
       public static toObject(
         message: perftools.profiles.Location,
-        options?: $protobuf.IConversionOptions,
-      ): {[k: string]: any}
+        options?: $protobuf.IConversionOptions
+      ): { [k: string]: any };
 
       /**
        * Converts this Location to JSON.
        * @returns JSON object
        */
-      public toJSON(): {[k: string]: any}
+      public toJSON(): { [k: string]: any };
     }
 
     /** Properties of a Line. */
     interface ILine {
       /** Line functionId */
-      functionId?: number | Long | null
+      functionId?: number | Long | null;
 
       /** Line line */
-      line?: number | Long | null
+      line?: number | Long | null;
     }
 
     /** Represents a Line. */
@@ -827,20 +831,20 @@ export namespace perftools {
        * Constructs a new Line.
        * @param [properties] Properties to set
        */
-      constructor(properties?: perftools.profiles.ILine)
+      constructor(properties?: perftools.profiles.ILine);
 
       /** Line functionId. */
-      public functionId: number | Long
+      public functionId: number | Long;
 
       /** Line line. */
-      public line: number | Long
+      public line: number | Long;
 
       /**
        * Creates a new Line instance using the specified properties.
        * @param [properties] Properties to set
        * @returns Line instance
        */
-      public static create(properties?: perftools.profiles.ILine): perftools.profiles.Line
+      public static create(properties?: perftools.profiles.ILine): perftools.profiles.Line;
 
       /**
        * Encodes the specified Line message. Does not implicitly {@link perftools.profiles.Line.verify|verify} messages.
@@ -850,8 +854,8 @@ export namespace perftools {
        */
       public static encode(
         message: perftools.profiles.ILine,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Encodes the specified Line message, length delimited. Does not implicitly {@link perftools.profiles.Line.verify|verify} messages.
@@ -861,8 +865,8 @@ export namespace perftools {
        */
       public static encodeDelimited(
         message: perftools.profiles.ILine,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Decodes a Line message from the specified reader or buffer.
@@ -874,8 +878,8 @@ export namespace perftools {
        */
       public static decode(
         reader: $protobuf.Reader | Uint8Array,
-        length?: number,
-      ): perftools.profiles.Line
+        length?: number
+      ): perftools.profiles.Line;
 
       /**
        * Decodes a Line message from the specified reader or buffer, length delimited.
@@ -884,21 +888,21 @@ export namespace perftools {
        * @throws {Error} If the payload is not a reader or valid buffer
        * @throws {$protobuf.util.ProtocolError} If required fields are missing
        */
-      public static decodeDelimited(reader: $protobuf.Reader | Uint8Array): perftools.profiles.Line
+      public static decodeDelimited(reader: $protobuf.Reader | Uint8Array): perftools.profiles.Line;
 
       /**
        * Verifies a Line message.
        * @param message Plain object to verify
        * @returns `null` if valid, otherwise the reason why it is not
        */
-      public static verify(message: {[k: string]: any}): string | null
+      public static verify(message: { [k: string]: any }): string | null;
 
       /**
        * Creates a Line message from a plain object. Also converts values to their respective internal types.
        * @param object Plain object
        * @returns Line
        */
-      public static fromObject(object: {[k: string]: any}): perftools.profiles.Line
+      public static fromObject(object: { [k: string]: any }): perftools.profiles.Line;
 
       /**
        * Creates a plain object from a Line message. Also converts values to other types if specified.
@@ -908,32 +912,32 @@ export namespace perftools {
        */
       public static toObject(
         message: perftools.profiles.Line,
-        options?: $protobuf.IConversionOptions,
-      ): {[k: string]: any}
+        options?: $protobuf.IConversionOptions
+      ): { [k: string]: any };
 
       /**
        * Converts this Line to JSON.
        * @returns JSON object
        */
-      public toJSON(): {[k: string]: any}
+      public toJSON(): { [k: string]: any };
     }
 
     /** Properties of a Function. */
     interface IFunction {
       /** Function id */
-      id?: number | Long | null
+      id?: number | Long | null;
 
       /** Function name */
-      name?: number | Long | null
+      name?: number | Long | null;
 
       /** Function systemName */
-      systemName?: number | Long | null
+      systemName?: number | Long | null;
 
       /** Function filename */
-      filename?: number | Long | null
+      filename?: number | Long | null;
 
       /** Function startLine */
-      startLine?: number | Long | null
+      startLine?: number | Long | null;
     }
 
     /** Represents a Function. */
@@ -942,29 +946,29 @@ export namespace perftools {
        * Constructs a new Function.
        * @param [properties] Properties to set
        */
-      constructor(properties?: perftools.profiles.IFunction)
+      constructor(properties?: perftools.profiles.IFunction);
 
       /** Function id. */
-      public id: number | Long
+      public id: number | Long;
 
       /** Function name. */
-      public name: number | Long
+      public name: number | Long;
 
       /** Function systemName. */
-      public systemName: number | Long
+      public systemName: number | Long;
 
       /** Function filename. */
-      public filename: number | Long
+      public filename: number | Long;
 
       /** Function startLine. */
-      public startLine: number | Long
+      public startLine: number | Long;
 
       /**
        * Creates a new Function instance using the specified properties.
        * @param [properties] Properties to set
        * @returns Function instance
        */
-      public static create(properties?: perftools.profiles.IFunction): perftools.profiles.Function
+      public static create(properties?: perftools.profiles.IFunction): perftools.profiles.Function;
 
       /**
        * Encodes the specified Function message. Does not implicitly {@link perftools.profiles.Function.verify|verify} messages.
@@ -974,8 +978,8 @@ export namespace perftools {
        */
       public static encode(
         message: perftools.profiles.IFunction,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Encodes the specified Function message, length delimited. Does not implicitly {@link perftools.profiles.Function.verify|verify} messages.
@@ -985,8 +989,8 @@ export namespace perftools {
        */
       public static encodeDelimited(
         message: perftools.profiles.IFunction,
-        writer?: $protobuf.Writer,
-      ): $protobuf.Writer
+        writer?: $protobuf.Writer
+      ): $protobuf.Writer;
 
       /**
        * Decodes a Function message from the specified reader or buffer.
@@ -998,8 +1002,8 @@ export namespace perftools {
        */
       public static decode(
         reader: $protobuf.Reader | Uint8Array,
-        length?: number,
-      ): perftools.profiles.Function
+        length?: number
+      ): perftools.profiles.Function;
 
       /**
        * Decodes a Function message from the specified reader or buffer, length delimited.
@@ -1009,22 +1013,22 @@ export namespace perftools {
        * @throws {$protobuf.util.ProtocolError} If required fields are missing
        */
       public static decodeDelimited(
-        reader: $protobuf.Reader | Uint8Array,
-      ): perftools.profiles.Function
+        reader: $protobuf.Reader | Uint8Array
+      ): perftools.profiles.Function;
 
       /**
        * Verifies a Function message.
        * @param message Plain object to verify
        * @returns `null` if valid, otherwise the reason why it is not
        */
-      public static verify(message: {[k: string]: any}): string | null
+      public static verify(message: { [k: string]: any }): string | null;
 
       /**
        * Creates a Function message from a plain object. Also converts values to their respective internal types.
        * @param object Plain object
        * @returns Function
        */
-      public static fromObject(object: {[k: string]: any}): perftools.profiles.Function
+      public static fromObject(object: { [k: string]: any }): perftools.profiles.Function;
 
       /**
        * Creates a plain object from a Function message. Also converts values to other types if specified.
@@ -1034,14 +1038,14 @@ export namespace perftools {
        */
       public static toObject(
         message: perftools.profiles.Function,
-        options?: $protobuf.IConversionOptions,
-      ): {[k: string]: any}
+        options?: $protobuf.IConversionOptions
+      ): { [k: string]: any };
 
       /**
        * Converts this Function to JSON.
        * @returns JSON object
        */
-      public toJSON(): {[k: string]: any}
+      public toJSON(): { [k: string]: any };
     }
   }
 }
