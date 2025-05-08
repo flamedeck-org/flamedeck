@@ -3,3 +3,25 @@
 /coverage
 /.nx/cache
 /.nx/workspace-data
+
+# Ignore artifacts:
+node_modules
+dist
+coverage
+.nx
+.yarn
+tmp
+
+# Ignore generated files
+**/*.gen.ts
+**/*.generated.ts
+
+# Ignore specific configs if needed
+# .env
+# local.settings.json
+
+# Other common ignores
+.DS_Store
+.next
+.vercel
+*.log
