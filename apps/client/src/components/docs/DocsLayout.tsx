@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { cn } from "@/lib/utils"; // Assuming you have a utility for class names
 import { Button } from "@/components/ui/button";
