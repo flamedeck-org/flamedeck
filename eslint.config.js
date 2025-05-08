@@ -10,7 +10,8 @@ export default tseslint.config(
       "tmp/", 
       "**/*.gen.ts", 
       "coverage/", 
-      "apps/client/dist/"
+      "apps/client/dist/",
+      "supabase/functions/"
     ]
   },
   {
@@ -19,7 +20,8 @@ export default tseslint.config(
       "**/*.config.js", 
       "**/*.config.ts", 
       "**/*.config.cjs",
-      "**/vite-env.d.ts" // Often not included in main tsconfig
+      "**/vite-env.d.ts",
+      "**/examples/**" // Exclude example directories from typed-linting block
     ],
     languageOptions: {
       parser: tseslint.parser,
@@ -27,6 +29,7 @@ export default tseslint.config(
         project: [
           "./apps/client/tsconfig.app.json",
           "./packages/shared-importer/tsconfig.json",
+          "./packages/client-uploader/tsconfig.lib.json"
         ],
         tsconfigRootDir: import.meta.dirname,
       },
