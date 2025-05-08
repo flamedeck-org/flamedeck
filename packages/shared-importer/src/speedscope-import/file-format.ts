@@ -3,32 +3,34 @@ import type {
   CallTreeNode,
   Frame,
   FrameInfo,
-  ProfileGroup} from '../speedscope-core/profile.ts';
+  ProfileGroup,
+} from '../speedscope-core/profile.ts';
+import { CallTreeProfileBuilder, StackListProfileBuilder } from '../speedscope-core/profile.ts';
 import {
-  CallTreeProfileBuilder,
-  StackListProfileBuilder
-} from '../speedscope-core/profile.ts'
-import {TimeFormatter, ByteFormatter, RawValueFormatter} from '../speedscope-core/value-formatters.ts'
-import {FileFormat} from '../speedscope-core/file-format-spec.ts'
+  TimeFormatter,
+  ByteFormatter,
+  RawValueFormatter,
+} from '../speedscope-core/value-formatters.ts';
+import { FileFormat } from '../speedscope-core/file-format-spec.ts';
 
 export function exportProfileGroup(profileGroup: ProfileGroup): FileFormat.File {
-  const frames: FileFormat.Frame[] = []
+  const frames: FileFormat.Frame[] = [];
 
-  const indexForFrame = new Map<Frame, number>()
+  const indexForFrame = new Map<Frame, number>();
   function getIndexForFrame(frame: Frame): number {
-    let index = indexForFrame.get(frame)
+    let index = indexForFrame.get(frame);
     if (index == null) {
       const serializedFrame: FileFormat.Frame = {
         name: frame.name,
-      }
-      if (frame.file != null) serializedFrame.file = frame.file
-      if (frame.line != null) serializedFrame.line = frame.line
-      if (frame.col != null) serializedFrame.col = frame.col
-      index = frames.length
-      indexForFrame.set(frame, index)
-      frames.push(serializedFrame)
+      };
+      if (frame.file != null) serializedFrame.file = frame.file;
+      if (frame.line != null) serializedFrame.line = frame.line;
+      if (frame.col != null) serializedFrame.col = frame.col;
+      index = frames.length;
+      indexForFrame.set(frame, index);
+      frames.push(serializedFrame);
     }
-    return index
+    return index;
   }
 
   const file: FileFormat.File = {
@@ -36,15 +38,15 @@ export function exportProfileGroup(profileGroup: ProfileGroup): FileFormat.File 
     name: profileGroup.name,
     activeProfileIndex: profileGroup.indexToView,
     $schema: 'https://www.speedscope.app/file-format-schema.json',
-    shared: {frames},
+    shared: { frames },
     profiles: [],
-  }
+  };
 
   for (const profile of profileGroup.profiles) {
-    file.profiles.push(exportProfile(profile, getIndexForFrame))
+    file.profiles.push(exportProfile(profile, getIndexForFrame));
   }
 
-  return file
+  return file;
 }
 
 function exportProfile(profile: Profile, getIndexForFrame: (frame: Frame) => number) {
@@ -55,104 +57,104 @@ function exportProfile(profile: Profile, getIndexForFrame: (frame: Frame) => num
     startValue: 0,
     endValue: profile.getTotalWeight(),
     events: [],
-  }
+  };
   const openFrame = (node: CallTreeNode, value: number) => {
     eventedProfile.events.push({
       type: FileFormat.EventType.OPEN_FRAME,
       frame: getIndexForFrame(node.frame),
       at: value,
-    })
-  }
+    });
+  };
   const closeFrame = (node: CallTreeNode, value: number) => {
     eventedProfile.events.push({
       type: FileFormat.EventType.CLOSE_FRAME,
       frame: getIndexForFrame(node.frame),
       at: value,
-    })
-  }
-  profile.forEachCall(openFrame, closeFrame)
-  return eventedProfile
+    });
+  };
+  profile.forEachCall(openFrame, closeFrame);
+  return eventedProfile;
 }
 
 function importSpeedscopeProfile(
   serialized: FileFormat.Profile,
-  frames: FileFormat.Frame[],
+  frames: FileFormat.Frame[]
 ): Profile {
   function setCommonProperties(p: Profile) {
-    const {name, unit} = serialized
+    const { name, unit } = serialized;
 
     switch (unit) {
       case 'nanoseconds':
       case 'microseconds':
       case 'milliseconds':
       case 'seconds':
-        p.setValueFormatter(new TimeFormatter(unit))
-        break
+        p.setValueFormatter(new TimeFormatter(unit));
+        break;
 
       case 'bytes':
-        p.setValueFormatter(new ByteFormatter())
-        break
+        p.setValueFormatter(new ByteFormatter());
+        break;
 
       case 'none':
-        p.setValueFormatter(new RawValueFormatter())
-        break
+        p.setValueFormatter(new RawValueFormatter());
+        break;
     }
-    p.setName(name)
+    p.setName(name);
   }
 
   function importEventedProfile(evented: FileFormat.EventedProfile) {
-    const {startValue, endValue, events} = evented
+    const { startValue, endValue, events } = evented;
 
-    const profile = new CallTreeProfileBuilder(endValue - startValue)
-    setCommonProperties(profile)
+    const profile = new CallTreeProfileBuilder(endValue - startValue);
+    setCommonProperties(profile);
 
-    const frameInfos: FrameInfo[] = frames.map((frame, i) => ({key: i, ...frame}))
+    const frameInfos: FrameInfo[] = frames.map((frame, i) => ({ key: i, ...frame }));
 
     for (const ev of events) {
       switch (ev.type) {
         case FileFormat.EventType.OPEN_FRAME: {
-          profile.enterFrame(frameInfos[ev.frame], ev.at - startValue)
-          break
+          profile.enterFrame(frameInfos[ev.frame], ev.at - startValue);
+          break;
         }
         case FileFormat.EventType.CLOSE_FRAME: {
-          profile.leaveFrame(frameInfos[ev.frame], ev.at - startValue)
-          break
+          profile.leaveFrame(frameInfos[ev.frame], ev.at - startValue);
+          break;
         }
       }
     }
-    return profile.build()
+    return profile.build();
   }
 
   function importSampledProfile(sampled: FileFormat.SampledProfile) {
-    const {startValue, endValue, samples, weights} = sampled
-    const profile = new StackListProfileBuilder(endValue - startValue)
-    setCommonProperties(profile)
+    const { startValue, endValue, samples, weights } = sampled;
+    const profile = new StackListProfileBuilder(endValue - startValue);
+    setCommonProperties(profile);
 
-    const frameInfos: FrameInfo[] = frames.map((frame, i) => ({key: i, ...frame}))
+    const frameInfos: FrameInfo[] = frames.map((frame, i) => ({ key: i, ...frame }));
 
     if (samples.length !== weights.length) {
       throw new Error(
-        `Expected samples.length (${samples.length}) to equal weights.length (${weights.length})`,
-      )
+        `Expected samples.length (${samples.length}) to equal weights.length (${weights.length})`
+      );
     }
 
     for (let i = 0; i < samples.length; i++) {
-      const stack = samples[i]
-      const weight = weights[i]
+      const stack = samples[i];
+      const weight = weights[i];
       profile.appendSampleWithWeight(
-        stack.map(n => frameInfos[n]),
-        weight,
-      )
+        stack.map((n) => frameInfos[n]),
+        weight
+      );
     }
 
-    return profile.build()
+    return profile.build();
   }
 
   switch (serialized.type) {
     case FileFormat.ProfileType.EVENTED:
-      return importEventedProfile(serialized)
+      return importEventedProfile(serialized);
     case FileFormat.ProfileType.SAMPLED:
-      return importSampledProfile(serialized)
+      return importSampledProfile(serialized);
   }
 }
 
@@ -160,26 +162,26 @@ export function importSpeedscopeProfiles(serialized: FileFormat.File): ProfileGr
   return {
     name: serialized.name || serialized.profiles[0].name || 'profile',
     indexToView: serialized.activeProfileIndex || 0,
-    profiles: serialized.profiles.map(p => importSpeedscopeProfile(p, serialized.shared.frames)),
-  }
+    profiles: serialized.profiles.map((p) => importSpeedscopeProfile(p, serialized.shared.frames)),
+  };
 }
 
 export function saveToFile(profileGroup: ProfileGroup): void {
-  const file = exportProfileGroup(profileGroup)
-  const blob = new Blob([JSON.stringify(file)], {type: 'text/json'})
+  const file = exportProfileGroup(profileGroup);
+  const blob = new Blob([JSON.stringify(file)], { type: 'text/json' });
 
-  const nameWithoutExt = file.name ? file.name.split('.')[0]! : 'profile'
-  const filename = `${nameWithoutExt.replace(/\W+/g, '_')}.speedscope.json`
+  const nameWithoutExt = file.name ? file.name.split('.')[0]! : 'profile';
+  const filename = `${nameWithoutExt.replace(/\W+/g, '_')}.speedscope.json`;
 
-  console.log('Saving', filename)
+  console.log('Saving', filename);
 
-  const a = document.createElement('a')
-  a.download = filename
-  a.href = window.URL.createObjectURL(blob)
-  a.dataset.downloadurl = ['text/json', a.download, a.href].join(':')
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = window.URL.createObjectURL(blob);
+  a.dataset.downloadurl = ['text/json', a.download, a.href].join(':');
 
   // For this to work in Firefox, the <a> must be in the DOM
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }

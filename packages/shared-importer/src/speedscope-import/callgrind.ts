@@ -86,77 +86,81 @@
 // execution.
 
 import type { FrameInfo, Profile, ProfileGroup } from '../speedscope-core/profile.ts';
-import { CallTreeProfileBuilder, Frame } from '../speedscope-core/profile.ts'
-import { getOrElse, getOrInsert, KeyedSet } from '../speedscope-core/lib-utils.ts'
-import { ByteFormatter, TimeFormatter, RawValueFormatter } from '../speedscope-core/value-formatters.ts'
-import type { TextFileContent } from './importer-utils.ts'
+import { CallTreeProfileBuilder, Frame } from '../speedscope-core/profile.ts';
+import { getOrElse, getOrInsert, KeyedSet } from '../speedscope-core/lib-utils.ts';
+import {
+  ByteFormatter,
+  TimeFormatter,
+  RawValueFormatter,
+} from '../speedscope-core/value-formatters.ts';
+import type { TextFileContent } from './importer-utils.ts';
 
 class CallGraph {
-  private frameSet = new KeyedSet<Frame>()
-  private totalWeights = new Map<Frame, number>()
-  private childrenTotalWeights = new Map<Frame, Map<Frame, number>>()
+  private frameSet = new KeyedSet<Frame>();
+  private totalWeights = new Map<Frame, number>();
+  private childrenTotalWeights = new Map<Frame, Map<Frame, number>>();
 
   constructor(
     private fileName: string,
-    private fieldName: string,
+    private fieldName: string
   ) {}
 
   private getOrInsertFrame(info: FrameInfo): Frame {
-    return Frame.getOrInsert(this.frameSet, info)
+    return Frame.getOrInsert(this.frameSet, info);
   }
 
   private addToTotalWeight(frame: Frame, weight: number) {
     if (!this.totalWeights.has(frame)) {
-      this.totalWeights.set(frame, weight)
+      this.totalWeights.set(frame, weight);
     } else {
-      this.totalWeights.set(frame, this.totalWeights.get(frame)! + weight)
+      this.totalWeights.set(frame, this.totalWeights.get(frame)! + weight);
     }
   }
 
   addSelfWeight(frameInfo: FrameInfo, weight: number) {
-    this.addToTotalWeight(this.getOrInsertFrame(frameInfo), weight)
+    this.addToTotalWeight(this.getOrInsertFrame(frameInfo), weight);
   }
 
   addChildWithTotalWeight(parentInfo: FrameInfo, childInfo: FrameInfo, weight: number) {
-    const parent = this.getOrInsertFrame(parentInfo)
-    const child = this.getOrInsertFrame(childInfo)
+    const parent = this.getOrInsertFrame(parentInfo);
+    const child = this.getOrInsertFrame(childInfo);
 
-    const childMap = getOrInsert(this.childrenTotalWeights, parent, k => new Map())
+    const childMap = getOrInsert(this.childrenTotalWeights, parent, (k) => new Map());
 
     if (!childMap.has(child)) {
-      childMap.set(child, weight)
+      childMap.set(child, weight);
     } else {
-      childMap.set(child, childMap.get(child) + weight)
+      childMap.set(child, childMap.get(child) + weight);
     }
 
-    this.addToTotalWeight(parent, weight)
+    this.addToTotalWeight(parent, weight);
   }
 
   toProfile(): Profile {
-    const profile = new CallTreeProfileBuilder()
+    const profile = new CallTreeProfileBuilder();
 
-    let unitMultiplier = 1
+    let unitMultiplier = 1;
 
     // These are common field names used by Xdebug. Let's give them special
     // treatment to more helpfully display units.
     if (this.fieldName === 'Time_(10ns)') {
-      profile.setName(`${this.fileName} -- Time`)
-      unitMultiplier = 10
-      profile.setValueFormatter(new TimeFormatter('nanoseconds'))
+      profile.setName(`${this.fileName} -- Time`);
+      unitMultiplier = 10;
+      profile.setValueFormatter(new TimeFormatter('nanoseconds'));
     } else if (this.fieldName == 'Memory_(bytes)') {
-      profile.setName(`${this.fileName} -- Memory`)
-      profile.setValueFormatter(new ByteFormatter())
+      profile.setName(`${this.fileName} -- Memory`);
+      profile.setValueFormatter(new ByteFormatter());
     } else {
-      profile.setName(`${this.fileName} -- ${this.fieldName}`)
+      profile.setName(`${this.fileName} -- ${this.fieldName}`);
     }
 
-    let totalCumulative = 0
+    let totalCumulative = 0;
 
-    const currentStack = new Set<Frame>()
+    const currentStack = new Set<Frame>();
 
-    let maxWeight = 0
+    let maxWeight = 0;
     for (const [_, totalWeight] of this.totalWeights) {
-      maxWeight = Math.max(maxWeight, totalWeight)
+      maxWeight = Math.max(maxWeight, totalWeight);
     }
 
     const visit = (frame: Frame, subtreeTotalWeight: number) => {
@@ -166,7 +170,7 @@ class CallGraph {
         // more than once in a call stack. The result will be that the time
         // spent in the recursive call will instead be attributed as self time
         // in the parent.
-        return
+        return;
       }
 
       // We need to calculate how much weight to give to a particular node in
@@ -211,27 +215,27 @@ class CallGraph {
         // To mitigate this explosion of the # of nodes, we ignore subtrees
         // whose weights are less than 0.01% of the heaviest node in the call
         // graph.
-        return
+        return;
       }
 
-      const totalWeightForFrameInCallgraph = getOrElse(this.totalWeights, frame, () => 0)
+      const totalWeightForFrameInCallgraph = getOrElse(this.totalWeights, frame, () => 0);
       if (totalWeightForFrameInCallgraph === 0) {
-        return
+        return;
       }
 
-      let selfWeightForNodeInCallTree = subtreeTotalWeight
+      let selfWeightForNodeInCallTree = subtreeTotalWeight;
 
-      profile.enterFrame(frame, Math.round(totalCumulative * unitMultiplier))
+      profile.enterFrame(frame, Math.round(totalCumulative * unitMultiplier));
 
-      currentStack.add(frame)
+      currentStack.add(frame);
       for (const [child, totalWeightAsChild] of this.childrenTotalWeights.get(frame) || []) {
         // To determine the weight of the child in the call tree, we look at the
         // weight of the child in the call graph relative to its parent.
         const childCallTreeWeight =
-          subtreeTotalWeight * (totalWeightAsChild / totalWeightForFrameInCallgraph)
+          subtreeTotalWeight * (totalWeightAsChild / totalWeightForFrameInCallgraph);
 
-        const prevTotalCumulative = totalCumulative
-        visit(child, childCallTreeWeight)
+        const prevTotalCumulative = totalCumulative;
+        visit(child, childCallTreeWeight);
 
         // Even though we tried to add a child with total weight equal to
         // childCallTreeWeight, we might have failed for a variety of data
@@ -241,14 +245,14 @@ class CallGraph {
         // the self weight on the assumption it was added to the subtree, so we
         // only subtree from the self weight the amount that was *actually* used
         // by the subtree, rather than the amount we *intended* for it to use.
-        const actualChildCallTreeWeight = totalCumulative - prevTotalCumulative
-        selfWeightForNodeInCallTree -= actualChildCallTreeWeight
+        const actualChildCallTreeWeight = totalCumulative - prevTotalCumulative;
+        selfWeightForNodeInCallTree -= actualChildCallTreeWeight;
       }
-      currentStack.delete(frame)
+      currentStack.delete(frame);
 
-      totalCumulative += selfWeightForNodeInCallTree
-      profile.leaveFrame(frame, Math.round(totalCumulative * unitMultiplier))
-    }
+      totalCumulative += selfWeightForNodeInCallTree;
+      profile.leaveFrame(frame, Math.round(totalCumulative * unitMultiplier));
+    };
 
     // It's surprisingly hard to figure out which nodes in the call graph
     // constitute the root nodes of call trees.
@@ -306,19 +310,19 @@ class CallGraph {
     //
     // Despite not always being correct, I'm opting for option (1).
 
-    const rootNodes = new Set<Frame>(this.frameSet)
+    const rootNodes = new Set<Frame>(this.frameSet);
 
     for (const [_, childMap] of this.childrenTotalWeights) {
       for (const [child, _] of childMap) {
-        rootNodes.delete(child)
+        rootNodes.delete(child);
       }
     }
 
     for (const rootNode of rootNodes) {
-      visit(rootNode, this.totalWeights.get(rootNode)!)
+      visit(rootNode, this.totalWeights.get(rootNode)!);
     }
 
-    return profile.build()
+    return profile.build();
   }
 }
 
@@ -335,112 +339,112 @@ class CallGraph {
 // So, instead, I'm not going to bother with a formal parse. Since there are no
 // real recursive structures in this file format, that should be okay.
 class CallgrindParser {
-  private lines: string[]
-  private lineNum: number
+  private lines: string[];
+  private lineNum: number;
 
-  private callGraphs: CallGraph[] | null = null
-  private eventsLine: string | null = null
+  private callGraphs: CallGraph[] | null = null;
+  private eventsLine: string | null = null;
 
-  private filename: string | null = null
-  private functionName: string | null = null
-  private calleeFilename: string | null = null
-  private calleeFunctionName: string | null = null
+  private filename: string | null = null;
+  private functionName: string | null = null;
+  private calleeFilename: string | null = null;
+  private calleeFunctionName: string | null = null;
 
-  private savedFileNames: {[id: string]: string} = {}
-  private savedFunctionNames: {[id: string]: string} = {}
+  private savedFileNames: { [id: string]: string } = {};
+  private savedFunctionNames: { [id: string]: string } = {};
 
   constructor(
     contents: TextFileContent,
-    private importedFileName: string,
+    private importedFileName: string
   ) {
-    this.lines = [...contents.splitLines()]
-    this.lineNum = 0
+    this.lines = [...contents.splitLines()];
+    this.lineNum = 0;
   }
 
   parse(): ProfileGroup | null {
     while (this.lineNum < this.lines.length) {
-      const line = this.lines[this.lineNum++]
+      const line = this.lines[this.lineNum++];
 
       if (/^\s*#/.exec(line)) {
         // Line is a comment. Ignore it.
-        continue
+        continue;
       }
 
       if (/^\s*$/.exec(line)) {
         // Line is empty. Ignore it.
-        continue
+        continue;
       }
 
       if (this.parseHeaderLine(line)) {
-        continue
+        continue;
       }
 
       if (this.parseAssignmentLine(line)) {
-        continue
+        continue;
       }
 
       if (this.parseCostLine(line, 'self')) {
-        continue
+        continue;
       }
 
-      throw new Error(`Unrecognized line "${line}" on line ${this.lineNum}`)
+      throw new Error(`Unrecognized line "${line}" on line ${this.lineNum}`);
     }
 
     if (!this.callGraphs) {
-      return null
+      return null;
     }
     return {
       name: this.importedFileName,
       indexToView: 0,
-      profiles: this.callGraphs.map(cg => cg.toProfile()),
-    }
+      profiles: this.callGraphs.map((cg) => cg.toProfile()),
+    };
   }
 
   private frameInfo(): FrameInfo {
-    const file = this.filename || '(unknown)'
-    const name = this.functionName || '(unknown)'
-    const key = `${file}:${name}`
-    return {key, name, file}
+    const file = this.filename || '(unknown)';
+    const name = this.functionName || '(unknown)';
+    const key = `${file}:${name}`;
+    return { key, name, file };
   }
 
   private calleeFrameInfo(): FrameInfo {
-    const file = this.calleeFilename || this.filename || '(unknown)'
-    const name = this.calleeFunctionName || '(unknown)'
-    const key = `${file}:${name}`
-    return {key, name, file}
+    const file = this.calleeFilename || this.filename || '(unknown)';
+    const name = this.calleeFunctionName || '(unknown)';
+    const key = `${file}:${name}`;
+    return { key, name, file };
   }
 
   private parseHeaderLine(line: string): boolean {
-    const headerMatch = /^\s*(\w+):\s*(.*)+$/.exec(line)
-    if (!headerMatch) return false
+    const headerMatch = /^\s*(\w+):\s*(.*)+$/.exec(line);
+    if (!headerMatch) return false;
 
     if (headerMatch[1] !== 'events') {
       // We don't care about other headers. Ignore this line.
-      return true
+      return true;
     }
 
     // Line specifies the formatting of subsequent cost lines.
-    const fields = headerMatch[2].split(' ')
+    const fields = headerMatch[2].split(' ');
 
     if (this.callGraphs != null) {
       throw new Error(
-        `Duplicate "events: " lines specified. First was "${this.eventsLine}", now received "${line}" on ${this.lineNum}.`,
-      )
+        `Duplicate "events: " lines specified. First was "${this.eventsLine}", now received "${line}" on ${this.lineNum}.`
+      );
     }
 
-    this.callGraphs = fields.map(fieldName => {
-      return new CallGraph(this.importedFileName, fieldName)
-    })
+    this.callGraphs = fields.map((fieldName) => {
+      return new CallGraph(this.importedFileName, fieldName);
+    });
 
-    return true
+    return true;
   }
 
   private parseAssignmentLine(line: string): boolean {
-    const assignmentMatch = /^(\w+)=\s*(.*)$/.exec(line)
-    if (!assignmentMatch) return false
+    const assignmentMatch = /^(\w+)=\s*(.*)$/.exec(line);
+    if (!assignmentMatch) return false;
 
-    const key = assignmentMatch[1]
-    const value = assignmentMatch[2]
+    const key = assignmentMatch[1];
+    const value = assignmentMatch[2];
 
     switch (key) {
       case 'fe':
@@ -452,31 +456,31 @@ class CallgrindParser {
         //
         // We still need to do the parseNameWithCompression call in case a name
         // is defined and then referenced later on for name compression.
-        this.parseNameWithCompression(value, this.savedFileNames)
-        break
+        this.parseNameWithCompression(value, this.savedFileNames);
+        break;
       }
 
       case 'fl': {
-        this.filename = this.parseNameWithCompression(value, this.savedFileNames)
-        break
+        this.filename = this.parseNameWithCompression(value, this.savedFileNames);
+        break;
       }
 
       case 'fn': {
-        this.functionName = this.parseNameWithCompression(value, this.savedFunctionNames)
-        break
+        this.functionName = this.parseNameWithCompression(value, this.savedFunctionNames);
+        break;
       }
 
       case 'cfi':
       case 'cfl': {
         // NOTE: unlike the fe/fi distinction described above, cfi and cfl are
         // interchangeable.
-        this.calleeFilename = this.parseNameWithCompression(value, this.savedFileNames)
-        break
+        this.calleeFilename = this.parseNameWithCompression(value, this.savedFileNames);
+        break;
       }
 
       case 'cfn': {
-        this.calleeFunctionName = this.parseNameWithCompression(value, this.savedFunctionNames)
-        break
+        this.calleeFunctionName = this.parseNameWithCompression(value, this.savedFunctionNames);
+        break;
       }
 
       case 'calls': {
@@ -484,7 +488,7 @@ class CallgrindParser {
         // made. Accounting for the number of calls might be unhelpful anyway,
         // since it'll just be copying the exact same frame over-and-over again,
         // but that might be better than ignoring it.
-        this.parseCostLine(this.lines[this.lineNum++], 'child')
+        this.parseCostLine(this.lines[this.lineNum++], 'child');
 
         // This isn't specified anywhere in the spec, but empirically the and
         // "cfn" scope should only persist for a single "call".
@@ -492,73 +496,73 @@ class CallgrindParser {
         // This seems to be what KCacheGrind does too:
         //
         // https://github.com/KDE/kcachegrind/blob/ea4314db2785cb8f279fe884ee7f82445642b692/libcore/cachegrindloader.cpp#L1259
-        this.calleeFilename = null
-        this.calleeFunctionName = null
-        break
+        this.calleeFilename = null;
+        this.calleeFunctionName = null;
+        break;
       }
 
       case 'cob':
       case 'ob': {
         // We ignore these for now. They're valid lines, but we don't capture or
         // display information about them.
-        break
+        break;
       }
 
       default: {
-        console.log(`Ignoring assignment to unrecognized key "${line}" on line ${this.lineNum}`)
+        console.log(`Ignoring assignment to unrecognized key "${line}" on line ${this.lineNum}`);
       }
     }
 
-    return true
+    return true;
   }
 
-  private parseNameWithCompression(name: string, saved: {[id: string]: string}): string {
+  private parseNameWithCompression(name: string, saved: { [id: string]: string }): string {
     {
-      const nameDefinitionMatch = /^\((\d+)\)\s*(.+)$/.exec(name)
+      const nameDefinitionMatch = /^\((\d+)\)\s*(.+)$/.exec(name);
 
       if (nameDefinitionMatch) {
-        const id = nameDefinitionMatch[1]
-        const name = nameDefinitionMatch[2]
+        const id = nameDefinitionMatch[1];
+        const name = nameDefinitionMatch[2];
         if (id in saved) {
           throw new Error(
-            `Redefinition of name with id: ${id}. Original value was "${saved[id]}". Tried to redefine as "${name}" on line ${this.lineNum}.`,
-          )
+            `Redefinition of name with id: ${id}. Original value was "${saved[id]}". Tried to redefine as "${name}" on line ${this.lineNum}.`
+          );
         }
 
-        saved[id] = name
-        return name
+        saved[id] = name;
+        return name;
       }
     }
 
     {
-      const nameUseMatch = /^\((\d+)\)$/.exec(name)
+      const nameUseMatch = /^\((\d+)\)$/.exec(name);
       if (nameUseMatch) {
-        const id = nameUseMatch[1]
+        const id = nameUseMatch[1];
         if (!(id in saved)) {
           throw new Error(
-            `Tried to use name with id ${id} on line ${this.lineNum} before it was defined.`,
-          )
+            `Tried to use name with id ${id} on line ${this.lineNum} before it was defined.`
+          );
         }
-        return saved[id]
+        return saved[id];
       }
     }
 
-    return name
+    return name;
   }
 
-  private prevCostLineNumbers: number[] = []
+  private prevCostLineNumbers: number[] = [];
 
   private parseCostLine(line: string, costType: 'self' | 'child'): boolean {
     // TODO(jlfwong): Allow hexadecimal encoding
 
-    const parts = line.split(/\s+/)
-    const nums: number[] = []
+    const parts = line.split(/\s+/);
+    const nums: number[] = [];
 
     for (let i = 0; i < parts.length; i++) {
-      const part = parts[i]
+      const part = parts[i];
 
       if (part.length === 0) {
-        return false
+        return false;
       }
 
       if (part === '*' || part[0] === '-' || part[1] === '+') {
@@ -568,38 +572,38 @@ class CallgrindParser {
           throw new Error(
             `Line ${this.lineNum} has a subposition on column ${i} but ` +
               `previous cost line has only ${this.prevCostLineNumbers.length} ` +
-              `columns. Line contents: ${line}`,
-          )
+              `columns. Line contents: ${line}`
+          );
         }
-        const prevCostForSubposition = this.prevCostLineNumbers[i]
+        const prevCostForSubposition = this.prevCostLineNumbers[i];
         if (part === '*') {
-          nums.push(prevCostForSubposition)
+          nums.push(prevCostForSubposition);
         } else {
           // This handles both the '-' and '+' cases
-          const offset = parseInt(part)
+          const offset = parseInt(part);
           if (isNaN(offset)) {
             throw new Error(
               `Line ${this.lineNum} has a subposition on column ${i} but ` +
-                `the offset is not a number. Line contents: ${line}`,
-            )
+                `the offset is not a number. Line contents: ${line}`
+            );
           }
-          nums.push(prevCostForSubposition + offset)
+          nums.push(prevCostForSubposition + offset);
         }
       } else {
-        const asNum = parseInt(part)
+        const asNum = parseInt(part);
         if (isNaN(asNum)) {
-          return false
+          return false;
         }
-        nums.push(asNum)
+        nums.push(asNum);
       }
     }
 
     if (nums.length == 0) {
-      return false
+      return false;
     }
 
     // TODO(jlfwong): Handle custom positions format w/ multiple parts
-    const numPositionFields = 1
+    const numPositionFields = 1;
 
     // NOTE: We intentionally do not include the line number here because
     // callgrind uses the line number of the function invocation, not the
@@ -610,29 +614,29 @@ class CallgrindParser {
 
     if (!this.callGraphs) {
       throw new Error(
-        `Encountered a cost line on line ${this.lineNum} before event specification was provided.`,
-      )
+        `Encountered a cost line on line ${this.lineNum} before event specification was provided.`
+      );
     }
     for (let i = 0; i < this.callGraphs.length; i++) {
       if (costType === 'self') {
-        this.callGraphs[i].addSelfWeight(this.frameInfo(), nums[numPositionFields + i])
+        this.callGraphs[i].addSelfWeight(this.frameInfo(), nums[numPositionFields + i]);
       } else if (costType === 'child') {
         this.callGraphs[i].addChildWithTotalWeight(
           this.frameInfo(),
           this.calleeFrameInfo(),
-          nums[numPositionFields + i] || 0,
-        )
+          nums[numPositionFields + i] || 0
+        );
       }
     }
 
-    this.prevCostLineNumbers = nums
-    return true
+    this.prevCostLineNumbers = nums;
+    return true;
   }
 }
 
 export function importFromCallgrind(
   contents: TextFileContent,
-  importedFileName: string,
+  importedFileName: string
 ): ProfileGroup | null {
-  return new CallgrindParser(contents, importedFileName).parse()
+  return new CallgrindParser(contents, importedFileName).parse();
 }

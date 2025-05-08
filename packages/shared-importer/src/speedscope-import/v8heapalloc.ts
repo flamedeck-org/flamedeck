@@ -1,7 +1,7 @@
-import type {Profile, FrameInfo} from '../speedscope-core/profile.ts';
-import { StackListProfileBuilder} from '../speedscope-core/profile.ts'
-import {getOrInsert} from '../speedscope-core/lib-utils.ts'
-import {ByteFormatter} from '../speedscope-core/value-formatters.ts'
+import type { Profile, FrameInfo } from '../speedscope-core/profile.ts';
+import { StackListProfileBuilder } from '../speedscope-core/profile.ts';
+import { getOrInsert } from '../speedscope-core/lib-utils.ts';
+import { ByteFormatter } from '../speedscope-core/value-formatters.ts';
 
 /**
  * The V8 Heap Allocation profile is a way to represent heap allocation for each
@@ -15,98 +15,98 @@ import {ByteFormatter} from '../speedscope-core/value-formatters.ts'
  */
 
 interface HeapProfileCallFrame {
-  columnNumber: number
-  functionName: string
-  lineNumber: number
-  scriptId: string
-  url: string
+  columnNumber: number;
+  functionName: string;
+  lineNumber: number;
+  scriptId: string;
+  url: string;
 }
 
 interface HeapProfileNode {
-  callFrame: HeapProfileCallFrame
-  selfSize: number
-  children: HeapProfileNode[]
-  id: number
-  parent?: number
-  totalSize: number
+  callFrame: HeapProfileCallFrame;
+  selfSize: number;
+  children: HeapProfileNode[];
+  id: number;
+  parent?: number;
+  totalSize: number;
 }
 
 interface HeapProfile {
-  head: HeapProfileNode
+  head: HeapProfileNode;
 }
 
-const callFrameToFrameInfo = new Map<HeapProfileCallFrame, FrameInfo>()
+const callFrameToFrameInfo = new Map<HeapProfileCallFrame, FrameInfo>();
 function frameInfoForCallFrame(callFrame: HeapProfileCallFrame) {
-  return getOrInsert(callFrameToFrameInfo, callFrame, callFrame => {
-    const file = callFrame.url
-    const line = callFrame.lineNumber
-    const col = callFrame.columnNumber
+  return getOrInsert(callFrameToFrameInfo, callFrame, (callFrame) => {
+    const file = callFrame.url;
+    const line = callFrame.lineNumber;
+    const col = callFrame.columnNumber;
     const name =
       callFrame.functionName ||
-      (file ? `(anonymous ${file.split('/').pop()}:${line})` : '(anonymous)')
+      (file ? `(anonymous ${file.split('/').pop()}:${line})` : '(anonymous)');
     return {
       key: `${name}:${file}:${line}:${col}`,
       name,
       file,
       line,
       col,
-    }
-  })
+    };
+  });
 }
 
 export function importFromChromeHeapProfile(chromeProfile: HeapProfile): Profile {
-  const nodeById = new Map<number, HeapProfileNode>()
-  let currentId = 0
+  const nodeById = new Map<number, HeapProfileNode>();
+  let currentId = 0;
   const computeId = (node: HeapProfileNode, parent?: HeapProfileNode) => {
-    node.id = currentId++
-    nodeById.set(node.id, node)
+    node.id = currentId++;
+    nodeById.set(node.id, node);
     if (parent) {
-      node.parent = parent.id
+      node.parent = parent.id;
     }
 
-    node.children.forEach(children => computeId(children, node))
-  }
-  computeId(chromeProfile.head)
+    node.children.forEach((children) => computeId(children, node));
+  };
+  computeId(chromeProfile.head);
 
   // Compute the total size
   const computeTotalSize = (node: HeapProfileNode): number => {
-    if (node.children.length === 0) return node.selfSize || 0
+    if (node.children.length === 0) return node.selfSize || 0;
     const totalChild = node.children.reduce((total: number, children) => {
-      total += computeTotalSize(children)
-      return total
-    }, node.selfSize)
-    node.totalSize = totalChild
-    return totalChild
-  }
-  const total = computeTotalSize(chromeProfile.head)
+      total += computeTotalSize(children);
+      return total;
+    }, node.selfSize);
+    node.totalSize = totalChild;
+    return totalChild;
+  };
+  const total = computeTotalSize(chromeProfile.head);
 
   // Compute all stacks by taking each last node and going upward
-  const stacks: HeapProfileNode[][] = []
+  const stacks: HeapProfileNode[][] = [];
   for (let currentNode of nodeById.values()) {
-    const stack: HeapProfileNode[] = []
-    stack.push(currentNode)
+    const stack: HeapProfileNode[] = [];
+    stack.push(currentNode);
     // While we found a parent
     while (true) {
-      if (currentNode.parent === undefined) break
-      const parent = nodeById.get(currentNode.parent)
-      if (parent === undefined) break
+      if (currentNode.parent === undefined) break;
+      const parent = nodeById.get(currentNode.parent);
+      if (parent === undefined) break;
       // Push the parent at the beginning of the stack
-      stack.unshift(parent)
-      currentNode = parent
+      stack.unshift(parent);
+      currentNode = parent;
     }
-    stacks.push(stack)
+    stacks.push(stack);
   }
 
-  const profile = new StackListProfileBuilder(total)
+  const profile = new StackListProfileBuilder(total);
 
   for (const stack of stacks) {
-    const lastFrame = stack[stack.length - 1]
+    const lastFrame = stack[stack.length - 1];
     profile.appendSampleWithWeight(
-      stack.map(frame => frameInfoForCallFrame(frame.callFrame)),
-      lastFrame.selfSize,
-    )
+      stack.map((frame) => frameInfoForCallFrame(frame.callFrame)),
+      lastFrame.selfSize
+    );
   }
 
-  profile.setValueFormatter(new ByteFormatter())
-  return profile.build()
+  profile.setValueFormatter(new ByteFormatter());
+  return profile.build();
 }

@@ -1,4 +1,4 @@
-import type {CPUProfile, CPUProfileNode} from './chrome.ts'
+import type { CPUProfile, CPUProfileNode } from './chrome.ts';
 
 /**
  * This importer handles an old format used by the C++ API of V8. This format is still used by v8-profiler-node8.
@@ -10,26 +10,26 @@ import type {CPUProfile, CPUProfileNode} from './chrome.ts'
  */
 
 interface OldCPUProfileNode {
-  functionName: string
-  lineNumber: number
-  scriptId: string
-  url: string
-  hitCount: number
-  bailoutReason: string
-  id: number
-  children: OldCPUProfileNode[]
+  functionName: string;
+  lineNumber: number;
+  scriptId: string;
+  url: string;
+  hitCount: number;
+  bailoutReason: string;
+  id: number;
+  children: OldCPUProfileNode[];
 }
 
 export interface OldCPUProfile {
-  startTime: number
-  endTime: number
-  head: OldCPUProfileNode
-  samples: number[]
-  timestamps: number[]
+  startTime: number;
+  endTime: number;
+  head: OldCPUProfileNode;
+  samples: number[];
+  timestamps: number[];
 }
 
 function treeToArray(root: OldCPUProfileNode): CPUProfileNode[] {
-  const nodes: CPUProfileNode[] = []
+  const nodes: CPUProfileNode[] = [];
   function visit(node: OldCPUProfileNode) {
     nodes.push({
       id: node.id,
@@ -41,19 +41,19 @@ function treeToArray(root: OldCPUProfileNode): CPUProfileNode[] {
         url: node.url,
       },
       hitCount: node.hitCount,
-      children: node.children.map(child => child.id),
-    })
-    node.children.forEach(visit)
+      children: node.children.map((child) => child.id),
+    });
+    node.children.forEach(visit);
   }
-  visit(root)
-  return nodes
+  visit(root);
+  return nodes;
 }
 
 function timestampsToDeltas(timestamps: number[], startTime: number): number[] {
   return timestamps.map((timestamp, index) => {
-    const lastTimestamp = index === 0 ? startTime * 1000000 : timestamps[index - 1]
-    return timestamp - lastTimestamp
-  })
+    const lastTimestamp = index === 0 ? startTime * 1000000 : timestamps[index - 1];
+    return timestamp - lastTimestamp;
+  });
 }
 
 /**
@@ -67,5 +67,5 @@ export function chromeTreeToNodes(content: OldCPUProfile): CPUProfile {
     endTime: content.endTime * 1000000,
     nodes: treeToArray(content.head),
     timeDeltas: timestampsToDeltas(content.timestamps, content.startTime),
-  }
+  };
 }

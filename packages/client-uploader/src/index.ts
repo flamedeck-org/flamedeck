@@ -67,7 +67,7 @@ export class UploadError extends Error {
  * @throws {UploadError} If the upload fails due to network issues, API errors, or invalid input.
  */
 export async function uploadTraceToApi(options: UploadOptions): Promise<UploadResult> {
-  const { 
+  const {
     apiKey,
     traceData,
     fileName,
@@ -104,16 +104,16 @@ export async function uploadTraceToApi(options: UploadOptions): Promise<UploadRe
   if (metadata !== null && metadata !== undefined) {
     let metadataString: string;
     if (typeof metadata === 'string') {
-        metadataString = metadata; 
+      metadataString = metadata;
     } else {
-        try {
-            metadataString = JSON.stringify(metadata);
-        } catch (e) {
-            throw new UploadError('Invalid metadata object: failed to stringify', 400, e);
-        }
+      try {
+        metadataString = JSON.stringify(metadata);
+      } catch (e) {
+        throw new UploadError('Invalid metadata object: failed to stringify', 400, e);
+      }
     }
     if (metadataString) {
-        params.set('metadata', metadataString);
+      params.set('metadata', metadataString);
     }
   }
   if (isPublic === true) {
@@ -127,16 +127,16 @@ export async function uploadTraceToApi(options: UploadOptions): Promise<UploadRe
     response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/octet-stream',
       },
-      body: traceData, 
+      body: traceData,
       // Note: 'duplex: half' might be needed for streams in some environments (like Node < 18 or specific fetch impls),
       // but standard fetch with Blob/ArrayBuffer usually doesn't require it.
-      // duplex: 'half' 
+      // duplex: 'half'
     });
   } catch (networkError) {
-    console.error("Network error during trace upload:", networkError);
+    console.error('Network error during trace upload:', networkError);
     throw new UploadError(`Network error: ${(networkError as Error).message}`, 0); // Status 0 for network errors
   }
 
@@ -145,14 +145,17 @@ export async function uploadTraceToApi(options: UploadOptions): Promise<UploadRe
     responseBody = await response.json();
   } catch (jsonError) {
     // Handle cases where the response is not valid JSON (e.g., plain text error from proxy)
-    console.error("Failed to parse API response JSON:", jsonError);
+    console.error('Failed to parse API response JSON:', jsonError);
     const textBody = await response.text().catch(() => 'Invalid response body'); // Try reading as text
-    throw new UploadError(`Failed to parse API response (status ${response.status}): ${textBody}`, response.status);
+    throw new UploadError(
+      `Failed to parse API response (status ${response.status}): ${textBody}`,
+      response.status
+    );
   }
 
   if (!response.ok) {
     // Type assertion after checking response.ok is false
-    const errorPayload = responseBody as { error?: string; issues?: unknown }; 
+    const errorPayload = responseBody as { error?: string; issues?: unknown };
     const errorMessage = errorPayload?.error || `API Error (status ${response.status})`;
     const errorDetails = errorPayload?.issues;
     console.error(`API Error ${response.status}:`, errorMessage, errorDetails || '');
@@ -163,7 +166,7 @@ export async function uploadTraceToApi(options: UploadOptions): Promise<UploadRe
   const successPayload = responseBody as { id?: string; [key: string]: unknown };
 
   if (typeof successPayload?.id !== 'string' || !successPayload.id) {
-    console.error("Invalid success response format from API:", responseBody);
+    console.error('Invalid success response format from API:', responseBody);
     throw new UploadError('Invalid success response format from API', 500);
   }
 
@@ -174,6 +177,6 @@ export async function uploadTraceToApi(options: UploadOptions): Promise<UploadRe
   // Return ID and the constructed view URL
   return {
     id: traceId,
-    viewUrl: viewUrl
+    viewUrl: viewUrl,
   };
 }

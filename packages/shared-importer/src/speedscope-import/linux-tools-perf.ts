@@ -1,8 +1,8 @@
-import type { ProfileGroup} from '../speedscope-core/profile.ts';
-import {StackListProfileBuilder} from '../speedscope-core/profile.ts'
-import {itMap, getOrInsert} from '../speedscope-core/lib-utils.ts'
-import {TimeFormatter} from '../speedscope-core/value-formatters.ts'
-import type {TextFileContent} from './importer-utils.ts'
+import type { ProfileGroup } from '../speedscope-core/profile.ts';
+import { StackListProfileBuilder } from '../speedscope-core/profile.ts';
+import { itMap, getOrInsert } from '../speedscope-core/lib-utils.ts';
+import { TimeFormatter } from '../speedscope-core/value-formatters.ts';
+import type { TextFileContent } from './importer-utils.ts';
 
 // This imports the output of the "perf script" command on linux.
 //
@@ -10,35 +10,35 @@ import type {TextFileContent} from './importer-utils.ts'
 // Reference: https://github.com/brendangregg/FlameGraph/blob/18c3dea/stackcollapse-perf.pl#L163
 
 interface PerfStackFrame {
-  address: string
-  symbolName: string
-  file: string
+  address: string;
+  symbolName: string;
+  file: string;
 }
 
 interface PerfEvent {
-  command: string | null
-  processID: number | null
-  threadID: number | null
-  time: number | null
-  eventType: string
-  stack: PerfStackFrame[]
+  command: string | null;
+  processID: number | null;
+  threadID: number | null;
+  time: number | null;
+  eventType: string;
+  stack: PerfStackFrame[];
 }
 
 function* parseEvents(contents: TextFileContent): Generator<PerfEvent | null> {
-  let buffer: string[] = []
+  let buffer: string[] = [];
   for (const line of contents.splitLines()) {
     if (line === '') {
-      yield parseEvent(buffer)
-      buffer = []
-    } else buffer.push(line)
+      yield parseEvent(buffer);
+      buffer = [];
+    } else buffer.push(line);
   }
 
-  if (buffer.length > 0) yield parseEvent(buffer)
+  if (buffer.length > 0) yield parseEvent(buffer);
 }
 
 // rawEvent is splitted into lines
 function parseEvent(rawEvent: string[]): PerfEvent | null {
-  const lines = rawEvent.filter(l => !/^\s*#/.exec(l))
+  const lines = rawEvent.filter((l) => !/^\s*#/.exec(l));
 
   const event: PerfEvent = {
     command: null,
@@ -47,98 +47,98 @@ function parseEvent(rawEvent: string[]): PerfEvent | null {
     time: null,
     eventType: '',
     stack: [],
-  }
+  };
 
-  const firstLine = lines.shift()
-  if (!firstLine) return null
+  const firstLine = lines.shift();
+  if (!firstLine) return null;
 
   // Note: command name may contain spaces, e.g.
   //
   //  V8 WorkerThread 25607 4794564.109216: cycles:
-  const eventStartMatch = /^(\S.+?)\s+(\d+)(?:\/?(\d+))?\s+/.exec(firstLine)
-  if (!eventStartMatch) return null
+  const eventStartMatch = /^(\S.+?)\s+(\d+)(?:\/?(\d+))?\s+/.exec(firstLine);
+  if (!eventStartMatch) return null;
 
-  event.command = eventStartMatch[1]
+  event.command = eventStartMatch[1];
 
   // default "perf script" output has TID but not PID
   if (eventStartMatch[3]) {
-    event.processID = parseInt(eventStartMatch[2], 10)
-    event.threadID = parseInt(eventStartMatch[3], 10)
+    event.processID = parseInt(eventStartMatch[2], 10);
+    event.threadID = parseInt(eventStartMatch[3], 10);
   } else {
-    event.threadID = parseInt(eventStartMatch[2], 10)
+    event.threadID = parseInt(eventStartMatch[2], 10);
   }
 
-  const timeMatch = /\s+(\d+\.\d+):\s+/.exec(firstLine)
+  const timeMatch = /\s+(\d+\.\d+):\s+/.exec(firstLine);
   if (timeMatch) {
-    event.time = parseFloat(timeMatch[1])
+    event.time = parseFloat(timeMatch[1]);
   }
 
-  const evName = /(\S+):\s*$/.exec(firstLine)
+  const evName = /(\S+):\s*$/.exec(firstLine);
   if (evName) {
-    event.eventType = evName[1]
+    event.eventType = evName[1];
   }
 
   for (const line of lines) {
-    const lineMatch = /^\s*(\w+)\s*(.+) \((\S*)\)/.exec(line)
-    if (!lineMatch) continue
-    let [, address, symbolName, file] = lineMatch
+    const lineMatch = /^\s*(\w+)\s*(.+) \((\S*)\)/.exec(line);
+    if (!lineMatch) continue;
+    let [, address, symbolName, file] = lineMatch;
 
     // Linux 4.8 included symbol offsets in perf script output by default, eg:
     // 7fffb84c9afc cpu_startup_entry+0x800047c022ec ([kernel.kallsyms])
     // strip these off:
-    symbolName = symbolName.replace(/\+0x[\da-f]+$/, '')
+    symbolName = symbolName.replace(/\+0x[\da-f]+$/, '');
 
-    event.stack.push({address: `0x${address}`, symbolName, file})
+    event.stack.push({ address: `0x${address}`, symbolName, file });
   }
-  event.stack.reverse()
+  event.stack.reverse();
 
-  return event
+  return event;
 }
 
 export function importFromLinuxPerf(contents: TextFileContent): ProfileGroup | null {
-  const profiles = new Map<string, StackListProfileBuilder>()
+  const profiles = new Map<string, StackListProfileBuilder>();
 
-  let eventType: string | null = null
+  let eventType: string | null = null;
 
   for (const event of parseEvents(contents)) {
-    if (event == null) continue
-    if (eventType != null && eventType != event.eventType) continue
-    if (event.time == null) continue
-    eventType = event.eventType
+    if (event == null) continue;
+    if (eventType != null && eventType != event.eventType) continue;
+    if (event.time == null) continue;
+    eventType = event.eventType;
 
-    const profileNameParts = []
-    if (event.command) profileNameParts.push(event.command)
-    if (event.processID) profileNameParts.push(`pid: ${event.processID}`)
-    if (event.threadID) profileNameParts.push(`tid: ${event.threadID}`)
-    const profileName = profileNameParts.join(' ')
+    const profileNameParts = [];
+    if (event.command) profileNameParts.push(event.command);
+    if (event.processID) profileNameParts.push(`pid: ${event.processID}`);
+    if (event.threadID) profileNameParts.push(`tid: ${event.threadID}`);
+    const profileName = profileNameParts.join(' ');
     const builderState = getOrInsert(profiles, profileName, () => {
-      const builder = new StackListProfileBuilder()
-      builder.setName(profileName)
-      builder.setValueFormatter(new TimeFormatter('seconds'))
-      return builder
-    })
+      const builder = new StackListProfileBuilder();
+      builder.setName(profileName);
+      builder.setValueFormatter(new TimeFormatter('seconds'));
+      return builder;
+    });
 
-    const builder = builderState
+    const builder = builderState;
 
     builder.appendSampleWithTimestamp(
-      event.stack.map(({symbolName, file}) => {
+      event.stack.map(({ symbolName, file }) => {
         return {
           key: `${symbolName} (${file})`,
           name: symbolName === '[unknown]' ? `??? (${file})` : symbolName,
           file: file,
-        }
+        };
       }),
-      event.time!,
-    )
+      event.time!
+    );
   }
 
   if (profiles.size === 0) {
-    return null
+    return null;
   }
 
   return {
     name: profiles.size === 1 ? Array.from(profiles.keys())[0] : '',
     indexToView: 0,
-    profiles: Array.from(itMap(profiles.values(), builder => builder.build())),
-  }
+    profiles: Array.from(itMap(profiles.values(), (builder) => builder.build())),
+  };
 }
