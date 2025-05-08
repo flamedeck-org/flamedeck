@@ -1,7 +1,7 @@
-import {Profile} from '../profile'
+import type {Profile} from '../profile'
 import {getProfileToView} from './getters'
 import {flattenRecursionAtom, profileGroupAtom} from '.'
-import {FlamechartViewState, SandwichViewState} from './profile-group'
+import type {FlamechartViewState, SandwichViewState} from './profile-group'
 import {useAtom} from '../atom'
 
 export interface ApplicationState {}

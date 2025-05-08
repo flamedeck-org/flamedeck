@@ -1,7 +1,7 @@
 import React, { ComponentChildren, createContext, useCallback, useContext, useEffect, useState } from 'react'
 import {ColorScheme, colorSchemeAtom} from '../../../lib/speedscope-core/app-state/color-scheme.ts'
 import {useAtom} from '../../../lib/speedscope-core/atom.ts'
-import {Color} from '../../../lib/speedscope-core/color.ts'
+import type {Color} from '../../../lib/speedscope-core/color.ts'
 import {memoizeByReference} from '../../../lib/speedscope-core/lib-utils.ts'
 import {darkTheme} from './dark-theme.ts'
 import {lightTheme} from './light-theme.ts'

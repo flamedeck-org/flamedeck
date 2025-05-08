@@ -23,17 +23,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CommentForm from "@/components/CommentForm";
-import { CommentItem, StructuredComment } from "@/components/comments";
+import type { StructuredComment } from "@/components/comments";
+import { CommentItem } from "@/components/comments";
 import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
-import { ProfileType } from "@trace-view-pilot/shared-importer";
-import { SpeedscopeViewType } from '@/components/SpeedscopeViewer';
+import type { ProfileType } from "@trace-view-pilot/shared-importer";
+import type { SpeedscopeViewType } from '@/components/SpeedscopeViewer';
 import { useSharingModal } from '@/hooks/useSharingModal';
 import { useTraceDetails } from '@/hooks/useTraceDetails';
 import { useTraceComments } from '@/hooks/useTraceComments';
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDuration } from "@/lib/utils";
-import { TraceCommentWithAuthor } from '@/lib/api';
+import type { TraceCommentWithAuthor } from '@/lib/api';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { UserAvatar } from "@/components/UserAvatar";
 import { getExpirationStatus } from "@/lib/utils/getExpirationStatus";

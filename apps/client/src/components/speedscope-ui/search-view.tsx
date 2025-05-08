@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useRef, useEffect, useMemo, memo, Fragment } from 'react';
 import { ProfileSearchResults } from '../../lib/speedscope-core/profile-search';
-import { Profile } from '../../lib/speedscope-core/profile';
+import type { Profile } from '../../lib/speedscope-core/profile';
 import { useActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
 import { searchIsActiveAtom, searchQueryAtom } from '../../lib/speedscope-core/app-state';
 import { useAtom } from '../../lib/speedscope-core/atom';

@@ -1,5 +1,6 @@
-import {Rect, Vec2, AffineTransform} from '@/lib/speedscope-core/math'
-import {Color} from '@/lib/speedscope-core/color'
+import type {Rect} from '@/lib/speedscope-core/math';
+import { Vec2, AffineTransform} from '@/lib/speedscope-core/math'
+import type {Color} from '@/lib/speedscope-core/color'
 import {Graphics} from './graphics'
 import {setUniformAffineTransform} from './utils'
 

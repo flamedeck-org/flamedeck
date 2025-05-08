@@ -1,5 +1,5 @@
 import {Vec2, Rect, AffineTransform} from '@/lib/speedscope-core/math'
-import {Theme} from '@/components/speedscope-ui/themes/theme'
+import type {Theme} from '@/components/speedscope-ui/themes/theme'
 import {Graphics} from './graphics'
 import {setUniformAffineTransform} from './utils'
 

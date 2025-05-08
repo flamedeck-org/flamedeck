@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import type { TraceMetadata, UserProfile } from "@/types";
 import { gzipCompress, gzipDecompress } from "../utils/compress"; // Import compression utilities
-import { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
+import type { PostgrestError } from '@supabase/supabase-js'; // Import PostgrestError
 
 // Upload a trace file to Supabase storage
 export const uploadTraceFile = async (file: File): Promise<{ path: string; size: number }> => {

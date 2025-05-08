@@ -1,9 +1,9 @@
-import { ApiError, ApiResponse } from "@/types";
-import { Folder } from "./types";
+import type { ApiError, ApiResponse } from "@/types";
+import type { Folder } from "./types";
 import { supabase } from "@/integrations/supabase/client";
-import { PostgrestError, PostgrestSingleResponse } from "@supabase/supabase-js";
+import type { PostgrestError, PostgrestSingleResponse } from "@supabase/supabase-js";
 import { deleteStorageObject } from "./utils"; // Ensure this helper is available
-import { RecursiveFolderContents } from "@/types"; // Import the new type
+import type { RecursiveFolderContents } from "@/types"; // Import the new type
 
 export async function createFolder(
     name: string,

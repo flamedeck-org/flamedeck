@@ -1,4 +1,4 @@
-import {Frame, CallTreeNode} from './profile'
+import type {Frame, CallTreeNode} from './profile'
 
 import {lastOf} from './lib-utils'
 import {clamp, Rect, Vec2} from './math'

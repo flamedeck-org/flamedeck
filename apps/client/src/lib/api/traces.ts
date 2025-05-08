@@ -1,9 +1,9 @@
-import { ApiError } from "@/types";
+import type { ApiError } from "@/types";
 
 import { supabase } from "@/integrations/supabase/client";
-import { TraceMetadata, TraceUpload } from "@/types";
-import { ApiResponse } from "@/types";
-import { PostgrestError } from "@supabase/supabase-js";
+import type { TraceMetadata, TraceUpload } from "@/types";
+import type { ApiResponse } from "@/types";
+import type { PostgrestError } from "@supabase/supabase-js";
 import { deleteStorageObject } from "./utils";
 import { uploadJson } from "./storage";
 

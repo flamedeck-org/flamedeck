@@ -1,8 +1,9 @@
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CommentItem, StructuredComment } from './CommentItem';
-import { TraceCommentWithAuthor } from '@/lib/api'; // Using this type for now
+import type { StructuredComment } from './CommentItem';
+import { CommentItem } from './CommentItem';
+import type { TraceCommentWithAuthor } from '@/lib/api'; // Using this type for now
 import { cn } from '@/lib/utils';
 
 interface CommentListProps {

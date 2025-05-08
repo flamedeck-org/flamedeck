@@ -1,17 +1,18 @@
-import {Frame} from '../../lib/speedscope-core/profile'
+import type {Frame} from '../../lib/speedscope-core/profile'
 import {ProfileTableViewContainer} from './profile-table-view'
 import React, { JSX, createContext, memo, useCallback, useMemo, useContext, Component, forwardRef, useRef, useImperativeHandle } from 'react'
 import {Sizes, FontSize} from './style'
 import {InvertedCallerFlamegraphView} from './inverted-caller-flamegraph-view'
 import {CalleeFlamegraphView} from './callee-flamegraph-view'
 import {SandwichSearchView} from './sandwich-search-view'
-import {ActiveProfileState} from '../../lib/speedscope-core/app-state/active-profile-state'
+import type {ActiveProfileState} from '../../lib/speedscope-core/app-state/active-profile-state'
 import {sortBy} from '../../lib/speedscope-core/lib-utils'
 import {ProfileSearchContext} from './search-view'
-import {Theme, useTheme} from './themes/theme'
+import type {Theme} from './themes/theme';
+import { useTheme} from './themes/theme'
 import {SortField, SortDirection, profileGroupAtom, tableSortMethodAtom} from '../../lib/speedscope-core/app-state'
 import {useAtom} from '../../lib/speedscope-core/atom'
-import { FlamechartViewHandle } from './flamechart-view-container'
+import type { FlamechartViewHandle } from './flamechart-view-container'
 
 interface SandwichViewProps {
   selectedFrame: Frame | null

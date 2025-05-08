@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTraceComments } from '@/hooks/useTraceComments';
-import { SpeedscopeViewType } from '../SpeedscopeViewer'; // Assuming SpeedscopeViewType is exported
+import type { SpeedscopeViewType } from '../SpeedscopeViewer'; // Assuming SpeedscopeViewType is exported
 import { CommentList } from '@/components/comments'; // Import the new CommentList
 
 interface TraceViewerCommentListProps {

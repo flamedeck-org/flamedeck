@@ -12,10 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { traceApi } from '@/lib/api';
-import { TraceMetadata } from '@/types';
+import type { TraceMetadata } from '@/types';
 import { toast } from 'sonner';
 import { FOLDER_VIEW_QUERY_KEY } from './hooks/useTraces';
-import { ApiError, ApiResponse } from '@/types';
+import type { ApiError, ApiResponse } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 

@@ -1,11 +1,12 @@
-import {Flamechart} from '@/lib/speedscope-core/flamechart'
-import {RectangleBatch, RectangleBatchRenderer} from './rectangle-batch-renderer'
+import type {Flamechart} from '@/lib/speedscope-core/flamechart'
+import type { RectangleBatchRenderer} from './rectangle-batch-renderer';
+import {RectangleBatch} from './rectangle-batch-renderer'
 import {Vec2, Rect, AffineTransform} from '@/lib/speedscope-core/math'
 import {Color} from '@/lib/speedscope-core/color'
 import {KeyedSet} from '@/lib/speedscope-core/lib-utils'
-import {RowAtlas} from './row-atlas'
+import type {RowAtlas} from './row-atlas'
 import {Graphics} from './graphics'
-import {FlamechartColorPassRenderer} from './flamechart-color-pass-renderer'
+import type {FlamechartColorPassRenderer} from './flamechart-color-pass-renderer'
 import {renderInto} from './utils'
 
 const MAX_BATCH_SIZE = 10000

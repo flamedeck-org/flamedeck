@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { ApiError, ApiResponse } from "@/types";
-import { PostgrestError } from "@supabase/supabase-js";
+import type { ApiError, ApiResponse } from "@/types";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 export interface SubscriptionUsage {
     monthly_uploads_used: number | null;

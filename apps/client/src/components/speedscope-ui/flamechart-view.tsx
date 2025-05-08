@@ -1,14 +1,15 @@
 import { Fragment, Component, MouseEvent as ReactMouseEvent, forwardRef, useRef, useImperativeHandle, useEffect, memo } from 'react';
 
-import {CallTreeNode } from '../../lib/speedscope-core/profile';
-import {Rect, Vec2, AffineTransform} from '../../lib/speedscope-core/math';
+import type {CallTreeNode } from '../../lib/speedscope-core/profile';
+import type { AffineTransform} from '../../lib/speedscope-core/math';
+import {Rect, Vec2} from '../../lib/speedscope-core/math';
 import {formatPercent} from '../../lib/speedscope-core/lib-utils.ts';
 import {FlamechartMinimapView} from './flamechart-minimap-view'
 
 import {Sizes } from './style'
 import {FlamechartDetailView} from './flamechart-detail-view'
 import {FlamechartPanZoomView, type HoverPayload} from './flamechart-pan-zoom-view'
-import {FlamechartViewProps as FlamechartViewContainerProps} from './flamechart-view-container'
+import type {FlamechartViewProps as FlamechartViewContainerProps} from './flamechart-view-container'
 import {ProfileSearchContext} from './search-view'
 import {FlamechartSearchView} from './flamechart-search-view'
 import { ContextMenu, ContextMenuDivider } from '@/components/ui/context-menu';

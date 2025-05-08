@@ -1,7 +1,7 @@
 import React, { memo, useState, useCallback } from 'react';
 import { Folder as FolderIcon, Trash2, Edit, Move, MoreVertical, Eye } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Folder } from '@/lib/api'; // Assuming Folder type is exported from api.ts
+import type { Folder } from '@/lib/api'; // Assuming Folder type is exported from api.ts
 import { formatRelativeDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { FOLDER_VIEW_QUERY_KEY } from './hooks/useTraces';
 import { DeleteFolderDialog } from './DeleteFolderDialog';
-import { RecursiveFolderContents, ApiError, ApiResponse } from '@/types'; // Import needed types
+import type { RecursiveFolderContents, ApiError, ApiResponse } from '@/types'; // Import needed types
 
 interface FolderItemProps {
   folder: Folder;

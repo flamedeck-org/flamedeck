@@ -1,6 +1,6 @@
 import {Color} from '@/lib/speedscope-core/color'
-import {AffineTransform, Rect} from '@/lib/speedscope-core/math'
-import {Theme} from '@/components/speedscope-ui/themes/theme'
+import type {AffineTransform, Rect} from '@/lib/speedscope-core/math'
+import type {Theme} from '@/components/speedscope-ui/themes/theme'
 import {Graphics} from './graphics'
 import {setUniformAffineTransform, setUniformVec2} from './utils'
 

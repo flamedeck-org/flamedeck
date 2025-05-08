@@ -23,13 +23,13 @@ import {
   ContextMenuItem, 
   ContextMenuDivider 
 } from '@/components/ui/context-menu';
-import { TraceMetadata } from "@/types";
+import type { TraceMetadata } from "@/types";
 import { formatRelativeDate, formatDuration, cn } from "@/lib/utils";
-import { User } from '@supabase/supabase-js'; // Import User type if needed
+import type { User } from '@supabase/supabase-js'; // Import User type if needed
 import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
 import { MoveItemDialog } from './MoveItemDialog'; // Import the new dialog
 import { RenameTraceDialog } from './RenameTraceDialog'; // Import the new dialog
-import { ProfileType } from '@trace-view-pilot/shared-importer'; // Import ProfileType
+import type { ProfileType } from '@trace-view-pilot/shared-importer'; // Import ProfileType
 import { UserAvatar } from '@/components/UserAvatar'; // Import the new component
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getExpirationStatus } from "@/lib/utils/getExpirationStatus";

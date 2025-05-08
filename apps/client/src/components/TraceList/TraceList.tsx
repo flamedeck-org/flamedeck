@@ -33,8 +33,8 @@ import {
 import { UploadDialog } from "@/components/UploadDialog";
 import { DraggableArea } from "@/components/DraggableArea";
 import type { Folder } from "@/lib/api/types";
-import { PostgrestError } from '@supabase/supabase-js';
-import { ApiResponse } from "@/types";
+import type { PostgrestError } from '@supabase/supabase-js';
+import type { ApiResponse } from "@/types";
 
 function TraceListComponent() {
   const navigate = useNavigate();

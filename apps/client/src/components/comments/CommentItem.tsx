@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
-import { TraceCommentWithAuthor, updateTraceComment, deleteTraceCommentLogically } from '@/lib/api'; // Use the type that includes author info, Import updateTraceComment, Import deleteTraceCommentLogically
+import type { TraceCommentWithAuthor} from '@/lib/api';
+import { updateTraceComment, deleteTraceCommentLogically } from '@/lib/api'; // Use the type that includes author info, Import updateTraceComment, Import deleteTraceCommentLogically
 import { getInitials } from '@/lib/utils'; // Assuming a utility for initials
 import CommentForm from '@/components/CommentForm'; // Added CommentForm import
 import { cn } from '@/lib/utils'; // Added cn function for conditional classes

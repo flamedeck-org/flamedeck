@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { TraceCommentWithAuthor } from '@/lib/api';
+import type { TraceCommentWithAuthor } from '@/lib/api';
 
 // Define a no-op function for unauthenticated state
 const noOp = () => {};

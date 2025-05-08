@@ -1,5 +1,6 @@
-import {Profile} from '../../lib/speedscope-core/profile';
-import {useCallback, useState, useMemo, useEffect, useRef, Ref} from 'react';
+import type {Profile} from '../../lib/speedscope-core/profile';
+import type { Ref} from 'react';
+import {useCallback, useState, useMemo, useEffect, useRef} from 'react';
 import {fuzzyMatchStrings} from '../../lib/speedscope-core/fuzzy-find';
 import {sortBy} from '../../lib/speedscope-core/lib-utils';
 

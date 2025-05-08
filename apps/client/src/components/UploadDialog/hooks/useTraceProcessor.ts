@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { processAndPrepareTraceUpload, ProfileType } from '../utils';
+import type { ProfileType } from '../utils';
+import { processAndPrepareTraceUpload } from '../utils';
 
 interface UseTraceProcessorProps {
   file: File | null;

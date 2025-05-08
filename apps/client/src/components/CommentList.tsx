@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { traceApi, TraceCommentWithAuthor } from '@/lib/api';
+import type { TraceCommentWithAuthor } from '@/lib/api';
+import { traceApi } from '@/lib/api';
 import CommentItem from './CommentItem';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, MessageSquare } from 'lucide-react';

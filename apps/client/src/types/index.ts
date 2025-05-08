@@ -1,4 +1,4 @@
-import { ProfileType } from "@trace-view-pilot/shared-importer";
+import type { ProfileType } from "@trace-view-pilot/shared-importer";
 import { User } from "@supabase/supabase-js";
 
 export interface UserProfile {

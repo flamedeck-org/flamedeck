@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ListTree, UploadCloud, LogOut, User as UserIcon, Settings as SettingsIcon, Star } from "lucide-react"; // Add UserIcon, SettingsIcon, and Star
 import { useQuery } from "@tanstack/react-query"; // Import useQuery
 import { supabase } from "@/integrations/supabase/client"; // Import supabase client
-import { Database } from "@/integrations/supabase/types"; // Import Database types
+import type { Database } from "@/integrations/supabase/types"; // Import Database types
 import { UserAvatar } from "@/components/UserAvatar"; // Import the new component
 import { useSubscriptionUsage } from "@/hooks/useSubscriptionUsage"; // Import the new hook
 import { Progress } from "@/components/ui/progress"; // Import Progress component

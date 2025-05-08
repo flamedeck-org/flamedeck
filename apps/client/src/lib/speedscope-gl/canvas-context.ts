@@ -5,7 +5,7 @@ import {Rect, Vec2} from '@/lib/speedscope-core/math'
 import {ViewportRectangleRenderer} from './overlay-rectangle-renderer'
 import {FlamechartColorPassRenderer} from './flamechart-color-pass-renderer'
 import {Color} from '@/lib/speedscope-core/color'
-import {Theme} from '@/components/speedscope-ui/themes/theme'
+import type {Theme} from '@/components/speedscope-ui/themes/theme'
 
 type FrameCallback = () => void
 

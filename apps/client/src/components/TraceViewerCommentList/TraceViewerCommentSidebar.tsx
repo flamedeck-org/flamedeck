@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/popover';
 import { TraceViewerCommentList } from './TraceViewerCommentList';
 import { MessageSquare } from 'lucide-react';
-import { SpeedscopeViewType } from '../SpeedscopeViewer';
+import type { SpeedscopeViewType } from '../SpeedscopeViewer';
 
 interface TraceViewerCommentSidebarProps {
   traceId: string;

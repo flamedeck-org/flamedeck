@@ -1,7 +1,7 @@
 // A simple implementation of an efficient scrolling list view which
 // renders only items within the viewport + a couple extra items.
 
-import {JSX} from 'react'
+import type {JSX} from 'react'
 import {useState, useCallback, useRef, useMemo, useEffect} from 'react'
 
 export interface ListItem {

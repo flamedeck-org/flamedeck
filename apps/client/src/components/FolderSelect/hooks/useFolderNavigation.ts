@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { traceApi, Folder, ApiError } from '@/lib/api';
+import type { Folder, ApiError } from '@/lib/api';
+import { traceApi } from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from '@/contexts/AuthContext';
 

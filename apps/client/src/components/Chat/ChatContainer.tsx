@@ -4,7 +4,7 @@ import { FloatingChatButton, ChatWindow, type ChatMessage, type ChatWindowHandle
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth to get user ID
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
-import { RealtimeChannel } from '@supabase/supabase-js'; // Import type for channel ref
+import type { RealtimeChannel } from '@supabase/supabase-js'; // Import type for channel ref
 import { HumanMessage, AIMessage as LangChainAIMessage, BaseMessage } from "@langchain/core/messages"; // Import Langchain message types if needed for type checking history mapping
 
 // Define the type for the snapshot result prop

@@ -1,14 +1,16 @@
 import React, { memo, useCallback, useMemo, useContext } from 'react'
-import { Profile, Frame } from '../../lib/speedscope-core/profile'
+import type { Profile, Frame } from '../../lib/speedscope-core/profile'
 import { formatPercent } from '../../lib/speedscope-core/lib-utils'
 import { ColorChit } from './color-chit'
-import { ListItem, ScrollableListView } from './scrollable-list-view'
+import type { ListItem} from './scrollable-list-view';
+import { ScrollableListView } from './scrollable-list-view'
 import { createGetCSSColorForFrame, getFrameToColorBucket } from '../../lib/speedscope-core/app-state/getters'
 import { SandwichViewContext } from './sandwich-view'
 import { Color } from '../../lib/speedscope-core/color'
+import type {
+  SortMethod} from '../../lib/speedscope-core/app-state';
 import {
   SortDirection,
-  SortMethod,
   SortField,
   profileGroupAtom,
   tableSortMethodAtom,
@@ -16,7 +18,7 @@ import {
   searchQueryAtom,
 } from '../../lib/speedscope-core/app-state'
 import { useAtom } from '../../lib/speedscope-core/atom'
-import { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state'
+import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state'
 import { useTheme } from './themes/theme'
 
 interface HBarProps {

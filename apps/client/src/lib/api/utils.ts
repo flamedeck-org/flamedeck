@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Folder } from "./types";
+import type { Folder } from "./types";
 
 // Helper function to get breadcrumb path (iterative approach)
 export async function getFolderPath(startFolderId: string): Promise<Folder[]> {

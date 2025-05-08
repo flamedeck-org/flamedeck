@@ -1,6 +1,7 @@
 import {Atom} from '../atom'
 import {ViewMode} from '../view-mode'
-import {getHashParams, HashParams} from '../hash-params'
+import type { HashParams} from '../hash-params';
+import {getHashParams} from '../hash-params'
 import {ProfileGroupAtom} from './profile-group'
 
 // True if recursion should be flattened when viewing flamegraphs

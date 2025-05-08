@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 // Assuming the Comment type is exported from the hook or a types file
 // import { Comment } from '@/hooks/useTraceComments'; // This type might need adjustment
-import { TraceCommentWithAuthor } from '@/lib/api'; // Use the consistent type
+import type { TraceCommentWithAuthor } from '@/lib/api'; // Use the consistent type
 import { CommentItem, StructuredComment } from '@/components/comments'; // Import CommentItem
 import { cn } from "@/lib/utils";
 import { useState } from 'react'; // Import useState for reply state

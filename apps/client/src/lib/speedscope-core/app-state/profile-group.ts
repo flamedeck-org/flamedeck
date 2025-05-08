@@ -1,6 +1,7 @@
 import {Atom} from '../atom'
 import {clamp, Rect, Vec2} from '../math'
-import {CallTreeNode, Frame, Profile, ProfileGroup, FrameInfo} from '../profile'
+import type {CallTreeNode, Frame, Profile, ProfileGroup} from '../profile';
+import { FrameInfo} from '../profile'
 import {objectsHaveShallowEquality} from '../lib-utils'
 
 export interface FlamechartViewState {

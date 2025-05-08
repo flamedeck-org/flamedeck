@@ -8,15 +8,18 @@ import * as pako from 'pako'; // Import pako for client-side use
 import { JSON_parse } from 'uint8array-json-parser'; // Import parser for client-side use
 import Long from 'long'; // Import Long for client-side
 import { profileGroupAtom, glCanvasAtom, flattenRecursionAtom } from '@/lib/speedscope-core/app-state';
-import { ActiveProfileState, useActiveProfileState, CallTreeNode } from '@/lib/speedscope-core/app-state/active-profile-state'; 
+import type { CallTreeNode } from '@/lib/speedscope-core/app-state/active-profile-state';
+import { ActiveProfileState, useActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state'; 
 import { useAtom } from '@/lib/speedscope-core/atom'; 
-import { SandwichViewContainer, SandwichViewHandle } from './speedscope-ui/sandwich-view'; 
+import type { SandwichViewHandle } from './speedscope-ui/sandwich-view';
+import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
 import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
-import { ChronoFlamechartView, LeftHeavyFlamechartView, FlamechartViewHandle } from './speedscope-ui/flamechart-view-container';
+import type { FlamechartViewHandle } from './speedscope-ui/flamechart-view-container';
+import { ChronoFlamechartView, LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
 import ProfileCommentForm from './ProfileCommentForm';
 import { useTraceComments } from '@/hooks/useTraceComments';
 import CommentSidebar from './CommentSidebar';
-import { TraceCommentWithAuthor } from '@/lib/api';
+import type { TraceCommentWithAuthor } from '@/lib/api';
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatContainer } from '@/components/Chat';
 
