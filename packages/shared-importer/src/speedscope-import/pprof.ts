@@ -1,8 +1,9 @@
 import * as profileProto from './profile.proto.js'
-import {FrameInfo, StackListProfileBuilder, Profile} from '../speedscope-core/profile.ts'
+import type {FrameInfo, Profile} from '../speedscope-core/profile.ts';
+import { StackListProfileBuilder} from '../speedscope-core/profile.ts'
 import {lastOf} from '../speedscope-core/lib-utils.ts'
 import {TimeFormatter, ByteFormatter} from '../speedscope-core/value-formatters.ts'
-import { ImporterDependencies } from './importer-utils.ts'
+import type { ImporterDependencies } from './importer-utils.ts'
 
 const perftools = (profileProto as any).perftools
 

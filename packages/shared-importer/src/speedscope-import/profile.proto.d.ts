@@ -5,7 +5,7 @@
 //    node node_modules/protobufjs/cli/bin/pbts -o src/import/profile.proto.d.ts src/import/profile.proto.j
 //
 // Then prepend this comment to the result.
-import * as $protobuf from 'protobufjs'
+import type * as $protobuf from 'protobufjs'
 /** Namespace perftools. */
 export namespace perftools {
   /** Namespace profiles. */

@@ -1,16 +1,18 @@
 // This file contains methods to import data from OS X Instruments.app
 // https://developer.apple.com/library/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/index.html
 
-import {
+import type {
   Profile,
   FrameInfo,
+  ProfileGroup} from '../speedscope-core/profile.ts';
+import {
   CallTreeProfileBuilder,
-  StackListProfileBuilder,
-  ProfileGroup,
+  StackListProfileBuilder
 } from '../speedscope-core/profile.ts'
 import {sortBy, getOrThrow, getOrInsert, lastOf, getOrElse, zeroPad} from '../speedscope-core/lib-utils.ts'
 import {ByteFormatter, TimeFormatter} from '../speedscope-core/value-formatters.ts'
-import {MaybeCompressedDataReader, TextFileContent} from './importer-utils.ts'
+import type { TextFileContent} from './importer-utils.ts';
+import {MaybeCompressedDataReader} from './importer-utils.ts'
 
 function parseTSV<T>(contents: TextFileContent): T[] {
   const lines = [...contents.splitLines()].map(l => l.split('\t'))
