@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Folder as FolderIcon, Trash2, Edit, Move, MoreVertical, Eye } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import type { Folder } from '@/lib/api'; // Assuming Folder type is exported from api.ts
@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { ContextMenu, ContextMenuItem, ContextMenuDivider } from '@/components/ui/context-menu';
 import { MoveItemDialog } from './MoveItemDialog';
 import { RenameFolderDialog } from './RenameFolderDialog'; // Import the rename dialog
-import { cn } from '@/lib/utils'; // Import cn utility
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { traceApi } from '@/lib/api'; // Import Folder type too
 import { useAuth } from '@/contexts/AuthContext';

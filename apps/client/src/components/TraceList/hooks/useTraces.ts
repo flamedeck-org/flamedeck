@@ -51,10 +51,6 @@ export function useTraces() {
     queryFn: async ({ pageParam = 0 }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      console.log(
-        `[RPC] Fetching view for folder: ${currentFolderId || 'root'}, page: ${pageParam}, search: ${searchQuery}`
-      );
-
       const { data, error } = await supabase.rpc('get_folder_view_data', {
         p_user_id: user.id,
         p_folder_id: currentFolderId,

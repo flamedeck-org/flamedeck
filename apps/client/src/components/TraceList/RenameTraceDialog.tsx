@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -32,7 +32,6 @@ function RenameTraceDialogComponent({
   setIsOpen,
   traceId,
   currentScenario,
-  triggerElement,
 }: RenameTraceDialogProps) {
   const queryClient = useQueryClient();
   const [newScenario, setNewScenario] = useState(currentScenario);

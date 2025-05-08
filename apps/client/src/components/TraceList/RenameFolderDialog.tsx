@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -32,7 +32,6 @@ function RenameFolderDialogComponent({
   setIsOpen,
   folderId,
   currentName,
-  triggerElement,
 }: RenameFolderDialogProps) {
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState(currentName);

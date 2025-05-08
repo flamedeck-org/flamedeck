@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -43,7 +43,6 @@ function DeleteFolderDialogComponent({
     data: contentsData,
     isLoading: isLoadingContents,
     error: contentsError,
-    refetch,
   } = useQuery<RecursiveFolderContents, Error>({
     queryKey: [FOLDER_CONTENTS_QUERY_KEY, folderId],
     queryFn: async () => {
