@@ -455,6 +455,56 @@ export type Database = {
           api_key_plaintext: string
         }[]
       }
+      create_trace: {
+        Args:
+          | {
+              p_user_id: string
+              p_blob_path: string
+              p_upload_source: string
+              p_make_public: boolean
+              p_commit_sha?: string
+              p_branch?: string
+              p_scenario?: string
+              p_device_model?: string
+              p_duration_ms?: number
+              p_file_size_bytes?: number
+              p_profile_type?: string
+              p_notes?: string
+              p_folder_id?: string
+            }
+          | {
+              p_user_id: string
+              p_blob_path: string
+              p_upload_source: string
+              p_make_public: boolean
+              p_commit_sha?: string
+              p_branch?: string
+              p_scenario?: string
+              p_duration_ms?: number
+              p_file_size_bytes?: number
+              p_profile_type?: string
+              p_notes?: string
+              p_folder_id?: string
+            }
+        Returns: {
+          blob_path: string
+          branch: string | null
+          commit_sha: string | null
+          duration_ms: number | null
+          expires_at: string | null
+          file_size_bytes: number | null
+          folder_id: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          profile_type: string | null
+          scenario: string | null
+          updated_at: string | null
+          upload_source: string
+          uploaded_at: string
+          user_id: string
+        }
+      }
       delete_folder_contents_by_ids: {
         Args: {
           p_folder_ids_to_delete: string[]

@@ -71,6 +71,8 @@ flamedeck upload \
   --notes "Trace captured during peak load on staging server." \
   --folder-id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" \
   --metadata '{"ci_build_id": 456, "region": "eu-west-1", "test_variant": "A"}' \
+   # Add this line to make the trace publicly viewable!
+  --public \
   /path/to/another_trace.json
 
 # Upload via stdin (requires --file-name)

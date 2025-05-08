@@ -43,9 +43,9 @@ const queryParamsSchema = z.object({
   scenario: z.string().optional().default('API Upload'), // Optional with default
   commitSha: z.string().nullable().optional(),          // Optional, can be null
   branch: z.string().nullable().optional(),
-  deviceModel: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   folderId: z.string().uuid("Invalid folder ID format").nullable().optional(), // Allow optional folderId
+  public: z.boolean().optional().default(false), // Add public parameter
 });
 
 type QueryParams = z.infer<typeof queryParamsSchema>;
@@ -121,9 +121,9 @@ serve(async (req) => {
       scenario: url.searchParams.get('scenario'),
       commitSha: url.searchParams.get('commitSha'),
       branch: url.searchParams.get('branch'),
-      deviceModel: url.searchParams.get('deviceModel'),
       notes: url.searchParams.get('notes'),
       folderId: url.searchParams.get('folderId'), // Extract folderId
+      public: url.searchParams.get('public') ? url.searchParams.get('public') === 'true' : undefined, // Add public
     };
 
     const validationResult = queryParamsSchema.safeParse(queryParamsToValidate);
@@ -145,12 +145,12 @@ serve(async (req) => {
       scenario,
       commitSha,
       branch,
-      deviceModel,
       notes,
-      folderId // Destructure folderId
+      folderId, // Destructure folderId
+      public: isPublic, // Destructure public (renamed to avoid conflict)
     } = validationResult.data;
 
-    console.log(`Validated metadata - fileName: ${fileName}, scenario: ${scenario}, folderId: ${folderId ?? 'none'}`);
+    console.log(`Validated metadata - fileName: ${fileName}, scenario: ${scenario}, folderId: ${folderId ?? 'none'}, public: ${isPublic}`);
 
     // Create the dependencies object for the Deno environment
     const importerDeps: ImporterDependencies = {
@@ -189,7 +189,7 @@ serve(async (req) => {
 
       // Extract info from the ProfileGroup object
       const profileGroup = importResult.profileGroup;
-      const profileType = importResult.profileType; // Get type from result
+      profileType = importResult.profileType; // Assign to the outer scope variable
 
       // Use the shared utility function for duration calculation
       // The profileGroup object returned by the importer *must* conform
@@ -277,53 +277,65 @@ serve(async (req) => {
       });
     }
 
-    // 8. Database Insert
-    let insertedTraceData: object | null = null;
+    // 8. Database Insert (Now RPC Call)
+    let insertedTraceData: any | null = null; // Type will come from RPC result
     try {
-      console.log(`Attempting to insert trace record into database for user ${userId}`);
-      const { data: dbData, error: dbError } = await supabaseAdmin
-        .from('traces')
-        .insert({
-            user_id: userId,
-            commit_sha: commitSha,
-            branch: branch,
-            scenario: scenario,
-            device_model: deviceModel,
-            duration_ms: durationMs, // Already rounded by the utility function (if not null)
-            blob_path: storagePath,
-            file_size_bytes: compressedSize, // Store compressed size
-            profile_type: profileType,
-            notes: notes,
-            uploaded_at: new Date().toISOString(),
-            folder_id: folderId, // Add folderId here
-        })
-        .select() // Select the newly created record
-        .single();
+      console.log(`Attempting to create trace record via RPC for user ${userId}, public: ${isPublic}`);
+      const rpcParams = {
+        p_user_id: userId,
+        p_blob_path: storagePath,
+        p_upload_source: 'api' as const, // Literal type for upload_source
+        p_make_public: isPublic,
+        p_commit_sha: commitSha,
+        p_branch: branch,
+        p_scenario: scenario,
+        p_duration_ms: durationMs,
+        p_file_size_bytes: compressedSize,
+        p_profile_type: profileType, // Use the updated outer scope variable
+        p_notes: notes,
+        p_folder_id: folderId,
+      };
+      console.log("Calling create_trace RPC with params:", rpcParams)
 
-      if (dbError) {
-        console.error("Database insert failed:", dbError);
+      const { data: rpcData, error: rpcError } = await supabaseAdmin
+        .rpc('create_trace', rpcParams);
+
+      if (rpcError) {
+        console.error("RPC call to create_trace failed:", rpcError);
         // IMPORTANT: Attempt to clean up the orphaned storage object
-        console.warn(`Database insert failed. Attempting to delete orphaned storage object: ${storagePath}`);
+        console.warn(`RPC call failed. Attempting to delete orphaned storage object: ${storagePath}`);
         const [bucketName, ...objectPathParts] = storagePath.split('/');
         const objectPath = objectPathParts.join('/');
         if (bucketName && objectPath) {
            await supabaseAdmin.storage.from(bucketName).remove([objectPath]);
-           console.log(`Cleanup attempt for ${storagePath} finished.`);
+           console.log(`Cleanup attempt for ${storagePath} finished after RPC error.`);
         } else {
-           console.error(`Could not parse bucket/path for cleanup: ${storagePath}`);
+           console.error(`Could not parse bucket/path for cleanup after RPC error: ${storagePath}`);
         }
-        // Throw an error to be caught by the main try/catch
-        throw new Error(`Database insert failed: ${dbError.message}`);
+        // Throw an error to be caught by the main try/catch, or return a specific error response
+        throw new Error(`Failed to create trace via RPC: ${rpcError.message}`);
       }
 
-      insertedTraceData = dbData;
-      console.log(`Database insert successful. Trace ID: ${insertedTraceData?.id}`);
+      insertedTraceData = rpcData;
+      console.log(`RPC call to create_trace successful. Trace ID: ${insertedTraceData?.id}`);
 
-    } catch (dbInsertCatchError) {
-      console.error(`Error during database insert phase for ${fileName}:`, dbInsertCatchError);
-      // Don't need specific response here, main catch block handles it
+    } catch (dbProcessingError) { // Catch errors from RPC call or subsequent logic
+      console.error(`Error during database processing phase (RPC or aftermath) for ${fileName}:`, dbProcessingError);
+      // Ensure cleanup is attempted if not already done by a more specific catch for rpcError
+      // This catch block might be redundant if the rpcError catch re-throws, but good for safety.
+      if (!(dbProcessingError.message.includes('Failed to create trace via RPC')) && storagePath) {
+        console.warn(`Generic DB processing error. Attempting to delete orphaned storage object: ${storagePath}`);
+        const [bucketName, ...objectPathParts] = storagePath.split('/');
+        const objectPath = objectPathParts.join('/');
+        if (bucketName && objectPath) {
+           await supabaseAdmin.storage.from(bucketName).remove([objectPath]);
+           console.log(`Cleanup attempt for ${storagePath} finished after generic DB error.`);
+        } else {
+           console.error(`Could not parse bucket/path for cleanup after generic DB error: ${storagePath}`);
+        }
+      }
       // Re-throw to ensure the main error handler sends a 500
-      throw dbInsertCatchError;
+      throw dbProcessingError;
     }
 
     // 9. Success Response

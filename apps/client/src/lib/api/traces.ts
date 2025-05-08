@@ -98,7 +98,8 @@ import { uploadJson } from "./storage";
     file: File,
     metadata: Omit<TraceUpload, "blob_path">,
     userId: string,
-    folderId: string | null = null
+    folderId: string | null = null,
+    makePublic?: boolean
   ): Promise<ApiResponse<TraceMetadata>> {
     const bucket = 'traces';
     let filePathInBucket: string | null = null;
@@ -138,35 +139,33 @@ import { uploadJson } from "./storage";
       // 5. Construct full storage path for DB record
       const storagePath = `${bucket}/${uploadResult.path}`; 
 
-      // 6. Insert Trace Metadata into Database
-      const { data: dbData, error: dbError } = await supabase
-          .from('traces')
-          .insert({
-              user_id: userId,
-              commit_sha: metadata.commit_sha,
-              branch: metadata.branch,
-              scenario: metadata.scenario,
-              duration_ms: Math.round(metadata.duration_ms),
-              blob_path: storagePath,
-              file_size_bytes: file.size, // Size of the *processed* (but uncompressed) file
-              profile_type: metadata.profile_type,
-              notes: metadata.notes,
-              uploaded_at: new Date().toISOString(),
-              folder_id: folderId,
-              upload_source: 'web'
-          })
-          .select()
-          .single();
+      // 6. Insert Trace Metadata into Database (Now RPC Call)
+      console.log(`Calling create_trace RPC for user ${userId}, public: ${makePublic ?? false}`);
+      const { data: rpcData, error: rpcError } = await supabase
+          .rpc('create_trace', {
+              p_user_id: userId,
+              p_blob_path: storagePath,
+              p_upload_source: 'web' as const,
+              p_make_public: makePublic ?? false,
+              p_commit_sha: metadata.commit_sha,
+              p_branch: metadata.branch,
+              p_scenario: metadata.scenario,
+              p_duration_ms: Math.round(metadata.duration_ms),
+              p_file_size_bytes: file.size, // Size of the *original* file or processed file if different; RPC expects bigint
+              p_profile_type: metadata.profile_type,
+              p_notes: metadata.notes,
+              p_folder_id: folderId,
+          });
 
       // Handle DB insert failure - Requires cleanup of the uploaded storage object
-      if (dbError) {
-          console.error("Database insert failed after successful storage upload:", dbError);
-          // Throw a new error to be caught by the outer catch block for cleanup
-          throw new Error(`Database insert failed: ${dbError.message}`);
+      if (rpcError) {
+        console.error("RPC call to create_trace failed after successful storage upload:", rpcError);
+        // Throw a new error to be caught by the outer catch block for cleanup
+        throw new Error(`RPC call to create_trace failed: ${rpcError.message}`);
       }
 
       // Success!
-      return { data: dbData as TraceMetadata, error: null };
+      return { data: rpcData as TraceMetadata, error: null };
 
     } catch (error) {
         console.error("Upload trace failed:", error);
