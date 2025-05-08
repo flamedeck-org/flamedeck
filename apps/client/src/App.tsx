@@ -14,7 +14,6 @@ import ApiKeysPage from "./pages/settings/ApiKeysPage";
 import Upload from "./pages/Upload";
 import NotFound from "./pages/NotFound";
 import TraceViewerPage from "./pages/TraceViewerPage";
-import DocsApiPage from "./pages/DocsApiPage/DocsApiPage";
 import DocsGettingStartedPage from "./pages/DocsGettingStartedPage";
 import DocsCliUploadPage from './pages/DocsCliUploadPage';
 import DocsNpmUploadPage from './pages/DocsNpmUploadPage';
@@ -81,7 +80,6 @@ const AppRoutes = () => {
         <Route path="getting-started" element={<DocsGettingStartedPage />} />
         <Route path="cli-upload" element={<DocsCliUploadPage />} />
         <Route path="npm-upload" element={<DocsNpmUploadPage />} />
-        <Route path="api" element={<DocsApiPage />} />
       </Route>
 
       {/* Public Trace Viewer Route - outside ProtectedRoute */}

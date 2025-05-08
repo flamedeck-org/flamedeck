@@ -16,6 +16,27 @@ interface DocsSidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   onLinkClick?: () => void; // Optional callback
 }
 
+interface DocsNavLinkProps {
+  to: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+function DocsNavLink({ to, children, onClick }: DocsNavLinkProps) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className={({ isActive }) => cn(
+        "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-10 px-4 py-2 justify-start",
+        isActive ? "bg-muted hover:bg-muted" : "hover:bg-transparent hover:underline"
+      )}
+    >
+      {children}
+    </NavLink>
+  );
+}
+
 function DocsSidebarNav({ className, onLinkClick, ...props }: DocsSidebarNavProps) {
   const handleLinkClick = () => {
     if (onLinkClick) {
@@ -31,46 +52,15 @@ function DocsSidebarNav({ className, onLinkClick, ...props }: DocsSidebarNavProp
       )}
       {...props}
     >
-      <NavLink
-        to="/docs/getting-started"
-        onClick={handleLinkClick}
-        className={({ isActive }) => cn(
-          "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-10 px-4 py-2 justify-start",
-          isActive ? "bg-muted hover:bg-muted" : "hover:bg-transparent hover:underline"
-        )}
-      >
+      <DocsNavLink to="/docs/getting-started" onClick={handleLinkClick}>
         Getting Started
-      </NavLink>
-      <NavLink
-        to="/docs/cli-upload"
-        onClick={handleLinkClick}
-        className={({ isActive }) => cn(
-          "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-10 px-4 py-2 justify-start",
-          isActive ? "bg-muted hover:bg-muted" : "hover:bg-transparent hover:underline"
-        )}
-      >
+      </DocsNavLink>
+      <DocsNavLink to="/docs/cli-upload" onClick={handleLinkClick}>
         CLI Upload
-      </NavLink>
-      <NavLink
-        to="/docs/npm-upload"
-        onClick={handleLinkClick}
-        className={({ isActive }) => cn(
-          "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-10 px-4 py-2 justify-start",
-          isActive ? "bg-muted hover:bg-muted" : "hover:bg-transparent hover:underline"
-        )}
-      >
+      </DocsNavLink>
+      <DocsNavLink to="/docs/npm-upload" onClick={handleLinkClick}>
         NPM Package Upload
-      </NavLink>
-      <NavLink
-        to="/docs/api"
-        onClick={handleLinkClick}
-        className={({ isActive }) => cn(
-          "inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-10 px-4 py-2 justify-start",
-          isActive ? "bg-muted hover:bg-muted" : "hover:bg-transparent hover:underline"
-        )}
-      >
-        API Trace Upload
-      </NavLink>
+      </DocsNavLink>
     </nav>
   )
 }
