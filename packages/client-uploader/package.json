@@ -27,7 +27,6 @@
   "license": "ISC",
   "sideEffects": false,
   "dependencies": {
-    "@flamedeck/trace-uploader-core": "*",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

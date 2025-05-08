@@ -1706,19 +1706,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@flamedeck/trace-uploader-core@npm:*, @flamedeck/trace-uploader-core@workspace:packages/trace-uploader-core":
-  version: 0.0.0-use.local
-  resolution: "@flamedeck/trace-uploader-core@workspace:packages/trace-uploader-core"
-  dependencies:
-    tslib: "npm:^2.3.0"
-  languageName: unknown
-  linkType: soft
-
 "@flamedeck/upload@workspace:packages/client-uploader":
   version: 0.0.0-use.local
   resolution: "@flamedeck/upload@workspace:packages/client-uploader"
   dependencies:
-    "@flamedeck/trace-uploader-core": "npm:*"
     ts-node: "npm:^10.9.2"
     tslib: "npm:^2.3.0"
     vite: "npm:^5.0.0"
