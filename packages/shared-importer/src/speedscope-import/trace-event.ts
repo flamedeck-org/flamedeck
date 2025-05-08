@@ -424,8 +424,7 @@ function eventListToProfile(
 
     if (b == null) {
       console.warn(
-        `Tried to end frame "${
-          frameInfoForEvent(e, exporterSource).key
+        `Tried to end frame "${frameInfoForEvent(e, exporterSource).key
         }", but the stack was empty. Doing nothing instead.`
       );
       return;
@@ -645,28 +644,44 @@ function sampleListToProfileGroup(contents: TraceWithSamples): ProfileGroup {
   const importableEvents = filterIgnoredEventTypes(contents.traceEvents);
   const partitionedTraceEvents = partitionByPidTid(importableEvents);
   const partitionedSamples = partitionByPidTid(contents.samples);
+
   const profileNamesByPidTid = getProfileNameByPidTid(contents.traceEvents, partitionedTraceEvents);
 
   const profilePairs: [string, Profile][] = [];
 
-  profileNamesByPidTid.forEach((name, profileKey) => {
-    const samplesForPidTid = partitionedSamples.get(profileKey);
-
-    if (!samplesForPidTid) {
-      throw new Error(`Could not find samples for key: ${samplesForPidTid}`);
-    }
-
-    if (samplesForPidTid.length === 0) {
+  partitionedSamples.forEach((samplesForThisKey, sampleKey) => {
+    if (samplesForThisKey.length === 0) {
       return;
     }
 
-    profilePairs.push([profileKey, sampleListToProfile(contents, samplesForPidTid, name)]);
+    let name = profileNamesByPidTid.get(sampleKey);
+
+    if (!name) {
+      const { pid: samplePidNum, tid: sampleTidStr } = samplesForThisKey[0];
+      const samplePid = Number(samplePidNum);
+      const sampleTid = Number(sampleTidStr);
+
+      const processNamesByPid = getProcessNamesByPid(contents.traceEvents);
+      const threadNamesByPidTid = getThreadNamesByPidTid(contents.traceEvents);
+
+      const processName = processNamesByPid.get(samplePid);
+      const threadName = threadNamesByPidTid.get(sampleKey);
+
+      if (processName && threadName) {
+        name = `${processName} (pid ${samplePid}), ${threadName} (tid ${sampleTid})`;
+      } else if (processName) {
+        name = `${processName} (pid ${samplePid}, tid ${sampleTid})`;
+      } else if (threadName) {
+        name = `${threadName} (pid ${samplePid}, tid ${sampleTid})`;
+      } else {
+        name = `pid ${samplePid}, tid ${sampleTid}`;
+      }
+      console.warn(`No specific profile name found in traceEvents for sample key ${sampleKey}. Using generated name: "${name}"`);
+    }
+
+    profilePairs.push([sampleKey, sampleListToProfile(contents, samplesForThisKey, name)]);
   });
 
-  // For now, we just sort processes by pid & tid.
-  // TODO: The standard specifies that metadata events with the name
-  // "process_sort_index" and "thread_sort_index" can be used to influence the
-  // order, but for simplicity we'll ignore that until someone complains :)
   sortBy(profilePairs, (p) => p[0]);
 
   return {
