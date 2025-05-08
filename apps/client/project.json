@@ -17,6 +17,12 @@
       "options": {
         "lintFilePatterns": ["apps/client/**/*.{ts,tsx,js,jsx}"]
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/client/tsconfig.app.json"
+      }
     }
   }
 } 

@@ -17,6 +17,12 @@
       "options": {
         "lintFilePatterns": ["packages/shared-importer/**/*.{ts,tsx,js,jsx}"]
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/shared-importer/tsconfig.json"
+      }
     }
   }
 } 

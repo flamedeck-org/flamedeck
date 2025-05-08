@@ -27,6 +27,12 @@
         "lintFilePatterns": ["packages/client-uploader/**/*.ts"]
       }
     },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/client-uploader/tsconfig.lib.json"
+      }
+    },
     "build": {
       "executor": "nx:run-script",
       "outputs": ["{projectRoot}/dist"],
