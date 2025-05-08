@@ -1,4 +1,4 @@
-import {FileFormat} from './file-format-spec.ts'
+import type {FileFormat} from './file-format-spec.ts'
 import {zeroPad} from './lib-utils.ts'
 
 export interface ValueFormatter {

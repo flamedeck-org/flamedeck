@@ -1,4 +1,5 @@
-import {Profile, FrameInfo, StackListProfileBuilder} from '../speedscope-core/profile.ts'
+import type {Profile, FrameInfo} from '../speedscope-core/profile.ts';
+import { StackListProfileBuilder} from '../speedscope-core/profile.ts'
 import {TimeFormatter} from '../speedscope-core/value-formatters.ts'
 
 interface Record {

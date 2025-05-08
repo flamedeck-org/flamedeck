@@ -1,7 +1,8 @@
 // https://github.com/brendangregg/FlameGraph#2-fold-stacks
 
-import {Profile, FrameInfo, StackListProfileBuilder} from '../speedscope-core/profile.ts'
-import {TextFileContent} from './importer-utils.ts'
+import type {Profile, FrameInfo} from '../speedscope-core/profile.ts';
+import { StackListProfileBuilder} from '../speedscope-core/profile.ts'
+import type {TextFileContent} from './importer-utils.ts'
 
 interface BGSample {
   stack: FrameInfo[]

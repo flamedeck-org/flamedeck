@@ -1,4 +1,5 @@
-import {Profile, FrameInfo, CallTreeProfileBuilder} from '../speedscope-core/profile.ts'
+import type {Profile, FrameInfo} from '../speedscope-core/profile.ts';
+import { CallTreeProfileBuilder} from '../speedscope-core/profile.ts'
 import {getOrInsert} from '../speedscope-core/lib-utils.ts'
 import {TimeFormatter} from '../speedscope-core/value-formatters.ts'
 

@@ -1,11 +1,12 @@
-import {
+import type {
   Profile,
   CallTreeNode,
   Frame,
-  CallTreeProfileBuilder,
   FrameInfo,
-  StackListProfileBuilder,
-  ProfileGroup,
+  ProfileGroup} from '../speedscope-core/profile.ts';
+import {
+  CallTreeProfileBuilder,
+  StackListProfileBuilder
 } from '../speedscope-core/profile.ts'
 import {TimeFormatter, ByteFormatter, RawValueFormatter} from '../speedscope-core/value-formatters.ts'
 import {FileFormat} from '../speedscope-core/file-format-spec.ts'

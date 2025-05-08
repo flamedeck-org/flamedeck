@@ -1,4 +1,4 @@
-import {Profile, ProfileGroup} from '../speedscope-core/profile.ts'
+import type {Profile, ProfileGroup} from '../speedscope-core/profile.ts'
 
 import {
   importFromChromeCPUProfile,
@@ -16,7 +16,8 @@ import {importFromV8ProfLog} from './v8proflog.ts'
 import {importFromLinuxPerf} from './linux-tools-perf.ts'
 import {importFromHaskell} from './haskell.ts'
 import {importFromSafari} from './safari.ts'
-import {ProfileDataSource, TextProfileDataSource, MaybeCompressedDataReader, InflateFn, ParseJsonUint8ArrayFn, ImporterDependencies} from './importer-utils.ts'
+import type {ProfileDataSource, ImporterDependencies} from './importer-utils.ts';
+import { TextProfileDataSource, MaybeCompressedDataReader, InflateFn, ParseJsonUint8ArrayFn} from './importer-utils.ts'
 import {importAsPprofProfile} from './pprof.ts'
 import {decodeBase64} from './utils.ts'
 import {importFromChromeHeapProfile} from './v8heapalloc.ts'

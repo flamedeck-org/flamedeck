@@ -1,4 +1,5 @@
-import {Profile, FrameInfo, StackListProfileBuilder} from '../speedscope-core/profile.ts'
+import type {Profile, FrameInfo} from '../speedscope-core/profile.ts';
+import { StackListProfileBuilder} from '../speedscope-core/profile.ts'
 import {getOrInsert} from '../speedscope-core/lib-utils.ts'
 import {ByteFormatter} from '../speedscope-core/value-formatters.ts'
 

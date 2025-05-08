@@ -1,9 +1,10 @@
 import {sortBy, zeroPad, getOrInsert, lastOf} from '../speedscope-core/lib-utils.ts'
-import {
+import type {
   ProfileGroup,
-  CallTreeProfileBuilder,
   FrameInfo,
-  Profile,
+  Profile} from '../speedscope-core/profile.ts';
+import {
+  CallTreeProfileBuilder,
   StackListProfileBuilder,
 } from '../speedscope-core/profile.ts'
 import {TimeFormatter} from '../speedscope-core/value-formatters.ts'

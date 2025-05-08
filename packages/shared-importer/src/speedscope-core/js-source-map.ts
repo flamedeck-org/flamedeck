@@ -27,7 +27,7 @@
 import type {MappingItem, RawSourceMap, SourceMapConsumer} from 'source-map'
 const sourceMapModule = import('source-map')
 
-import {Frame, SymbolRemapper} from './profile'
+import type {Frame, SymbolRemapper} from './profile'
 import {findIndexBisect} from './lib-utils'
 
 const DEBUG = false
