@@ -15,11 +15,10 @@
   "tags": [],
   "targets": {
     "build": {
-      "executor": "@nx/vite:build",
-      "outputs": ["{options.outputPath}"],
+      "executor": "nx:run-script",
+      "outputs": ["{projectRoot}/dist"],
       "options": {
-        "outputPath": "packages/client-uploader/dist",
-        "configFile": "packages/client-uploader/vite.config.ts"
+        "script": "build"
       }
     },
     "publish": {
