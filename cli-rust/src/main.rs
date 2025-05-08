@@ -68,6 +68,10 @@ struct UploadArgs {
     #[arg(long)]
     metadata: Option<String>,
 
+    /// Make the uploaded trace publicly viewable
+    #[arg(long)]
+    public: bool,
+
     /// Override Supabase functions base URL
     #[arg(long)]
     supabase_url: Option<String>,
@@ -142,6 +146,10 @@ async fn main() -> Result<()> {
                     return Err(anyhow!("--metadata must be a valid JSON string"));
                 }
                 params.push(("metadata", metadata.clone())); 
+            }
+            // Add public flag if set
+            if args.public {
+                params.push(("public", "true".to_string()));
             }
 
             // --- Build Request URL ---

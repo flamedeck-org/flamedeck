@@ -26,6 +26,8 @@ export interface UploadOptions extends TraceMetadata {
   traceData: Blob | ArrayBuffer;
   /** The original filename of the trace. */
   fileName: string;
+  /** Optional: Whether the trace should be publicly viewable. Defaults to false. */
+  public?: boolean;
   /** Optional: Override the base URL for the Supabase functions endpoint. */
   supabaseFunctionsUrl?: string;
 }
@@ -75,7 +77,8 @@ export async function uploadTraceToApi(options: UploadOptions): Promise<UploadRe
     notes,
     folderId,
     metadata,
-    supabaseFunctionsUrl = DEFAULT_SUPABASE_FUNCTIONS_URL 
+    supabaseFunctionsUrl = DEFAULT_SUPABASE_FUNCTIONS_URL,
+    public: isPublic,
   } = options;
 
   if (!apiKey) {
@@ -112,6 +115,9 @@ export async function uploadTraceToApi(options: UploadOptions): Promise<UploadRe
     if (metadataString) {
         params.set('metadata', metadataString);
     }
+  }
+  if (isPublic === true) {
+    params.set('public', 'true');
   }
 
   const apiUrl = `${supabaseFunctionsUrl}/api-upload-trace?${params.toString()}`;
