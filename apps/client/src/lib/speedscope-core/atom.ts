@@ -55,104 +55,103 @@
 //
 // This library is inspired by https://recoiljs.org/
 
+import { useLayoutEffect, useState } from "react";
 
-import {useLayoutEffect, useState} from 'react'
+type AtomListener = () => void;
 
-type AtomListener = () => void
+let AtomDev: { [key: string]: Atom<any> } | null = null;
+let hotReloadStash: Map<string, any> | null = null;
 
-let AtomDev: {[key: string]: Atom<any>} | null = null
-let hotReloadStash: Map<string, any> | null = null
-
-declare const module: any
+declare const module: any;
 // Use Vite env variable and check for module/module.hot existence
-if (import.meta.env.DEV && typeof module !== 'undefined' && module.hot) {
-  ;(window as any)['Atom'] = AtomDev = {}
+if (import.meta.env.DEV && typeof module !== "undefined" && module.hot) {
+  (window as any)["Atom"] = AtomDev = {};
 
   module.hot.dispose(() => {
     if (AtomDev) {
-      hotReloadStash = new Map()
+      hotReloadStash = new Map();
       for (const key in AtomDev) {
-        hotReloadStash.set(key, AtomDev[key].get())
+        hotReloadStash.set(key, AtomDev[key].get());
       }
     }
 
-    ;(window as any)['Atom_hotReloadStash'] = hotReloadStash
-  })
+    (window as any)["Atom_hotReloadStash"] = hotReloadStash;
+  });
 
-  hotReloadStash = (window as any)['Atom_hotReloadStash'] || null
+  hotReloadStash = (window as any)["Atom_hotReloadStash"] || null;
 }
 
 export class Atom<T> {
-  private observers: AtomListener[] = []
+  private observers: AtomListener[] = [];
   constructor(
     protected state: T,
-    debugKey: string,
+    debugKey: string
   ) {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       if (hotReloadStash?.has(debugKey)) {
         // If we have a stored value from a previous hot reload, use that
         // instead of whatever was passed to the constructor.
-        this.state = hotReloadStash.get(debugKey)
+        this.state = hotReloadStash.get(debugKey);
       }
 
       if (AtomDev) {
         if (debugKey in AtomDev) {
-          console.warn(`[Atom] Multiple atoms tried to register with the key ${debugKey}`)
+          console.warn(`[Atom] Multiple atoms tried to register with the key ${debugKey}`);
         }
-        AtomDev[debugKey] = this
+        AtomDev[debugKey] = this;
       }
     }
 
     // We do the bind here rather than in the definition to facilitate
     // inheritance (we want the value defined on both the prototype and the
     // instance).
-    this.set = this.set.bind(this)
-    this.get = this.get.bind(this)
+    this.set = this.set.bind(this);
+    this.get = this.get.bind(this);
   }
 
   set(t: T) {
     if (this.state === t) {
       // No-op if the value didn't actually change
-      return
+      return;
     }
-    this.state = t
-    this.observers.forEach(fn => fn())
+    this.state = t;
+    this.observers.forEach((fn) => fn());
   }
 
   get(): T {
-    return this.state
+    return this.state;
   }
 
   subscribe(listener: AtomListener) {
-    this.observers.push(listener)
+    this.observers.push(listener);
   }
 
   unsubscribe(listener: AtomListener) {
-    const index = this.observers.indexOf(listener)
+    const index = this.observers.indexOf(listener);
     if (index !== -1) {
-      this.observers.splice(index, 1)
+      this.observers.splice(index, 1);
     }
   }
 }
 
 export function useAtom<T>(atom: Atom<T>): T {
-  const [value, setValue] = useState(atom.get())
+  const [value, setValue] = useState(atom.get());
 
   useLayoutEffect(() => {
     // We need to setValue here because it's possible something has changed the
     // value in the store between the atom.get() call above and layout. In most
     // cases this should no-op.
-    setValue(atom.get())
+    setValue(atom.get());
 
     function listener() {
-      setValue(atom.get())
+      setValue(atom.get());
     }
 
-    atom.subscribe(listener)
+    atom.subscribe(listener);
     return () => {
-      atom.unsubscribe(listener)
-    }
-  }, [atom])
+      atom.unsubscribe(listener);
+    };
+  }, [atom]);
 
-  return value
+  return value;
 }

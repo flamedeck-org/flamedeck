@@ -1,11 +1,11 @@
-import React, { memo, useState, useCallback } from 'react';
-import { FolderSelectDialog } from '@/components/FolderSelectDialog';
-import { traceApi } from '@/lib/api';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { FOLDER_VIEW_QUERY_KEY } from './hooks/useTraces';
-import type { ApiError, ApiResponse } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { memo, useState, useCallback } from "react";
+import { FolderSelectDialog } from "@/components/FolderSelectDialog";
+import { traceApi } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { FOLDER_VIEW_QUERY_KEY } from "./hooks/useTraces";
+import type { ApiError, ApiResponse } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MoveItemDialogProps {
   isOpen: boolean;
@@ -16,13 +16,13 @@ interface MoveItemDialogProps {
   triggerElement?: React.ReactNode; // Optional trigger
 }
 
-function MoveItemDialogComponent({ 
+function MoveItemDialogComponent({
   isOpen,
   setIsOpen,
   itemsToMove,
   itemNames,
   initialFolderId,
-  triggerElement 
+  triggerElement,
 }: MoveItemDialogProps) {
   const queryClient = useQueryClient();
   const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
@@ -33,29 +33,33 @@ function MoveItemDialogComponent({
     ApiError,
     string | null
   >({
-    mutationFn: (targetFolderId: string | null) => traceApi.moveItems(itemsToMove, user?.id, targetFolderId),
+    mutationFn: (targetFolderId: string | null) =>
+      traceApi.moveItems(itemsToMove, user?.id, targetFolderId),
     onSuccess: (_, targetFolderId) => {
-      toast.success(`Successfully moved ${itemNames.length} item(s) to "${selectedFolderName || 'Root'}".`);
+      toast.success(
+        `Successfully moved ${itemNames.length} item(s) to "${selectedFolderName || "Root"}".`
+      );
       queryClient.invalidateQueries({ queryKey: [FOLDER_VIEW_QUERY_KEY] });
       setIsOpen(false);
     },
     onError: (error: ApiError) => {
       toast.error(`Failed to move items: ${error.message}`);
-    }
+    },
   });
 
-  const handleConfirmMove = useCallback((folderId: string | null, folderName: string | null) => {
-    if (folderId === initialFolderId) {
-      toast.info("Cannot move items to their current location.");
-      return;
-    }
-    setSelectedFolderName(folderName);
-    moveItems(folderId);
-  }, [initialFolderId, moveItems, setSelectedFolderName]);
+  const handleConfirmMove = useCallback(
+    (folderId: string | null, folderName: string | null) => {
+      if (folderId === initialFolderId) {
+        toast.info("Cannot move items to their current location.");
+        return;
+      }
+      setSelectedFolderName(folderName);
+      moveItems(folderId);
+    },
+    [initialFolderId, moveItems, setSelectedFolderName]
+  );
 
-  const itemsDisplay = itemNames.length === 1 
-    ? `"${itemNames[0]}"` 
-    : `${itemNames.length} items`;
+  const itemsDisplay = itemNames.length === 1 ? `"${itemNames[0]}"` : `${itemNames.length} items`;
 
   return (
     <FolderSelectDialog
@@ -70,4 +74,4 @@ function MoveItemDialogComponent({
   );
 }
 
-export const MoveItemDialog = memo(MoveItemDialogComponent); 
+export const MoveItemDialog = memo(MoveItemDialogComponent);

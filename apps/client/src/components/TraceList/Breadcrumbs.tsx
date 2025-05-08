@@ -1,7 +1,7 @@
-import { memo } from 'react';
+import { memo } from "react";
 // import { Folder } from '@/lib/api'; // No longer need full Folder type
-import { ChevronRight, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronRight, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Use a simpler type for the path segments, matching what the RPC returns
 interface PathSegment {
@@ -16,15 +16,18 @@ interface BreadcrumbsProps {
 
 function BreadcrumbsComponent({ path, onNavigate }: BreadcrumbsProps) {
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center space-x-1 text-sm text-muted-foreground">
+    <nav
+      aria-label="Breadcrumb"
+      className="flex items-center space-x-1 text-sm text-muted-foreground"
+    >
       {/* Root button */}
       <Button
         variant="ghost"
         size="sm"
-        className={`pl-0 pr-2 py-1 h-auto ${path.length === 0 ? 'text-foreground font-medium' : 'hover:underline'}`}
+        className={`pl-0 pr-2 py-1 h-auto ${path.length === 0 ? "text-foreground font-medium" : "hover:underline"}`}
         onClick={() => onNavigate(null)} // Navigate to root
         disabled={path.length === 0} // Disable if already at root
-        aria-current={path.length === 0 ? 'page' : undefined}
+        aria-current={path.length === 0 ? "page" : undefined}
       >
         <Home className="h-4 w-4 mr-1.5 flex-shrink-0" />
         My Traces
@@ -39,10 +42,10 @@ function BreadcrumbsComponent({ path, onNavigate }: BreadcrumbsProps) {
             <Button
               variant="ghost"
               size="sm"
-              className={`px-2 py-1 h-auto truncate ${isLast ? 'text-foreground font-medium' : 'hover:underline'}`}
+              className={`px-2 py-1 h-auto truncate ${isLast ? "text-foreground font-medium" : "hover:underline"}`}
               onClick={() => onNavigate(folder.id)}
               disabled={isLast} // Disable the last item (current folder)
-              aria-current={isLast ? 'page' : undefined}
+              aria-current={isLast ? "page" : undefined}
             >
               {folder.name}
             </Button>
@@ -53,4 +56,4 @@ function BreadcrumbsComponent({ path, onNavigate }: BreadcrumbsProps) {
   );
 }
 
-export const Breadcrumbs = memo(BreadcrumbsComponent); 
+export const Breadcrumbs = memo(BreadcrumbsComponent);

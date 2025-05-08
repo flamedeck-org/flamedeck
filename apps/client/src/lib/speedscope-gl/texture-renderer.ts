@@ -1,11 +1,11 @@
-import {Vec2, Rect, AffineTransform} from '@/lib/speedscope-core/math'
-import {Graphics} from './graphics'
-import {setUniformAffineTransform} from './utils'
+import { Vec2, Rect, AffineTransform } from "@/lib/speedscope-core/math";
+import { Graphics } from "./graphics";
+import { setUniformAffineTransform } from "./utils";
 
 export interface TextureRendererProps {
-  texture: Graphics.Texture
-  srcRect: Rect
-  dstRect: Rect
+  texture: Graphics.Texture;
+  srcRect: Rect;
+  dstRect: Rect;
 }
 
 const vert = `
@@ -20,7 +20,7 @@ const vert = `
     vUv = (uvTransform * vec3(uv, 1)).xy;
     gl_Position = vec4((positionTransform * vec3(position, 1)).xy, 0, 1);
   }
-`
+`;
 
 const frag = `
   precision mediump float;
@@ -31,79 +31,79 @@ const frag = `
   void main() {
    gl_FragColor = texture2D(texture, vUv);
   }
-`
+`;
 
 export interface TextureRendererProps {
-  texture: Graphics.Texture
-  srcRect: Rect
-  dstRect: Rect
+  texture: Graphics.Texture;
+  srcRect: Rect;
+  dstRect: Rect;
 }
 
 export class TextureRenderer {
-  private buffer: Graphics.VertexBuffer
-  private material: Graphics.Material
+  private buffer: Graphics.VertexBuffer;
+  private material: Graphics.Material;
 
   constructor(private gl: Graphics.Context) {
-    const vertexFormat = new Graphics.VertexFormat()
-    vertexFormat.add('position', Graphics.AttributeType.FLOAT, 2)
-    vertexFormat.add('uv', Graphics.AttributeType.FLOAT, 2)
+    const vertexFormat = new Graphics.VertexFormat();
+    vertexFormat.add("position", Graphics.AttributeType.FLOAT, 2);
+    vertexFormat.add("uv", Graphics.AttributeType.FLOAT, 2);
 
     const vertices = [
-      {pos: [-1, 1], uv: [0, 1]},
-      {pos: [1, 1], uv: [1, 1]},
-      {pos: [-1, -1], uv: [0, 0]},
-      {pos: [1, -1], uv: [1, 0]},
-    ]
-    const floats: number[] = []
+      { pos: [-1, 1], uv: [0, 1] },
+      { pos: [1, 1], uv: [1, 1] },
+      { pos: [-1, -1], uv: [0, 0] },
+      { pos: [1, -1], uv: [1, 0] },
+    ];
+    const floats: number[] = [];
     for (const v of vertices) {
-      floats.push(v.pos[0])
-      floats.push(v.pos[1])
-      floats.push(v.uv[0])
-      floats.push(v.uv[1])
+      floats.push(v.pos[0]);
+      floats.push(v.pos[1]);
+      floats.push(v.uv[0]);
+      floats.push(v.uv[1]);
     }
 
-    this.buffer = gl.createVertexBuffer(vertexFormat.stride * vertices.length)
-    this.buffer.upload(new Uint8Array(new Float32Array(floats).buffer))
-    this.material = gl.createMaterial(vertexFormat, vert, frag)
+    this.buffer = gl.createVertexBuffer(vertexFormat.stride * vertices.length);
+    this.buffer.upload(new Uint8Array(new Float32Array(floats).buffer));
+    this.material = gl.createMaterial(vertexFormat, vert, frag);
   }
 
   render(props: TextureRendererProps) {
-    this.material.setUniformSampler('texture', props.texture, 0)
+    this.material.setUniformSampler("texture", props.texture, 0);
     setUniformAffineTransform(
       this.material,
-      'uvTransform',
+      "uvTransform",
       (() => {
-        const {srcRect, texture} = props
+        const { srcRect, texture } = props;
         const physicalToUV = AffineTransform.withTranslation(new Vec2(0, 1))
           .times(AffineTransform.withScale(new Vec2(1, -1)))
           .times(
             AffineTransform.betweenRects(
               new Rect(Vec2.zero, new Vec2(texture.width, texture.height)),
-              Rect.unit,
-            ),
-          )
-        const uvRect = physicalToUV.transformRect(srcRect)
-        return AffineTransform.betweenRects(Rect.unit, uvRect)
-      })(),
-    )
+              Rect.unit
+            )
+          );
+        const uvRect = physicalToUV.transformRect(srcRect);
+        return AffineTransform.betweenRects(Rect.unit, uvRect);
+      })()
+    );
     setUniformAffineTransform(
       this.material,
-      'positionTransform',
+      "positionTransform",
       (() => {
-        const {dstRect} = props
+        const { dstRect } = props;
 
-        const {viewport} = this.gl
-        const viewportSize = new Vec2(viewport.width, viewport.height)
+        const { viewport } = this.gl;
+        const viewportSize = new Vec2(viewport.width, viewport.height);
 
         const physicalToNDC = AffineTransform.withScale(new Vec2(1, -1)).times(
-          AffineTransform.betweenRects(new Rect(Vec2.zero, viewportSize), Rect.NDC),
-        )
-        const ndcRect = physicalToNDC.transformRect(dstRect)
-        return AffineTransform.betweenRects(Rect.NDC, ndcRect)
-      })(),
-    )
+          AffineTransform.betweenRects(new Rect(Vec2.zero, viewportSize), Rect.NDC)
+        );
+        const ndcRect = physicalToNDC.transformRect(dstRect);
+        return AffineTransform.betweenRects(Rect.NDC, ndcRect);
+      })()
+    );
 
-    this.gl.setUnpremultipliedBlendState()
-    this.gl.draw(Graphics.Primitive.TRIANGLE_STRIP, this.material, this.buffer)
+    this.gl.setUnpremultipliedBlendState();
+    this.gl.draw(Graphics.Primitive.TRIANGLE_STRIP, this.material, this.buffer);
   }
 }

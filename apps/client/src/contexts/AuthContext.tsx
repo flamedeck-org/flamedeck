@@ -1,12 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types';
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
-import { fetchUserProfile } from '@/lib/api/users';
-import type { ApiResponse, UserProfileData } from '@/types';
+import { fetchUserProfile } from "@/lib/api/users";
+import type { ApiResponse, UserProfileData } from "@/types";
 
 type UserProfile = UserProfileData;
 
@@ -22,7 +22,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const userProfileQueryKey = (userId: string) => ['userProfile', userId];
+const userProfileQueryKey = (userId: string) => ["userProfile", userId];
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -30,12 +30,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  const { 
+  const {
     data: profileData,
     isLoading: profileLoading,
     refetch: refetchProfileQuery,
   } = useQuery<ApiResponse<UserProfile | null>, Error>({
-    queryKey: userProfileQueryKey(user?.id ?? ''),
+    queryKey: userProfileQueryKey(user?.id ?? ""),
     queryFn: async () => {
       if (!user?.id) return { data: null, error: null };
       const result = await fetchUserProfile(user.id);
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(null);
       setUser(null);
       setLoading(false);
-      queryClient.removeQueries({ queryKey: userProfileQueryKey(user?.id ?? '') });
+      queryClient.removeQueries({ queryKey: userProfileQueryKey(user?.id ?? "") });
       queryClient.clear();
     } catch (error) {
       setSession(null);
@@ -80,43 +80,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const checkLoadingComplete = () => {
       if (getSessionResolved && firstAuthStateEventProcessed && isMounted) {
-        console.log("[AuthContext] Both getSession and first auth event processed. Setting loading = false.");
+        console.log(
+          "[AuthContext] Both getSession and first auth event processed. Setting loading = false."
+        );
         setLoading(false);
       }
     };
 
     console.log("[AuthContext] Setting up onAuthStateChange listener...");
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, currentSession) => {
-        if (!isMounted) return;
-        console.log("[AuthContext] onAuthStateChange event:", _event, "Session:", currentSession);
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      if (!isMounted) return;
+      console.log("[AuthContext] onAuthStateChange event:", _event, "Session:", currentSession);
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
 
-        if (!firstAuthStateEventProcessed) {
-          console.log("[AuthContext] First onAuthStateChange event processed.");
-          firstAuthStateEventProcessed = true;
-          checkLoadingComplete();
-        }
-        
-        if (_event === 'SIGNED_OUT') {
-          console.log("[AuthContext] SIGNED_OUT event, clearing RQ profile cache.");
-          queryClient.clear();
-        }
+      if (!firstAuthStateEventProcessed) {
+        console.log("[AuthContext] First onAuthStateChange event processed.");
+        firstAuthStateEventProcessed = true;
+        checkLoadingComplete();
       }
-    );
+
+      if (_event === "SIGNED_OUT") {
+        console.log("[AuthContext] SIGNED_OUT event, clearing RQ profile cache.");
+        queryClient.clear();
+      }
+    });
 
     console.log("[AuthContext] Performing initial getSession...");
-    supabase.auth.getSession()
+    supabase.auth
+      .getSession()
       .then(({ data: { session: initialSession } }) => {
         if (!isMounted) return;
         console.log("[AuthContext] getSession() resolved. Session:", initialSession);
-        setSession(prev => prev ?? initialSession);
-        setUser(prev => prev ?? (initialSession?.user ?? null));
+        setSession((prev) => prev ?? initialSession);
+        setUser((prev) => prev ?? initialSession?.user ?? null);
         getSessionResolved = true;
         checkLoadingComplete();
       })
-      .catch(error => {
+      .catch((error) => {
         if (!isMounted) return;
         console.error("[AuthContext] Error during initial getSession() check:", error);
         getSessionResolved = true;
@@ -127,7 +130,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("[AuthContext] useEffect cleanup. Unsubscribing.");
       isMounted = false;
       subscription.unsubscribe();
-    }
+    };
   }, [queryClient]);
 
   const value = useMemo(() => {
@@ -138,21 +141,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       loading,
       profileLoading,
       signOut,
-      refetchProfile
-    }
+      refetchProfile,
+    };
   }, [session, user, profile, loading, profileLoading, signOut, refetchProfile]);
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

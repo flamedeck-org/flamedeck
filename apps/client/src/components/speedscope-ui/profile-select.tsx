@@ -1,8 +1,8 @@
-import type {Profile} from '../../lib/speedscope-core/profile';
-import type { Ref} from 'react';
-import {useCallback, useState, useMemo, useEffect, useRef} from 'react';
-import {fuzzyMatchStrings} from '../../lib/speedscope-core/fuzzy-find';
-import {sortBy} from '../../lib/speedscope-core/lib-utils';
+import type { Profile } from "../../lib/speedscope-core/profile";
+import type { Ref } from "react";
+import { useCallback, useState, useMemo, useEffect, useRef } from "react";
+import { fuzzyMatchStrings } from "../../lib/speedscope-core/fuzzy-find";
+import { sortBy } from "../../lib/speedscope-core/lib-utils";
 
 interface ProfileSelectRowProps {
   setProfileIndexToView: (profileIndex: number) => void;
@@ -21,7 +21,7 @@ interface ProfileSelectRowProps {
 function highlightRanges(
   text: string,
   ranges: [number, number][],
-  highlightedClassName: string,
+  highlightedClassName: string
 ): JSX.Element {
   const spans: ComponentChild[] = [];
   let last = 0;
@@ -53,9 +53,12 @@ export function ProfileSelectRow({
     setProfileIndexToView(indexInProfileGroup);
   }, [closeProfileSelect, setProfileIndexToView, indexInProfileGroup]);
 
-  const onMouseEnter = useCallback((ev: Event) => {
-    setHoveredProfileIndex(indexInProfileGroup);
-  }, [setHoveredProfileIndex, indexInProfileGroup]);
+  const onMouseEnter = useCallback(
+    (ev: Event) => {
+      setHoveredProfileIndex(indexInProfileGroup);
+    },
+    [setHoveredProfileIndex, indexInProfileGroup]
+  );
 
   const name = profile.getName();
 
@@ -78,13 +81,13 @@ export function ProfileSelectRow({
     indexInFilteredListView % 2 === 0 ? "bg-gray-100" : "",
     selected ? "bg-blue-500 text-white" : "",
     hovered ? "border-blue-500" : "",
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  const indexClasses = [
-    "inline-block text-right",
-    "text-gray-500",
-    selected ? "text-white" : "",
-  ].filter(Boolean).join(' ');
+  const indexClasses = ["inline-block text-right", "text-gray-500", selected ? "text-white" : ""]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div
@@ -94,12 +97,9 @@ export function ProfileSelectRow({
       title={name}
       className={rowClasses}
     >
-      <span
-        className={indexClasses}
-        style={{width: maxDigits + 'em'}}
-      >
+      <span className={indexClasses} style={{ width: maxDigits + "em" }}>
         {indexInProfileGroup + 1}:
-      </span>{' '}
+      </span>{" "}
       {highlighted}
     </div>
   );
@@ -136,7 +136,7 @@ function getSortedFilteredProfiles(profiles: Profile[], filterText: string): Fil
       ...match,
     });
   }
-  sortBy(filtered, p => -p.score);
+  sortBy(filtered, (p) => -p.score);
   return filtered;
 }
 
@@ -147,22 +147,28 @@ export function ProfileSelect({
   visible,
   setProfileIndexToView,
 }: ProfileSelectProps) {
-  const [filterText, setFilterText] = useState('');
+  const [filterText, setFilterText] = useState("");
 
-  const onFilterTextChange = useCallback((ev: Event) => {
-    const value = (ev.target as HTMLInputElement).value;
-    setFilterText(value);
-  }, [setFilterText]);
+  const onFilterTextChange = useCallback(
+    (ev: Event) => {
+      const value = (ev.target as HTMLInputElement).value;
+      setFilterText(value);
+    },
+    [setFilterText]
+  );
 
-  const focusFilterInput = useCallback((node: HTMLInputElement | null) => {
-    if (node) {
-      if (visible) {
-        node.select();
-      } else {
-        node.blur();
+  const focusFilterInput = useCallback(
+    (node: HTMLInputElement | null) => {
+      if (node) {
+        if (visible) {
+          node.select();
+        } else {
+          node.blur();
+        }
       }
-    }
-  }, [visible]);
+    },
+    [visible]
+  );
 
   const filteredProfiles = useMemo(() => {
     return getSortedFilteredProfiles(profiles, filterText);
@@ -176,75 +182,73 @@ export function ProfileSelect({
       setHoveredProfileIndex(null);
       if (selectedNodeRef.current !== null) {
         selectedNodeRef.current.scrollIntoView({
-          behavior: 'auto',
-          block: 'nearest',
-          inline: 'nearest',
+          behavior: "auto",
+          block: "nearest",
+          inline: "nearest",
         });
       }
     }
   }, [visible]);
 
-  const onFilterKeyUp = useCallback((ev: KeyboardEvent) => {
-    stopPropagation(ev);
+  const onFilterKeyUp = useCallback(
+    (ev: KeyboardEvent) => {
+      stopPropagation(ev);
 
-    let newHoveredIndexInFilteredList: number | null = null;
+      let newHoveredIndexInFilteredList: number | null = null;
 
-    switch (ev.key) {
-      case 'Enter': {
-        if (hoveredProfileIndex != null) {
+      switch (ev.key) {
+        case "Enter": {
+          if (hoveredProfileIndex != null) {
+            closeProfileSelect();
+            setProfileIndexToView(hoveredProfileIndex);
+          }
+          break;
+        }
+        case "Escape": {
           closeProfileSelect();
-          setProfileIndexToView(hoveredProfileIndex);
+          break;
         }
-        break;
-      }
-      case 'Escape': {
-        closeProfileSelect();
-        break;
-      }
-      case 'ArrowDown': {
-        ev.preventDefault();
-        newHoveredIndexInFilteredList = 0;
-        if (hoveredProfileIndex != null) {
-          const indexInFilteredList = filteredProfiles.findIndex(
-            p => p.indexInProfileGroup === hoveredProfileIndex,
-          );
-          if (indexInFilteredList !== -1) {
-            newHoveredIndexInFilteredList = indexInFilteredList + 1;
+        case "ArrowDown": {
+          ev.preventDefault();
+          newHoveredIndexInFilteredList = 0;
+          if (hoveredProfileIndex != null) {
+            const indexInFilteredList = filteredProfiles.findIndex(
+              (p) => p.indexInProfileGroup === hoveredProfileIndex
+            );
+            if (indexInFilteredList !== -1) {
+              newHoveredIndexInFilteredList = indexInFilteredList + 1;
+            }
           }
+          break;
         }
-        break;
-      }
-      case 'ArrowUp': {
-        ev.preventDefault();
-        newHoveredIndexInFilteredList = filteredProfiles.length - 1;
-        if (hoveredProfileIndex != null) {
-          const indexInFilteredList = filteredProfiles.findIndex(
-            p => p.indexInProfileGroup === hoveredProfileIndex,
-          );
-          if (indexInFilteredList !== -1) {
-            newHoveredIndexInFilteredList = indexInFilteredList - 1;
+        case "ArrowUp": {
+          ev.preventDefault();
+          newHoveredIndexInFilteredList = filteredProfiles.length - 1;
+          if (hoveredProfileIndex != null) {
+            const indexInFilteredList = filteredProfiles.findIndex(
+              (p) => p.indexInProfileGroup === hoveredProfileIndex
+            );
+            if (indexInFilteredList !== -1) {
+              newHoveredIndexInFilteredList = indexInFilteredList - 1;
+            }
           }
+          break;
         }
-        break;
       }
-    }
 
-    if (
-      newHoveredIndexInFilteredList != null &&
-      newHoveredIndexInFilteredList >= 0 &&
-      newHoveredIndexInFilteredList < filteredProfiles.length
-    ) {
-      const indexInProfileGroup =
-        filteredProfiles[newHoveredIndexInFilteredList].indexInProfileGroup;
-      setHoveredProfileIndex(indexInProfileGroup);
-      setPendingForcedScroll(true);
-    }
-  }, [
-    closeProfileSelect,
-    setProfileIndexToView,
-    hoveredProfileIndex,
-    filteredProfiles,
-  ]);
+      if (
+        newHoveredIndexInFilteredList != null &&
+        newHoveredIndexInFilteredList >= 0 &&
+        newHoveredIndexInFilteredList < filteredProfiles.length
+      ) {
+        const indexInProfileGroup =
+          filteredProfiles[newHoveredIndexInFilteredList].indexInProfileGroup;
+        setHoveredProfileIndex(indexInProfileGroup);
+        setPendingForcedScroll(true);
+      }
+    },
+    [closeProfileSelect, setProfileIndexToView, hoveredProfileIndex, filteredProfiles]
+  );
 
   const [pendingForcedScroll, setPendingForcedScroll] = useState(false);
   useEffect(() => {
@@ -254,21 +258,27 @@ export function ProfileSelect({
     }
   }, [setHoveredProfileIndex, filteredProfiles]);
 
-  const hoveredNodeRef = useCallback((hoveredNode: HTMLDivElement | null) => {
-    if (pendingForcedScroll && hoveredNode) {
-      hoveredNode.scrollIntoView({
-        behavior: 'auto',
-        block: 'nearest',
-        inline: 'nearest',
-      });
-      setPendingForcedScroll(false);
-    }
-  }, [pendingForcedScroll, setPendingForcedScroll]);
+  const hoveredNodeRef = useCallback(
+    (hoveredNode: HTMLDivElement | null) => {
+      if (pendingForcedScroll && hoveredNode) {
+        hoveredNode.scrollIntoView({
+          behavior: "auto",
+          block: "nearest",
+          inline: "nearest",
+        });
+        setPendingForcedScroll(false);
+      }
+    },
+    [pendingForcedScroll, setPendingForcedScroll]
+  );
 
-  const selectedHoveredRef = useCallback((node: HTMLDivElement | null) => {
-    selectedNodeRef.current = node;
-    hoveredNodeRef(node);
-  }, [selectedNodeRef, hoveredNodeRef]);
+  const selectedHoveredRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      selectedNodeRef.current = node;
+      hoveredNodeRef(node);
+    },
+    [selectedNodeRef, hoveredNodeRef]
+  );
 
   return (
     <div className="w-full max-w-lg mx-auto relative z-20 flex flex-col items-center">
@@ -279,7 +289,7 @@ export function ProfileSelect({
             type="text"
             className="text-black bg-gray-100 rounded p-1.25 border-none outline-none focus:border-none focus:outline-none selection:bg-blue-300 selection:text-black"
             ref={focusFilterInput}
-            placeholder={'Filter...'}
+            placeholder={"Filter..."}
             value={filterText}
             onInput={onFilterTextChange}
             onKeyDown={onFilterKeyUp}
@@ -288,7 +298,7 @@ export function ProfileSelect({
           />
         </div>
         <div className="max-h-[calc(min(100vh-64px,560px))] overflow-auto">
-          {filteredProfiles.map(({profile, matchedRanges, indexInProfileGroup}, indexInList) => {
+          {filteredProfiles.map(({ profile, matchedRanges, indexInProfileGroup }, indexInList) => {
             let ref: Ref<HTMLDivElement> | undefined = undefined;
             const selected = indexInProfileGroup === indexToView;
             const hovered = indexInProfileGroup === hoveredProfileIndex;

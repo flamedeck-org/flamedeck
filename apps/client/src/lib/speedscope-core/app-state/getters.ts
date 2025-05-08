@@ -1,70 +1,69 @@
-import type {Frame, Profile} from '../profile'
-import {memoizeByReference, memoizeByShallowEquality} from '../lib-utils'
-import {RowAtlas} from '../../speedscope-gl/row-atlas'
-import {CanvasContext} from '../../speedscope-gl/canvas-context'
-import type {FlamechartRowAtlasKey} from '../../speedscope-gl/flamechart-renderer'
-import type {Theme} from '@/components/speedscope-ui/themes/theme'
+import type { Frame, Profile } from "../profile";
+import { memoizeByReference, memoizeByShallowEquality } from "../lib-utils";
+import { RowAtlas } from "../../speedscope-gl/row-atlas";
+import { CanvasContext } from "../../speedscope-gl/canvas-context";
+import type { FlamechartRowAtlasKey } from "../../speedscope-gl/flamechart-renderer";
+import type { Theme } from "@/components/speedscope-ui/themes/theme";
 
 export const createGetColorBucketForFrame = memoizeByReference(
   (frameToColorBucket: Map<number | string, number>) => {
     return (frame: Frame): number => {
-      return frameToColorBucket.get(frame.key) || 0
-    }
-  },
-)
-
+      return frameToColorBucket.get(frame.key) || 0;
+    };
+  }
+);
 
 export const createGetCSSColorForFrame = memoizeByShallowEquality(
   ({
     theme,
     frameToColorBucket,
   }: {
-    theme: Theme
-    frameToColorBucket: Map<number | string, number>
+    theme: Theme;
+    frameToColorBucket: Map<number | string, number>;
   }) => {
-    const getColorBucketForFrame = createGetColorBucketForFrame(frameToColorBucket)
+    const getColorBucketForFrame = createGetColorBucketForFrame(frameToColorBucket);
     return (frame: Frame): string => {
-      const t = getColorBucketForFrame(frame) / 255
-      return theme.colorForBucket(t).toCSS()
-    }
-  },
-)
+      const t = getColorBucketForFrame(frame) / 255;
+      return theme.colorForBucket(t).toCSS();
+    };
+  }
+);
 
 export const getCanvasContext = memoizeByShallowEquality(
-  ({theme, canvas}: {theme: Theme; canvas: HTMLCanvasElement}) => {
-    return new CanvasContext(canvas, theme)
-  },
-)
+  ({ theme, canvas }: { theme: Theme; canvas: HTMLCanvasElement }) => {
+    return new CanvasContext(canvas, theme);
+  }
+);
 
 export const getRowAtlas = memoizeByReference((canvasContext: CanvasContext) => {
   return new RowAtlas<FlamechartRowAtlasKey>(
     canvasContext.gl,
     canvasContext.rectangleBatchRenderer,
-    canvasContext.textureRenderer,
-  )
-})
+    canvasContext.textureRenderer
+  );
+});
 
 export const getProfileToView = memoizeByShallowEquality(
-  ({profile, flattenRecursion}: {profile: Profile; flattenRecursion: boolean}): Profile => {
-    return flattenRecursion ? profile.getProfileWithRecursionFlattened() : profile
-  },
-)
+  ({ profile, flattenRecursion }: { profile: Profile; flattenRecursion: boolean }): Profile => {
+    return flattenRecursion ? profile.getProfileWithRecursionFlattened() : profile;
+  }
+);
 export const getFrameToColorBucket = memoizeByReference(
   (profile: Profile): Map<string | number, number> => {
-    const frames: Frame[] = []
-    profile.forEachFrame(f => frames.push(f))
+    const frames: Frame[] = [];
+    profile.forEachFrame((f) => frames.push(f));
     function key(f: Frame) {
-      return (f.file || '') + f.name
+      return (f.file || "") + f.name;
     }
     function compare(a: Frame, b: Frame) {
-      return key(a) > key(b) ? 1 : -1
+      return key(a) > key(b) ? 1 : -1;
     }
-    frames.sort(compare)
-    const frameToColorBucket = new Map<string | number, number>()
+    frames.sort(compare);
+    const frameToColorBucket = new Map<string | number, number>();
     for (let i = 0; i < frames.length; i++) {
-      frameToColorBucket.set(frames[i].key, Math.floor((255 * i) / frames.length))
+      frameToColorBucket.set(frames[i].key, Math.floor((255 * i) / frames.length));
     }
 
-    return frameToColorBucket
-  },
-)
+    return frameToColorBucket;
+  }
+);

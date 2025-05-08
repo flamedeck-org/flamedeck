@@ -10,33 +10,43 @@ import { useQuery } from "@tanstack/react-query";
 import { getTraceBlob } from "@/lib/api/storage";
 import type { TraceMetadata } from "@/lib/api";
 import { traceApi } from "@/lib/api";
-import type { ApiResponse } from '@/types';
+import type { ApiResponse } from "@/types";
 import type { FallbackProps } from "react-error-boundary";
 import { ErrorBoundary } from "react-error-boundary";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, Palette, Share2 } from 'lucide-react';
-import { TraceViewerCommentSidebar } from '@/components/TraceViewerCommentList/TraceViewerCommentSidebar';
-import { useCommentManagement } from '@/hooks/useCommentManagement';
-import type { ApiError } from '@/types';
-import { ChatContainer } from '@/components/Chat';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, MessageSquare, Palette, Share2 } from "lucide-react";
+import { TraceViewerCommentSidebar } from "@/components/TraceViewerCommentList/TraceViewerCommentSidebar";
+import { useCommentManagement } from "@/hooks/useCommentManagement";
+import type { ApiError } from "@/types";
+import { ChatContainer } from "@/components/Chat";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAtom } from "../lib/speedscope-core/atom.ts";
-import type { 
-  FlamegraphThemeName} from "../components/speedscope-ui/themes/theme.tsx";
-import { 
-  flamegraphThemeAtom, 
-  flamegraphThemeDisplayNames, 
-  flamegraphThemePreviews
+import type { FlamegraphThemeName } from "../components/speedscope-ui/themes/theme.tsx";
+import {
+  flamegraphThemeAtom,
+  flamegraphThemeDisplayNames,
+  flamegraphThemePreviews,
 } from "../components/speedscope-ui/themes/theme.tsx";
-import { useSharingModal } from '@/hooks/useSharingModal';
+import { useSharingModal } from "@/hooks/useSharingModal";
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
-    <div role="alert" className="flex flex-col items-center justify-center h-full w-full p-4 text-center border border-destructive bg-destructive/10 text-destructive">
+    <div
+      role="alert"
+      className="flex flex-col items-center justify-center h-full w-full p-4 text-center border border-destructive bg-destructive/10 text-destructive"
+    >
       <h2 className="text-xl font-semibold">Something went wrong rendering the trace viewer:</h2>
       <pre className="mt-2 whitespace-pre-wrap">{error.message}</pre>
-      <Button variant="outline" className="mt-4" onClick={resetErrorBoundary}>Try again</Button>
+      <Button variant="outline" className="mt-4" onClick={resetErrorBoundary}>
+        Try again
+      </Button>
     </div>
   );
 }
@@ -46,31 +56,33 @@ type SnapshotGenerator = (viewType: string, frameKey?: string) => Promise<string
 
 // Define the type for the snapshot result state
 interface SnapshotResultState {
-    requestId: string;
-    status: 'success' | 'error';
-    data?: string; // imageDataUrl
-    error?: string;
+  requestId: string;
+  status: "success" | "error";
+  data?: string; // imageDataUrl
+  error?: string;
 }
 
 // --- Add state for test snapshot display ---
 interface TestSnapshotState {
-    dataUrl: string | null;
-    error: string | null;
+  dataUrl: string | null;
+  error: string | null;
 }
 // -----------------------------------------
 
 const TraceViewerPage: React.FC = () => {
-  const { id = '' } = useParams<{ id: string }>();
+  const { id = "" } = useParams<{ id: string }>();
   const location = useLocation();
   const { user } = useAuth();
   const isAuthenticated = !!user;
   const { openModal } = useSharingModal();
-  
+
   // Read initialView from location state, default to 'time_ordered'
   const initialViewFromState = location.state?.initialView as SpeedscopeViewType | undefined;
-  const [selectedView, setSelectedView] = useState<SpeedscopeViewType>(initialViewFromState || 'time_ordered');
+  const [selectedView, setSelectedView] = useState<SpeedscopeViewType>(
+    initialViewFromState || "time_ordered"
+  );
 
-  // --- Flamegraph Theme State --- 
+  // --- Flamegraph Theme State ---
   const selectedFlamegraphTheme = useAtom(flamegraphThemeAtom);
   const selectedThemePreview = flamegraphThemePreviews[selectedFlamegraphTheme]; // Get selected preview
   // ------------------------------
@@ -78,51 +90,57 @@ const TraceViewerPage: React.FC = () => {
   // Get blobPath from location state
   const blobPathFromState = location.state?.blobPath as string | undefined;
 
-  // --- Call comment hook unconditionally --- 
+  // --- Call comment hook unconditionally ---
   // NOTE: useCommentManagement needs to be updated to handle isAuthenticated=false internally
   const commentManagement = useCommentManagement(id, isAuthenticated);
   // -----------------------------------------
 
-  // --- Snapshot State and Refs --- 
-  const [snapshotResultForClient, setSnapshotResultForClient] = useState<SnapshotResultState | null>(null);
+  // --- Snapshot State and Refs ---
+  const [snapshotResultForClient, setSnapshotResultForClient] =
+    useState<SnapshotResultState | null>(null);
   const snapshotGeneratorRef = useRef<SnapshotGenerator | null>(null);
   // --- State for local testing display ---
-  const [testSnapshot, setTestSnapshot] = useState<TestSnapshotState>({ dataUrl: null, error: null });
+  const [testSnapshot, setTestSnapshot] = useState<TestSnapshotState>({
+    dataUrl: null,
+    error: null,
+  });
   // ------------------------------------
 
   // --- Conditionally fetch trace details ---
-  const traceDetailsQueryKey = useMemo(() =>
-    isAuthenticated
-      ? ['traceDetails', id]
-      : ['publicTraceDetails', id]
-  , [isAuthenticated, id]);
+  const traceDetailsQueryKey = useMemo(
+    () => (isAuthenticated ? ["traceDetails", id] : ["publicTraceDetails", id]),
+    [isAuthenticated, id]
+  );
 
   const fetchTraceDetailsFn = useMemo(() => {
     // Explicitly type the functions being returned
-    return (): Promise<ApiResponse<TraceMetadata> | ApiResponse<{ id: string; blob_path: string }>> =>
-     isAuthenticated ? traceApi.getTrace(id) : traceApi.getPublicTrace(id);
+    return (): Promise<
+      ApiResponse<TraceMetadata> | ApiResponse<{ id: string; blob_path: string }>
+    > => (isAuthenticated ? traceApi.getTrace(id) : traceApi.getPublicTrace(id));
   }, [isAuthenticated, id]);
 
   // Define the expected type for the query data, which depends on authentication state
-  type TraceDetailsQueryData = ApiResponse<TraceMetadata> | ApiResponse<{ id: string; blob_path: string }>;
+  type TraceDetailsQueryData =
+    | ApiResponse<TraceMetadata>
+    | ApiResponse<{ id: string; blob_path: string }>;
 
   const {
     data: traceDetailsApiResponse, // Renamed from traceData
     isLoading: isLoadingTraceDetails, // Renamed from isLoadingTrace
-    error: traceDetailsError // Renamed from traceError
+    error: traceDetailsError, // Renamed from traceError
   } = useQuery<TraceDetailsQueryData, ApiError>({
     queryKey: traceDetailsQueryKey,
     queryFn: fetchTraceDetailsFn,
     enabled: !!id && !blobPathFromState, // Only fetch if ID exists and blob path isn't in state
     staleTime: 5 * 60 * 1000, // Stale time of 5 minutes
     retry: (failureCount, error: ApiError) => {
-       // Don't retry on 404-like errors (not found or not public)
-       if (error?.error?.code === '404' || error?.error?.code === 'PGRST116') {
-           return false;
-       }
-       // Standard retry logic for other errors
-       return failureCount < 3;
-    }
+      // Don't retry on 404-like errors (not found or not public)
+      if (error?.error?.code === "404" || error?.error?.code === "PGRST116") {
+        return false;
+      }
+      // Standard retry logic for other errors
+      return failureCount < 3;
+    },
   });
   // -----------------------------------------
 
@@ -130,18 +148,22 @@ const TraceViewerPage: React.FC = () => {
   const traceData = traceDetailsApiResponse?.data;
 
   // Get the blob path (conditionally)
-  const blobPath = blobPathFromState || (traceData as TraceMetadata | { blob_path: string })?.blob_path;
+  const blobPath =
+    blobPathFromState || (traceData as TraceMetadata | { blob_path: string })?.blob_path;
 
   // Fetch trace blob
   const {
     data: traceBlobData,
     isLoading: isLoadingBlob,
-    error: blobError
-  } = useQuery<{
-    data: ArrayBuffer;
-    fileName: string;
-  }, Error>({
-    queryKey: ['traceBlob', id, blobPath],
+    error: blobError,
+  } = useQuery<
+    {
+      data: ArrayBuffer;
+      fileName: string;
+    },
+    Error
+  >({
+    queryKey: ["traceBlob", id, blobPath],
     queryFn: () => {
       if (!blobPath) throw new Error("Blob path is required");
       return getTraceBlob(blobPath);
@@ -157,10 +179,10 @@ const TraceViewerPage: React.FC = () => {
       setSelectedView(newInitialView);
     }
     // Only run when location state changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
-  // --- Snapshot Handling Callbacks --- 
+  // --- Snapshot Handling Callbacks ---
   const handleRegisterSnapshotter = useCallback((generator: SnapshotGenerator) => {
     console.log("[TraceViewerPage] Snapshot generator registered.");
     snapshotGeneratorRef.current = generator;
@@ -170,54 +192,62 @@ const TraceViewerPage: React.FC = () => {
   const handleTriggerSnapshotForChat = useCallback(
     async (requestId: string, viewType: string, frameKey?: string) => {
       if (!snapshotGeneratorRef.current) {
-        console.error('[TraceViewerPage] Snapshot generator not registered!');
-        setSnapshotResultForClient({ requestId, status: 'error', error: 'Snapshot function not available.' });
+        console.error("[TraceViewerPage] Snapshot generator not registered!");
+        setSnapshotResultForClient({
+          requestId,
+          status: "error",
+          error: "Snapshot function not available.",
+        });
         return;
       }
       try {
-        console.log(`[TraceViewerPage] Triggering snapshot for ${viewType}, requestId ${requestId} (for Chat)`);
+        console.log(
+          `[TraceViewerPage] Triggering snapshot for ${viewType}, requestId ${requestId} (for Chat)`
+        );
         const imageDataUrl = await snapshotGeneratorRef.current(viewType, frameKey);
         if (imageDataUrl) {
-          setSnapshotResultForClient({ requestId, status: 'success', data: imageDataUrl });
+          setSnapshotResultForClient({ requestId, status: "success", data: imageDataUrl });
         } else {
-          throw new Error('Snapshot generation returned null.');
+          throw new Error("Snapshot generation returned null.");
         }
       } catch (error: unknown) {
-        console.error('[TraceViewerPage] Snapshot generation failed:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to generate snapshot.';
-        setSnapshotResultForClient({ requestId, status: 'error', error: errorMessage });
+        console.error("[TraceViewerPage] Snapshot generation failed:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to generate snapshot.";
+        setSnapshotResultForClient({ requestId, status: "error", error: errorMessage });
       }
     },
-    [], // No dependencies needed as it uses a ref
+    [] // No dependencies needed as it uses a ref
   );
 
   // --- Test function to trigger snapshot locally ---
   const handleTriggerSnapshotForTest = useCallback(async () => {
     setTestSnapshot({ dataUrl: null, error: "Generating..." }); // Indicate loading
     if (!snapshotGeneratorRef.current) {
-        console.error('[TraceViewerPage] Snapshot generator not registered!');
-        setTestSnapshot({ dataUrl: null, error: 'Snapshot function not available.' });
-        return;
+      console.error("[TraceViewerPage] Snapshot generator not registered!");
+      setTestSnapshot({ dataUrl: null, error: "Snapshot function not available." });
+      return;
     }
     try {
-        console.log(`[TraceViewerPage] Triggering snapshot for ${selectedView} (for Test)`);
-        const imageDataUrl = await snapshotGeneratorRef.current(selectedView); // Use current view
-        if (imageDataUrl) {
-            setTestSnapshot({ dataUrl: imageDataUrl, error: null });
-        } else {
-            throw new Error('Snapshot generation returned null.');
-        }
+      console.log(`[TraceViewerPage] Triggering snapshot for ${selectedView} (for Test)`);
+      const imageDataUrl = await snapshotGeneratorRef.current(selectedView); // Use current view
+      if (imageDataUrl) {
+        setTestSnapshot({ dataUrl: imageDataUrl, error: null });
+      } else {
+        throw new Error("Snapshot generation returned null.");
+      }
     } catch (error: unknown) {
-        console.error('[TraceViewerPage] Test snapshot generation failed:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to generate test snapshot.';
-        setTestSnapshot({ dataUrl: null, error: errorMessage });
+      console.error("[TraceViewerPage] Test snapshot generation failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to generate test snapshot.";
+      setTestSnapshot({ dataUrl: null, error: errorMessage });
     }
   }, [selectedView]); // Recreate if selectedView changes
   // ---------------------------------------------
 
   const clearSnapshotResult = useCallback(() => {
-      console.log("[TraceViewerPage] Clearing snapshot result for chat.");
-      setSnapshotResultForClient(null);
+    console.log("[TraceViewerPage] Clearing snapshot result for chat.");
+    setSnapshotResultForClient(null);
   }, []);
   // -----------------------------------
 
@@ -249,21 +279,46 @@ const TraceViewerPage: React.FC = () => {
       {!isLoading && error && (
         <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center relative z-10">
           <h2 className="text-xl font-semibold text-destructive">
-            {error?.code === '404' ? 'Trace Not Found or Not Public' : 'Error Loading Trace Data'}
+            {error?.code === "404" ? "Trace Not Found or Not Public" : "Error Loading Trace Data"}
           </h2>
           <p className="text-destructive mt-2">{error.message}</p>
-          {id && <Link to={`/traces/${id}`}><Button variant="outline" className="mt-4">Back to Details</Button></Link>}
+          {id && (
+            <Link to={`/traces/${id}`}>
+              <Button variant="outline" className="mt-4">
+                Back to Details
+              </Button>
+            </Link>
+          )}
         </div>
       )}
 
       {!isLoading && !error && traceBlobData && id && (
         <div className="h-full w-full flex flex-col bg-background">
           <div className="flex justify-between items-center flex-shrink-0 border-b z-[1] bg-background px-4 gap-4">
-            <Tabs value={selectedView} onValueChange={(value: string) => setSelectedView(value as SpeedscopeViewType)} className="inline-block">
+            <Tabs
+              value={selectedView}
+              onValueChange={(value: string) => setSelectedView(value as SpeedscopeViewType)}
+              className="inline-block"
+            >
               <TabsList className="inline-flex rounded-none bg-transparent text-foreground p-0 border-none">
-                <TabsTrigger value="time_ordered" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Time Ordered</TabsTrigger>
-                <TabsTrigger value="left_heavy" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Left Heavy</TabsTrigger>
-                <TabsTrigger value="sandwich" className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground">Sandwich</TabsTrigger>
+                <TabsTrigger
+                  value="time_ordered"
+                  className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground"
+                >
+                  Time Ordered
+                </TabsTrigger>
+                <TabsTrigger
+                  value="left_heavy"
+                  className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground"
+                >
+                  Left Heavy
+                </TabsTrigger>
+                <TabsTrigger
+                  value="sandwich"
+                  className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground"
+                >
+                  Sandwich
+                </TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="flex items-center gap-2">
@@ -277,41 +332,55 @@ const TraceViewerPage: React.FC = () => {
                 value={selectedFlamegraphTheme}
                 onValueChange={(value: FlamegraphThemeName) => flamegraphThemeAtom.set(value)}
               >
-                <SelectTrigger className="w-[150px] h-8 py-0.5 text-sm" title="Select Flamegraph Theme">
-                   <SelectValue placeholder="Select theme..." />
+                <SelectTrigger
+                  className="w-[150px] h-8 py-0.5 text-sm"
+                  title="Select Flamegraph Theme"
+                >
+                  <SelectValue placeholder="Select theme..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(flamegraphThemeDisplayNames) as FlamegraphThemeName[]).map((themeName) => {
-                    const previewGradient = flamegraphThemePreviews[themeName];
-                    return (
-                      <SelectItem 
-                        key={themeName} 
-                        value={themeName}
-                        className="data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground [&_svg]:hidden pl-3"
-                      >
-                        <div className="flex items-center gap-2"> 
-                          <span 
-                            className="inline-block w-4 h-4 rounded-sm border border-border" 
-                            style={previewGradient ? { background: previewGradient } : { backgroundColor: 'transparent' } }
-                            aria-hidden="true"
-                          />
-                          <span>{flamegraphThemeDisplayNames[themeName]}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
+                  {(Object.keys(flamegraphThemeDisplayNames) as FlamegraphThemeName[]).map(
+                    (themeName) => {
+                      const previewGradient = flamegraphThemePreviews[themeName];
+                      return (
+                        <SelectItem
+                          key={themeName}
+                          value={themeName}
+                          className="data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground [&_svg]:hidden pl-3"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="inline-block w-4 h-4 rounded-sm border border-border"
+                              style={
+                                previewGradient
+                                  ? { background: previewGradient }
+                                  : { backgroundColor: "transparent" }
+                              }
+                              aria-hidden="true"
+                            />
+                            <span>{flamegraphThemeDisplayNames[themeName]}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    }
+                  )}
                 </SelectContent>
               </Select>
               {/* --------------------------------- */}
-              {isAuthenticated && commentManagement && <TraceViewerCommentSidebar traceId={id} activeView={selectedView} />}
+              {isAuthenticated && commentManagement && (
+                <TraceViewerCommentSidebar traceId={id} activeView={selectedView} />
+              )}
               {/* --- Add Share Button --- */}
               {isAuthenticated && (
                 <Button variant="ghost" size="sm" onClick={handleShareClick} title="Share Trace">
-                   <Share2 className="h-4 w-4" />
+                  <Share2 className="h-4 w-4" />
                 </Button>
               )}
               {/* ------------------------- */}
-              <Link to={isAuthenticated ? `/traces/${id}` : '/'} title={isAuthenticated ? "Back to Details" : "Back to Home"}>
+              <Link
+                to={isAuthenticated ? `/traces/${id}` : "/"}
+                title={isAuthenticated ? "Back to Details" : "Back to Home"}
+              >
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   {isAuthenticated ? "Back to Details" : "Back Home"}
@@ -368,12 +437,12 @@ const TraceViewerPage: React.FC = () => {
       )}
 
       {!isLoading && !error && (!traceBlobData || !id) && (
-         <div className="flex items-center justify-center h-full w-full bg-background relative z-10">
-            <p>Trace data could not be loaded (missing path, data, or ID).</p>
-         </div>
+        <div className="flex items-center justify-center h-full w-full bg-background relative z-10">
+          <p>Trace data could not be loaded (missing path, data, or ID).</p>
+        </div>
       )}
     </Layout>
   );
 };
 
-export default TraceViewerPage; 
+export default TraceViewerPage;

@@ -1,9 +1,16 @@
-import { importProfileGroupFromText, importProfilesFromArrayBuffer, type ImporterDependencies } from '@trace-view-pilot/shared-importer';
-import type { ProfileType } from '@trace-view-pilot/shared-importer';
-import { exportProfileGroup, getDurationMsFromProfileGroup } from '@trace-view-pilot/shared-importer';
-import * as pako from 'pako'; // Import pako for client-side use
-import { JSON_parse } from 'uint8array-json-parser'; // Import parser for client-side use
-import Long from 'long'; // Import Long for client-side
+import {
+  importProfileGroupFromText,
+  importProfilesFromArrayBuffer,
+  type ImporterDependencies,
+} from "@trace-view-pilot/shared-importer";
+import type { ProfileType } from "@trace-view-pilot/shared-importer";
+import {
+  exportProfileGroup,
+  getDurationMsFromProfileGroup,
+} from "@trace-view-pilot/shared-importer";
+import * as pako from "pako"; // Import pako for client-side use
+import { JSON_parse } from "uint8array-json-parser"; // Import parser for client-side use
+import Long from "long"; // Import Long for client-side
 
 /**
  * Processes a raw trace file using Speedscope import/export functions.
@@ -16,21 +23,27 @@ import Long from 'long'; // Import Long for client-side
  * @returns An object containing the processed File, the duration in ms, and the detected profile type.
  * @throws If the file cannot be read or parsed by Speedscope importers.
  */
-export async function processAndPrepareTraceUpload(originalFile: File): Promise<ProcessedTraceData> {
+export async function processAndPrepareTraceUpload(
+  originalFile: File
+): Promise<ProcessedTraceData> {
   let importResult: { profileGroup: ProfileGroup | null; profileType: ProfileType } | null = null;
-  
+
   // Create the dependencies object for the client environment
   const importerDeps: ImporterDependencies = {
     inflate: pako.inflate,
     parseJsonUint8Array: JSON_parse,
-    isLong: Long.isLong
+    isLong: Long.isLong,
   };
 
   // Try importing via ArrayBuffer first
   try {
     const fileContent = await originalFile.arrayBuffer();
     // Pass the dependencies object
-    importResult = await importProfilesFromArrayBuffer(originalFile.name, fileContent, importerDeps);
+    importResult = await importProfilesFromArrayBuffer(
+      originalFile.name,
+      fileContent,
+      importerDeps
+    );
   } catch (e) {
     console.warn("Reading or importing as ArrayBuffer failed, will try text.", e);
     // Let it proceed to text import
@@ -38,34 +51,39 @@ export async function processAndPrepareTraceUpload(originalFile: File): Promise<
 
   // If ArrayBuffer import didn't succeed or wasn't attempted, try text import
   if (!importResult?.profileGroup) {
-     console.log("Attempting import via text content.");
-     try {
-        const fileText = await originalFile.text();
-        // Pass the dependencies object
-        const textImportResult = await importProfileGroupFromText(originalFile.name, fileText, importerDeps);
-        // Only use text result if it successfully found a profile group
-        if (textImportResult?.profileGroup) {
-            importResult = textImportResult;
-        } else if (!importResult) {
-            // If binary also failed, set a default failure state
-             importResult = { profileGroup: null, profileType: 'unknown' };
-        }
-     } catch(e) {
-         console.error("Importing as text failed:", e);
-         if (!importResult) {
-             // If binary also failed, set a default failure state
-             importResult = { profileGroup: null, profileType: 'unknown' };
-         }
-         // Potentially throw here if both fail definitively
-         // throw new Error(`Failed to parse profile: Both binary and text import methods failed. Error: ${e instanceof Error ? e.message : String(e)}`);
-     }
+    console.log("Attempting import via text content.");
+    try {
+      const fileText = await originalFile.text();
+      // Pass the dependencies object
+      const textImportResult = await importProfileGroupFromText(
+        originalFile.name,
+        fileText,
+        importerDeps
+      );
+      // Only use text result if it successfully found a profile group
+      if (textImportResult?.profileGroup) {
+        importResult = textImportResult;
+      } else if (!importResult) {
+        // If binary also failed, set a default failure state
+        importResult = { profileGroup: null, profileType: "unknown" };
+      }
+    } catch (e) {
+      console.error("Importing as text failed:", e);
+      if (!importResult) {
+        // If binary also failed, set a default failure state
+        importResult = { profileGroup: null, profileType: "unknown" };
+      }
+      // Potentially throw here if both fail definitively
+      // throw new Error(`Failed to parse profile: Both binary and text import methods failed. Error: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
-
 
   if (!importResult?.profileGroup) {
     // Throw error only if *both* methods failed to produce a profile group
     console.error("Failed to import profile group from file:", originalFile.name);
-    throw new Error('Could not parse the profile file. The format might be unsupported or the file corrupted.');
+    throw new Error(
+      "Could not parse the profile file. The format might be unsupported or the file corrupted."
+    );
   }
 
   const { profileGroup, profileType } = importResult;
@@ -78,15 +96,16 @@ export async function processAndPrepareTraceUpload(originalFile: File): Promise<
   const jsonString = JSON.stringify(exportedProfile);
 
   // 5. Create a Blob from the JSON string
-  const blob = new Blob([jsonString], { type: 'application/json' });
+  const blob = new Blob([jsonString], { type: "application/json" });
 
   // 6. Generate new filename
   const originalFilename = originalFile.name;
-  const baseName = originalFilename.substring(0, originalFilename.lastIndexOf('.')) || originalFilename;
+  const baseName =
+    originalFilename.substring(0, originalFilename.lastIndexOf(".")) || originalFilename;
   const newFilename = `${baseName}.speedscope.json`;
 
   // 7. Create the final File object
   const processedFile = new File([blob], newFilename, { type: blob.type });
 
   return { processedFile, durationMs, profileType }; // Return detected type from importer
-} 
+}

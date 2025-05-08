@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ContextMenuProps {
   x: number;
@@ -9,15 +9,9 @@ interface ContextMenuProps {
   children: React.ReactNode;
 }
 
-export const ContextMenu: React.FC<ContextMenuProps> = ({ 
-  x, 
-  y, 
-  onClose, 
-  frameKey, 
-  children 
-}) => {
+export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose, frameKey, children }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  
+
   // Close the menu if clicking outside
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -25,34 +19,34 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         onClose();
       }
     };
-    
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [onClose]);
 
   // Position the menu correctly based on viewport boundaries
   const [adjustedPosition, setAdjustedPosition] = useState({ x, y });
-  
+
   useEffect(() => {
     if (menuRef.current) {
       const rect = menuRef.current.getBoundingClientRect();
       const maxX = window.innerWidth - rect.width;
       const maxY = window.innerHeight - rect.height;
-      
+
       setAdjustedPosition({
         x: Math.min(x, maxX),
-        y: Math.min(y, maxY)
+        y: Math.min(y, maxY),
       });
     }
   }, [x, y]);
 
   return createPortal(
-    <div 
+    <div
       ref={menuRef}
       className="absolute z-50 min-w-[160px] bg-popover text-popover-foreground rounded-md shadow-md border border-border py-1 text-sm"
-      style={{ 
-        left: adjustedPosition.x, 
-        top: adjustedPosition.y 
+      style={{
+        left: adjustedPosition.x,
+        top: adjustedPosition.y,
       }}
     >
       {children}
@@ -67,7 +61,7 @@ export const ContextMenuItem: React.FC<{
   children: React.ReactNode;
 }> = ({ onClick, icon, children }) => {
   return (
-    <div 
+    <div
       className="px-3 py-1.5 flex items-center gap-2 cursor-pointer hover:bg-accent hover:text-accent-foreground"
       onClick={onClick}
     >
@@ -77,6 +71,4 @@ export const ContextMenuItem: React.FC<{
   );
 };
 
-export const ContextMenuDivider: React.FC = () => (
-  <div className="h-px bg-border my-1" />
-);
+export const ContextMenuDivider: React.FC = () => <div className="h-px bg-border my-1" />;

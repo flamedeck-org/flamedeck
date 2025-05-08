@@ -1,140 +1,140 @@
-import React, {Component} from 'react'
+import React, { Component } from "react";
 
-import type {ProfileGroup} from '../../lib/speedscope-core/profile';
-import { SymbolRemapper, Profile} from '../../lib/speedscope-core/profile'
-import {FontFamily, FontSize, Duration} from './style'
-import {importEmscriptenSymbolMap as importEmscriptenSymbolRemapper} from '../../lib/speedscope-core/emscripten'
-import {SandwichViewContainer} from './sandwich-view'
-import {saveToFile} from '../../lib/speedscope-core/file-format'
-import type {ActiveProfileState} from '../../lib/speedscope-core/app-state/active-profile-state'
-import {LeftHeavyFlamechartView, ChronoFlamechartView} from './flamechart-view-container'
-import type {CanvasContext} from '../../lib/speedscope-gl/canvas-context'
-import {Toolbar} from './toolbar'
-import {importJavaScriptSourceMapSymbolRemapper} from '../../lib/speedscope-core/js-source-map'
-import type {Theme} from './themes/theme'
-import {ViewMode} from '../../lib/speedscope-core/view-mode'
-import {canUseXHR} from '../../lib/speedscope-core/app-state'
-import type {ProfileGroupState} from '../../lib/speedscope-core/app-state/profile-group'
-import type {HashParams} from '../../lib/speedscope-core/hash-params'
-import {FlamechartID} from '../../lib/speedscope-core/app-state/profile-group'
+import type { ProfileGroup } from "../../lib/speedscope-core/profile";
+import { SymbolRemapper, Profile } from "../../lib/speedscope-core/profile";
+import { FontFamily, FontSize, Duration } from "./style";
+import { importEmscriptenSymbolMap as importEmscriptenSymbolRemapper } from "../../lib/speedscope-core/emscripten";
+import { SandwichViewContainer } from "./sandwich-view";
+import { saveToFile } from "../../lib/speedscope-core/file-format";
+import type { ActiveProfileState } from "../../lib/speedscope-core/app-state/active-profile-state";
+import { LeftHeavyFlamechartView, ChronoFlamechartView } from "./flamechart-view-container";
+import type { CanvasContext } from "../../lib/speedscope-gl/canvas-context";
+import { Toolbar } from "./toolbar";
+import { importJavaScriptSourceMapSymbolRemapper } from "../../lib/speedscope-core/js-source-map";
+import type { Theme } from "./themes/theme";
+import { ViewMode } from "../../lib/speedscope-core/view-mode";
+import { canUseXHR } from "../../lib/speedscope-core/app-state";
+import type { ProfileGroupState } from "../../lib/speedscope-core/app-state/profile-group";
+import type { HashParams } from "../../lib/speedscope-core/hash-params";
+import { FlamechartID } from "../../lib/speedscope-core/app-state/profile-group";
 
-const importModule = import('@trace-view-pilot/shared-importer')
+const importModule = import("@trace-view-pilot/shared-importer");
 
 // Force eager loading of a few code-split modules.
 //
 // We put them all in one place so we can directly control the relative priority
 // of these.
-importModule.then(() => {})
-import('../../lib/speedscope-core/demangle-cpp').then(() => {})
-import('source-map').then(() => {})
+importModule.then(() => {});
+import("../../lib/speedscope-core/demangle-cpp").then(() => {});
+import("source-map").then(() => {});
 
 async function importProfilesFromText(
   fileName: string,
-  contents: string,
+  contents: string
 ): Promise<ProfileGroup | null> {
-  return (await importModule).importProfileGroupFromText(fileName, contents)
+  return (await importModule).importProfileGroupFromText(fileName, contents);
 }
 
 async function importProfilesFromBase64(
   fileName: string,
-  contents: string,
+  contents: string
 ): Promise<ProfileGroup | null> {
-  return (await importModule).importProfileGroupFromBase64(fileName, contents)
+  return (await importModule).importProfileGroupFromBase64(fileName, contents);
 }
 
 async function importProfilesFromArrayBuffer(
   fileName: string,
-  contents: ArrayBuffer,
+  contents: ArrayBuffer
 ): Promise<ProfileGroup | null> {
-  return (await importModule).importProfilesFromArrayBuffer(fileName, contents)
+  return (await importModule).importProfilesFromArrayBuffer(fileName, contents);
 }
 
 async function importProfilesFromFile(file: File): Promise<ProfileGroup | null> {
-  return (await importModule).importProfilesFromFile(file)
+  return (await importModule).importProfilesFromFile(file);
 }
 async function importFromFileSystemDirectoryEntry(entry: FileSystemDirectoryEntry) {
-  return (await importModule).importFromFileSystemDirectoryEntry(entry)
+  return (await importModule).importFromFileSystemDirectoryEntry(entry);
 }
 
 function isFileSystemDirectoryEntry(entry: FileSystemEntry): entry is FileSystemDirectoryEntry {
-  return entry != null && entry.isDirectory
+  return entry != null && entry.isDirectory;
 }
 
 interface GLCanvasProps {
-  canvasContext: CanvasContext | null
-  theme: Theme
-  setGLCanvas: (canvas: HTMLCanvasElement | null) => void
+  canvasContext: CanvasContext | null;
+  theme: Theme;
+  setGLCanvas: (canvas: HTMLCanvasElement | null) => void;
 }
 export class GLCanvas extends Component<GLCanvasProps> {
-  private canvas: HTMLCanvasElement | null = null
+  private canvas: HTMLCanvasElement | null = null;
 
   private ref: React.RefCallback<HTMLCanvasElement> = (canvas) => {
     if (canvas instanceof HTMLCanvasElement) {
-      this.canvas = canvas
+      this.canvas = canvas;
     } else {
-      this.canvas = null
+      this.canvas = null;
     }
 
-    this.props.setGLCanvas(this.canvas)
-  }
+    this.props.setGLCanvas(this.canvas);
+  };
 
-  private container: HTMLElement | null = null
+  private container: HTMLElement | null = null;
   private containerRef: React.RefCallback<HTMLElement> = (container) => {
     if (container instanceof HTMLElement) {
-      this.container = container
+      this.container = container;
     } else {
-      this.container = null
+      this.container = null;
     }
-  }
+  };
 
   private maybeResize = () => {
-    if (!this.container) return
-    if (!this.props.canvasContext) return
+    if (!this.container) return;
+    if (!this.props.canvasContext) return;
 
-    const {width, height} = this.container.getBoundingClientRect()
+    const { width, height } = this.container.getBoundingClientRect();
 
-    const widthInAppUnits = width
-    const heightInAppUnits = height
-    const widthInPixels = width * window.devicePixelRatio
-    const heightInPixels = height * window.devicePixelRatio
+    const widthInAppUnits = width;
+    const heightInAppUnits = height;
+    const widthInPixels = width * window.devicePixelRatio;
+    const heightInPixels = height * window.devicePixelRatio;
 
     this.props.canvasContext.gl.resize(
       widthInPixels,
       heightInPixels,
       widthInAppUnits,
-      heightInAppUnits,
-    )
-  }
+      heightInAppUnits
+    );
+  };
 
   onWindowResize = () => {
     if (this.props.canvasContext) {
-      this.props.canvasContext.requestFrame()
+      this.props.canvasContext.requestFrame();
     }
-  }
+  };
   componentDidUpdate(prevProps: Readonly<GLCanvasProps>) {
     if (this.props.canvasContext !== prevProps.canvasContext) {
       if (prevProps.canvasContext) {
-        prevProps.canvasContext.removeBeforeFrameHandler(this.maybeResize)
+        prevProps.canvasContext.removeBeforeFrameHandler(this.maybeResize);
       }
       if (this.props.canvasContext) {
-        this.props.canvasContext.addBeforeFrameHandler(this.maybeResize)
-        this.props.canvasContext.requestFrame()
+        this.props.canvasContext.addBeforeFrameHandler(this.maybeResize);
+        this.props.canvasContext.requestFrame();
       }
     }
   }
   componentDidMount() {
-    window.addEventListener('resize', this.onWindowResize)
-    this.maybeResize()
+    window.addEventListener("resize", this.onWindowResize);
+    this.maybeResize();
     if (this.props.canvasContext) {
-      this.props.canvasContext.addBeforeFrameHandler(this.maybeResize)
-      this.props.canvasContext.requestFrame()
+      this.props.canvasContext.addBeforeFrameHandler(this.maybeResize);
+      this.props.canvasContext.requestFrame();
     }
   }
   componentWillUnmount() {
     if (this.props.canvasContext) {
-      this.props.canvasContext.removeBeforeFrameHandler(this.maybeResize)
+      this.props.canvasContext.removeBeforeFrameHandler(this.maybeResize);
     }
-    window.removeEventListener('resize', this.onWindowResize)
+    window.removeEventListener("resize", this.onWindowResize);
   }
   render() {
     // TODO: Fix theme styling
@@ -143,71 +143,71 @@ export class GLCanvas extends Component<GLCanvasProps> {
       <div ref={this.containerRef} className="absolute inset-0 -z-1 pointer-events-none">
         <canvas ref={this.ref} width={1} height={1} />
       </div>
-    )
+    );
   }
 }
 
 export type ApplicationProps = {
-  setGLCanvas: (canvas: HTMLCanvasElement | null) => void
-  setLoading: (loading: boolean) => void
-  setError: (error: boolean) => void
-  setProfileGroup: (profileGroup: ProfileGroup) => void
-  setDragActive: (dragActive: boolean) => void
-  setViewMode: (viewMode: ViewMode) => void
-  setFlattenRecursion: (flattenRecursion: boolean) => void
-  setProfileIndexToView: (profileIndex: number) => void
-  activeProfileState: ActiveProfileState | null
-  canvasContext: CanvasContext | null
-  theme: Theme
-  profileGroup: ProfileGroupState
-  flattenRecursion: boolean
-  viewMode: ViewMode
-  hashParams: HashParams
-  dragActive: boolean
-  loading: boolean
-  glCanvas: HTMLCanvasElement | null
-  error: boolean
-  setFlamechartViewState?: (id: FlamechartID, viewState: any) => void
-  setSelectedFrame?: (frame: FrameInfo | null) => void
-}
+  setGLCanvas: (canvas: HTMLCanvasElement | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: boolean) => void;
+  setProfileGroup: (profileGroup: ProfileGroup) => void;
+  setDragActive: (dragActive: boolean) => void;
+  setViewMode: (viewMode: ViewMode) => void;
+  setFlattenRecursion: (flattenRecursion: boolean) => void;
+  setProfileIndexToView: (profileIndex: number) => void;
+  activeProfileState: ActiveProfileState | null;
+  canvasContext: CanvasContext | null;
+  theme: Theme;
+  profileGroup: ProfileGroupState;
+  flattenRecursion: boolean;
+  viewMode: ViewMode;
+  hashParams: HashParams;
+  dragActive: boolean;
+  loading: boolean;
+  glCanvas: HTMLCanvasElement | null;
+  error: boolean;
+  setFlamechartViewState?: (id: FlamechartID, viewState: any) => void;
+  setSelectedFrame?: (frame: FrameInfo | null) => void;
+};
 
 export class Application extends Component<ApplicationProps> {
   onWindowKeyPress = async (ev: KeyboardEvent) => {
-    if (ev.key === '1') {
-      this.props.setViewMode(ViewMode.CHRONO_FLAME_CHART)
-    } else if (ev.key === '2') {
-      this.props.setViewMode(ViewMode.LEFT_HEAVY_FLAME_GRAPH)
-    } else if (ev.key === '3') {
-      this.props.setViewMode(ViewMode.SANDWICH_VIEW)
-    } else if (ev.key === 'r') {
-      const {flattenRecursion} = this.props
-      this.props.setFlattenRecursion(!flattenRecursion)
-    } else if (ev.key === 'n') {
-      const {activeProfileState} = this.props
+    if (ev.key === "1") {
+      this.props.setViewMode(ViewMode.CHRONO_FLAME_CHART);
+    } else if (ev.key === "2") {
+      this.props.setViewMode(ViewMode.LEFT_HEAVY_FLAME_GRAPH);
+    } else if (ev.key === "3") {
+      this.props.setViewMode(ViewMode.SANDWICH_VIEW);
+    } else if (ev.key === "r") {
+      const { flattenRecursion } = this.props;
+      this.props.setFlattenRecursion(!flattenRecursion);
+    } else if (ev.key === "n") {
+      const { activeProfileState } = this.props;
       if (activeProfileState) {
-        this.props.setProfileIndexToView(activeProfileState.index + 1)
+        this.props.setProfileIndexToView(activeProfileState.index + 1);
       }
-    } else if (ev.key === 'p') {
-      const {activeProfileState} = this.props
+    } else if (ev.key === "p") {
+      const { activeProfileState } = this.props;
       if (activeProfileState) {
-        this.props.setProfileIndexToView(activeProfileState.index - 1)
+        this.props.setProfileIndexToView(activeProfileState.index - 1);
       }
     }
-  }
+  };
 
   componentDidMount() {
-    window.addEventListener('keypress', this.onWindowKeyPress)
+    window.addEventListener("keypress", this.onWindowKeyPress);
   }
 
   componentWillUnmount() {
-    window.removeEventListener('keypress', this.onWindowKeyPress)
+    window.removeEventListener("keypress", this.onWindowKeyPress);
   }
 
   renderContent() {
-    const {activeProfileState} = this.props
-    if (!activeProfileState) return null
+    const { activeProfileState } = this.props;
+    if (!activeProfileState) return null;
 
-    let view: React.ReactNode = null
+    let view: React.ReactNode = null;
     switch (this.props.viewMode) {
       case ViewMode.CHRONO_FLAME_CHART:
         view = (
@@ -221,8 +221,8 @@ export class Application extends Component<ApplicationProps> {
             flamechartViewState={activeProfileState.chronoViewState}
             updateFlamechartViewState={this.props.setFlamechartViewState!}
           />
-        )
-        break
+        );
+        break;
 
       case ViewMode.LEFT_HEAVY_FLAME_GRAPH:
         view = (
@@ -236,8 +236,8 @@ export class Application extends Component<ApplicationProps> {
             flamechartViewState={activeProfileState.leftHeavyViewState}
             updateFlamechartViewState={this.props.setFlamechartViewState!}
           />
-        )
-        break
+        );
+        break;
 
       case ViewMode.SANDWICH_VIEW:
         view = (
@@ -250,8 +250,8 @@ export class Application extends Component<ApplicationProps> {
             setSelectedFrame={this.props.setSelectedFrame!}
             setFlamechartViewState={this.props.setFlamechartViewState!}
           />
-        )
-        break
+        );
+        break;
     }
 
     return (
@@ -259,13 +259,13 @@ export class Application extends Component<ApplicationProps> {
         <Toolbar theme={this.props.theme} {...this.props} />
         {view}
       </div>
-    )
+    );
   }
 
   render() {
-    let content: React.ReactNode = null
+    let content: React.ReactNode = null;
 
-    content = this.renderContent()
+    content = this.renderContent();
 
     return (
       <div className="w-full h-full overflow-hidden flex flex-col relative font-mono text-sm text-foreground">
@@ -276,7 +276,7 @@ export class Application extends Component<ApplicationProps> {
         />
         {content}
       </div>
-    )
+    );
   }
 }
 

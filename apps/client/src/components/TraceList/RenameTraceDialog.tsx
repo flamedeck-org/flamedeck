@@ -1,5 +1,5 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { memo, useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,17 +7,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { traceApi } from '@/lib/api';
-import type { TraceMetadata } from '@/types';
-import { toast } from 'sonner';
-import { FOLDER_VIEW_QUERY_KEY } from './hooks/useTraces';
-import type { ApiError, ApiResponse } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { traceApi } from "@/lib/api";
+import type { TraceMetadata } from "@/types";
+import { toast } from "sonner";
+import { FOLDER_VIEW_QUERY_KEY } from "./hooks/useTraces";
+import type { ApiError, ApiResponse } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 interface RenameTraceDialogProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ function RenameTraceDialogComponent({
   setIsOpen,
   traceId,
   currentScenario,
-  triggerElement
+  triggerElement,
 }: RenameTraceDialogProps) {
   const queryClient = useQueryClient();
   const [newScenario, setNewScenario] = useState(currentScenario);
@@ -50,12 +50,12 @@ function RenameTraceDialogComponent({
     string // newScenario
   >({
     mutationFn: (updatedScenario: string) => {
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error("User not authenticated");
       return traceApi.renameTrace(traceId, updatedScenario, user.id);
     },
     onSuccess: (response) => {
       if (response.data) {
-        toast.success(`Successfully renamed trace to "${response.data.scenario || 'N/A'}".`);
+        toast.success(`Successfully renamed trace to "${response.data.scenario || "N/A"}".`);
         queryClient.invalidateQueries({ queryKey: [FOLDER_VIEW_QUERY_KEY] });
         setIsOpen(false);
       } else if (response.error) {
@@ -70,7 +70,7 @@ function RenameTraceDialogComponent({
   const handleSave = useCallback(() => {
     const trimmedScenario = newScenario.trim();
     if (!trimmedScenario) {
-      toast.error('Scenario name cannot be empty.');
+      toast.error("Scenario name cannot be empty.");
       return;
     }
     if (trimmedScenario === currentScenario) {
@@ -83,7 +83,7 @@ function RenameTraceDialogComponent({
   const handleOpenChange = (open: boolean) => {
     if (isPending) return; // Prevent closing while submitting
     setIsOpen(open);
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -91,7 +91,7 @@ function RenameTraceDialogComponent({
         <DialogHeader>
           <DialogTitle>Rename Trace</DialogTitle>
           <DialogDescription>
-Enter a new scenario name for the trace currently named "{currentScenario || 'N/A'}".
+            Enter a new scenario name for the trace currently named "{currentScenario || "N/A"}".
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -106,7 +106,9 @@ Enter a new scenario name for the trace currently named "{currentScenario || 'N/
               className="col-span-3"
               disabled={isPending}
               placeholder="e.g., User Login Performance"
-              onKeyDown={(e) => { if (e.key === 'Enter' && !isPending) handleSave(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isPending) handleSave();
+              }}
             />
           </div>
         </div>
@@ -114,7 +116,10 @@ Enter a new scenario name for the trace currently named "{currentScenario || 'N/
           <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isPending || !newScenario.trim() || newScenario.trim() === currentScenario}>
+          <Button
+            onClick={handleSave}
+            disabled={isPending || !newScenario.trim() || newScenario.trim() === currentScenario}
+          >
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Save Changes
           </Button>
@@ -124,4 +129,4 @@ Enter a new scenario name for the trace currently named "{currentScenario || 'N/
   );
 }
 
-export const RenameTraceDialog = memo(RenameTraceDialogComponent); 
+export const RenameTraceDialog = memo(RenameTraceDialogComponent);

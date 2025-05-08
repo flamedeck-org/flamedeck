@@ -1,13 +1,9 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { TraceViewerCommentList } from './TraceViewerCommentList';
-import { MessageSquare } from 'lucide-react';
-import type { SpeedscopeViewType } from '../SpeedscopeViewer';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { TraceViewerCommentList } from "./TraceViewerCommentList";
+import { MessageSquare } from "lucide-react";
+import type { SpeedscopeViewType } from "../SpeedscopeViewer";
 
 interface TraceViewerCommentSidebarProps {
   traceId: string;
@@ -29,4 +25,4 @@ export function TraceViewerCommentSidebar({ traceId, activeView }: TraceViewerCo
       </PopoverContent>
     </Popover>
   );
-} 
+}

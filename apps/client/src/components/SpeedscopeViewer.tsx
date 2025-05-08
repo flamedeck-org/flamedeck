@@ -1,29 +1,39 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { 
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import {
   importProfilesFromArrayBuffer,
   importProfileGroupFromText,
-  type ImporterDependencies // Import type via alias
-} from '@trace-view-pilot/shared-importer';
-import * as pako from 'pako'; // Import pako for client-side use
-import { JSON_parse } from 'uint8array-json-parser'; // Import parser for client-side use
-import Long from 'long'; // Import Long for client-side
-import { profileGroupAtom, glCanvasAtom, flattenRecursionAtom } from '@/lib/speedscope-core/app-state';
-import type { CallTreeNode } from '@/lib/speedscope-core/app-state/active-profile-state';
-import { ActiveProfileState, useActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state'; 
-import { useAtom } from '@/lib/speedscope-core/atom'; 
-import type { SandwichViewHandle } from './speedscope-ui/sandwich-view';
-import { SandwichViewContainer } from './speedscope-ui/sandwich-view'; 
-import { ProfileSearchContextProvider } from './speedscope-ui/search-view';
-import type { FlamechartViewHandle } from './speedscope-ui/flamechart-view-container';
-import { ChronoFlamechartView, LeftHeavyFlamechartView } from './speedscope-ui/flamechart-view-container';
-import ProfileCommentForm from './ProfileCommentForm';
-import { useTraceComments } from '@/hooks/useTraceComments';
-import CommentSidebar from './CommentSidebar';
-import type { TraceCommentWithAuthor } from '@/lib/api';
+  type ImporterDependencies, // Import type via alias
+} from "@trace-view-pilot/shared-importer";
+import * as pako from "pako"; // Import pako for client-side use
+import { JSON_parse } from "uint8array-json-parser"; // Import parser for client-side use
+import Long from "long"; // Import Long for client-side
+import {
+  profileGroupAtom,
+  glCanvasAtom,
+  flattenRecursionAtom,
+} from "@/lib/speedscope-core/app-state";
+import type { CallTreeNode } from "@/lib/speedscope-core/app-state/active-profile-state";
+import {
+  ActiveProfileState,
+  useActiveProfileState,
+} from "@/lib/speedscope-core/app-state/active-profile-state";
+import { useAtom } from "@/lib/speedscope-core/atom";
+import type { SandwichViewHandle } from "./speedscope-ui/sandwich-view";
+import { SandwichViewContainer } from "./speedscope-ui/sandwich-view";
+import { ProfileSearchContextProvider } from "./speedscope-ui/search-view";
+import type { FlamechartViewHandle } from "./speedscope-ui/flamechart-view-container";
+import {
+  ChronoFlamechartView,
+  LeftHeavyFlamechartView,
+} from "./speedscope-ui/flamechart-view-container";
+import ProfileCommentForm from "./ProfileCommentForm";
+import { useTraceComments } from "@/hooks/useTraceComments";
+import CommentSidebar from "./CommentSidebar";
+import type { TraceCommentWithAuthor } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChatContainer } from '@/components/Chat';
+import { ChatContainer } from "@/components/Chat";
 
-export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
+export type SpeedscopeViewType = "sandwich" | "time_ordered" | "left_heavy";
 
 // Type for storing selection state per view
 interface SelectedCommentState {
@@ -33,17 +43,17 @@ interface SelectedCommentState {
 
 // Helper map from Speedscope view type to comment_type used in DB/API
 const viewToCommentTypeMap: Record<SpeedscopeViewType, string> = {
-  time_ordered: 'chrono',
-  left_heavy: 'left_heavy',
-  sandwich: 'sandwich',
+  time_ordered: "chrono",
+  left_heavy: "left_heavy",
+  sandwich: "sandwich",
 };
 
 // Define the type for snapshot result state
 interface SnapshotResultState {
-    requestId: string;
-    status: 'success' | 'error';
-    data?: string; // imageDataUrl
-    error?: string;
+  requestId: string;
+  status: "success" | "error";
+  data?: string; // imageDataUrl
+  error?: string;
 }
 
 // Define the type for the generator function expected by the prop
@@ -62,11 +72,11 @@ interface SpeedscopeViewerProps {
   onRegisterSnapshotter?: (generator: SnapshotGenerator) => void; // Optional prop
 }
 
-const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({ 
-  traceId, 
-  traceData, 
-  fileName, 
-  view, 
+const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
+  traceId,
+  traceData,
+  fileName,
+  view,
   // Destructure new props
   replyingToCommentId,
   onStartReply,
@@ -76,14 +86,16 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // State to hold selection info per view
-  const [selectedCommentInfoByView, setSelectedCommentInfoByView] = useState<Record<SpeedscopeViewType, SelectedCommentState>>({
+  const [selectedCommentInfoByView, setSelectedCommentInfoByView] = useState<
+    Record<SpeedscopeViewType, SelectedCommentState>
+  >({
     time_ordered: { cellId: null, nodeName: null },
     left_heavy: { cellId: null, nodeName: null },
     sandwich: { cellId: null, nodeName: null }, // Initialize for all views
   });
-  
+
   const profileGroup = useAtom(profileGroupAtom);
   const glCanvas = useAtom(glCanvasAtom);
   const flattenRecursion = useAtom(flattenRecursionAtom);
@@ -97,40 +109,46 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
   // ------------------------------
 
   // Fetch all comments once
-  const { 
-    allComments, 
-    commentedChronoCellIds, 
+  const {
+    allComments,
+    commentedChronoCellIds,
     commentedLeftHeavyCellIds,
-    isLoading: commentsLoading, 
-    error: commentsError 
+    isLoading: commentsLoading,
+    error: commentsError,
   } = useTraceComments(traceId);
 
   const { user } = useAuth();
   const isAuthenticated = !!user;
 
   // Create the dependencies object (useMemo to avoid recreating on every render)
-  const importerDeps = useMemo((): ImporterDependencies => ({
-    inflate: pako.inflate,
-    parseJsonUint8Array: JSON_parse,
-    isLong: Long.isLong
-  }), []);
+  const importerDeps = useMemo(
+    (): ImporterDependencies => ({
+      inflate: pako.inflate,
+      parseJsonUint8Array: JSON_parse,
+      isLong: Long.isLong,
+    }),
+    []
+  );
 
   // Updated handler to accept the view type
-  const handleNodeSelect = useCallback((activeView: SpeedscopeViewType, node: CallTreeNode | null, cellId?: string | null) => {
-    const nodeName = node?.frame.name ?? null;
-    setSelectedCommentInfoByView(prev => {
-      return {
+  const handleNodeSelect = useCallback(
+    (activeView: SpeedscopeViewType, node: CallTreeNode | null, cellId?: string | null) => {
+      const nodeName = node?.frame.name ?? null;
+      setSelectedCommentInfoByView((prev) => {
+        return {
           ...prev,
-          [activeView]: { cellId: cellId ?? null, nodeName: nodeName }
-      }
-    });
-  }, []);
+          [activeView]: { cellId: cellId ?? null, nodeName: nodeName },
+        };
+      });
+    },
+    []
+  );
 
   // Simplified close handler - only closes for the currently active view
   const handleCloseSidebar = useCallback(() => {
-    setSelectedCommentInfoByView(prev => ({
+    setSelectedCommentInfoByView((prev) => ({
       ...prev,
-      [view]: { cellId: null, nodeName: null } // Reset only the current view's state
+      [view]: { cellId: null, nodeName: null }, // Reset only the current view's state
     }));
   }, [view]); // Re-create if the active view changes
 
@@ -142,7 +160,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
       profileGroupAtom.set(null);
 
       // Pass the importerDeps object
-      const importerPromise = 
+      const importerPromise =
         traceData instanceof ArrayBuffer
           ? importProfilesFromArrayBuffer(fileName, traceData, importerDeps)
           : importProfileGroupFromText(fileName, traceData, importerDeps);
@@ -154,16 +172,20 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
             profileGroupAtom.setProfileGroup(profileGroup);
             setError(null);
           } else if (profileGroup) {
-             setError('Could not parse the profile file. The format might be unsupported or the file corrupted.');
-             profileGroupAtom.set(null); 
+            setError(
+              "Could not parse the profile file. The format might be unsupported or the file corrupted."
+            );
+            profileGroupAtom.set(null);
           } else {
-            setError('Import process failed unexpectedly.');
-            profileGroupAtom.set(null); 
+            setError("Import process failed unexpectedly.");
+            profileGroupAtom.set(null);
           }
         })
-        .catch(err => {
+        .catch((err) => {
           if (isCancelled) return;
-          setError(`An error occurred during import: ${err instanceof Error ? err.message : String(err)}`);
+          setError(
+            `An error occurred during import: ${err instanceof Error ? err.message : String(err)}`
+          );
           profileGroupAtom.set(null);
         })
         .finally(() => {
@@ -180,14 +202,16 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const targetElement = event.target as HTMLElement;
-      if (targetElement.closest('.chat-input-area')) {
-        return; 
+      if (targetElement.closest(".chat-input-area")) {
+        return;
       }
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
         return;
       }
-      if (event.key === 'r') { flattenRecursionAtom.set(!flattenRecursion); }
-      if (event.key === 'Escape') {
+      if (event.key === "r") {
+        flattenRecursionAtom.set(!flattenRecursion);
+      }
+      if (event.key === "Escape") {
         if (selectedCommentInfoByView[view].cellId !== null) {
           handleCloseSidebar();
         } else {
@@ -195,138 +219,161 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
         }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => { window.removeEventListener('keydown', handleKeyDown); };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [selectedCommentInfoByView, view, activeProfileState, flattenRecursion, handleCloseSidebar]);
 
   // State for managing snapshot results to send back to chat
-  const [snapshotResultForClient, setSnapshotResultForClient] = useState<SnapshotResultState | null>(null);
+  const [snapshotResultForClient, setSnapshotResultForClient] =
+    useState<SnapshotResultState | null>(null);
 
   const clearSnapshotResult = useCallback(() => {
     console.log("[SpeedscopeViewer] Clearing snapshot result for chat.");
     setSnapshotResultForClient(null);
   }, []);
 
-  // --- Snapshot Logic --- 
-  const generateSnapshotCallback = useCallback(async (requestedViewType: string, frameKey?: string): Promise<string | null> => {
-    console.log(`[SpeedscopeViewer] generateSnapshot called for view: ${requestedViewType}`);
-    if (!glCanvas) {
+  // --- Snapshot Logic ---
+  const generateSnapshotCallback = useCallback(
+    async (requestedViewType: string, frameKey?: string): Promise<string | null> => {
+      console.log(`[SpeedscopeViewer] generateSnapshot called for view: ${requestedViewType}`);
+      if (!glCanvas) {
         console.error("Cannot generate snapshot: glCanvas not available.");
         return null;
-    }
+      }
 
-    // Determine which view ref to use
-    let activeViewRef: React.RefObject<FlamechartViewHandle | SandwichViewHandle> | null = null;
-    let isSandwichView = false;
-    
-    if (requestedViewType === 'time_ordered') {
-      activeViewRef = chronoViewRef;
-    } else if (requestedViewType === 'left_heavy') {
-      activeViewRef = leftHeavyViewRef;
-    } else if (requestedViewType.startsWith('sandwich_')) {
-      activeViewRef = sandwichViewRef;
-      isSandwichView = true;
-    }
+      // Determine which view ref to use
+      let activeViewRef: React.RefObject<FlamechartViewHandle | SandwichViewHandle> | null = null;
+      let isSandwichView = false;
 
-    if (!activeViewRef || !activeViewRef.current) {
-        console.error(`Cannot generate snapshot: Ref for view ${requestedViewType} is not available.`);
+      if (requestedViewType === "time_ordered") {
+        activeViewRef = chronoViewRef;
+      } else if (requestedViewType === "left_heavy") {
+        activeViewRef = leftHeavyViewRef;
+      } else if (requestedViewType.startsWith("sandwich_")) {
+        activeViewRef = sandwichViewRef;
+        isSandwichView = true;
+      }
+
+      if (!activeViewRef || !activeViewRef.current) {
+        console.error(
+          `Cannot generate snapshot: Ref for view ${requestedViewType} is not available.`
+        );
         return null;
-    }
+      }
 
-    try {
+      try {
         // Find the overlay canvas element with the specific class
-        const overlayCanvas = document.querySelector('.flamechart-overlay') as HTMLCanvasElement;
+        const overlayCanvas = document.querySelector(".flamechart-overlay") as HTMLCanvasElement;
         if (!overlayCanvas) {
-            console.error("Cannot generate snapshot: Overlay canvas not found with class 'flamechart-overlay'");
-            return null;
+          console.error(
+            "Cannot generate snapshot: Overlay canvas not found with class 'flamechart-overlay'"
+          );
+          return null;
         }
 
         // Get the dimensions of both canvases
         const overlayRect = overlayCanvas.getBoundingClientRect();
         const glRect = glCanvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
-        
+
         // Create a temporary canvas with the overlay canvas dimensions
-        const tempCanvas = document.createElement('canvas');
+        const tempCanvas = document.createElement("canvas");
         const canvasWidth = Math.floor(overlayRect.width);
         const canvasHeight = Math.floor(overlayRect.height);
-        
+
         // Set physical size (actual pixels)
         tempCanvas.width = Math.floor(canvasWidth * dpr);
         tempCanvas.height = Math.floor(canvasHeight * dpr);
-        
+
         // Set display size (CSS pixels)
         tempCanvas.style.width = `${canvasWidth}px`;
         tempCanvas.style.height = `${canvasHeight}px`;
 
-        const tempCtx = tempCanvas.getContext('2d');
+        const tempCtx = tempCanvas.getContext("2d");
         if (!tempCtx) {
-            console.error("Cannot generate snapshot: Failed to get 2D context for temporary canvas.");
-            return null;
+          console.error("Cannot generate snapshot: Failed to get 2D context for temporary canvas.");
+          return null;
         }
 
         // Fill with a dark background color
-        tempCtx.fillStyle = '#121212'; // Dark background
+        tempCtx.fillStyle = "#121212"; // Dark background
         tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-        
+
         // Calculate source coordinates for proper alignment
         // We want to align both the right and bottom edges of the canvases
-        
+
         // Calculate vertical alignment (bottom align)
-        const sourceY = Math.max(0, (glRect.height - overlayRect.height)) * dpr;
+        const sourceY = Math.max(0, glRect.height - overlayRect.height) * dpr;
         const sourceHeight = Math.min(glRect.height, overlayRect.height) * dpr;
-        
+
         // Calculate horizontal alignment (right align)
-        const sourceX = Math.max(0, (glRect.width - overlayRect.width)) * dpr;
+        const sourceX = Math.max(0, glRect.width - overlayRect.width) * dpr;
         const sourceWidth = Math.min(glRect.width, overlayRect.width) * dpr;
 
-        console.log(`[SpeedscopeViewer] Canvas sizes - GL: ${glRect.width}x${glRect.height}, Overlay: ${overlayRect.width}x${overlayRect.height}`);
-        console.log(`[SpeedscopeViewer] Source region - X: ${sourceX}, Y: ${sourceY}, Width: ${sourceWidth}, Height: ${sourceHeight}`);
-        
+        console.log(
+          `[SpeedscopeViewer] Canvas sizes - GL: ${glRect.width}x${glRect.height}, Overlay: ${overlayRect.width}x${overlayRect.height}`
+        );
+        console.log(
+          `[SpeedscopeViewer] Source region - X: ${sourceX}, Y: ${sourceY}, Width: ${sourceWidth}, Height: ${sourceHeight}`
+        );
+
         // Draw the bottom-right portion of the GL canvas onto the temp canvas
         tempCtx.drawImage(
-            glCanvas,
-            sourceX, sourceY, sourceWidth, sourceHeight,  // Source: Only take the bottom-right portion of glCanvas
-            0, 0, tempCanvas.width, tempCanvas.height     // Destination: Cover the entire tempCanvas
+          glCanvas,
+          sourceX,
+          sourceY,
+          sourceWidth,
+          sourceHeight, // Source: Only take the bottom-right portion of glCanvas
+          0,
+          0,
+          tempCanvas.width,
+          tempCanvas.height // Destination: Cover the entire tempCanvas
         );
 
         // Draw the overlay onto the combined canvas
         if (isSandwichView) {
-            (activeViewRef.current as SandwichViewHandle).drawOverlayOnto(tempCtx, requestedViewType);
+          (activeViewRef.current as SandwichViewHandle).drawOverlayOnto(tempCtx, requestedViewType);
         } else {
-            (activeViewRef.current as FlamechartViewHandle).drawOverlayOnto(tempCtx);
+          (activeViewRef.current as FlamechartViewHandle).drawOverlayOnto(tempCtx);
         }
 
         // Generate data URL from the combined canvas
-        const dataUrl = tempCanvas.toDataURL('image/png');
+        const dataUrl = tempCanvas.toDataURL("image/png");
         return dataUrl;
-    } catch (e) {
+      } catch (e) {
         console.error("[SpeedscopeViewer] Error generating combined snapshot:", e);
         return null;
-    }
-  }, [glCanvas, chronoViewRef, leftHeavyViewRef, sandwichViewRef]);
+      }
+    },
+    [glCanvas, chronoViewRef, leftHeavyViewRef, sandwichViewRef]
+  );
 
   // For ChatContainer - triggers snapshot generation and updates the snapshotResultForClient state
   const handleTriggerSnapshotForChat = useCallback(
     async (requestId: string, viewType: string, frameKey?: string) => {
-      console.log(`[SpeedscopeViewer] Chat requested snapshot for ${viewType}, requestId ${requestId}`);
+      console.log(
+        `[SpeedscopeViewer] Chat requested snapshot for ${viewType}, requestId ${requestId}`
+      );
       if (!glCanvas) {
-        console.error('[SpeedscopeViewer] Cannot generate snapshot: glCanvas not available.');
-        setSnapshotResultForClient({ requestId, status: 'error', error: 'Canvas not available.' });
+        console.error("[SpeedscopeViewer] Cannot generate snapshot: glCanvas not available.");
+        setSnapshotResultForClient({ requestId, status: "error", error: "Canvas not available." });
         return;
       }
-      
+
       try {
         const imageDataUrl = await generateSnapshotCallback(viewType, frameKey);
         if (imageDataUrl) {
-          setSnapshotResultForClient({ requestId, status: 'success', data: imageDataUrl });
+          setSnapshotResultForClient({ requestId, status: "success", data: imageDataUrl });
         } else {
-          throw new Error('Snapshot generation returned null.');
+          throw new Error("Snapshot generation returned null.");
         }
       } catch (error: unknown) {
-        console.error('[SpeedscopeViewer] Snapshot generation failed:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to generate snapshot.';
-        setSnapshotResultForClient({ requestId, status: 'error', error: errorMessage });
+        console.error("[SpeedscopeViewer] Snapshot generation failed:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to generate snapshot.";
+        setSnapshotResultForClient({ requestId, status: "error", error: errorMessage });
       }
     },
     [glCanvas, generateSnapshotCallback]
@@ -334,17 +381,17 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
 
   // Register the snapshot generator with the parent
   useEffect(() => {
-      if (onRegisterSnapshotter) {
-          console.log("[SpeedscopeViewer] Registering snapshot generator.");
-          onRegisterSnapshotter(generateSnapshotCallback);
-      }
+    if (onRegisterSnapshotter) {
+      console.log("[SpeedscopeViewer] Registering snapshot generator.");
+      onRegisterSnapshotter(generateSnapshotCallback);
+    }
   }, [onRegisterSnapshotter, generateSnapshotCallback]);
   // --- End Snapshot Logic ---
 
   if (isLoading) {
     return (
       <div className="h-full w-full flex items-center justify-center p-4 border border-gray-300">
-        <p>Parsing profile...</p> 
+        <p>Parsing profile...</p>
       </div>
     );
   }
@@ -360,7 +407,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
   if (!profileGroup || !activeProfileState) {
     return (
       <div className="h-full w-full flex items-center justify-center p-4 border border-gray-300">
-        <p>Profile loaded, but still initializing view state...</p> 
+        <p>Profile loaded, but still initializing view state...</p>
       </div>
     );
   }
@@ -374,28 +421,30 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
       <div className="flex-1 flex flex-row relative overflow-hidden">
         <div className="flex-1 h-full relative overflow-hidden">
           <ProfileSearchContextProvider>
-            {view === 'sandwich' && (
+            {view === "sandwich" && (
               <SandwichViewContainer
                 ref={sandwichViewRef}
-                onFrameSelectForComment={() => { /* Potentially call handleNodeSelect('sandwich', ...) */ }}
+                onFrameSelectForComment={() => {
+                  /* Potentially call handleNodeSelect('sandwich', ...) */
+                }}
                 activeProfileState={activeProfileState}
                 glCanvas={glCanvas}
               />
             )}
-            {view === 'time_ordered' && (
+            {view === "time_ordered" && (
               <ChronoFlamechartView
                 ref={chronoViewRef}
-                onNodeSelect={(node, cellId) => handleNodeSelect('time_ordered', node, cellId)}
+                onNodeSelect={(node, cellId) => handleNodeSelect("time_ordered", node, cellId)}
                 activeProfileState={activeProfileState}
                 glCanvas={glCanvas}
                 commentedCellIds={commentedChronoCellIds || []}
               />
             )}
-            {view === 'left_heavy' && (
+            {view === "left_heavy" && (
               <LeftHeavyFlamechartView
                 ref={leftHeavyViewRef}
                 onNodeSelect={(node, cellId) => {
-                  handleNodeSelect('left_heavy', node, cellId)
+                  handleNodeSelect("left_heavy", node, cellId);
                 }}
                 activeProfileState={activeProfileState}
                 glCanvas={glCanvas}
@@ -405,14 +454,14 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
           </ProfileSearchContextProvider>
         </div>
 
-        {/* Render sidebar based on current view's selection state */} 
+        {/* Render sidebar based on current view's selection state */}
         {currentSelection.cellId && traceId && (
           <CommentSidebar
             traceId={traceId}
             cellId={currentSelection.cellId}
             cellName={currentSelection.nodeName}
             commentType={commentTypeForView}
-            comments={allComments || []} 
+            comments={allComments || []}
             isLoading={commentsLoading}
             error={commentsError}
             onClose={handleCloseSidebar}
@@ -439,4 +488,4 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
   );
 };
 
-export default SpeedscopeViewer; 
+export default SpeedscopeViewer;

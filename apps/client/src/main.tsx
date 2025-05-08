@@ -1,15 +1,15 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
 // Import highlight.js themes
-import 'highlight.js/styles/github.css';      // Default (light) theme
-import 'highlight.js/styles/github-dark.css'; // Dark theme
-import { ThemeProvider as SpeedscopeThemeProvider } from './components/speedscope-ui/themes/theme'; // Renamed for clarity
+import "highlight.js/styles/github.css"; // Default (light) theme
+import "highlight.js/styles/github-dark.css"; // Dark theme
+import { ThemeProvider as SpeedscopeThemeProvider } from "./components/speedscope-ui/themes/theme"; // Renamed for clarity
 // Import ThemeProvider from next-themes
-import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {/* Use next-themes provider to control Tailwind dark class */}
     <NextThemesProvider
@@ -23,5 +23,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <App />
       </SpeedscopeThemeProvider>
     </NextThemesProvider>
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);

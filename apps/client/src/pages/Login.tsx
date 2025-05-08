@@ -15,21 +15,24 @@ const Login: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     // Store the intended destination before redirecting to Google
-    const from = location.state?.from?.pathname || sessionStorage.getItem('postLoginRedirectPath') || "/traces";
+    const from =
+      location.state?.from?.pathname ||
+      sessionStorage.getItem("postLoginRedirectPath") ||
+      "/traces";
     try {
-        sessionStorage.setItem('postLoginRedirectPath', from);
+      sessionStorage.setItem("postLoginRedirectPath", from);
     } catch (e) {
-        console.error("Failed to set sessionStorage for redirect path:", e);
-        // Continue without storing? Or show error? Depends on UX preference.
+      console.error("Failed to set sessionStorage for redirect path:", e);
+      // Continue without storing? Or show error? Depends on UX preference.
     }
-    
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           // Redirect to the dedicated callback page
-          redirectTo: window.location.origin + "/auth/callback" 
-        }
+          redirectTo: window.location.origin + "/auth/callback",
+        },
       });
 
       if (error) throw error;
@@ -49,25 +52,21 @@ const Login: React.FC = () => {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 w-12 h-12 rounded flex items-center justify-center">
-            <div className="w-12 h-12 rounded">
-              <img
-                src="/flamestack_icon_300.webp"
-                alt="FlameDeck Logo"
-                width={45}
-                height={45}
-                className="rounded"
-              />
-            </div>
+              <div className="w-12 h-12 rounded">
+                <img
+                  src="/flamestack_icon_300.webp"
+                  alt="FlameDeck Logo"
+                  width={45}
+                  height={45}
+                  className="rounded"
+                />
+              </div>
             </div>
             <CardTitle className="text-2xl font-bold">Welcome to FlameDeck</CardTitle>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
-            <Button 
-              onClick={handleGoogleLogin} 
-              className="w-full" 
-              variant="outline"
-            >
+            <Button onClick={handleGoogleLogin} className="w-full" variant="outline">
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -89,7 +88,7 @@ const Login: React.FC = () => {
               Sign in with Google
             </Button>
           </CardContent>
-          
+
           <CardFooter className="flex justify-center text-sm text-muted-foreground">
             Performance profiling for engineering teams
           </CardFooter>
@@ -100,4 +99,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-

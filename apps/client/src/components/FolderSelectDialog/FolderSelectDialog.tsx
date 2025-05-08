@@ -1,12 +1,12 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback } from "react";
 import {
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { FolderSelect } from '@/components/FolderSelect/FolderSelect';
+} from "@/components/ui/dialog";
+import { FolderSelect } from "@/components/FolderSelect/FolderSelect";
 
 interface FolderSelectDialogProps {
   isOpen: boolean;
@@ -27,11 +27,13 @@ function FolderSelectDialogComponent({
   description = "Choose a destination folder.",
   triggerElement,
 }: FolderSelectDialogProps) {
-
-  const handleSelect = useCallback((folderId: string | null, folderName: string | null) => {
-    onFolderSelected(folderId, folderName);
-    setIsOpen(false); // Close dialog on selection
-  }, [onFolderSelected, setIsOpen]);
+  const handleSelect = useCallback(
+    (folderId: string | null, folderName: string | null) => {
+      onFolderSelected(folderId, folderName);
+      setIsOpen(false); // Close dialog on selection
+    },
+    [onFolderSelected, setIsOpen]
+  );
 
   const handleCancel = useCallback(() => {
     setIsOpen(false);
@@ -57,4 +59,4 @@ function FolderSelectDialogComponent({
   );
 }
 
-export const FolderSelectDialog = memo(FolderSelectDialogComponent); 
+export const FolderSelectDialog = memo(FolderSelectDialogComponent);

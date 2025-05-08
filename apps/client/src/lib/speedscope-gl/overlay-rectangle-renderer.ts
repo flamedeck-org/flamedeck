@@ -1,16 +1,16 @@
-import {Color} from '@/lib/speedscope-core/color'
-import type {AffineTransform, Rect} from '@/lib/speedscope-core/math'
-import type {Theme} from '@/components/speedscope-ui/themes/theme'
-import {Graphics} from './graphics'
-import {setUniformAffineTransform, setUniformVec2} from './utils'
+import { Color } from "@/lib/speedscope-core/color";
+import type { AffineTransform, Rect } from "@/lib/speedscope-core/math";
+import type { Theme } from "@/components/speedscope-ui/themes/theme";
+import { Graphics } from "./graphics";
+import { setUniformAffineTransform, setUniformVec2 } from "./utils";
 
 export interface ViewportRectangleRendererProps {
-  configSpaceToPhysicalViewSpace: AffineTransform
-  configSpaceViewportRect: Rect
+  configSpaceToPhysicalViewSpace: AffineTransform;
+  configSpaceViewportRect: Rect;
 }
 
-const vertexFormat = new Graphics.VertexFormat()
-vertexFormat.add('position', Graphics.AttributeType.FLOAT, 2)
+const vertexFormat = new Graphics.VertexFormat();
+vertexFormat.add("position", Graphics.AttributeType.FLOAT, 2);
 
 const vert = `
   attribute vec2 position;
@@ -18,12 +18,12 @@ const vert = `
   void main() {
     gl_Position = vec4(position, 0, 1);
   }
-`
+`;
 
 const frag = (theme: Theme) => {
-  console.log('theme in overlay rectangle renderer', theme)
-  const {r, g, b} = Color.fromCSSHex(theme.fgSecondaryColor)
-  const rgb = `${r.toFixed(1)}, ${g.toFixed(1)}, ${b.toFixed(1)}`
+  console.log("theme in overlay rectangle renderer", theme);
+  const { r, g, b } = Color.fromCSSHex(theme.fgSecondaryColor);
+  const rgb = `${r.toFixed(1)}, ${g.toFixed(1)}, ${b.toFixed(1)}`;
   return `
     precision mediump float;
 
@@ -64,56 +64,60 @@ const frag = (theme: Theme) => {
         gl_FragColor = vec4(${rgb}, 0.5);
       }
     }
-  `
-}
+  `;
+};
 
 export class ViewportRectangleRenderer {
-  private material: Graphics.Material
-  private buffer: Graphics.VertexBuffer
+  private material: Graphics.Material;
+  private buffer: Graphics.VertexBuffer;
 
   constructor(
     private gl: Graphics.Context,
-    theme: Theme,
+    theme: Theme
   ) {
-    console.log('instantiating overlay rectangle renderer')
+    console.log("instantiating overlay rectangle renderer");
     const vertices = [
       [-1, 1],
       [1, 1],
       [-1, -1],
       [1, -1],
-    ]
-    const floats: number[] = []
+    ];
+    const floats: number[] = [];
     for (const v of vertices) {
-      floats.push(v[0])
-      floats.push(v[1])
+      floats.push(v[0]);
+      floats.push(v[1]);
     }
-    this.buffer = gl.createVertexBuffer(vertexFormat.stride * vertices.length)
-    this.buffer.upload(new Uint8Array(new Float32Array(floats).buffer))
-    this.material = gl.createMaterial(vertexFormat, vert, frag(theme))
+    this.buffer = gl.createVertexBuffer(vertexFormat.stride * vertices.length);
+    this.buffer.upload(new Uint8Array(new Float32Array(floats).buffer));
+    this.material = gl.createMaterial(vertexFormat, vert, frag(theme));
   }
 
   render(props: ViewportRectangleRendererProps) {
     setUniformAffineTransform(
       this.material,
-      'configSpaceToPhysicalViewSpace',
-      props.configSpaceToPhysicalViewSpace,
-    )
+      "configSpaceToPhysicalViewSpace",
+      props.configSpaceToPhysicalViewSpace
+    );
 
     // TODO(jlfwong): Pack these into a Vec4 instead
-    setUniformVec2(this.material, 'configSpaceViewportOrigin', props.configSpaceViewportRect.origin)
-    setUniformVec2(this.material, 'configSpaceViewportSize', props.configSpaceViewportRect.size)
+    setUniformVec2(
+      this.material,
+      "configSpaceViewportOrigin",
+      props.configSpaceViewportRect.origin
+    );
+    setUniformVec2(this.material, "configSpaceViewportSize", props.configSpaceViewportRect.size);
     // TODO(jlfwong): Pack these into a Vec4 instead
 
-    const viewport = this.gl.viewport
-    this.material.setUniformVec2('physicalOrigin', viewport.x, viewport.y)
-    this.material.setUniformVec2('physicalSize', viewport.width, viewport.height)
+    const viewport = this.gl.viewport;
+    this.material.setUniformVec2("physicalOrigin", viewport.x, viewport.y);
+    this.material.setUniformVec2("physicalSize", viewport.width, viewport.height);
 
-    this.material.setUniformFloat('framebufferHeight', this.gl.renderTargetHeightInPixels)
+    this.material.setUniformFloat("framebufferHeight", this.gl.renderTargetHeightInPixels);
 
     this.gl.setBlendState(
       Graphics.BlendOperation.SOURCE_ALPHA,
-      Graphics.BlendOperation.INVERSE_SOURCE_ALPHA,
-    )
-    this.gl.draw(Graphics.Primitive.TRIANGLE_STRIP, this.material, this.buffer)
+      Graphics.BlendOperation.INVERSE_SOURCE_ALPHA
+    );
+    this.gl.draw(Graphics.Primitive.TRIANGLE_STRIP, this.material, this.buffer);
   }
 }

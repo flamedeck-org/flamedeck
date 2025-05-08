@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface PageHeaderProps {
   title: React.ReactNode; // Allow string or Skeleton
@@ -12,21 +12,17 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, actions }) => 
       {/* Container for title and subtitle */}
       <div>
         {/* Allow title to be text or a skeleton */}
-        {typeof title === 'string' ? (
+        {typeof title === "string" ? (
           <h1 className="text-2xl font-bold">{title}</h1>
         ) : (
           title // Render Skeleton directly if passed
         )}
         {/* Render subtitle below title if provided */}
-        {subtitle && (
-          <div className="mt-1 text-sm text-muted-foreground">
-            {subtitle}
-          </div>
-        )}
+        {subtitle && <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div>}
       </div>
       {actions && <div>{actions}</div>} {/* Render actions if provided */}
     </div>
   );
 };
 
-export default PageHeader; 
+export default PageHeader;

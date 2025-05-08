@@ -1,4 +1,6 @@
 import tseslint from "typescript-eslint";
+import prettierPlugin from "eslint-plugin-prettier";
+import prettierConfig from "eslint-config-prettier";
 
 export default tseslint.config(
   {
@@ -45,6 +47,17 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
       "@typescript-eslint/consistent-type-imports": "warn",
+    },
+  },
+  // Prettier integration - MUST BE LAST to override other formatting rules
+  {
+    files: ["**/*.{ts,tsx,js,jsx,json,html,css,md,mdx,yaml,yml}"], // Files Prettier should format
+    plugins: {
+      prettier: prettierPlugin, 
+    },
+    rules: {
+      ...prettierConfig.rules, // Disables ESLint rules that conflict with Prettier
+      "prettier/prettier": "warn", // Runs Prettier as an ESLint rule and reports differences as warnings
     },
   }
 );

@@ -1,5 +1,5 @@
-import { memo, useMemo, useState, useCallback, useEffect } from 'react';
-import { useSharingModal } from '@/hooks/useSharingModal';
+import { memo, useMemo, useState, useCallback, useEffect } from "react";
+import { useSharingModal } from "@/hooks/useSharingModal";
 import {
   Dialog,
   DialogContent,
@@ -8,11 +8,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { TraceRole, TracePermissionWithUser } from '@/lib/api';
-import { traceApi } from '@/lib/api';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { TraceRole, TracePermissionWithUser } from "@/lib/api";
+import { traceApi } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertTriangle,
   Globe,
@@ -22,8 +22,8 @@ import {
   Lock,
   Copy as CopyIconInternal,
   Mail,
-} from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Select,
@@ -33,14 +33,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList, CommandInput } from "@/components/ui/command";
-import type { Database } from '@/integrations/supabase/types';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+  CommandInput,
+} from "@/components/ui/command";
+import type { Database } from "@/integrations/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useTraceDetails } from '@/hooks/useTraceDetails';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useTraceDetails } from "@/hooks/useTraceDetails";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // Type for user profile needed for search
-type UserProfileSearchResult = Database['public']['Tables']['user_profiles']['Row'];
+type UserProfileSearchResult = Database["public"]["Tables"]["user_profiles"]["Row"];
 
 function SharingModalImpl() {
   const { isOpen, closeModal, traceId } = useSharingModal();
@@ -53,15 +60,15 @@ function SharingModalImpl() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<UserProfileSearchResult[]>([]);
   const [invitePopoverOpen, setInvitePopoverOpen] = useState(false);
-  const [selectedInviteRole, setSelectedInviteRole] = useState<TraceRole>('viewer');
+  const [selectedInviteRole, setSelectedInviteRole] = useState<TraceRole>("viewer");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
 
   // Fetch trace details using the new hook
-  const { 
-    data: traceDetails, 
-    isLoading: isLoadingDetails, 
-    error: detailsError 
+  const {
+    data: traceDetails,
+    isLoading: isLoadingDetails,
+    error: detailsError,
   } = useTraceDetails(traceId);
 
   // Fetch permissions when the modal is open and traceId is available
@@ -70,7 +77,7 @@ function SharingModalImpl() {
     isLoading: isLoadingPermissions,
     error: permissionsFetchError,
   } = useQuery<TracePermissionWithUser[] | null, string>({
-    queryKey: ['tracePermissions', traceId],
+    queryKey: ["tracePermissions", traceId],
     queryFn: async () => {
       if (!traceId) return null;
       const permResponse = await traceApi.getTracePermissions(traceId);
@@ -89,7 +96,10 @@ function SharingModalImpl() {
   const isLoading = isLoadingDetails || isLoadingPermissions;
   const fetchError = detailsError?.message || permissionsFetchError;
 
-  const permissions: TracePermissionWithUser[] = useMemo(() => permissionsData ?? [], [permissionsData]);
+  const permissions: TracePermissionWithUser[] = useMemo(
+    () => permissionsData ?? [],
+    [permissionsData]
+  );
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -98,8 +108,8 @@ function SharingModalImpl() {
   };
 
   // Calculate current public access state - Adapt later for General Access dropdown
-  const publicPermission = useMemo(() => permissions.find(p => p.user === null), [permissions]);
-  const isPublic = publicPermission?.role === 'viewer'; // Use this for General Access initial state
+  const publicPermission = useMemo(() => permissions.find((p) => p.user === null), [permissions]);
+  const isPublic = publicPermission?.role === "viewer"; // Use this for General Access initial state
 
   // --- Mutations ---
 
@@ -110,12 +120,15 @@ function SharingModalImpl() {
   const { mutate: setPublicAccess, isPending: isSettingPublicAccess } = useMutation({
     mutationFn: (makePublic: boolean) => {
       if (!traceId) throw new Error("Trace ID is missing");
-      const targetRole: TraceRole | null = makePublic ? 'viewer' : null;
+      const targetRole: TraceRole | null = makePublic ? "viewer" : null;
       return traceApi.setPublicTraceAccess(traceId, targetRole);
     },
     onSuccess: (data, makePublic) => {
-      toast({ title: `Access updated`, description: makePublic ? "Trace is now public." : "Trace is now private." });
-      queryClient.invalidateQueries({ queryKey: ['tracePermissions', traceId] });
+      toast({
+        title: `Access updated`,
+        description: makePublic ? "Trace is now public." : "Trace is now private.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["tracePermissions", traceId] });
     },
     onError: (error) => {
       toast({ title: "Error updating access", description: error.message, variant: "destructive" });
@@ -127,14 +140,14 @@ function SharingModalImpl() {
     mutationFn: (params: { userId: string; role: TraceRole }) => {
       if (!traceId) throw new Error("Trace ID is missing");
       if (!params.userId) throw new Error("User ID is missing");
-      if (permissions.some(p => p.user?.id === params.userId)) {
+      if (permissions.some((p) => p.user?.id === params.userId)) {
         throw new Error("User already has access.");
       }
       return traceApi.addTracePermission(traceId, params.userId, params.role);
     },
     onSuccess: (data, params) => {
       toast({ title: "User Invited", description: `Access granted to user.` });
-      queryClient.invalidateQueries({ queryKey: ['tracePermissions', traceId] });
+      queryClient.invalidateQueries({ queryKey: ["tracePermissions", traceId] });
       setComboboxValue("");
       setSearchResults([]);
       setInvitePopoverOpen(false);
@@ -152,14 +165,18 @@ function SharingModalImpl() {
     },
     onSuccess: (data, params) => {
       toast({ title: "Permission Updated" });
-      queryClient.invalidateQueries({ queryKey: ['tracePermissions', traceId] });
+      queryClient.invalidateQueries({ queryKey: ["tracePermissions", traceId] });
     },
     onError: (error, params) => {
-      toast({ title: "Error Updating Permission", description: error.message, variant: "destructive" });
+      toast({
+        title: "Error Updating Permission",
+        description: error.message,
+        variant: "destructive",
+      });
     },
     onSettled: () => {
       setMutatingPermissionId(null); // Clear tracking on completion
-    }
+    },
   });
 
   // Mutation for removing a permission
@@ -170,14 +187,14 @@ function SharingModalImpl() {
     },
     onSuccess: (data, permissionId) => {
       toast({ title: "Access Removed" });
-      queryClient.invalidateQueries({ queryKey: ['tracePermissions', traceId] });
+      queryClient.invalidateQueries({ queryKey: ["tracePermissions", traceId] });
     },
     onError: (error, permissionId) => {
       toast({ title: "Error Removing Access", description: error.message, variant: "destructive" });
     },
     onSettled: () => {
       setMutatingPermissionId(null); // Clear tracking on completion
-    }
+    },
   });
 
   // --- Copy Link --- (Placeholder Function)
@@ -187,52 +204,62 @@ function SharingModalImpl() {
       return;
     }
     const url = `${window.location.origin}/traces/${traceId}/view`;
-    navigator.clipboard.writeText(url)
+    navigator.clipboard
+      .writeText(url)
       .then(() => {
         toast({ title: "Link Copied" });
       })
-      .catch(err => {
+      .catch((err) => {
         toast({ title: "Error copying link", description: err.message, variant: "destructive" });
       });
   };
 
   // --- Calculate User Permissions ---
-  const currentUserPermission = useMemo(() => permissions.find(p => p.user?.id === currentUser?.id), [permissions, currentUser]);
-  const canManagePermissions = currentUserPermission?.role === 'editor' || currentUserPermission?.role === 'owner';
+  const currentUserPermission = useMemo(
+    () => permissions.find((p) => p.user?.id === currentUser?.id),
+    [permissions, currentUser]
+  );
+  const canManagePermissions =
+    currentUserPermission?.role === "editor" || currentUserPermission?.role === "owner";
 
   // --- Search Function (Memoized) ---
-  const performSearch = useCallback(async (query: string) => {
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      setIsSearching(false);
-      setInvitePopoverOpen(false);
-      return;
-    }
-    setIsSearching(true);
-    try {
-      const response = await traceApi.searchUsers(query);
-      if (response.data) {
-        const existingUserIds = new Set(permissions.map(p => p.user?.id).filter(Boolean));
-        const filteredResults = response.data.filter(u => u.id !== currentUser?.id && !existingUserIds.has(u.id));
-        setSearchResults(filteredResults);
-        // Only open popover if there are results or if it's not already open
-        // This helps prevent unnecessary state updates if the popover is already open
-        if (filteredResults.length > 0) {
-             setInvitePopoverOpen(prev => !prev ? true : prev);
-        }
-      } else {
+  const performSearch = useCallback(
+    async (query: string) => {
+      if (query.trim().length < 2) {
         setSearchResults([]);
-        setInvitePopoverOpen(prev => !prev ? true : prev); // Keep open to show "No users found"
-        console.error("Search API error:", response.error);
+        setIsSearching(false);
+        setInvitePopoverOpen(false);
+        return;
       }
-    } catch (err) {
-      console.error("Search function failed:", err);
-      setSearchResults([]);
-      setInvitePopoverOpen(prev => !prev ? true : prev); // Keep open to show error state?
-    } finally {
-      setIsSearching(false);
-    }
-  }, [permissions, currentUser?.id, setInvitePopoverOpen, setSearchResults, setIsSearching]); // Added state setters as dependencies
+      setIsSearching(true);
+      try {
+        const response = await traceApi.searchUsers(query);
+        if (response.data) {
+          const existingUserIds = new Set(permissions.map((p) => p.user?.id).filter(Boolean));
+          const filteredResults = response.data.filter(
+            (u) => u.id !== currentUser?.id && !existingUserIds.has(u.id)
+          );
+          setSearchResults(filteredResults);
+          // Only open popover if there are results or if it's not already open
+          // This helps prevent unnecessary state updates if the popover is already open
+          if (filteredResults.length > 0) {
+            setInvitePopoverOpen((prev) => (!prev ? true : prev));
+          }
+        } else {
+          setSearchResults([]);
+          setInvitePopoverOpen((prev) => (!prev ? true : prev)); // Keep open to show "No users found"
+          console.error("Search API error:", response.error);
+        }
+      } catch (err) {
+        console.error("Search function failed:", err);
+        setSearchResults([]);
+        setInvitePopoverOpen((prev) => (!prev ? true : prev)); // Keep open to show error state?
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [permissions, currentUser?.id, setInvitePopoverOpen, setSearchResults, setIsSearching]
+  ); // Added state setters as dependencies
 
   // --- Effect to run search on debounced query change ---
   useEffect(() => {
@@ -249,9 +276,9 @@ function SharingModalImpl() {
 
   // --- Handler for Role Change/Remove ---
   const handleRoleChange = (permissionId: string, newRoleOrAction: string) => {
-    if (newRoleOrAction === 'remove') {
+    if (newRoleOrAction === "remove") {
       removePermission(permissionId);
-    } else if (newRoleOrAction === 'viewer' || newRoleOrAction === 'editor') {
+    } else if (newRoleOrAction === "viewer" || newRoleOrAction === "editor") {
       updatePermissionRole({ permissionId, role: newRoleOrAction });
     }
   };
@@ -282,7 +309,7 @@ function SharingModalImpl() {
     }
 
     // Filter out the public permission entry for list display
-    const userPermissions = permissions.filter(p => p.user !== null);
+    const userPermissions = permissions.filter((p) => p.user !== null);
 
     return (
       <>
@@ -322,16 +349,16 @@ function SharingModalImpl() {
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={user.avatar_url ?? undefined} />
                               <AvatarFallback>
-                                { (user.username || "U").substring(0, 2).toUpperCase() }
+                                {(user.username || "U").substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col flex-grow min-w-0">
                               <span className="font-medium truncate text-sm">
-                                {user.username || 'Unnamed User'}
+                                {user.username || "Unnamed User"}
                               </span>
                               {(user.first_name || user.last_name) && (
                                 <span className="text-xs text-muted-foreground truncate">
-                                  {`${user.first_name || ''} ${user.last_name || ''}`.trim()}
+                                  {`${user.first_name || ""} ${user.last_name || ""}`.trim()}
                                 </span>
                               )}
                             </div>
@@ -348,27 +375,42 @@ function SharingModalImpl() {
 
         {/* People with Access Section */}
         <div>
-          <ul className="space-y-3"> {/* Increased spacing */}
+          <ul className="space-y-3">
+            {" "}
+            {/* Increased spacing */}
             {userPermissions.map((perm) => {
               if (!perm.user) return null; // Should not happen with filtering, but safeguard
 
-              const userDisplayName = perm.user.username || `${perm.user.first_name || ''} ${perm.user.last_name || ''}`.trim() || `User`;
-              const initials = userDisplayName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+              const userDisplayName =
+                perm.user.username ||
+                `${perm.user.first_name || ""} ${perm.user.last_name || ""}`.trim() ||
+                `User`;
+              const initials =
+                userDisplayName
+                  .split(" ")
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase() || "?";
               const isCurrentUser = perm.user.id === currentUser?.id;
-              const isPermOwner = perm.role === 'owner';
+              const isPermOwner = perm.role === "owner";
               const isMutatingThisRow = mutatingPermissionId === perm.id;
 
               return (
                 <li key={perm.id} className="flex justify-between items-center text-sm">
-                  <div className="flex items-center space-x-3"> {/* Increased spacing */}
-                    <Avatar className="h-8 w-8"> {/* Slightly larger Avatar */}
+                  <div className="flex items-center space-x-3">
+                    {" "}
+                    {/* Increased spacing */}
+                    <Avatar className="h-8 w-8">
+                      {" "}
+                      {/* Slightly larger Avatar */}
                       <AvatarImage src={perm.user.avatar_url ?? undefined} alt={userDisplayName} />
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
                       <span className="font-medium">
                         {userDisplayName}
-                        {isCurrentUser && ' (you)'}
+                        {isCurrentUser && " (you)"}
                       </span>
                       {/* TODO: Check if email exists before displaying */}
                     </div>
@@ -377,83 +419,107 @@ function SharingModalImpl() {
                   {/* Role Dropdown / Remove Button */}
                   {isPermOwner ? (
                     <span className="text-xs text-muted-foreground px-3">Owner</span>
-                  ) : (canManagePermissions && !isCurrentUser) ? (
-                     <Select
-                        value={perm.role}
-                        onValueChange={(newValue) => handleRoleChange(perm.id, newValue)}
-                        disabled={isMutatingThisRow} // Disable select during mutation for this row
-                       >
-                       <SelectTrigger className="w-[100px] h-8 text-xs">
-                         {isMutatingThisRow ? (
-                           <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                         ) : (
-                           <SelectValue />
-                         )}
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="viewer">Viewer</SelectItem>
-                         <SelectItem value="editor">Editor</SelectItem>
-                         {/* Styled Remove Item */}
-                         <SelectItem value="remove" className="text-destructive focus:bg-destructive focus:text-destructive-foreground"> 
-                           <div className="flex items-center w-full"> 
-                             <span>Remove access</span>
-                           </div>
-                         </SelectItem>
-                       </SelectContent>
-                     </Select>
+                  ) : canManagePermissions && !isCurrentUser ? (
+                    <Select
+                      value={perm.role}
+                      onValueChange={(newValue) => handleRoleChange(perm.id, newValue)}
+                      disabled={isMutatingThisRow} // Disable select during mutation for this row
+                    >
+                      <SelectTrigger className="w-[100px] h-8 text-xs">
+                        {isMutatingThisRow ? (
+                          <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                        ) : (
+                          <SelectValue />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="viewer">Viewer</SelectItem>
+                        <SelectItem value="editor">Editor</SelectItem>
+                        {/* Styled Remove Item */}
+                        <SelectItem
+                          value="remove"
+                          className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                        >
+                          <div className="flex items-center w-full">
+                            <span>Remove access</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   ) : (
-                     <span className="text-xs text-muted-foreground capitalize px-3">{perm.role}</span>
+                    <span className="text-xs text-muted-foreground capitalize px-3">
+                      {perm.role}
+                    </span>
                   )}
                 </li>
               );
             })}
             {userPermissions.length === 0 && (
-               <li className="text-sm text-muted-foreground">Only you have access.</li>
+              <li className="text-sm text-muted-foreground">Only you have access.</li>
             )}
           </ul>
         </div>
 
         {/* General Access Section */}
         {canManagePermissions && (
-             <div>
-               <h4 className="font-medium text-sm mb-2">General access</h4>
-               <div className="flex items-start space-x-3">
-                 <div className="mt-1">
-                    {isPublic ? <Globe className="h-5 w-5 text-muted-foreground" /> : <Lock className="h-5 w-5 text-muted-foreground" />}
-                 </div>
-                 <div className="flex-grow">
-                    <Select
-                        value={isPublic ? 'public' : 'restricted'}
-                        onValueChange={(value) => setPublicAccess(value === 'public')}
-                        disabled={isSettingPublicAccess}
-                      >
-                      <SelectTrigger className="w-full h-auto p-0 border-0 shadow-none focus:ring-0 text-left">
-                         <div>
-                             <p className="font-medium text-sm">{isPublic ? "Anyone with the link" : "Restricted"}</p>
-                             <p className="text-xs text-muted-foreground">
-                               {isPublic ? "Anyone on the internet with the link can view" : "Only people with access can open with the link"}
-                              </p>
-                          </div>
-                          {isSettingPublicAccess
-                             ? <Loader2 className="h-4 w-4 animate-spin ml-auto text-muted-foreground" />
-                             : <ChevronsUpDown className="h-4 w-4 ml-auto text-muted-foreground" />
-                          }
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="restricted">
-                            <div className="flex items-center"><Lock className="h-4 w-4 mr-2"/>Restricted</div>
-                            <p className="text-xs text-muted-foreground pl-6">Only people with access can open with the link</p>
-                          </SelectItem>
-                         <SelectItem value="public">
-                           <div className="flex items-center"><Globe className="h-4 w-4 mr-2"/>Anyone with the link</div>
-                           <p className="text-xs text-muted-foreground pl-6">Anyone on the internet with the link can view</p>
-                         </SelectItem>
-                       </SelectContent>
-                     </Select>
-                 </div>
-               </div>
-             </div>
-         )}
+          <div>
+            <h4 className="font-medium text-sm mb-2">General access</h4>
+            <div className="flex items-start space-x-3">
+              <div className="mt-1">
+                {isPublic ? (
+                  <Globe className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <Lock className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-grow">
+                <Select
+                  value={isPublic ? "public" : "restricted"}
+                  onValueChange={(value) => setPublicAccess(value === "public")}
+                  disabled={isSettingPublicAccess}
+                >
+                  <SelectTrigger className="w-full h-auto p-0 border-0 shadow-none focus:ring-0 text-left">
+                    <div>
+                      <p className="font-medium text-sm">
+                        {isPublic ? "Anyone with the link" : "Restricted"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {isPublic
+                          ? "Anyone on the internet with the link can view"
+                          : "Only people with access can open with the link"}
+                      </p>
+                    </div>
+                    {isSettingPublicAccess ? (
+                      <Loader2 className="h-4 w-4 animate-spin ml-auto text-muted-foreground" />
+                    ) : (
+                      <ChevronsUpDown className="h-4 w-4 ml-auto text-muted-foreground" />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="restricted">
+                      <div className="flex items-center">
+                        <Lock className="h-4 w-4 mr-2" />
+                        Restricted
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-6">
+                        Only people with access can open with the link
+                      </p>
+                    </SelectItem>
+                    <SelectItem value="public">
+                      <div className="flex items-center">
+                        <Globe className="h-4 w-4 mr-2" />
+                        Anyone with the link
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-6">
+                        Anyone on the internet with the link can view
+                      </p>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   };
@@ -462,27 +528,30 @@ function SharingModalImpl() {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {/* Increased max-width */}
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader className="pr-16"> {/* Add padding to prevent overlap with close button */}
+        <DialogHeader className="pr-16">
+          {" "}
+          {/* Add padding to prevent overlap with close button */}
           {/* Use fetched trace name, fallback to ID or placeholder */}
-          <DialogTitle className="truncate"> 
-             {isLoadingDetails 
-                ? <Skeleton className="h-6 w-48" /> 
-                : `Share "${traceDetails?.scenario || 'Trace'}"`
-             }
+          <DialogTitle className="truncate">
+            {isLoadingDetails ? (
+              <Skeleton className="h-6 w-48" />
+            ) : (
+              `Share "${traceDetails?.scenario || "Trace"}"`
+            )}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-6">
-          {renderContent()}
-        </div>
+        <div className="space-y-6">{renderContent()}</div>
         <DialogFooter className="sm:justify-between pt-2">
           <Button type="button" variant="outline" onClick={handleCopyLink}>
-             <LinkIcon className="mr-2 h-4 w-4" /> Copy link
-           </Button>
-          <Button type="button" onClick={closeModal} className="px-6">Done</Button>
+            <LinkIcon className="mr-2 h-4 w-4" /> Copy link
+          </Button>
+          <Button type="button" onClick={closeModal} className="px-6">
+            Done
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 
-export const SharingModal = memo(SharingModalImpl); 
+export const SharingModal = memo(SharingModalImpl);

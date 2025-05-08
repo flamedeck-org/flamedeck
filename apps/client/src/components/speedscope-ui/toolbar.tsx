@@ -1,15 +1,15 @@
-import React, { Fragment, useCallback, useState, useEffect } from 'react';
-import type { ApplicationProps } from './application'
-import { Sizes, FontFamily, FontSize, Duration } from './style'
-import { ProfileSelect } from './profile-select'
-import type { Profile } from '../../lib/speedscope-core/profile'
-import { objectsHaveShallowEquality } from '../../lib/speedscope-core/lib-utils'
-import { colorSchemeToString, useTheme, Theme } from './themes/theme'
-import { ViewMode } from '../../lib/speedscope-core/view-mode'
-import { viewModeAtom } from '../../lib/speedscope-core/app-state'
-import type { ProfileGroupState } from '../../lib/speedscope-core/app-state/profile-group'
-import { colorSchemeAtom } from '../../lib/speedscope-core/app-state/color-scheme'
-import { useAtom } from '../../lib/speedscope-core/atom'
+import React, { Fragment, useCallback, useState, useEffect } from "react";
+import type { ApplicationProps } from "./application";
+import { Sizes, FontFamily, FontSize, Duration } from "./style";
+import { ProfileSelect } from "./profile-select";
+import type { Profile } from "../../lib/speedscope-core/profile";
+import { objectsHaveShallowEquality } from "../../lib/speedscope-core/lib-utils";
+import { colorSchemeToString, useTheme, Theme } from "./themes/theme";
+import { ViewMode } from "../../lib/speedscope-core/view-mode";
+import { viewModeAtom } from "../../lib/speedscope-core/app-state";
+import type { ProfileGroupState } from "../../lib/speedscope-core/app-state/profile-group";
+import { colorSchemeAtom } from "../../lib/speedscope-core/app-state/color-scheme";
+import { useAtom } from "../../lib/speedscope-core/atom";
 
 interface ToolbarProps extends ApplicationProps {
   // browseForFile(): void
@@ -17,7 +17,7 @@ interface ToolbarProps extends ApplicationProps {
 }
 
 function useSetViewMode(setViewMode: (viewMode: ViewMode) => void, viewMode: ViewMode) {
-  return useCallback(() => setViewMode(viewMode), [setViewMode, viewMode])
+  return useCallback(() => setViewMode(viewMode), [setViewMode, viewMode]);
 }
 
 // --- Toolbar Button Component (Helper for Tailwind) ---
@@ -28,34 +28,37 @@ interface ToolbarButtonProps {
   className?: string;
 }
 
-const ToolbarButton: React.FC<ToolbarButtonProps> = ({ onClick, isActive, children, className }) => {
+const ToolbarButton: React.FC<ToolbarButtonProps> = ({
+  onClick,
+  isActive,
+  children,
+  className,
+}) => {
   // Base classes + conditional active/hover classes
-  const baseClasses = "inline-block mt-px h-[calc(theme(height.8)-theme(margin.px))] leading-[calc(theme(height.8)-theme(margin.px))] px-2 ml-0.5 transition-colors ease-in"; // Adjust h-8, leading, ml-0.5 based on Sizes
-  const themeClasses = isActive 
-    ? "bg-primary text-primary-foreground hover:bg-primary" 
+  const baseClasses =
+    "inline-block mt-px h-[calc(theme(height.8)-theme(margin.px))] leading-[calc(theme(height.8)-theme(margin.px))] px-2 ml-0.5 transition-colors ease-in"; // Adjust h-8, leading, ml-0.5 based on Sizes
+  const themeClasses = isActive
+    ? "bg-primary text-primary-foreground hover:bg-primary"
     : "bg-secondary text-secondary-foreground hover:bg-accent"; // Map theme.selectionPrimary/SecondaryColor
-  
+
   return (
-    <div 
-      className={`${baseClasses} ${themeClasses} ${className || ''}`}
-      onClick={onClick}
-    >
+    <div className={`${baseClasses} ${themeClasses} ${className || ""}`} onClick={onClick}>
       {children}
     </div>
   );
 };
 
-const EmojiSpan: React.FC<{children: React.ReactNode}> = ({ children }) => (
+const EmojiSpan: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span className="inline-block align-middle mr-1">{children}</span> // Approximated style.emoji
 );
 // --- End Helper Components ---
 
 function ToolbarLeftContent(props: ToolbarProps) {
-  const setChronoFlameChart = useSetViewMode(viewModeAtom.set, ViewMode.CHRONO_FLAME_CHART)
-  const setLeftHeavyFlameGraph = useSetViewMode(viewModeAtom.set, ViewMode.LEFT_HEAVY_FLAME_GRAPH)
-  const setSandwichView = useSetViewMode(viewModeAtom.set, ViewMode.SANDWICH_VIEW)
+  const setChronoFlameChart = useSetViewMode(viewModeAtom.set, ViewMode.CHRONO_FLAME_CHART);
+  const setLeftHeavyFlameGraph = useSetViewMode(viewModeAtom.set, ViewMode.LEFT_HEAVY_FLAME_GRAPH);
+  const setSandwichView = useSetViewMode(viewModeAtom.set, ViewMode.SANDWICH_VIEW);
 
-  if (!props.activeProfileState) return null
+  if (!props.activeProfileState) return null;
 
   return (
     <div className="absolute h-8 overflow-hidden top-0 left-0 ml-0.5 text-left">
@@ -71,14 +74,11 @@ function ToolbarLeftContent(props: ToolbarProps) {
       >
         <EmojiSpan>⬅️</EmojiSpan>Left Heavy
       </ToolbarButton>
-      <ToolbarButton
-        isActive={props.viewMode === ViewMode.SANDWICH_VIEW}
-        onClick={setSandwichView}
-      >
+      <ToolbarButton isActive={props.viewMode === ViewMode.SANDWICH_VIEW} onClick={setSandwichView}>
         <EmojiSpan>🥪</EmojiSpan>Sandwich
       </ToolbarButton>
     </div>
-  )
+  );
 }
 
 const getCachedProfileList = (() => {
@@ -89,61 +89,61 @@ const getCachedProfileList = (() => {
   // information for each tab for each profile. So whenever any property in any
   // persisted view state changes for *any* view in *any* profile, the profiles
   // list will get re-generated.
-  let cachedProfileList: Profile[] | null = null
+  let cachedProfileList: Profile[] | null = null;
 
   return (profileGroup: ProfileGroupState): Profile[] | null => {
-    const nextProfileList = profileGroup?.profiles.map(p => p.profile) || null
+    const nextProfileList = profileGroup?.profiles.map((p) => p.profile) || null;
 
     if (
       cachedProfileList === null ||
       (nextProfileList != null && !objectsHaveShallowEquality(cachedProfileList, nextProfileList))
     ) {
-      cachedProfileList = nextProfileList
+      cachedProfileList = nextProfileList;
     }
 
-    return cachedProfileList
-  }
-})()
+    return cachedProfileList;
+  };
+})();
 
 function ToolbarCenterContent(props: ToolbarProps): JSX.Element {
-  const {activeProfileState, profileGroup} = props
-  const profiles = getCachedProfileList(profileGroup)
-  const [profileSelectShown, setProfileSelectShown] = useState(false)
+  const { activeProfileState, profileGroup } = props;
+  const profiles = getCachedProfileList(profileGroup);
+  const [profileSelectShown, setProfileSelectShown] = useState(false);
 
   const openProfileSelect = useCallback(() => {
-    setProfileSelectShown(true)
-  }, [setProfileSelectShown])
+    setProfileSelectShown(true);
+  }, [setProfileSelectShown]);
 
   const closeProfileSelect = useCallback(() => {
-    setProfileSelectShown(false)
-  }, [setProfileSelectShown])
+    setProfileSelectShown(false);
+  }, [setProfileSelectShown]);
 
   useEffect(() => {
     const onWindowKeyPress = (ev: KeyboardEvent) => {
-      if (ev.key === 't') {
-        ev.preventDefault()
-        setProfileSelectShown(true)
+      if (ev.key === "t") {
+        ev.preventDefault();
+        setProfileSelectShown(true);
       }
-    }
-    window.addEventListener('keypress', onWindowKeyPress)
+    };
+    window.addEventListener("keypress", onWindowKeyPress);
     return () => {
-      window.removeEventListener('keypress', onWindowKeyPress)
-    }
-  }, [setProfileSelectShown])
+      window.removeEventListener("keypress", onWindowKeyPress);
+    };
+  }, [setProfileSelectShown]);
 
   if (activeProfileState && profileGroup && profiles) {
     if (profileGroup.profiles.length === 1) {
-      return <>{activeProfileState.profile.getName()}</>
+      return <>{activeProfileState.profile.getName()}</>;
     } else {
       return (
         <div className="pt-px h-8 relative" onMouseLeave={closeProfileSelect}>
           <span onMouseOver={openProfileSelect}>
-            {activeProfileState.profile.getName()}{' '}
+            {activeProfileState.profile.getName()}{" "}
             <span className="text-muted-foreground">
               ({activeProfileState.index + 1}/{profileGroup.profiles.length})
             </span>
           </span>
-          <div style={{display: profileSelectShown ? 'block' : 'none'}}>
+          <div style={{ display: profileSelectShown ? "block" : "none" }}>
             <ProfileSelect
               setProfileIndexToView={props.setProfileIndexToView}
               indexToView={profileGroup.indexToView}
@@ -153,14 +153,14 @@ function ToolbarCenterContent(props: ToolbarProps): JSX.Element {
             />
           </div>
         </div>
-      )
+      );
     }
   }
-  return <>{'🔬speedscope'}</>
+  return <>{"🔬speedscope"}</>;
 }
 
 function ToolbarRightContent(props: ToolbarProps) {
-  const colorScheme = useAtom(colorSchemeAtom)
+  const colorScheme = useAtom(colorSchemeAtom);
 
   const colorSchemeToggle = (
     <ToolbarButton onClick={colorSchemeAtom.cycleToNextColorScheme}>
@@ -169,7 +169,7 @@ function ToolbarRightContent(props: ToolbarProps) {
         {colorSchemeToString(colorScheme)}
       </span>
     </ToolbarButton>
-  )
+  );
 
   const help = (
     <ToolbarButton className="px-2">
@@ -182,14 +182,14 @@ function ToolbarRightContent(props: ToolbarProps) {
         <EmojiSpan>❓</EmojiSpan>Help
       </a>
     </ToolbarButton>
-  )
+  );
 
   return (
     <div className="absolute h-8 overflow-hidden top-0 right-0 mr-0.5 text-right">
       {colorSchemeToggle}
       {help}
     </div>
-  )
+  );
 }
 
 export function Toolbar(props: ToolbarProps) {
@@ -199,5 +199,5 @@ export function Toolbar(props: ToolbarProps) {
       <ToolbarCenterContent {...props} />
       <ToolbarRightContent {...props} />
     </div>
-  )
+  );
 }

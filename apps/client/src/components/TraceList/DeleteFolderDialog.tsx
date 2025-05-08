@@ -1,17 +1,22 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { memo, useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-  DialogDescription, DialogFooter, DialogClose
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { AlertCircle, Loader2 } from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useQuery } from '@tanstack/react-query';
-import { traceApi } from '@/lib/api';
-import type { RecursiveFolderContents } from '@/types';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from "@tanstack/react-query";
+import { traceApi } from "@/lib/api";
+import type { RecursiveFolderContents } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DeleteFolderDialogProps {
   isOpen: boolean;
@@ -22,7 +27,7 @@ interface DeleteFolderDialogProps {
   isPending: boolean;
 }
 
-const FOLDER_CONTENTS_QUERY_KEY = 'folderContentsForDelete';
+const FOLDER_CONTENTS_QUERY_KEY = "folderContentsForDelete";
 
 function DeleteFolderDialogComponent({
   isOpen,
@@ -30,22 +35,24 @@ function DeleteFolderDialogComponent({
   folderId,
   folderName,
   onConfirm,
-  isPending
+  isPending,
 }: DeleteFolderDialogProps) {
   const [confirmInput, setConfirmInput] = useState("");
 
-  const { data: contentsData, isLoading: isLoadingContents, error: contentsError, refetch } = useQuery<
-    RecursiveFolderContents,
-    Error
-  >({
+  const {
+    data: contentsData,
+    isLoading: isLoadingContents,
+    error: contentsError,
+    refetch,
+  } = useQuery<RecursiveFolderContents, Error>({
     queryKey: [FOLDER_CONTENTS_QUERY_KEY, folderId],
     queryFn: async () => {
       const response = await traceApi.getRecursiveFolderContents(folderId);
       if (response.error) {
-        throw new Error(response.error.message || 'Failed to fetch folder contents');
+        throw new Error(response.error.message || "Failed to fetch folder contents");
       }
       if (!response.data) {
-        throw new Error('No data received when fetching folder contents');
+        throw new Error("No data received when fetching folder contents");
       }
       return response.data;
     },
@@ -59,7 +66,7 @@ function DeleteFolderDialogComponent({
     if (isOpen) {
       setConfirmInput("");
     } else {
-        setConfirmInput("");
+      setConfirmInput("");
     }
   }, [isOpen, folderId]);
 
@@ -72,16 +79,18 @@ function DeleteFolderDialogComponent({
   }, [isMatch, isPending, isLoadingContents, contentsData, onConfirm]);
 
   const handleOpenChange = (open: boolean) => {
-     if (isPending) return;
-     setIsOpen(open);
-  }
+    if (isPending) return;
+    setIsOpen(open);
+  };
 
   const renderDescription = () => {
     if (isLoadingContents) {
       return <Skeleton className="h-4 w-4/5" />;
     }
     if (contentsError) {
-      return <span className="text-destructive">Error loading contents: {contentsError.message}</span>;
+      return (
+        <span className="text-destructive">Error loading contents: {contentsError.message}</span>
+      );
     }
     if (contentsData) {
       const folderCount = contentsData.folder_ids.length;
@@ -89,23 +98,21 @@ function DeleteFolderDialogComponent({
       const traceCount = contentsData.trace_ids.length;
 
       let contentDescription = ``;
-       if (subFolderCount > 0 && traceCount > 0) {
-           contentDescription = `containing ${subFolderCount} subfolder(s) and ${traceCount} trace(s)`;
-       } else if (subFolderCount > 0) {
-           contentDescription = `containing ${subFolderCount} subfolder(s)`;
-       } else if (traceCount > 0) {
-           contentDescription = `containing ${traceCount} trace(s)`;
-       }
-       else if (folderCount === 1 && traceCount === 0) {
-            contentDescription = `which is currently empty`;
-       }
+      if (subFolderCount > 0 && traceCount > 0) {
+        contentDescription = `containing ${subFolderCount} subfolder(s) and ${traceCount} trace(s)`;
+      } else if (subFolderCount > 0) {
+        contentDescription = `containing ${subFolderCount} subfolder(s)`;
+      } else if (traceCount > 0) {
+        contentDescription = `containing ${traceCount} trace(s)`;
+      } else if (folderCount === 1 && traceCount === 0) {
+        contentDescription = `which is currently empty`;
+      }
 
       return (
         <>
           This action cannot be undone. This will permanently delete the folder
           <strong className="mx-1">"{folderName}"</strong>
-          {contentDescription}
-          .
+          {contentDescription}.
         </>
       );
     }
@@ -119,9 +126,7 @@ function DeleteFolderDialogComponent({
           <DialogTitle className="flex items-center">
             <AlertCircle className="mr-2 h-5 w-5 text-destructive" /> Permanently Delete Folder?
           </DialogTitle>
-          <DialogDescription>
-             {renderDescription()}
-          </DialogDescription>
+          <DialogDescription>{renderDescription()}</DialogDescription>
         </DialogHeader>
 
         <Alert variant="destructive" className="my-4">
@@ -147,14 +152,19 @@ function DeleteFolderDialogComponent({
               aria-describedby="confirm-folder-description"
             />
           </div>
-           <p id="confirm-folder-description" className="text-xs text-muted-foreground px-1 col-span-4 text-center">
-                Type <span className="font-semibold">{folderName}</span> to enable deletion.
-            </p>
+          <p
+            id="confirm-folder-description"
+            className="text-xs text-muted-foreground px-1 col-span-4 text-center"
+          >
+            Type <span className="font-semibold">{folderName}</span> to enable deletion.
+          </p>
         </div>
         <DialogFooter>
-           <DialogClose asChild>
-               <Button variant="outline" disabled={isPending}>Cancel</Button>
-           </DialogClose>
+          <DialogClose asChild>
+            <Button variant="outline" disabled={isPending}>
+              Cancel
+            </Button>
+          </DialogClose>
           <Button
             variant="destructive"
             onClick={handleConfirmClick}
@@ -163,7 +173,7 @@ function DeleteFolderDialogComponent({
           >
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isLoadingContents ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {(!isPending && !isLoadingContents) ? 'Delete Permanently' : 'Deleting...'}
+            {!isPending && !isLoadingContents ? "Delete Permanently" : "Deleting..."}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -171,4 +181,4 @@ function DeleteFolderDialogComponent({
   );
 }
 
-export const DeleteFolderDialog = memo(DeleteFolderDialogComponent); 
+export const DeleteFolderDialog = memo(DeleteFolderDialogComponent);

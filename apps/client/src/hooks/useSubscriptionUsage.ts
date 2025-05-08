@@ -4,7 +4,7 @@ import type { SubscriptionUsage } from "@/lib/api/subscription";
 import { getUserSubscriptionUsage } from "@/lib/api/subscription";
 
 // Define a constant for the base query key
-export const SUBSCRIPTION_USAGE_QUERY_KEY = 'subscriptionUsage';
+export const SUBSCRIPTION_USAGE_QUERY_KEY = "subscriptionUsage";
 
 /**
  * Generates the React Query key for fetching user subscription usage.
@@ -18,25 +18,26 @@ export function getSubscriptionUsageQueryKey(userId: string | null | undefined) 
 }
 
 export const useSubscriptionUsage = () => {
-    const { user } = useAuth();
-    const userId = user?.id;
+  const { user } = useAuth();
+  const userId = user?.id;
 
-    return useQuery<SubscriptionUsage | null, Error>({ // Specify types
-        queryKey: getSubscriptionUsageQueryKey(userId), // Use the generator function
-        queryFn: async () => {
-            if (!userId) {
-                return null; // No user, no usage data
-            }
-            const { data, error } = await getUserSubscriptionUsage(userId);
-            if (error) {
-                // Don't necessarily throw, component can handle null data + error state
-                console.error("Failed to fetch subscription usage:", error);
-                return null; 
-            }
-            return data;
-        },
-        enabled: !!userId, // Only run the query if userId exists
-        staleTime: 1 * 60 * 1000, // Cache for 1 minute (adjust as needed)
-        refetchOnWindowFocus: true, // Refetch on focus to get latest count
-    });
-}; 
+  return useQuery<SubscriptionUsage | null, Error>({
+    // Specify types
+    queryKey: getSubscriptionUsageQueryKey(userId), // Use the generator function
+    queryFn: async () => {
+      if (!userId) {
+        return null; // No user, no usage data
+      }
+      const { data, error } = await getUserSubscriptionUsage(userId);
+      if (error) {
+        // Don't necessarily throw, component can handle null data + error state
+        console.error("Failed to fetch subscription usage:", error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!userId, // Only run the query if userId exists
+    staleTime: 1 * 60 * 1000, // Cache for 1 minute (adjust as needed)
+    refetchOnWindowFocus: true, // Refetch on focus to get latest count
+  });
+};

@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { ArrowRight } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
 
 interface DocsPagerProps {
   title: string;
@@ -26,4 +26,4 @@ export function DocsPager({ title, href }: DocsPagerProps) {
       </Link>
     </div>
   );
-} 
+}

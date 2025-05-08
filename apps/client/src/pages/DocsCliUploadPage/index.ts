@@ -1,1 +1,1 @@
-export { default } from './DocsCliUploadPage'; 
+export { default } from "./DocsCliUploadPage";

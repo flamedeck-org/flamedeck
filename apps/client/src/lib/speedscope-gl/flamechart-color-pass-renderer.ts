@@ -1,11 +1,11 @@
-import {Vec2, Rect, AffineTransform} from '@/lib/speedscope-core/math'
-import type {Theme} from '@/components/speedscope-ui/themes/theme'
-import {Graphics} from './graphics'
-import {setUniformAffineTransform} from './utils'
+import { Vec2, Rect, AffineTransform } from "@/lib/speedscope-core/math";
+import type { Theme } from "@/components/speedscope-ui/themes/theme";
+import { Graphics } from "./graphics";
+import { setUniformAffineTransform } from "./utils";
 
-const vertexFormat = new Graphics.VertexFormat()
-vertexFormat.add('position', Graphics.AttributeType.FLOAT, 2)
-vertexFormat.add('uv', Graphics.AttributeType.FLOAT, 2)
+const vertexFormat = new Graphics.VertexFormat();
+vertexFormat.add("position", Graphics.AttributeType.FLOAT, 2);
+vertexFormat.add("uv", Graphics.AttributeType.FLOAT, 2);
 
 const vert = `
   uniform mat3 uvTransform;
@@ -19,7 +19,7 @@ const vert = `
     vUv = (uvTransform * vec3(uv, 1)).xy;
     gl_Position = vec4((positionTransform * vec3(position, 1)).xy, 0, 1);
   }
-`
+`;
 
 const frag = (colorForBucket: string) => `
   precision mediump float;
@@ -89,75 +89,75 @@ const frag = (colorForBucket: string) => `
       gl_FragColor = vec4(colorForBucket(here.z), here.a);
     }
   }
-`
+`;
 
 export interface FlamechartColorPassRenderProps {
-  rectInfoTexture: Graphics.Texture
-  renderOutlines: boolean
-  srcRect: Rect
-  dstRect: Rect
+  rectInfoTexture: Graphics.Texture;
+  renderOutlines: boolean;
+  srcRect: Rect;
+  dstRect: Rect;
 }
 
 export class FlamechartColorPassRenderer {
-  private material: Graphics.Material
-  private buffer: Graphics.VertexBuffer
+  private material: Graphics.Material;
+  private buffer: Graphics.VertexBuffer;
 
   constructor(
     private gl: Graphics.Context,
-    theme: Theme,
+    theme: Theme
   ) {
     const vertices = [
-      {pos: [-1, 1], uv: [0, 1]},
-      {pos: [1, 1], uv: [1, 1]},
-      {pos: [-1, -1], uv: [0, 0]},
-      {pos: [1, -1], uv: [1, 0]},
-    ]
-    const floats: number[] = []
+      { pos: [-1, 1], uv: [0, 1] },
+      { pos: [1, 1], uv: [1, 1] },
+      { pos: [-1, -1], uv: [0, 0] },
+      { pos: [1, -1], uv: [1, 0] },
+    ];
+    const floats: number[] = [];
     for (const v of vertices) {
-      floats.push(v.pos[0])
-      floats.push(v.pos[1])
-      floats.push(v.uv[0])
-      floats.push(v.uv[1])
+      floats.push(v.pos[0]);
+      floats.push(v.pos[1]);
+      floats.push(v.uv[0]);
+      floats.push(v.uv[1]);
     }
 
-    this.buffer = gl.createVertexBuffer(vertexFormat.stride * vertices.length)
-    this.buffer.uploadFloats(floats)
-    this.material = gl.createMaterial(vertexFormat, vert, frag(theme.colorForBucketGLSL))
+    this.buffer = gl.createVertexBuffer(vertexFormat.stride * vertices.length);
+    this.buffer.uploadFloats(floats);
+    this.material = gl.createMaterial(vertexFormat, vert, frag(theme.colorForBucketGLSL));
   }
 
   render(props: FlamechartColorPassRenderProps) {
-    const {srcRect, rectInfoTexture} = props
+    const { srcRect, rectInfoTexture } = props;
     const physicalToUV = AffineTransform.withTranslation(new Vec2(0, 1))
       .times(AffineTransform.withScale(new Vec2(1, -1)))
       .times(
         AffineTransform.betweenRects(
           new Rect(Vec2.zero, new Vec2(rectInfoTexture.width, rectInfoTexture.height)),
-          Rect.unit,
-        ),
-      )
-    const uvRect = physicalToUV.transformRect(srcRect)
-    const uvTransform = AffineTransform.betweenRects(Rect.unit, uvRect)
+          Rect.unit
+        )
+      );
+    const uvRect = physicalToUV.transformRect(srcRect);
+    const uvTransform = AffineTransform.betweenRects(Rect.unit, uvRect);
 
-    const {dstRect} = props
-    const viewportSize = new Vec2(this.gl.viewport.width, this.gl.viewport.height)
+    const { dstRect } = props;
+    const viewportSize = new Vec2(this.gl.viewport.width, this.gl.viewport.height);
 
     const physicalToNDC = AffineTransform.withScale(new Vec2(1, -1)).times(
-      AffineTransform.betweenRects(new Rect(Vec2.zero, viewportSize), Rect.NDC),
-    )
-    const ndcRect = physicalToNDC.transformRect(dstRect)
-    const positionTransform = AffineTransform.betweenRects(Rect.NDC, ndcRect)
+      AffineTransform.betweenRects(new Rect(Vec2.zero, viewportSize), Rect.NDC)
+    );
+    const ndcRect = physicalToNDC.transformRect(dstRect);
+    const positionTransform = AffineTransform.betweenRects(Rect.NDC, ndcRect);
 
     const uvSpacePixelSize = Vec2.unit.dividedByPointwise(
-      new Vec2(props.rectInfoTexture.width, props.rectInfoTexture.height),
-    )
+      new Vec2(props.rectInfoTexture.width, props.rectInfoTexture.height)
+    );
 
-    this.material.setUniformSampler('colorTexture', props.rectInfoTexture, 0)
-    setUniformAffineTransform(this.material, 'uvTransform', uvTransform)
-    this.material.setUniformFloat('renderOutlines', props.renderOutlines ? 1.0 : 0.0)
-    this.material.setUniformVec2('uvSpacePixelSize', uvSpacePixelSize.x, uvSpacePixelSize.y)
-    setUniformAffineTransform(this.material, 'positionTransform', positionTransform)
+    this.material.setUniformSampler("colorTexture", props.rectInfoTexture, 0);
+    setUniformAffineTransform(this.material, "uvTransform", uvTransform);
+    this.material.setUniformFloat("renderOutlines", props.renderOutlines ? 1.0 : 0.0);
+    this.material.setUniformVec2("uvSpacePixelSize", uvSpacePixelSize.x, uvSpacePixelSize.y);
+    setUniformAffineTransform(this.material, "positionTransform", positionTransform);
 
-    this.gl.setUnpremultipliedBlendState()
-    this.gl.draw(Graphics.Primitive.TRIANGLE_STRIP, this.material, this.buffer)
+    this.gl.setUnpremultipliedBlendState();
+    this.gl.draw(Graphics.Primitive.TRIANGLE_STRIP, this.material, this.buffer);
   }
 }
