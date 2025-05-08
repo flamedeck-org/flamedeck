@@ -15,6 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@/*": ["apps/client/src/*"],
       "@trace-view-pilot/shared-importer": ["packages/shared-importer/src/index.ts"]
     }
   },

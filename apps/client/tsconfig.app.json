@@ -13,12 +13,9 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitAny": false,
-    "noFallthroughCasesInSwitch": false,
+    "noFallthroughCasesInSwitch": false
 
     /* Keep app-specific paths relative to its baseUrl (now inherited) */
-    "paths": {
-      "@/*": ["./src/*"] // This path is now relative to apps/client
-    }
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"] // Good practice to exclude dist
