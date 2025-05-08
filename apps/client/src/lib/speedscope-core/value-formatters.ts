@@ -1,5 +1,5 @@
-import type { FileFormat } from "./file-format-spec";
-import { zeroPad } from "./lib-utils";
+import type { FileFormat } from './file-format-spec';
+import { zeroPad } from './lib-utils';
 
 export interface ValueFormatter {
   unit: FileFormat.ValueUnit;
@@ -7,7 +7,7 @@ export interface ValueFormatter {
 }
 
 export class RawValueFormatter implements ValueFormatter {
-  unit: FileFormat.ValueUnit = "none";
+  unit: FileFormat.ValueUnit = 'none';
   format(v: number) {
     return v.toLocaleString();
   }
@@ -16,10 +16,10 @@ export class RawValueFormatter implements ValueFormatter {
 export class TimeFormatter implements ValueFormatter {
   private multiplier: number;
 
-  constructor(public unit: "nanoseconds" | "microseconds" | "milliseconds" | "seconds") {
-    if (unit === "nanoseconds") this.multiplier = 1e-9;
-    else if (unit === "microseconds") this.multiplier = 1e-6;
-    else if (unit === "milliseconds") this.multiplier = 1e-3;
+  constructor(public unit: 'nanoseconds' | 'microseconds' | 'milliseconds' | 'seconds') {
+    if (unit === 'nanoseconds') this.multiplier = 1e-9;
+    else if (unit === 'microseconds') this.multiplier = 1e-6;
+    else if (unit === 'milliseconds') this.multiplier = 1e-3;
     else this.multiplier = 1;
   }
 
@@ -38,12 +38,12 @@ export class TimeFormatter implements ValueFormatter {
   }
 
   format(v: number) {
-    return `${v < 0 ? "-" : ""}${this.formatUnsigned(Math.abs(v))}`;
+    return `${v < 0 ? '-' : ''}${this.formatUnsigned(Math.abs(v))}`;
   }
 }
 
 export class ByteFormatter implements ValueFormatter {
-  unit: FileFormat.ValueUnit = "bytes";
+  unit: FileFormat.ValueUnit = 'bytes';
 
   format(v: number) {
     if (v < 1024) return `${v.toFixed(0)} B`;

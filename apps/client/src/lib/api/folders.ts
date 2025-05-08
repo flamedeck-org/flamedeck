@@ -1,9 +1,9 @@
-import type { ApiError, ApiResponse } from "@/types";
-import type { Folder } from "./types";
-import { supabase } from "@/integrations/supabase/client";
-import type { PostgrestError, PostgrestSingleResponse } from "@supabase/supabase-js";
-import { deleteStorageObject } from "./utils"; // Ensure this helper is available
-import type { RecursiveFolderContents } from "@/types"; // Import the new type
+import type { ApiError, ApiResponse } from '@/types';
+import type { Folder } from './types';
+import { supabase } from '@/integrations/supabase/client';
+import type { PostgrestError, PostgrestSingleResponse } from '@supabase/supabase-js';
+import { deleteStorageObject } from './utils'; // Ensure this helper is available
+import type { RecursiveFolderContents } from '@/types'; // Import the new type
 
 export async function createFolder(
   name: string,
@@ -13,11 +13,11 @@ export async function createFolder(
   try {
     // Basic validation
     if (!name || name.trim().length === 0 || name.length > 255) {
-      throw new Error("Invalid folder name.");
+      throw new Error('Invalid folder name.');
     }
 
     const { data, error } = await supabase
-      .from("folders")
+      .from('folders')
       .insert({
         name: name.trim(),
         user_id: userId,
@@ -28,15 +28,15 @@ export async function createFolder(
 
     if (error) {
       // Check for unique constraint violation or other specific errors if needed
-      console.error("Database error creating folder:", error);
+      console.error('Database error creating folder:', error);
       throw error;
     }
     // Explicit type assertion might be necessary if Supabase return type isn't specific enough
     return { data: data as Folder, error: null };
   } catch (error) {
-    console.error("Error creating folder:", error);
+    console.error('Error creating folder:', error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to create folder",
+      message: error instanceof Error ? error.message : 'Failed to create folder',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
@@ -49,10 +49,10 @@ export async function createFolder(
 export async function getFolder(folderId: string): Promise<ApiResponse<Folder>> {
   try {
     // RLS policy on the 'folders' table should ensure the user has access.
-    const { data, error } = await supabase.from("folders").select("*").eq("id", folderId).single();
+    const { data, error } = await supabase.from('folders').select('*').eq('id', folderId).single();
 
     if (error) {
-      if (error.code === "PGRST116") {
+      if (error.code === 'PGRST116') {
         // Not found
         throw new Error(`Folder not found or access denied: ${folderId}`);
       }
@@ -69,7 +69,7 @@ export async function getFolder(folderId: string): Promise<ApiResponse<Folder>> 
   } catch (error) {
     console.error(`Error fetching folder ${folderId}:`, error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to fetch folder details",
+      message: error instanceof Error ? error.message : 'Failed to fetch folder details',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
@@ -88,7 +88,7 @@ export async function moveItems(
 
     // --- Input Validation ---
     if (!itemIds || (!itemIds.traces?.length && !itemIds.folders?.length)) {
-      console.log("No items specified to move.");
+      console.log('No items specified to move.');
       return { data: null, error: null }; // Nothing to do
     }
     const allFolderIds = [...(itemIds.folders || [])];
@@ -98,7 +98,7 @@ export async function moveItems(
 
     // Basic check: Prevent moving a folder into itself
     if (targetFolderId && itemIds.folders?.includes(targetFolderId)) {
-      throw new Error("Cannot move a folder into itself.");
+      throw new Error('Cannot move a folder into itself.');
     }
 
     // Advanced check: Prevent moving a folder into one of its own descendants
@@ -129,7 +129,7 @@ export async function moveItems(
     // Update traces
     if (itemIds.traces?.length > 0) {
       updates.push(
-        supabase.from("traces").update({ folder_id: targetFolderId }).in("id", itemIds.traces)
+        supabase.from('traces').update({ folder_id: targetFolderId }).in('id', itemIds.traces)
         // RLS on traces should enforce ownership, but explicit check is safer
         // REMOVED .eq('user_id', user.id) - Rely on RLS
       );
@@ -139,10 +139,10 @@ export async function moveItems(
     if (itemIds.folders?.length > 0) {
       updates.push(
         supabase
-          .from("folders")
+          .from('folders')
           .update({ parent_folder_id: targetFolderId, updated_at: now })
-          .in("id", itemIds.folders)
-          .eq("user_id", userId)
+          .in('id', itemIds.folders)
+          .eq('user_id', userId)
       );
     }
 
@@ -152,17 +152,17 @@ export async function moveItems(
     const errors = results.map((r) => r.error).filter((e) => e !== null);
     if (errors.length > 0) {
       // Combine error messages or handle specific errors
-      console.error("Errors during move operation:", errors);
+      console.error('Errors during move operation:', errors);
       throw new Error(
-        `Failed to move one or more items: ${errors.map((e) => e?.message).join(", ")}`
+        `Failed to move one or more items: ${errors.map((e) => e?.message).join(', ')}`
       );
     }
 
     return { data: null, error: null };
   } catch (error) {
-    console.error("Error moving items:", error);
+    console.error('Error moving items:', error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to move items",
+      message: error instanceof Error ? error.message : 'Failed to move items',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
@@ -180,23 +180,23 @@ export async function renameFolder(
   try {
     // Basic validation
     if (!newName || newName.trim().length === 0 || newName.length > 255) {
-      throw new Error("Invalid new folder name.");
+      throw new Error('Invalid new folder name.');
     }
     if (!folderId) {
-      throw new Error("Folder ID is required for renaming.");
+      throw new Error('Folder ID is required for renaming.');
     }
     if (!userId) {
-      throw new Error("User ID is required for renaming.");
+      throw new Error('User ID is required for renaming.');
     }
 
     const trimmedName = newName.trim();
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
-      .from("folders")
+      .from('folders')
       .update({ name: trimmedName, updated_at: now })
-      .eq("id", folderId)
-      .eq("user_id", userId) // Ensure user owns the folder
+      .eq('id', folderId)
+      .eq('user_id', userId) // Ensure user owns the folder
       .select()
       .single();
 
@@ -216,7 +216,7 @@ export async function renameFolder(
   } catch (error) {
     console.error(`Error renaming folder ${folderId}:`, error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to rename folder",
+      message: error instanceof Error ? error.message : 'Failed to rename folder',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
@@ -231,21 +231,21 @@ export async function getRecursiveFolderContents(
 ): Promise<ApiResponse<RecursiveFolderContents>> {
   try {
     if (!folderId) {
-      throw new Error("Folder ID is required.");
+      throw new Error('Folder ID is required.');
     }
     console.log(`[API] Fetching contents for folder confirmation: ${folderId}`);
 
     // Call the first RPC function (simplified signature)
-    const { data, error } = await supabase.rpc("get_recursive_folder_contents", {
+    const { data, error } = await supabase.rpc('get_recursive_folder_contents', {
       folder_id_to_check: folderId,
     });
 
     if (error) {
       console.error(`Error fetching folder contents/permissions for ${folderId}:`, error);
-      if (error.message.includes("Permission denied")) {
-        throw new Error("Permission denied.");
-      } else if (error.message.includes("Folder not found")) {
-        throw new Error("Folder not found.");
+      if (error.message.includes('Permission denied')) {
+        throw new Error('Permission denied.');
+      } else if (error.message.includes('Folder not found')) {
+        throw new Error('Folder not found.');
       }
       throw error; // Rethrow other errors
     }
@@ -253,13 +253,13 @@ export async function getRecursiveFolderContents(
     // Basic validation of the returned structure
     if (
       !data ||
-      typeof data !== "object" ||
+      typeof data !== 'object' ||
       !data.folder_ids ||
       !data.trace_ids ||
       !data.blob_paths
     ) {
-      console.error("Invalid data structure received from get_recursive_folder_contents:", data);
-      throw new Error("Invalid data received from server.");
+      console.error('Invalid data structure received from get_recursive_folder_contents:', data);
+      throw new Error('Invalid data received from server.');
     }
 
     console.log(`[API] Found ${data.folder_ids.length} folders, ${data.trace_ids.length} traces.`);
@@ -268,7 +268,7 @@ export async function getRecursiveFolderContents(
   } catch (error) {
     console.error(`Error in getRecursiveFolderContents for ${folderId}:`, error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to fetch folder contents",
+      message: error instanceof Error ? error.message : 'Failed to fetch folder contents',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
@@ -294,7 +294,7 @@ export async function confirmAndDeleteFolderContents(
   try {
     // Step 1: Delete Database Records using the second RPC
     console.log(`[API Delete] Deleting DB records for original folder ${originalFolderId}...`);
-    const { error: deleteDbError } = (await supabase.rpc("delete_folder_contents_by_ids", {
+    const { error: deleteDbError } = (await supabase.rpc('delete_folder_contents_by_ids', {
       p_folder_ids_to_delete: folderIdsToDelete,
       p_trace_ids_to_delete: traceIdsToDelete,
       p_original_folder_id: originalFolderId,
@@ -303,8 +303,8 @@ export async function confirmAndDeleteFolderContents(
     if (deleteDbError) {
       console.error(`[API Delete] Error deleting DB records:`, deleteDbError);
       // Re-check specific errors if needed (e.g., permission denied during the final check)
-      if (deleteDbError.message.includes("Permission denied")) {
-        throw new Error("Permission denied during final delete confirmation.");
+      if (deleteDbError.message.includes('Permission denied')) {
+        throw new Error('Permission denied during final delete confirmation.');
       }
       throw new Error(`Failed to delete database records: ${deleteDbError.message}`);
     }
@@ -316,10 +316,10 @@ export async function confirmAndDeleteFolderContents(
         `[API Delete] Attempting storage cleanup for ${blobPathsToDelete.length} objects...`
       );
       const cleanupPromises = blobPathsToDelete.map(async (fullPath) => {
-        const pathParts = fullPath.split("/");
+        const pathParts = fullPath.split('/');
         if (pathParts.length >= 2) {
           const bucket = pathParts[0];
-          const pathWithinBucket = pathParts.slice(1).join("/");
+          const pathWithinBucket = pathParts.slice(1).join('/');
           try {
             await deleteStorageObject(bucket, pathWithinBucket);
           } catch (storageError) {
@@ -334,9 +334,9 @@ export async function confirmAndDeleteFolderContents(
         }
       });
       await Promise.all(cleanupPromises);
-      console.log("[API Delete] Storage cleanup finished.");
+      console.log('[API Delete] Storage cleanup finished.');
     } else {
-      console.log("[API Delete] No storage objects to clean up.");
+      console.log('[API Delete] No storage objects to clean up.');
     }
 
     // Step 3: Final Result
@@ -354,7 +354,7 @@ export async function confirmAndDeleteFolderContents(
     // Catch errors from DB delete or storage cleanup
     console.error(`[API Delete] Error during confirmed deletion for ${originalFolderId}:`, error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to complete folder deletion",
+      message: error instanceof Error ? error.message : 'Failed to complete folder deletion',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,

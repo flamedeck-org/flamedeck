@@ -1,6 +1,6 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { PostgrestError } from "@supabase/supabase-js";
-import type { ApiError, ApiResponse } from "./types";
+import { supabase } from '@/integrations/supabase/client';
+import type { PostgrestError } from '@supabase/supabase-js';
+import type { ApiError, ApiResponse } from './types';
 // import * as bcrypt from "bcrypt-ts"; // No longer needed, hashing done in RPC
 
 // Type for displaying API key info (excluding the hash and preview)
@@ -16,24 +16,24 @@ export interface ApiKeyDisplayData {
 // --- List User API Keys ---
 export async function listUserApiKeys(userId: string): Promise<ApiResponse<ApiKeyDisplayData[]>> {
   if (!userId) {
-    return { data: null, error: { message: "User ID is required" } };
+    return { data: null, error: { message: 'User ID is required' } };
   }
 
   try {
     const { data, error } = await supabase
-      .from("api_keys")
-      .select("id, description, scopes, created_at, last_used_at, is_active")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .from('api_keys')
+      .select('id, description, scopes, created_at, last_used_at, is_active')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     // Return the data directly (it no longer contains key_hash)
     return { data: data || [], error: null };
   } catch (error) {
-    console.error("Error listing API keys:", error);
+    console.error('Error listing API keys:', error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to list API keys",
+      message: error instanceof Error ? error.message : 'Failed to list API keys',
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
       code: (error as PostgrestError)?.code,
@@ -52,26 +52,26 @@ export async function listUserApiKeys(userId: string): Promise<ApiResponse<ApiKe
 // --- Revoke API Key ---
 export async function revokeApiKey(keyId: string, userId: string): Promise<ApiResponse<null>> {
   if (!keyId || !userId) {
-    return { data: null, error: { message: "Key ID and User ID are required" } };
+    return { data: null, error: { message: 'Key ID and User ID are required' } };
   }
 
   try {
     // RLS policy should ensure user can only update their own keys
     const { error } = await supabase
-      .from("api_keys")
+      .from('api_keys')
       .update({ is_active: false })
-      .eq("id", keyId)
-      .eq("user_id", userId); // Ensure ownership
+      .eq('id', keyId)
+      .eq('user_id', userId); // Ensure ownership
 
     if (error) {
       // Handle specific errors, e.g., key not found or permission denied by RLS
-      if (error.code === "PGRST116") {
+      if (error.code === 'PGRST116') {
         // Not found
         return {
           data: null,
           error: {
             message: "API key not found or you don't have permission to revoke it.",
-            code: "404",
+            code: '404',
           },
         };
       }
@@ -82,7 +82,7 @@ export async function revokeApiKey(keyId: string, userId: string): Promise<ApiRe
   } catch (error) {
     console.error(`Error revoking API key ${keyId}:`, error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to revoke API key",
+      message: error instanceof Error ? error.message : 'Failed to revoke API key',
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
       code: (error as PostgrestError)?.code,
@@ -154,7 +154,7 @@ export async function createApiKeyViaRpc(
   try {
     // Call RPC without p_user_id
     const { data, error } = await supabase
-      .rpc("create_api_key", {
+      .rpc('create_api_key', {
         // p_user_id: userId, // REMOVED
         p_description: description,
         p_scopes: scopes,
@@ -163,14 +163,14 @@ export async function createApiKeyViaRpc(
 
     if (error) {
       // Check if the error is due to the user not being authenticated (raised by the function)
-      if (error.message.includes("User must be authenticated")) {
-        return { data: null, error: { message: "User not authenticated", code: "401" } };
+      if (error.message.includes('User must be authenticated')) {
+        return { data: null, error: { message: 'User not authenticated', code: '401' } };
       }
       throw error; // Re-throw other errors
     }
 
     if (!data || !data.api_key_id || !data.api_key_plaintext) {
-      throw new Error("RPC function did not return expected data.");
+      throw new Error('RPC function did not return expected data.');
     }
 
     return {
@@ -181,9 +181,9 @@ export async function createApiKeyViaRpc(
       error: null,
     };
   } catch (error) {
-    console.error("Error creating API key via RPC:", error);
+    console.error('Error creating API key via RPC:', error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to create API key",
+      message: error instanceof Error ? error.message : 'Failed to create API key',
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
       code: (error as PostgrestError)?.code,

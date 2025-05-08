@@ -1,15 +1,15 @@
-import React, { Fragment, useCallback, useState, useEffect } from "react";
-import type { ApplicationProps } from "./application";
-import { Sizes, FontFamily, FontSize, Duration } from "./style";
-import { ProfileSelect } from "./profile-select";
-import type { Profile } from "../../lib/speedscope-core/profile";
-import { objectsHaveShallowEquality } from "../../lib/speedscope-core/lib-utils";
-import { colorSchemeToString, useTheme, Theme } from "./themes/theme";
-import { ViewMode } from "../../lib/speedscope-core/view-mode";
-import { viewModeAtom } from "../../lib/speedscope-core/app-state";
-import type { ProfileGroupState } from "../../lib/speedscope-core/app-state/profile-group";
-import { colorSchemeAtom } from "../../lib/speedscope-core/app-state/color-scheme";
-import { useAtom } from "../../lib/speedscope-core/atom";
+import React, { Fragment, useCallback, useState, useEffect } from 'react';
+import type { ApplicationProps } from './application';
+import { Sizes, FontFamily, FontSize, Duration } from './style';
+import { ProfileSelect } from './profile-select';
+import type { Profile } from '../../lib/speedscope-core/profile';
+import { objectsHaveShallowEquality } from '../../lib/speedscope-core/lib-utils';
+import { colorSchemeToString, useTheme, Theme } from './themes/theme';
+import { ViewMode } from '../../lib/speedscope-core/view-mode';
+import { viewModeAtom } from '../../lib/speedscope-core/app-state';
+import type { ProfileGroupState } from '../../lib/speedscope-core/app-state/profile-group';
+import { colorSchemeAtom } from '../../lib/speedscope-core/app-state/color-scheme';
+import { useAtom } from '../../lib/speedscope-core/atom';
 
 interface ToolbarProps extends ApplicationProps {
   // browseForFile(): void
@@ -36,13 +36,13 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
 }) => {
   // Base classes + conditional active/hover classes
   const baseClasses =
-    "inline-block mt-px h-[calc(theme(height.8)-theme(margin.px))] leading-[calc(theme(height.8)-theme(margin.px))] px-2 ml-0.5 transition-colors ease-in"; // Adjust h-8, leading, ml-0.5 based on Sizes
+    'inline-block mt-px h-[calc(theme(height.8)-theme(margin.px))] leading-[calc(theme(height.8)-theme(margin.px))] px-2 ml-0.5 transition-colors ease-in'; // Adjust h-8, leading, ml-0.5 based on Sizes
   const themeClasses = isActive
-    ? "bg-primary text-primary-foreground hover:bg-primary"
-    : "bg-secondary text-secondary-foreground hover:bg-accent"; // Map theme.selectionPrimary/SecondaryColor
+    ? 'bg-primary text-primary-foreground hover:bg-primary'
+    : 'bg-secondary text-secondary-foreground hover:bg-accent'; // Map theme.selectionPrimary/SecondaryColor
 
   return (
-    <div className={`${baseClasses} ${themeClasses} ${className || ""}`} onClick={onClick}>
+    <div className={`${baseClasses} ${themeClasses} ${className || ''}`} onClick={onClick}>
       {children}
     </div>
   );
@@ -120,14 +120,14 @@ function ToolbarCenterContent(props: ToolbarProps): JSX.Element {
 
   useEffect(() => {
     const onWindowKeyPress = (ev: KeyboardEvent) => {
-      if (ev.key === "t") {
+      if (ev.key === 't') {
         ev.preventDefault();
         setProfileSelectShown(true);
       }
     };
-    window.addEventListener("keypress", onWindowKeyPress);
+    window.addEventListener('keypress', onWindowKeyPress);
     return () => {
-      window.removeEventListener("keypress", onWindowKeyPress);
+      window.removeEventListener('keypress', onWindowKeyPress);
     };
   }, [setProfileSelectShown]);
 
@@ -138,12 +138,12 @@ function ToolbarCenterContent(props: ToolbarProps): JSX.Element {
       return (
         <div className="pt-px h-8 relative" onMouseLeave={closeProfileSelect}>
           <span onMouseOver={openProfileSelect}>
-            {activeProfileState.profile.getName()}{" "}
+            {activeProfileState.profile.getName()}{' '}
             <span className="text-muted-foreground">
               ({activeProfileState.index + 1}/{profileGroup.profiles.length})
             </span>
           </span>
-          <div style={{ display: profileSelectShown ? "block" : "none" }}>
+          <div style={{ display: profileSelectShown ? 'block' : 'none' }}>
             <ProfileSelect
               setProfileIndexToView={props.setProfileIndexToView}
               indexToView={profileGroup.indexToView}
@@ -156,7 +156,7 @@ function ToolbarCenterContent(props: ToolbarProps): JSX.Element {
       );
     }
   }
-  return <>{"🔬speedscope"}</>;
+  return <>{'🔬speedscope'}</>;
 }
 
 function ToolbarRightContent(props: ToolbarProps) {

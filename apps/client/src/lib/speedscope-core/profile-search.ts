@@ -1,6 +1,6 @@
-import type { Profile, Frame, CallTreeNode } from "./profile";
-import type { Flamechart, FlamechartFrame } from "./flamechart";
-import { Rect, Vec2 } from "./math";
+import type { Profile, Frame, CallTreeNode } from './profile';
+import type { Flamechart, FlamechartFrame } from './flamechart';
+import { Rect, Vec2 } from './math';
 
 export enum FlamechartType {
   CHRONO_FLAME_CHART,

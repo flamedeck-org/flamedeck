@@ -1,18 +1,18 @@
-import { memo, useMemo, useState, useCallback, useEffect } from "react";
-import { useSharingModal } from "@/hooks/useSharingModal";
+import { memo, useMemo, useState, useCallback, useEffect } from 'react';
+import { useSharingModal } from '@/hooks/useSharingModal';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { TraceRole, TracePermissionWithUser } from "@/lib/api";
-import { traceApi } from "@/lib/api";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { TraceRole, TracePermissionWithUser } from '@/lib/api';
+import { traceApi } from '@/lib/api';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertTriangle,
   Globe,
@@ -22,17 +22,17 @@ import {
   Lock,
   Copy as CopyIconInternal,
   Mail,
-} from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -40,14 +40,14 @@ import {
   CommandItem,
   CommandList,
   CommandInput,
-} from "@/components/ui/command";
-import type { Database } from "@/integrations/supabase/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useTraceDetails } from "@/hooks/useTraceDetails";
-import { useDebounce } from "@/hooks/useDebounce";
+} from '@/components/ui/command';
+import type { Database } from '@/integrations/supabase/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTraceDetails } from '@/hooks/useTraceDetails';
+import { useDebounce } from '@/hooks/useDebounce';
 
 // Type for user profile needed for search
-type UserProfileSearchResult = Database["public"]["Tables"]["user_profiles"]["Row"];
+type UserProfileSearchResult = Database['public']['Tables']['user_profiles']['Row'];
 
 function SharingModalImpl() {
   const { isOpen, closeModal, traceId } = useSharingModal();
@@ -56,12 +56,12 @@ function SharingModalImpl() {
   const { toast } = useToast();
 
   // --- State for Invite/Search (Top Input) ---
-  const [comboboxValue, setComboboxValue] = useState("");
+  const [comboboxValue, setComboboxValue] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<UserProfileSearchResult[]>([]);
   const [invitePopoverOpen, setInvitePopoverOpen] = useState(false);
-  const [selectedInviteRole, setSelectedInviteRole] = useState<TraceRole>("viewer");
-  const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const [selectedInviteRole, setSelectedInviteRole] = useState<TraceRole>('viewer');
+  const [localSearchQuery, setLocalSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
 
   // Fetch trace details using the new hook
@@ -77,7 +77,7 @@ function SharingModalImpl() {
     isLoading: isLoadingPermissions,
     error: permissionsFetchError,
   } = useQuery<TracePermissionWithUser[] | null, string>({
-    queryKey: ["tracePermissions", traceId],
+    queryKey: ['tracePermissions', traceId],
     queryFn: async () => {
       if (!traceId) return null;
       const permResponse = await traceApi.getTracePermissions(traceId);
@@ -109,7 +109,7 @@ function SharingModalImpl() {
 
   // Calculate current public access state - Adapt later for General Access dropdown
   const publicPermission = useMemo(() => permissions.find((p) => p.user === null), [permissions]);
-  const isPublic = publicPermission?.role === "viewer"; // Use this for General Access initial state
+  const isPublic = publicPermission?.role === 'viewer'; // Use this for General Access initial state
 
   // --- Mutations ---
 
@@ -119,41 +119,41 @@ function SharingModalImpl() {
   // Mutation for setting public access (Keep, adapt later for General Access)
   const { mutate: setPublicAccess, isPending: isSettingPublicAccess } = useMutation({
     mutationFn: (makePublic: boolean) => {
-      if (!traceId) throw new Error("Trace ID is missing");
-      const targetRole: TraceRole | null = makePublic ? "viewer" : null;
+      if (!traceId) throw new Error('Trace ID is missing');
+      const targetRole: TraceRole | null = makePublic ? 'viewer' : null;
       return traceApi.setPublicTraceAccess(traceId, targetRole);
     },
     onSuccess: (data, makePublic) => {
       toast({
         title: `Access updated`,
-        description: makePublic ? "Trace is now public." : "Trace is now private.",
+        description: makePublic ? 'Trace is now public.' : 'Trace is now private.',
       });
-      queryClient.invalidateQueries({ queryKey: ["tracePermissions", traceId] });
+      queryClient.invalidateQueries({ queryKey: ['tracePermissions', traceId] });
     },
     onError: (error) => {
-      toast({ title: "Error updating access", description: error.message, variant: "destructive" });
+      toast({ title: 'Error updating access', description: error.message, variant: 'destructive' });
     },
   });
 
   // Mutation for adding a permission (inviting user) - Keep logic, remove UI for now
   const { mutate: inviteUser, isPending: isInvitingUser } = useMutation({
     mutationFn: (params: { userId: string; role: TraceRole }) => {
-      if (!traceId) throw new Error("Trace ID is missing");
-      if (!params.userId) throw new Error("User ID is missing");
+      if (!traceId) throw new Error('Trace ID is missing');
+      if (!params.userId) throw new Error('User ID is missing');
       if (permissions.some((p) => p.user?.id === params.userId)) {
-        throw new Error("User already has access.");
+        throw new Error('User already has access.');
       }
       return traceApi.addTracePermission(traceId, params.userId, params.role);
     },
     onSuccess: (data, params) => {
-      toast({ title: "User Invited", description: `Access granted to user.` });
-      queryClient.invalidateQueries({ queryKey: ["tracePermissions", traceId] });
-      setComboboxValue("");
+      toast({ title: 'User Invited', description: `Access granted to user.` });
+      queryClient.invalidateQueries({ queryKey: ['tracePermissions', traceId] });
+      setComboboxValue('');
       setSearchResults([]);
       setInvitePopoverOpen(false);
     },
     onError: (error) => {
-      toast({ title: "Error Inviting User", description: error.message, variant: "destructive" });
+      toast({ title: 'Error Inviting User', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -164,14 +164,14 @@ function SharingModalImpl() {
       return traceApi.updateTracePermission(params.permissionId, params.role);
     },
     onSuccess: (data, params) => {
-      toast({ title: "Permission Updated" });
-      queryClient.invalidateQueries({ queryKey: ["tracePermissions", traceId] });
+      toast({ title: 'Permission Updated' });
+      queryClient.invalidateQueries({ queryKey: ['tracePermissions', traceId] });
     },
     onError: (error, params) => {
       toast({
-        title: "Error Updating Permission",
+        title: 'Error Updating Permission',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
     onSettled: () => {
@@ -186,11 +186,11 @@ function SharingModalImpl() {
       return traceApi.removeTracePermission(permissionId);
     },
     onSuccess: (data, permissionId) => {
-      toast({ title: "Access Removed" });
-      queryClient.invalidateQueries({ queryKey: ["tracePermissions", traceId] });
+      toast({ title: 'Access Removed' });
+      queryClient.invalidateQueries({ queryKey: ['tracePermissions', traceId] });
     },
     onError: (error, permissionId) => {
-      toast({ title: "Error Removing Access", description: error.message, variant: "destructive" });
+      toast({ title: 'Error Removing Access', description: error.message, variant: 'destructive' });
     },
     onSettled: () => {
       setMutatingPermissionId(null); // Clear tracking on completion
@@ -200,17 +200,17 @@ function SharingModalImpl() {
   // --- Copy Link --- (Placeholder Function)
   const handleCopyLink = () => {
     if (!traceId) {
-      toast({ title: "Error", description: "Trace ID not found.", variant: "destructive" });
+      toast({ title: 'Error', description: 'Trace ID not found.', variant: 'destructive' });
       return;
     }
     const url = `${window.location.origin}/traces/${traceId}/view`;
     navigator.clipboard
       .writeText(url)
       .then(() => {
-        toast({ title: "Link Copied" });
+        toast({ title: 'Link Copied' });
       })
       .catch((err) => {
-        toast({ title: "Error copying link", description: err.message, variant: "destructive" });
+        toast({ title: 'Error copying link', description: err.message, variant: 'destructive' });
       });
   };
 
@@ -220,7 +220,7 @@ function SharingModalImpl() {
     [permissions, currentUser]
   );
   const canManagePermissions =
-    currentUserPermission?.role === "editor" || currentUserPermission?.role === "owner";
+    currentUserPermission?.role === 'editor' || currentUserPermission?.role === 'owner';
 
   // --- Search Function (Memoized) ---
   const performSearch = useCallback(
@@ -248,10 +248,10 @@ function SharingModalImpl() {
         } else {
           setSearchResults([]);
           setInvitePopoverOpen((prev) => (!prev ? true : prev)); // Keep open to show "No users found"
-          console.error("Search API error:", response.error);
+          console.error('Search API error:', response.error);
         }
       } catch (err) {
-        console.error("Search function failed:", err);
+        console.error('Search function failed:', err);
         setSearchResults([]);
         setInvitePopoverOpen((prev) => (!prev ? true : prev)); // Keep open to show error state?
       } finally {
@@ -269,16 +269,16 @@ function SharingModalImpl() {
   // Handler when selecting user from search results (triggers invite)
   const handleUserSelectAndInvite = (user: UserProfileSearchResult) => {
     setInvitePopoverOpen(false);
-    setComboboxValue("");
+    setComboboxValue('');
     setSearchResults([]);
     inviteUser({ userId: user.id, role: selectedInviteRole });
   };
 
   // --- Handler for Role Change/Remove ---
   const handleRoleChange = (permissionId: string, newRoleOrAction: string) => {
-    if (newRoleOrAction === "remove") {
+    if (newRoleOrAction === 'remove') {
       removePermission(permissionId);
-    } else if (newRoleOrAction === "viewer" || newRoleOrAction === "editor") {
+    } else if (newRoleOrAction === 'viewer' || newRoleOrAction === 'editor') {
       updatePermissionRole({ permissionId, role: newRoleOrAction });
     }
   };
@@ -324,7 +324,7 @@ function SharingModalImpl() {
                   aria-expanded={invitePopoverOpen}
                   className="w-full justify-between text-muted-foreground font-normal"
                 >
-                  {comboboxValue || "Add people by name or username"}
+                  {comboboxValue || 'Add people by name or username'}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
@@ -337,7 +337,7 @@ function SharingModalImpl() {
                     disabled={isSearching}
                   />
                   <CommandList>
-                    <CommandEmpty>{isSearching ? "Searching..." : "No users found."}</CommandEmpty>
+                    <CommandEmpty>{isSearching ? 'Searching...' : 'No users found.'}</CommandEmpty>
                     <CommandGroup>
                       {searchResults.map((user) => (
                         <CommandItem
@@ -349,16 +349,16 @@ function SharingModalImpl() {
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={user.avatar_url ?? undefined} />
                               <AvatarFallback>
-                                {(user.username || "U").substring(0, 2).toUpperCase()}
+                                {(user.username || 'U').substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col flex-grow min-w-0">
                               <span className="font-medium truncate text-sm">
-                                {user.username || "Unnamed User"}
+                                {user.username || 'Unnamed User'}
                               </span>
                               {(user.first_name || user.last_name) && (
                                 <span className="text-xs text-muted-foreground truncate">
-                                  {`${user.first_name || ""} ${user.last_name || ""}`.trim()}
+                                  {`${user.first_name || ''} ${user.last_name || ''}`.trim()}
                                 </span>
                               )}
                             </div>
@@ -376,33 +376,33 @@ function SharingModalImpl() {
         {/* People with Access Section */}
         <div>
           <ul className="space-y-3">
-            {" "}
+            {' '}
             {/* Increased spacing */}
             {userPermissions.map((perm) => {
               if (!perm.user) return null; // Should not happen with filtering, but safeguard
 
               const userDisplayName =
                 perm.user.username ||
-                `${perm.user.first_name || ""} ${perm.user.last_name || ""}`.trim() ||
+                `${perm.user.first_name || ''} ${perm.user.last_name || ''}`.trim() ||
                 `User`;
               const initials =
                 userDisplayName
-                  .split(" ")
+                  .split(' ')
                   .map((n) => n[0])
                   .slice(0, 2)
-                  .join("")
-                  .toUpperCase() || "?";
+                  .join('')
+                  .toUpperCase() || '?';
               const isCurrentUser = perm.user.id === currentUser?.id;
-              const isPermOwner = perm.role === "owner";
+              const isPermOwner = perm.role === 'owner';
               const isMutatingThisRow = mutatingPermissionId === perm.id;
 
               return (
                 <li key={perm.id} className="flex justify-between items-center text-sm">
                   <div className="flex items-center space-x-3">
-                    {" "}
+                    {' '}
                     {/* Increased spacing */}
                     <Avatar className="h-8 w-8">
-                      {" "}
+                      {' '}
                       {/* Slightly larger Avatar */}
                       <AvatarImage src={perm.user.avatar_url ?? undefined} alt={userDisplayName} />
                       <AvatarFallback>{initials}</AvatarFallback>
@@ -410,7 +410,7 @@ function SharingModalImpl() {
                     <div className="flex flex-col">
                       <span className="font-medium">
                         {userDisplayName}
-                        {isCurrentUser && " (you)"}
+                        {isCurrentUser && ' (you)'}
                       </span>
                       {/* TODO: Check if email exists before displaying */}
                     </div>
@@ -474,19 +474,19 @@ function SharingModalImpl() {
               </div>
               <div className="flex-grow">
                 <Select
-                  value={isPublic ? "public" : "restricted"}
-                  onValueChange={(value) => setPublicAccess(value === "public")}
+                  value={isPublic ? 'public' : 'restricted'}
+                  onValueChange={(value) => setPublicAccess(value === 'public')}
                   disabled={isSettingPublicAccess}
                 >
                   <SelectTrigger className="w-full h-auto p-0 border-0 shadow-none focus:ring-0 text-left">
                     <div>
                       <p className="font-medium text-sm">
-                        {isPublic ? "Anyone with the link" : "Restricted"}
+                        {isPublic ? 'Anyone with the link' : 'Restricted'}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {isPublic
-                          ? "Anyone on the internet with the link can view"
-                          : "Only people with access can open with the link"}
+                          ? 'Anyone on the internet with the link can view'
+                          : 'Only people with access can open with the link'}
                       </p>
                     </div>
                     {isSettingPublicAccess ? (
@@ -529,14 +529,14 @@ function SharingModalImpl() {
       {/* Increased max-width */}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader className="pr-16">
-          {" "}
+          {' '}
           {/* Add padding to prevent overlap with close button */}
           {/* Use fetched trace name, fallback to ID or placeholder */}
           <DialogTitle className="truncate">
             {isLoadingDetails ? (
               <Skeleton className="h-6 w-48" />
             ) : (
-              `Share "${traceDetails?.scenario || "Trace"}"`
+              `Share "${traceDetails?.scenario || 'Trace'}"`
             )}
           </DialogTitle>
         </DialogHeader>

@@ -1,20 +1,20 @@
-import React, { useState, useCallback } from "react";
-import { uploadTraceToApi, UploadError, type UploadOptions } from "@flamedeck/upload"; // Import from the built library
+import React, { useState, useCallback } from 'react';
+import { uploadTraceToApi, UploadError, type UploadOptions } from '@flamedeck/upload'; // Import from the built library
 
 // --- UI Components (assuming shadcn/ui) ---
 // You might need to adjust imports based on your actual UI component paths
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
 
 export function UploadTest() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [apiKey, setApiKey] = useState<string>("");
-  const [scenario, setScenario] = useState<string>("Client Dev Test"); // Default scenario
-  const [notes, setNotes] = useState<string>("");
+  const [apiKey, setApiKey] = useState<string>('');
+  const [scenario, setScenario] = useState<string>('Client Dev Test'); // Default scenario
+  const [notes, setNotes] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function UploadTest() {
 
   const handleUpload = useCallback(async () => {
     if (!selectedFile || !apiKey || !scenario) {
-      setError("Please select a file, enter an API key, and provide a scenario.");
+      setError('Please select a file, enter an API key, and provide a scenario.');
       return;
     }
 
@@ -55,14 +55,14 @@ export function UploadTest() {
     } catch (err) {
       if (err instanceof UploadError) {
         setError(
-          `Upload failed (${err.status}): ${err.message}${err.details ? ` - ${JSON.stringify(err.details)}` : ""}`
+          `Upload failed (${err.status}): ${err.message}${err.details ? ` - ${JSON.stringify(err.details)}` : ''}`
         );
       } else {
         setError(
           `An unexpected error occurred: ${err instanceof Error ? err.message : String(err)}`
         );
       }
-      console.error("Upload error:", err);
+      console.error('Upload error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +113,7 @@ export function UploadTest() {
       </div>
 
       <Button onClick={handleUpload} disabled={!selectedFile || !apiKey || !scenario || isLoading}>
-        {isLoading ? "Uploading..." : "Upload Trace"}
+        {isLoading ? 'Uploading...' : 'Upload Trace'}
       </Button>
 
       {error && (
@@ -129,7 +129,7 @@ export function UploadTest() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>Success!</AlertTitle>
           <AlertDescription>
-            Trace uploaded. View at:{" "}
+            Trace uploaded. View at:{' '}
             <a
               href={resultUrl}
               target="_blank"

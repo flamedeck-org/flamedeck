@@ -1,6 +1,6 @@
-import { findValueBisect } from "./lib-utils";
+import { findValueBisect } from './lib-utils';
 
-export const ELLIPSIS = "\u2026";
+export const ELLIPSIS = '\u2026';
 
 // NOTE: This blindly assumes the same result across contexts.
 const measureTextCache = new Map<string, number>();
@@ -148,7 +148,7 @@ export function remapRangesToTrimmedText(
         switch (endPosType) {
           case IndexTypeInTrimmed.IN_PREFIX: {
             // This should be impossible
-            throw new Error("Unexpected highlight range starts in elided and ends in prefix");
+            throw new Error('Unexpected highlight range starts in elided and ends in prefix');
           }
           case IndexTypeInTrimmed.ELIDED: {
             // The match starts & ends within the elided section.
@@ -181,11 +181,11 @@ export function remapRangesToTrimmedText(
         switch (endPosType) {
           case IndexTypeInTrimmed.IN_PREFIX: {
             // This should be impossible
-            throw new Error("Unexpected highlight range starts in suffix and ends in prefix");
+            throw new Error('Unexpected highlight range starts in suffix and ends in prefix');
           }
           case IndexTypeInTrimmed.ELIDED: {
             // This should be impossible
-            throw new Error("Unexpected highlight range starts in suffix and ends in elided");
+            throw new Error('Unexpected highlight range starts in suffix and ends in elided');
             break;
           }
           case IndexTypeInTrimmed.IN_SUFFIX: {

@@ -1,39 +1,39 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useParams, Link, useLocation } from "react-router-dom";
-import Layout from "@/components/Layout";
-import { useAuth } from "@/contexts/AuthContext";
-import type { SpeedscopeViewType } from "@/components/SpeedscopeViewer";
-import SpeedscopeViewer from "@/components/SpeedscopeViewer";
-import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { getTraceBlob } from "@/lib/api/storage";
-import type { TraceMetadata } from "@/lib/api";
-import { traceApi } from "@/lib/api";
-import type { ApiResponse } from "@/types";
-import type { FallbackProps } from "react-error-boundary";
-import { ErrorBoundary } from "react-error-boundary";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, Palette, Share2 } from "lucide-react";
-import { TraceViewerCommentSidebar } from "@/components/TraceViewerCommentList/TraceViewerCommentSidebar";
-import { useCommentManagement } from "@/hooks/useCommentManagement";
-import type { ApiError } from "@/types";
-import { ChatContainer } from "@/components/Chat";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import { useAuth } from '@/contexts/AuthContext';
+import type { SpeedscopeViewType } from '@/components/SpeedscopeViewer';
+import SpeedscopeViewer from '@/components/SpeedscopeViewer';
+import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { getTraceBlob } from '@/lib/api/storage';
+import type { TraceMetadata } from '@/lib/api';
+import { traceApi } from '@/lib/api';
+import type { ApiResponse } from '@/types';
+import type { FallbackProps } from 'react-error-boundary';
+import { ErrorBoundary } from 'react-error-boundary';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, MessageSquare, Palette, Share2 } from 'lucide-react';
+import { TraceViewerCommentSidebar } from '@/components/TraceViewerCommentList/TraceViewerCommentSidebar';
+import { useCommentManagement } from '@/hooks/useCommentManagement';
+import type { ApiError } from '@/types';
+import { ChatContainer } from '@/components/Chat';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useAtom } from "../lib/speedscope-core/atom.ts";
-import type { FlamegraphThemeName } from "../components/speedscope-ui/themes/theme.tsx";
+} from '@/components/ui/select';
+import { useAtom } from '../lib/speedscope-core/atom.ts';
+import type { FlamegraphThemeName } from '../components/speedscope-ui/themes/theme.tsx';
 import {
   flamegraphThemeAtom,
   flamegraphThemeDisplayNames,
   flamegraphThemePreviews,
-} from "../components/speedscope-ui/themes/theme.tsx";
-import { useSharingModal } from "@/hooks/useSharingModal";
+} from '../components/speedscope-ui/themes/theme.tsx';
+import { useSharingModal } from '@/hooks/useSharingModal';
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -57,7 +57,7 @@ type SnapshotGenerator = (viewType: string, frameKey?: string) => Promise<string
 // Define the type for the snapshot result state
 interface SnapshotResultState {
   requestId: string;
-  status: "success" | "error";
+  status: 'success' | 'error';
   data?: string; // imageDataUrl
   error?: string;
 }
@@ -70,7 +70,7 @@ interface TestSnapshotState {
 // -----------------------------------------
 
 const TraceViewerPage: React.FC = () => {
-  const { id = "" } = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>();
   const location = useLocation();
   const { user } = useAuth();
   const isAuthenticated = !!user;
@@ -79,7 +79,7 @@ const TraceViewerPage: React.FC = () => {
   // Read initialView from location state, default to 'time_ordered'
   const initialViewFromState = location.state?.initialView as SpeedscopeViewType | undefined;
   const [selectedView, setSelectedView] = useState<SpeedscopeViewType>(
-    initialViewFromState || "time_ordered"
+    initialViewFromState || 'time_ordered'
   );
 
   // --- Flamegraph Theme State ---
@@ -108,7 +108,7 @@ const TraceViewerPage: React.FC = () => {
 
   // --- Conditionally fetch trace details ---
   const traceDetailsQueryKey = useMemo(
-    () => (isAuthenticated ? ["traceDetails", id] : ["publicTraceDetails", id]),
+    () => (isAuthenticated ? ['traceDetails', id] : ['publicTraceDetails', id]),
     [isAuthenticated, id]
   );
 
@@ -135,7 +135,7 @@ const TraceViewerPage: React.FC = () => {
     staleTime: 5 * 60 * 1000, // Stale time of 5 minutes
     retry: (failureCount, error: ApiError) => {
       // Don't retry on 404-like errors (not found or not public)
-      if (error?.error?.code === "404" || error?.error?.code === "PGRST116") {
+      if (error?.error?.code === '404' || error?.error?.code === 'PGRST116') {
         return false;
       }
       // Standard retry logic for other errors
@@ -163,9 +163,9 @@ const TraceViewerPage: React.FC = () => {
     },
     Error
   >({
-    queryKey: ["traceBlob", id, blobPath],
+    queryKey: ['traceBlob', id, blobPath],
     queryFn: () => {
-      if (!blobPath) throw new Error("Blob path is required");
+      if (!blobPath) throw new Error('Blob path is required');
       return getTraceBlob(blobPath);
     },
     enabled: !!blobPath, // Only enable if blobPath is available
@@ -184,7 +184,7 @@ const TraceViewerPage: React.FC = () => {
 
   // --- Snapshot Handling Callbacks ---
   const handleRegisterSnapshotter = useCallback((generator: SnapshotGenerator) => {
-    console.log("[TraceViewerPage] Snapshot generator registered.");
+    console.log('[TraceViewerPage] Snapshot generator registered.');
     snapshotGeneratorRef.current = generator;
   }, []);
 
@@ -192,11 +192,11 @@ const TraceViewerPage: React.FC = () => {
   const handleTriggerSnapshotForChat = useCallback(
     async (requestId: string, viewType: string, frameKey?: string) => {
       if (!snapshotGeneratorRef.current) {
-        console.error("[TraceViewerPage] Snapshot generator not registered!");
+        console.error('[TraceViewerPage] Snapshot generator not registered!');
         setSnapshotResultForClient({
           requestId,
-          status: "error",
-          error: "Snapshot function not available.",
+          status: 'error',
+          error: 'Snapshot function not available.',
         });
         return;
       }
@@ -206,15 +206,15 @@ const TraceViewerPage: React.FC = () => {
         );
         const imageDataUrl = await snapshotGeneratorRef.current(viewType, frameKey);
         if (imageDataUrl) {
-          setSnapshotResultForClient({ requestId, status: "success", data: imageDataUrl });
+          setSnapshotResultForClient({ requestId, status: 'success', data: imageDataUrl });
         } else {
-          throw new Error("Snapshot generation returned null.");
+          throw new Error('Snapshot generation returned null.');
         }
       } catch (error: unknown) {
-        console.error("[TraceViewerPage] Snapshot generation failed:", error);
+        console.error('[TraceViewerPage] Snapshot generation failed:', error);
         const errorMessage =
-          error instanceof Error ? error.message : "Failed to generate snapshot.";
-        setSnapshotResultForClient({ requestId, status: "error", error: errorMessage });
+          error instanceof Error ? error.message : 'Failed to generate snapshot.';
+        setSnapshotResultForClient({ requestId, status: 'error', error: errorMessage });
       }
     },
     [] // No dependencies needed as it uses a ref
@@ -222,10 +222,10 @@ const TraceViewerPage: React.FC = () => {
 
   // --- Test function to trigger snapshot locally ---
   const handleTriggerSnapshotForTest = useCallback(async () => {
-    setTestSnapshot({ dataUrl: null, error: "Generating..." }); // Indicate loading
+    setTestSnapshot({ dataUrl: null, error: 'Generating...' }); // Indicate loading
     if (!snapshotGeneratorRef.current) {
-      console.error("[TraceViewerPage] Snapshot generator not registered!");
-      setTestSnapshot({ dataUrl: null, error: "Snapshot function not available." });
+      console.error('[TraceViewerPage] Snapshot generator not registered!');
+      setTestSnapshot({ dataUrl: null, error: 'Snapshot function not available.' });
       return;
     }
     try {
@@ -234,19 +234,19 @@ const TraceViewerPage: React.FC = () => {
       if (imageDataUrl) {
         setTestSnapshot({ dataUrl: imageDataUrl, error: null });
       } else {
-        throw new Error("Snapshot generation returned null.");
+        throw new Error('Snapshot generation returned null.');
       }
     } catch (error: unknown) {
-      console.error("[TraceViewerPage] Test snapshot generation failed:", error);
+      console.error('[TraceViewerPage] Test snapshot generation failed:', error);
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to generate test snapshot.";
+        error instanceof Error ? error.message : 'Failed to generate test snapshot.';
       setTestSnapshot({ dataUrl: null, error: errorMessage });
     }
   }, [selectedView]); // Recreate if selectedView changes
   // ---------------------------------------------
 
   const clearSnapshotResult = useCallback(() => {
-    console.log("[TraceViewerPage] Clearing snapshot result for chat.");
+    console.log('[TraceViewerPage] Clearing snapshot result for chat.');
     setSnapshotResultForClient(null);
   }, []);
   // -----------------------------------
@@ -256,7 +256,7 @@ const TraceViewerPage: React.FC = () => {
     if (id) {
       openModal(id);
     } else {
-      console.error("[TraceViewerPage] Trace ID is undefined, cannot open sharing modal.");
+      console.error('[TraceViewerPage] Trace ID is undefined, cannot open sharing modal.');
       // Optionally show a toast message here
     }
   }, [id, openModal]);
@@ -279,7 +279,7 @@ const TraceViewerPage: React.FC = () => {
       {!isLoading && error && (
         <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center relative z-10">
           <h2 className="text-xl font-semibold text-destructive">
-            {error?.code === "404" ? "Trace Not Found or Not Public" : "Error Loading Trace Data"}
+            {error?.code === '404' ? 'Trace Not Found or Not Public' : 'Error Loading Trace Data'}
           </h2>
           <p className="text-destructive mt-2">{error.message}</p>
           {id && (
@@ -354,7 +354,7 @@ const TraceViewerPage: React.FC = () => {
                               style={
                                 previewGradient
                                   ? { background: previewGradient }
-                                  : { backgroundColor: "transparent" }
+                                  : { backgroundColor: 'transparent' }
                               }
                               aria-hidden="true"
                             />
@@ -378,12 +378,12 @@ const TraceViewerPage: React.FC = () => {
               )}
               {/* ------------------------- */}
               <Link
-                to={isAuthenticated ? `/traces/${id}` : "/"}
-                title={isAuthenticated ? "Back to Details" : "Back to Home"}
+                to={isAuthenticated ? `/traces/${id}` : '/'}
+                title={isAuthenticated ? 'Back to Details' : 'Back to Home'}
               >
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  {isAuthenticated ? "Back to Details" : "Back Home"}
+                  {isAuthenticated ? 'Back to Details' : 'Back Home'}
                 </Button>
               </Link>
             </div>
@@ -392,7 +392,7 @@ const TraceViewerPage: React.FC = () => {
             <ErrorBoundary
               FallbackComponent={ErrorFallback}
               onReset={() => {
-                console.log("Attempting to reset Speedscope viewer boundary...");
+                console.log('Attempting to reset Speedscope viewer boundary...');
               }}
               key={id}
             >

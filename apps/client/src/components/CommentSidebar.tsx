@@ -1,17 +1,17 @@
-import React from "react";
+import React from 'react';
 // import ProfileCommentForm from './ProfileCommentForm'; // Assume using CommentForm instead
-import CommentForm from "./CommentForm"; // Use the generic CommentForm
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import CommentForm from './CommentForm'; // Use the generic CommentForm
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 // Assuming the Comment type is exported from the hook or a types file
 // import { Comment } from '@/hooks/useTraceComments'; // This type might need adjustment
-import type { TraceCommentWithAuthor } from "@/lib/api"; // Use the consistent type
-import { CommentItem, StructuredComment } from "@/components/comments"; // Import CommentItem
-import { cn } from "@/lib/utils";
-import { useState } from "react"; // Import useState for reply state
-import { Link } from "react-router-dom"; // Import Link for routing
-import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
+import type { TraceCommentWithAuthor } from '@/lib/api'; // Use the consistent type
+import { CommentItem, StructuredComment } from '@/components/comments'; // Import CommentItem
+import { cn } from '@/lib/utils';
+import { useState } from 'react'; // Import useState for reply state
+import { Link } from 'react-router-dom'; // Import Link for routing
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 interface CommentSidebarProps {
   traceId: string;
@@ -73,11 +73,11 @@ const CommentSidebar: React.FC<CommentSidebarProps> = ({
   const handleCommentPosted = () => {
     // Comments will be refetched by the parent's useTraceComments hook automatically
     // potentially scroll to bottom or give feedback?
-    console.log("New comment posted, sidebar remains open.");
+    console.log('New comment posted, sidebar remains open.');
   };
 
   const emptyMessage = `No comments for this item yet.`;
-  const headerTitle = cellName || "<unnamed>";
+  const headerTitle = cellName || '<unnamed>';
 
   return (
     <div className="w-[350px] border-l flex flex-col bg-background absolute right-0 top-0 bottom-[160px]">
@@ -98,7 +98,7 @@ const CommentSidebar: React.FC<CommentSidebarProps> = ({
 
       {/* Comment List Area */}
       <ScrollArea className="h-full">
-        <div className={cn("flex flex-col px-4 py-2")}>
+        <div className={cn('flex flex-col px-4 py-2')}>
           {isLoading ? (
             <div className="space-y-3 py-2">
               <Skeleton className="h-10 w-full" />

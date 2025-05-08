@@ -1,20 +1,20 @@
-import type { ApiError, ApiResponse, TraceMetadata } from "@/types";
+import type { ApiError, ApiResponse, TraceMetadata } from '@/types';
 
 import type {
   PostgrestError,
   PostgrestMaybeSingleResponse,
   PostgrestResponse,
-} from "@supabase/supabase-js";
+} from '@supabase/supabase-js';
 import type {
   DirectoryListingOptions,
   Folder,
   DirectoryListingContentsResponse,
   FolderContextResponse,
-} from "./types";
-import { DirectoryListingResponse } from "./types";
-import { supabase } from "@/integrations/supabase/client";
-import { getFolderPath } from "./utils";
-import { listUserTraces } from "./storage";
+} from './types';
+import { DirectoryListingResponse } from './types';
+import { supabase } from '@/integrations/supabase/client';
+import { getFolderPath } from './utils';
+import { listUserTraces } from './storage';
 
 // --- New Function: Fetch Folder Context (Path & Current Folder) ---
 export async function getFolderContext(
@@ -22,7 +22,7 @@ export async function getFolderContext(
   userId: string | undefined // User ID is needed for folder lookup
 ): Promise<ApiResponse<FolderContextResponse>> {
   if (!userId) {
-    return { data: null, error: { message: "User ID is required" } };
+    return { data: null, error: { message: 'User ID is required' } };
   }
   try {
     let path: Folder[] = [];
@@ -32,10 +32,10 @@ export async function getFolderContext(
       // Fetch current folder details separately
       const { data: folderData, error: currentFolderError }: PostgrestMaybeSingleResponse<Folder> =
         await supabase
-          .from("folders")
-          .select("*")
-          .eq("id", folderId)
-          .eq("user_id", userId) // Ensure user owns or has access (RLS helps)
+          .from('folders')
+          .select('*')
+          .eq('id', folderId)
+          .eq('user_id', userId) // Ensure user owns or has access (RLS helps)
           .maybeSingle();
 
       if (currentFolderError) {
@@ -70,9 +70,9 @@ export async function getFolderContext(
       error: null,
     };
   } catch (error) {
-    console.error("Error fetching folder context:", error);
+    console.error('Error fetching folder context:', error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to fetch folder context",
+      message: error instanceof Error ? error.message : 'Failed to fetch folder context',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,
@@ -94,44 +94,44 @@ export async function getDirectoryListing(
     page = 0,
     limit = 50, // Note: Limit primarily applies to traces due to pagination
     searchQuery = null,
-    itemTypeFilter = "all",
+    itemTypeFilter = 'all',
     // searchScope = 'current' // Default to current scope for now
   } = options;
 
   if (!userId) {
-    return { data: null, error: { message: "User ID is required for listing" } };
+    return { data: null, error: { message: 'User ID is required for listing' } };
   }
 
   try {
     // --- Fetch Folders ---
     let foldersData: Folder[] = [];
     // Fetch folders if filter allows, regardless of search (search only applies to name)
-    if (itemTypeFilter === "folder" || itemTypeFilter === "all") {
+    if (itemTypeFilter === 'folder' || itemTypeFilter === 'all') {
       console.log(
-        `[API Contents] Fetching folders for parent: ${folderId || "root"}, search: '${searchQuery || ""}'`
+        `[API Contents] Fetching folders for parent: ${folderId || 'root'}, search: '${searchQuery || ''}'`
       );
-      let folderQuery = supabase.from("folders").select("*").eq("user_id", userId); // RLS should handle access, but explicit is safer
+      let folderQuery = supabase.from('folders').select('*').eq('user_id', userId); // RLS should handle access, but explicit is safer
 
       // Filter by parent folder
       if (folderId) {
-        folderQuery = folderQuery.eq("parent_folder_id", folderId);
+        folderQuery = folderQuery.eq('parent_folder_id', folderId);
       } else {
-        folderQuery = folderQuery.is("parent_folder_id", null); // Root level folders
+        folderQuery = folderQuery.is('parent_folder_id', null); // Root level folders
       }
 
       // Apply search query to folder names
       if (searchQuery && searchQuery.trim().length > 0) {
-        folderQuery = folderQuery.ilike("name", `%${searchQuery.trim()}%`);
+        folderQuery = folderQuery.ilike('name', `%${searchQuery.trim()}%`);
       }
 
       // Ordering (always order folders by name)
-      folderQuery = folderQuery.order("name", { ascending: true });
+      folderQuery = folderQuery.order('name', { ascending: true });
 
       // Execute folder query
       const { data: fetchedFolders, error: foldersError }: PostgrestResponse<Folder> =
         await folderQuery;
       if (foldersError) {
-        console.error("Error fetching folders:", foldersError);
+        console.error('Error fetching folders:', foldersError);
         throw foldersError; // Propagate error
       }
       foldersData = fetchedFolders || [];
@@ -145,13 +145,13 @@ export async function getDirectoryListing(
     let tracesCount: number | null = 0;
 
     // Fetch traces if filter allows. The underlying RPC handles folder vs search logic.
-    const shouldFetchTraces = itemTypeFilter === "trace" || itemTypeFilter === "all";
+    const shouldFetchTraces = itemTypeFilter === 'trace' || itemTypeFilter === 'all';
 
     if (shouldFetchTraces) {
       // When searching, the RPC ignores the folderId and searches globally (as per SQL provided)
       // When not searching, the RPC uses folderId for filtering
       console.log(
-        `[API Contents] Fetching traces. Parent: ${folderId || "root"}, Search: '${searchQuery || ""}', Page: ${page}, Limit: ${limit}`
+        `[API Contents] Fetching traces. Parent: ${folderId || 'root'}, Search: '${searchQuery || ''}', Page: ${page}, Limit: ${limit}`
       );
 
       // Pass folderId even when searching; the RPC function decides whether to use it
@@ -187,9 +187,9 @@ export async function getDirectoryListing(
       error: null,
     };
   } catch (error) {
-    console.error("Error fetching directory listing contents:", error);
+    console.error('Error fetching directory listing contents:', error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : "Failed to fetch directory contents",
+      message: error instanceof Error ? error.message : 'Failed to fetch directory contents',
       code: (error as PostgrestError)?.code,
       details: (error as PostgrestError)?.details,
       hint: (error as PostgrestError)?.hint,

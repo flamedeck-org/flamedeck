@@ -23,21 +23,21 @@ async function streamToArrayBuffer(stream: ReadableStream<Uint8Array>): Promise<
 
 // Compresses data using CompressionStream or pako fallback
 export async function gzipCompress(data: ArrayBuffer): Promise<ArrayBuffer> {
-  if (typeof CompressionStream === "function") {
+  if (typeof CompressionStream === 'function') {
     try {
-      const cs = new CompressionStream("gzip");
+      const cs = new CompressionStream('gzip');
       const writer = cs.writable.getWriter();
       writer.write(data);
       writer.close();
       return await streamToArrayBuffer(cs.readable);
     } catch (e) {
-      console.warn("CompressionStream failed, falling back to pako.", e);
+      console.warn('CompressionStream failed, falling back to pako.', e);
       // Fall through to pako if CompressionStream fails (e.g., unsupported format)
     }
   }
 
-  console.log("Using pako for compression.");
-  const { gzip } = await import("pako");
+  console.log('Using pako for compression.');
+  const { gzip } = await import('pako');
   // Type assertion needed because pako types might not align perfectly with ArrayBuffer
   const compressedData = gzip(new Uint8Array(data));
   return compressedData.buffer;
@@ -45,21 +45,21 @@ export async function gzipCompress(data: ArrayBuffer): Promise<ArrayBuffer> {
 
 // Decompresses data using DecompressionStream or pako fallback
 export async function gzipDecompress(data: ArrayBuffer): Promise<ArrayBuffer> {
-  if (typeof DecompressionStream === "function") {
+  if (typeof DecompressionStream === 'function') {
     try {
-      const ds = new DecompressionStream("gzip");
+      const ds = new DecompressionStream('gzip');
       const writer = ds.writable.getWriter();
       writer.write(data);
       writer.close();
       return await streamToArrayBuffer(ds.readable);
     } catch (e) {
-      console.warn("DecompressionStream failed, falling back to pako.", e);
+      console.warn('DecompressionStream failed, falling back to pako.', e);
       // Fall through to pako if DecompressionStream fails
     }
   }
 
-  console.log("Using pako for decompression.");
-  const { ungzip } = await import("pako");
+  console.log('Using pako for decompression.');
+  const { ungzip } = await import('pako');
   // Type assertion needed because pako types might not align perfectly with ArrayBuffer
   const decompressedData = ungzip(new Uint8Array(data));
   return decompressedData.buffer;

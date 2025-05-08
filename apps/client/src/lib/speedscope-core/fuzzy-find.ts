@@ -26,12 +26,12 @@ export function fuzzyMatchStrings(text: string, pattern: string): FuzzyMatch | n
 //
 // Note: fzf includes a normalization table for homoglyphs. I'm going to ignore that too
 // https://github.com/junegunn/fzf/blob/master/src/algo/normalize.go
-const charCodeLowerA = "a".charCodeAt(0);
-const charCodeLowerZ = "z".charCodeAt(0);
-const charCodeUpperA = "A".charCodeAt(0);
-const charCodeUpperZ = "Z".charCodeAt(0);
-const charCodeDigit0 = "0".charCodeAt(0);
-const charCodeDigit9 = "9".charCodeAt(0);
+const charCodeLowerA = 'a'.charCodeAt(0);
+const charCodeLowerZ = 'z'.charCodeAt(0);
+const charCodeUpperA = 'A'.charCodeAt(0);
+const charCodeUpperZ = 'Z'.charCodeAt(0);
+const charCodeDigit0 = '0'.charCodeAt(0);
+const charCodeDigit9 = '9'.charCodeAt(0);
 
 enum fzfCharClass {
   charNonWord,
@@ -133,7 +133,7 @@ function fzfFuzzyMatchV1(text: string, pattern: string): FuzzyMatch | null {
   }
 
   // This should be unreachable.
-  throw new Error("Implementation error. This must be a bug in fzfFuzzyMatchV1");
+  throw new Error('Implementation error. This must be a bug in fzfFuzzyMatchV1');
 }
 
 const fzfScoreMatch = 16;
@@ -224,7 +224,7 @@ function fzfCalculateScore(text: string, pattern: string, sidx: number, eidx: nu
 
   if (pidx !== pattern.length) {
     throw new Error(
-      "fzfCalculateScore should only be called when pattern is found between sidx and eidx"
+      'fzfCalculateScore should only be called when pattern is found between sidx and eidx'
     );
   }
 

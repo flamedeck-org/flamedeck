@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ContextMenuProps {
   x: number;
@@ -20,8 +20,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose, frameKe
       }
     };
 
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [onClose]);
 
   // Position the menu correctly based on viewport boundaries

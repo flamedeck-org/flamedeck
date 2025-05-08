@@ -1,13 +1,13 @@
-import type { MouseEvent, WheelEvent } from "react";
-import React, { Component } from "react";
-import type { Flamechart } from "../../lib/speedscope-core/flamechart";
-import { Rect, Vec2, AffineTransform, clamp } from "../../lib/speedscope-core/math";
-import type { FlamechartRenderer } from "../../lib/speedscope-gl/flamechart-renderer";
-import { FontFamily, FontSize, Sizes } from "./style";
-import type { CanvasContext } from "../../lib/speedscope-gl/canvas-context";
-import { cachedMeasureTextWidth } from "../../lib/speedscope-core/text-utils";
-import { Color } from "../../lib/speedscope-core/color";
-import type { Theme } from "./themes/theme";
+import type { MouseEvent, WheelEvent } from 'react';
+import React, { Component } from 'react';
+import type { Flamechart } from '../../lib/speedscope-core/flamechart';
+import { Rect, Vec2, AffineTransform, clamp } from '../../lib/speedscope-core/math';
+import type { FlamechartRenderer } from '../../lib/speedscope-gl/flamechart-renderer';
+import { FontFamily, FontSize, Sizes } from './style';
+import type { CanvasContext } from '../../lib/speedscope-gl/canvas-context';
+import { cachedMeasureTextWidth } from '../../lib/speedscope-core/text-utils';
+import { Color } from '../../lib/speedscope-core/color';
+import type { Theme } from './themes/theme';
 
 interface FlamechartMinimapViewProps {
   theme: Theme;
@@ -124,7 +124,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
     const labelPaddingPx = (physicalViewSpaceFrameHeight - physicalViewSpaceFontSize) / 2;
 
     ctx.font = `${physicalViewSpaceFontSize}px/${physicalViewSpaceFrameHeight}px ${FontFamily.MONOSPACE}`;
-    ctx.textBaseline = "top";
+    ctx.textBaseline = 'top';
 
     const minInterval = Math.pow(10, Math.floor(Math.log10(targetInterval)));
     let interval = minInterval;
@@ -140,7 +140,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
     {
       ctx.fillStyle = Color.fromCSSHex(theme.bgPrimaryColor).withAlpha(0.8).toCSS();
       ctx.fillRect(0, 0, physicalViewSize.x, physicalViewSpaceFrameHeight);
-      ctx.textBaseline = "top";
+      ctx.textBaseline = 'top';
 
       for (let x = Math.ceil(left / interval) * interval; x < right; x += interval) {
         // TODO(jlfwong): Ensure that labels do not overlap
@@ -177,12 +177,12 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
   }
 
   componentDidMount() {
-    window.addEventListener("resize", this.onWindowResize);
+    window.addEventListener('resize', this.onWindowResize);
     this.props.canvasContext.addBeforeFrameHandler(this.onBeforeFrame);
   }
 
   componentWillUnmount() {
-    window.removeEventListener("resize", this.onWindowResize);
+    window.removeEventListener('resize', this.onWindowResize);
     this.props.canvasContext.removeBeforeFrameHandler(this.onBeforeFrame);
   }
 
@@ -235,7 +235,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
   // prevents us from accidentally switching between panning & zooming.
   private frameHadWheelEvent = false;
   private framesWithoutWheelEvents = 0;
-  private interactionLock: "pan" | "zoom" | null = null;
+  private interactionLock: 'pan' | 'zoom' | null = null;
   private maybeClearInteractionLock = () => {
     if (this.interactionLock) {
       if (!this.frameHadWheelEvent) {
@@ -251,7 +251,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
   };
 
   private pan(logicalViewSpaceDelta: Vec2) {
-    this.interactionLock = "pan";
+    this.interactionLock = 'pan';
     const physicalDelta = this.logicalToPhysicalViewSpace().transformVector(logicalViewSpaceDelta);
     const configDelta = this.configSpaceToPhysicalViewSpace().inverseTransformVector(physicalDelta);
 
@@ -260,7 +260,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
   }
 
   private zoom(multiplier: number) {
-    this.interactionLock = "zoom";
+    this.interactionLock = 'zoom';
     const configSpaceViewport = this.props.configSpaceViewportRect;
     const configSpaceCenter = configSpaceViewport.origin.plus(
       configSpaceViewport.size.times(1 / 2)
@@ -281,7 +281,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
 
     const isZoom = ev.metaKey || ev.ctrlKey;
 
-    if (isZoom && this.interactionLock !== "pan") {
+    if (isZoom && this.interactionLock !== 'pan') {
       let multiplier = 1 + ev.deltaY / 100;
 
       // On Chrome & Firefox, pinch-to-zoom maps to
@@ -294,7 +294,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
       multiplier = clamp(multiplier, 0.1, 10.0);
 
       this.zoom(multiplier);
-    } else if (this.interactionLock !== "zoom") {
+    } else if (this.interactionLock !== 'zoom') {
       this.pan(new Vec2(ev.deltaX, ev.deltaY));
     }
 
@@ -331,8 +331,8 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
       }
 
       this.dragStartConfigSpaceMouse = configSpaceMouse;
-      window.addEventListener("mousemove", this.onWindowMouseMove);
-      window.addEventListener("mouseup", this.onWindowMouseUp);
+      window.addEventListener('mousemove', this.onWindowMouseMove);
+      window.addEventListener('mouseup', this.onWindowMouseUp);
       this.updateCursor(configSpaceMouse);
     }
   };
@@ -375,21 +375,21 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
 
   private updateCursor = (configSpaceMouse: Vec2) => {
     if (this.draggingMode === DraggingMode.TRANSLATE_VIEWPORT) {
-      document.body.style.cursor = "grabbing";
-      document.body.style.cursor = "-webkit-grabbing";
+      document.body.style.cursor = 'grabbing';
+      document.body.style.cursor = '-webkit-grabbing';
     } else if (this.draggingMode === DraggingMode.DRAW_NEW_VIEWPORT) {
-      document.body.style.cursor = "col-resize";
+      document.body.style.cursor = 'col-resize';
     } else if (this.props.configSpaceViewportRect.contains(configSpaceMouse)) {
-      document.body.style.cursor = "grab";
-      document.body.style.cursor = "-webkit-grab";
+      document.body.style.cursor = 'grab';
+      document.body.style.cursor = '-webkit-grab';
     } else {
-      document.body.style.cursor = "col-resize";
+      document.body.style.cursor = 'col-resize';
     }
   };
 
   private onMouseLeave = () => {
     if (this.draggingMode == null) {
-      document.body.style.cursor = "default";
+      document.body.style.cursor = 'default';
     }
   };
 
@@ -401,8 +401,8 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
 
   private onWindowMouseUp = (ev: MouseEvent) => {
     this.draggingMode = null;
-    window.removeEventListener("mousemove", this.onWindowMouseMove);
-    window.removeEventListener("mouseup", this.onWindowMouseUp);
+    window.removeEventListener('mousemove', this.onWindowMouseMove);
+    window.removeEventListener('mouseup', this.onWindowMouseUp);
 
     const currentMousePos = new Vec2(ev.clientX, ev.clientY);
     const configSpaceMouse = this.configSpaceToPhysicalViewSpace().inverseTransformPosition(
@@ -418,7 +418,7 @@ export class FlamechartMinimapView extends Component<FlamechartMinimapViewProps,
   private overlayCanvasRef = (element: Element | null) => {
     if (element) {
       this.overlayCanvas = element as HTMLCanvasElement;
-      this.overlayCtx = this.overlayCanvas.getContext("2d");
+      this.overlayCtx = this.overlayCanvas.getContext('2d');
       this.renderCanvas();
     } else {
       this.overlayCanvas = null;

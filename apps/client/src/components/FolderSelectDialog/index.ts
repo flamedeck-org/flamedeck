@@ -1,1 +1,1 @@
-export { FolderSelectDialog } from "./FolderSelectDialog";
+export { FolderSelectDialog } from './FolderSelectDialog';

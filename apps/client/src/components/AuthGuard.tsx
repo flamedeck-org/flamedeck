@@ -1,7 +1,7 @@
-import React from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AuthGuardProps {
   children: React.ReactNode;

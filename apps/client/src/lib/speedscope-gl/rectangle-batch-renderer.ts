@@ -1,12 +1,12 @@
-import type { Rect } from "@/lib/speedscope-core/math";
-import { Vec2, AffineTransform } from "@/lib/speedscope-core/math";
-import type { Color } from "@/lib/speedscope-core/color";
-import { Graphics } from "./graphics";
-import { setUniformAffineTransform } from "./utils";
+import type { Rect } from '@/lib/speedscope-core/math';
+import { Vec2, AffineTransform } from '@/lib/speedscope-core/math';
+import type { Color } from '@/lib/speedscope-core/color';
+import { Graphics } from './graphics';
+import { setUniformAffineTransform } from './utils';
 
 const vertexFormat = new Graphics.VertexFormat();
-vertexFormat.add("configSpacePos", Graphics.AttributeType.FLOAT, 2);
-vertexFormat.add("color", Graphics.AttributeType.FLOAT, 3);
+vertexFormat.add('configSpacePos', Graphics.AttributeType.FLOAT, 2);
+vertexFormat.add('color', Graphics.AttributeType.FLOAT, 3);
 
 const vert = `
   uniform mat3 configSpaceToNDC;
@@ -120,7 +120,7 @@ export class RectangleBatchRenderer {
   render(props: RectangleBatchRendererProps) {
     setUniformAffineTransform(
       this.material,
-      "configSpaceToNDC",
+      'configSpaceToNDC',
       (() => {
         const configToPhysical = AffineTransform.betweenRects(
           props.configSpaceSrcRect,

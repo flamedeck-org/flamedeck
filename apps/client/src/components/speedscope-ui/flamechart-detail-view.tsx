@@ -1,7 +1,7 @@
-import { formatPercent } from "@/lib/speedscope-core/lib-utils";
-import type { Frame, CallTreeNode } from "@/lib/speedscope-core/profile";
-import { ColorChit } from "./color-chit";
-import type { Flamechart } from "@/lib/speedscope-core/flamechart";
+import { formatPercent } from '@/lib/speedscope-core/lib-utils';
+import type { Frame, CallTreeNode } from '@/lib/speedscope-core/profile';
+import { ColorChit } from './color-chit';
+import type { Flamechart } from '@/lib/speedscope-core/flamechart';
 
 interface StatisticsTableProps {
   title: string;
@@ -18,7 +18,7 @@ function StatisticsTable(props: StatisticsTableProps) {
   const totalPerc = props.grandTotal === 0 ? 0 : (100.0 * props.selectedTotal) / props.grandTotal;
   const selfPerc = props.grandTotal === 0 ? 0 : (100.0 * props.selectedSelf) / props.grandTotal;
 
-  const cellBaseStyle = "relative flex justify-center items-center";
+  const cellBaseStyle = 'relative flex justify-center items-center';
 
   return (
     <div className="grid grid-cols-2 grid-rows-[24px_24px_24px] gap-px text-center pr-px">
@@ -64,7 +64,7 @@ function StackTraceView(props: StackTraceViewProps) {
     if (rows.length) {
       row.push(
         <span key={`${frame.key}-sep`} className="text-gray-500 dark:text-gray-400">
-          &nbsp;&gt;{" "}
+          &nbsp;&gt;{' '}
         </span>
       );
     }
@@ -84,7 +84,7 @@ function StackTraceView(props: StackTraceViewProps) {
       }
       row.push(
         <span key={`${frame.key}-pos`} className="text-gray-500 dark:text-gray-400">
-          {" "}
+          {' '}
           ({pos})
         </span>
       );
@@ -115,7 +115,7 @@ export function FlamechartDetailView(props: FlamechartDetailViewProps) {
   return (
     <div className="grid h-40 overflow-hidden grid-cols-[120px_120px_1fr] grid-rows-1 border-t border-gray-300 dark:border-gray-700 text-xs absolute bg-background w-screen bottom-0 font-mono">
       <StatisticsTable
-        title={"This Instance"}
+        title={'This Instance'}
         instanceStyle="bg-blue-500 text-white"
         grandTotal={flamechart.getTotalWeight()}
         selectedTotal={selectedNode.getTotalWeight()}
@@ -123,7 +123,7 @@ export function FlamechartDetailView(props: FlamechartDetailViewProps) {
         formatter={flamechart.formatValue.bind(flamechart)}
       />
       <StatisticsTable
-        title={"All Instances"}
+        title={'All Instances'}
         instanceStyle="bg-purple-500 text-white"
         grandTotal={flamechart.getTotalWeight()}
         selectedTotal={frame.getTotalWeight()}

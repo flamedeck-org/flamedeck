@@ -1,5 +1,5 @@
-import type { Frame } from "../../lib/speedscope-core/profile";
-import { ProfileTableViewContainer } from "./profile-table-view";
+import type { Frame } from '../../lib/speedscope-core/profile';
+import { ProfileTableViewContainer } from './profile-table-view';
 import React, {
   JSX,
   createContext,
@@ -11,24 +11,24 @@ import React, {
   forwardRef,
   useRef,
   useImperativeHandle,
-} from "react";
-import { Sizes, FontSize } from "./style";
-import { InvertedCallerFlamegraphView } from "./inverted-caller-flamegraph-view";
-import { CalleeFlamegraphView } from "./callee-flamegraph-view";
-import { SandwichSearchView } from "./sandwich-search-view";
-import type { ActiveProfileState } from "../../lib/speedscope-core/app-state/active-profile-state";
-import { sortBy } from "../../lib/speedscope-core/lib-utils";
-import { ProfileSearchContext } from "./search-view";
-import type { Theme } from "./themes/theme";
-import { useTheme } from "./themes/theme";
+} from 'react';
+import { Sizes, FontSize } from './style';
+import { InvertedCallerFlamegraphView } from './inverted-caller-flamegraph-view';
+import { CalleeFlamegraphView } from './callee-flamegraph-view';
+import { SandwichSearchView } from './sandwich-search-view';
+import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
+import { sortBy } from '../../lib/speedscope-core/lib-utils';
+import { ProfileSearchContext } from './search-view';
+import type { Theme } from './themes/theme';
+import { useTheme } from './themes/theme';
 import {
   SortField,
   SortDirection,
   profileGroupAtom,
   tableSortMethodAtom,
-} from "../../lib/speedscope-core/app-state";
-import { useAtom } from "../../lib/speedscope-core/atom";
-import type { FlamechartViewHandle } from "./flamechart-view-container";
+} from '../../lib/speedscope-core/app-state';
+import { useAtom } from '../../lib/speedscope-core/atom';
+import type { FlamechartViewHandle } from './flamechart-view-container';
 
 interface SandwichViewProps {
   selectedFrame: Frame | null;
@@ -49,16 +49,16 @@ class SandwichView extends Component<SandwichViewProps> {
   };
 
   onWindowKeyPress = (ev: KeyboardEvent) => {
-    if (ev.key === "Escape") {
+    if (ev.key === 'Escape') {
       this.setSelectedFrame(null);
     }
   };
 
   componentDidMount() {
-    window.addEventListener("keydown", this.onWindowKeyPress);
+    window.addEventListener('keydown', this.onWindowKeyPress);
   }
   componentWillUnmount() {
-    window.removeEventListener("keydown", this.onWindowKeyPress);
+    window.removeEventListener('keydown', this.onWindowKeyPress);
   }
 
   render() {
@@ -142,9 +142,9 @@ export const SandwichViewContainer = memo(
     // Expose the drawOverlayOnto method that can choose which view to draw
     useImperativeHandle(ref, () => ({
       drawOverlayOnto: (targetCtx: CanvasRenderingContext2D, viewType: string) => {
-        if (viewType === "sandwich_caller") {
+        if (viewType === 'sandwich_caller') {
           invertedCallerRef.current?.drawOverlayOnto(targetCtx);
-        } else if (viewType === "sandwich_callee") {
+        } else if (viewType === 'sandwich_callee') {
           calleeRef.current?.drawOverlayOnto(targetCtx);
         } else {
           console.warn(`Unknown sandwich view type for snapshot: ${viewType}`);

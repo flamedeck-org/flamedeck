@@ -1,13 +1,13 @@
-import type { Flamechart } from "@/lib/speedscope-core/flamechart";
-import type { RectangleBatchRenderer } from "./rectangle-batch-renderer";
-import { RectangleBatch } from "./rectangle-batch-renderer";
-import { Vec2, Rect, AffineTransform } from "@/lib/speedscope-core/math";
-import { Color } from "@/lib/speedscope-core/color";
-import { KeyedSet } from "@/lib/speedscope-core/lib-utils";
-import type { RowAtlas } from "./row-atlas";
-import { Graphics } from "./graphics";
-import type { FlamechartColorPassRenderer } from "./flamechart-color-pass-renderer";
-import { renderInto } from "./utils";
+import type { Flamechart } from '@/lib/speedscope-core/flamechart';
+import type { RectangleBatchRenderer } from './rectangle-batch-renderer';
+import { RectangleBatch } from './rectangle-batch-renderer';
+import { Vec2, Rect, AffineTransform } from '@/lib/speedscope-core/math';
+import { Color } from '@/lib/speedscope-core/color';
+import { KeyedSet } from '@/lib/speedscope-core/lib-utils';
+import type { RowAtlas } from './row-atlas';
+import { Graphics } from './graphics';
+import type { FlamechartColorPassRenderer } from './flamechart-color-pass-renderer';
+import { renderInto } from './utils';
 
 const MAX_BATCH_SIZE = 10000;
 
@@ -53,7 +53,7 @@ class RangeTreeInteriorNode implements RangeTreeNode {
   private bounds: Rect;
   constructor(private children: RangeTreeNode[]) {
     if (children.length === 0) {
-      throw new Error("Empty interior node");
+      throw new Error('Empty interior node');
     }
     let minLeft = Infinity;
     let maxRight = -Infinity;

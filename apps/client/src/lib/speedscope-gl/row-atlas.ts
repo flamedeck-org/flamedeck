@@ -1,11 +1,11 @@
-import { LRUCache } from "@/lib/speedscope-core/lru-cache";
-import type { RectangleBatchRenderer } from "./rectangle-batch-renderer";
-import { RectangleBatch } from "./rectangle-batch-renderer";
-import { Rect, Vec2 } from "@/lib/speedscope-core/math";
-import { Color } from "@/lib/speedscope-core/color";
-import { Graphics } from "./graphics";
-import type { TextureRenderer } from "./texture-renderer";
-import { renderInto } from "./utils";
+import { LRUCache } from '@/lib/speedscope-core/lru-cache';
+import type { RectangleBatchRenderer } from './rectangle-batch-renderer';
+import { RectangleBatch } from './rectangle-batch-renderer';
+import { Rect, Vec2 } from '@/lib/speedscope-core/math';
+import { Color } from '@/lib/speedscope-core/color';
+import { Graphics } from './graphics';
+import type { TextureRenderer } from './texture-renderer';
+import { renderInto } from './utils';
 
 export class RowAtlas<K> {
   private texture: Graphics.Texture;

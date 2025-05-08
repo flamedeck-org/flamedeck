@@ -1,7 +1,7 @@
-import React, { memo, useCallback, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import React, { memo, useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,7 +11,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 import {
   Trash2,
   Eye,
@@ -23,18 +23,18 @@ import {
   Chrome,
   MoreVertical,
   Clock,
-} from "lucide-react";
-import { ContextMenu, ContextMenuItem, ContextMenuDivider } from "@/components/ui/context-menu";
-import type { TraceMetadata } from "@/types";
-import { formatRelativeDate, formatDuration, cn } from "@/lib/utils";
-import type { User } from "@supabase/supabase-js"; // Import User type if needed
-import { useSharingModal } from "@/hooks/useSharingModal"; // Added hook import
-import { MoveItemDialog } from "./MoveItemDialog"; // Import the new dialog
-import { RenameTraceDialog } from "./RenameTraceDialog"; // Import the new dialog
-import type { ProfileType } from "@trace-view-pilot/shared-importer"; // Import ProfileType
-import { UserAvatar } from "@/components/UserAvatar"; // Import the new component
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getExpirationStatus } from "@/lib/utils/getExpirationStatus";
+} from 'lucide-react';
+import { ContextMenu, ContextMenuItem, ContextMenuDivider } from '@/components/ui/context-menu';
+import type { TraceMetadata } from '@/types';
+import { formatRelativeDate, formatDuration, cn } from '@/lib/utils';
+import type { User } from '@supabase/supabase-js'; // Import User type if needed
+import { useSharingModal } from '@/hooks/useSharingModal'; // Added hook import
+import { MoveItemDialog } from './MoveItemDialog'; // Import the new dialog
+import { RenameTraceDialog } from './RenameTraceDialog'; // Import the new dialog
+import type { ProfileType } from '@trace-view-pilot/shared-importer'; // Import ProfileType
+import { UserAvatar } from '@/components/UserAvatar'; // Import the new component
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getExpirationStatus } from '@/lib/utils/getExpirationStatus';
 
 // Helper to get icon based on profile type
 const getIconForProfileType = (profileType?: ProfileType | string | null): React.ReactNode => {
@@ -42,24 +42,24 @@ const getIconForProfileType = (profileType?: ProfileType | string | null): React
     {
       speedscope: Flame,
       pprof: Flame,
-      "chrome-timeline": Chrome,
-      "chrome-cpuprofile": Chrome,
-      "chrome-cpuprofile-old": Chrome,
-      "chrome-heap-profile": Chrome,
+      'chrome-timeline': Chrome,
+      'chrome-cpuprofile': Chrome,
+      'chrome-cpuprofile-old': Chrome,
+      'chrome-heap-profile': Chrome,
       stackprof: Flame,
-      "instruments-deepcopy": Flame,
-      "instruments-trace": Flame,
-      "linux-perf": Flame,
-      "collapsed-stack": Flame,
-      "v8-prof-log": Flame,
+      'instruments-deepcopy': Flame,
+      'instruments-trace': Flame,
+      'linux-perf': Flame,
+      'collapsed-stack': Flame,
+      'v8-prof-log': Flame,
       firefox: Flame,
       safari: Flame,
       haskell: Flame,
-      "trace-event": Flame,
+      'trace-event': Flame,
       callgrind: Flame,
       papyrus: Flame,
       unknown: Flame,
-    }[profileType || "unknown"] || Flame; // Default to Flame if type is somehow missing
+    }[profileType || 'unknown'] || Flame; // Default to Flame if type is somehow missing
   // Render the Flame icon with consistent styling
   return <IconComponent className="mr-2 h-4 w-4 inline-block text-primary" />;
 };
@@ -95,12 +95,12 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
   );
 
   const ownerDisplayName = useMemo(() => {
-    if (isOwnerCurrentUser) return "me";
+    if (isOwnerCurrentUser) return 'me';
     const owner = trace.owner;
     return (
       owner?.username ||
-      `${owner?.first_name || ""} ${owner?.last_name || ""}`.trim() ||
-      "Unknown Owner"
+      `${owner?.first_name || ''} ${owner?.last_name || ''}`.trim() ||
+      'Unknown Owner'
     );
   }, [isOwnerCurrentUser, trace.owner]);
 
@@ -167,7 +167,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
   }, []);
 
   const commitShortSha = useMemo(
-    () => (trace.commit_sha ? trace.commit_sha.substring(0, 7) : "N/A"),
+    () => (trace.commit_sha ? trace.commit_sha.substring(0, 7) : 'N/A'),
     [trace.commit_sha]
   );
 
@@ -196,7 +196,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
       >
         <TableCell className="font-medium pl-6 py-3">
           {getIconForProfileType(trace.profile_type)}
-          {trace.scenario || "N/A"}
+          {trace.scenario || 'N/A'}
         </TableCell>
         <TableCell className="py-4">
           <div className="flex items-center space-x-2">
@@ -204,9 +204,9 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
             <span className="text-sm truncate">{ownerDisplayName}</span>
           </div>
         </TableCell>
-        <TableCell className="py-4 font-mono text-xs">{trace.branch || "N/A"}</TableCell>
+        <TableCell className="py-4 font-mono text-xs">{trace.branch || 'N/A'}</TableCell>
         <TableCell className="py-4 font-mono text-xs">
-          {trace.commit_sha ? trace.commit_sha.substring(0, 7) : "N/A"}
+          {trace.commit_sha ? trace.commit_sha.substring(0, 7) : 'N/A'}
         </TableCell>
         <TableCell className="py-4">{formatDuration(trace.duration_ms)}</TableCell>
         <TableCell className="py-4 text-muted-foreground text-sm">
@@ -220,7 +220,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
                   <TooltipContent>
                     <p>
                       Expires in {expirationStatus.daysRemaining}
-                      {expirationStatus.daysRemaining === 1 ? " day" : " days"}
+                      {expirationStatus.daysRemaining === 1 ? ' day' : ' days'}
                       {expirationStatus.formattedExpirationDate &&
                         ` (on ${expirationStatus.formattedExpirationDate})`}
                     </p>
@@ -281,17 +281,17 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
             onClick={isOwnerCurrentUser ? handleOpenRenameDialog : undefined}
             icon={<Edit className="h-4 w-4" />}
           >
-            <span className={!isOwnerCurrentUser ? "opacity-50 cursor-not-allowed" : ""}>
+            <span className={!isOwnerCurrentUser ? 'opacity-50 cursor-not-allowed' : ''}>
               Rename
             </span>
           </ContextMenuItem>
           <div
             onClick={isOwnerCurrentUser ? handleOpenMoveDialog : undefined}
             className={cn(
-              "px-3 py-1.5 flex items-center gap-2",
+              'px-3 py-1.5 flex items-center gap-2',
               isOwnerCurrentUser
-                ? "cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                : "opacity-50 cursor-not-allowed"
+                ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground'
+                : 'opacity-50 cursor-not-allowed'
             )}
           >
             <span className="w-4 h-4">
@@ -310,8 +310,8 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
             <span
               className={
                 !isOwnerCurrentUser
-                  ? "opacity-50 cursor-not-allowed text-destructive"
-                  : "text-destructive"
+                  ? 'opacity-50 cursor-not-allowed text-destructive'
+                  : 'text-destructive'
               }
             >
               <span className="text-destructive">Delete</span>
@@ -325,7 +325,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the trace{" "}
+              This action cannot be undone. This will permanently delete the trace{' '}
               <strong>{traceIdentifier}</strong> and all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -336,7 +336,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -359,7 +359,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
           isOpen={isRenameDialogOpen}
           setIsOpen={setIsRenameDialogOpen}
           traceId={trace.id}
-          currentScenario={trace.scenario || ""}
+          currentScenario={trace.scenario || ''}
         />
       )}
     </>
@@ -369,12 +369,12 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
 // Need to find formatBytes function if it's not imported/available globally
 // Placeholder:
 const formatBytes = (bytes: number, decimals = 2) => {
-  if (bytes === 0) return "0 Bytes";
+  if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
 export const TraceListItem = memo(TraceListItemComponent);

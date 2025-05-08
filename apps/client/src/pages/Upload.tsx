@@ -1,10 +1,10 @@
-import React from "react";
-import Layout from "@/components/Layout"; // Use the main Layout
-import PageHeader from "@/components/PageHeader";
-import AuthGuard from "@/components/AuthGuard";
-import { UploadDialog } from "@/components/UploadDialog";
-import { useLocation } from "react-router-dom"; // <-- Import useLocation
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // <-- Import Card components
+import React from 'react';
+import Layout from '@/components/Layout'; // Use the main Layout
+import PageHeader from '@/components/PageHeader';
+import AuthGuard from '@/components/AuthGuard';
+import { UploadDialog } from '@/components/UploadDialog';
+import { useLocation } from 'react-router-dom'; // <-- Import useLocation
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // <-- Import Card components
 
 const Upload: React.FC = () => {
   // Get location state
@@ -21,7 +21,7 @@ const Upload: React.FC = () => {
           {/*   <CardTitle className="text-2xl">Upload Performance Trace</CardTitle> */}
           {/* </CardHeader> */}
           <CardContent className="pt-6">
-            {" "}
+            {' '}
             {/* Add padding */}
             <UploadDialog initialFolderId={targetFolderId} />
           </CardContent>

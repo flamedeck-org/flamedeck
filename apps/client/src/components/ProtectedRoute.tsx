@@ -1,10 +1,10 @@
-import React from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import React from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 // Assuming AuthContext is at ../contexts/AuthContext.tsx relative to components/
-import { useAuth } from "../contexts/AuthContext";
-import { Loader2, AlertCircle } from "lucide-react"; // Keep if you want a loading spinner
-import { Button } from "./ui/button"; // Ensure correct path
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./ui/card"; // Import Card components
+import { useAuth } from '../contexts/AuthContext';
+import { Loader2, AlertCircle } from 'lucide-react'; // Keep if you want a loading spinner
+import { Button } from './ui/button'; // Ensure correct path
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from './ui/card'; // Import Card components
 
 // Define the shape of the profile object you expect from useAuth
 // Adjust this based on your actual user_profiles table structure
@@ -25,14 +25,14 @@ interface AuthContextValue {
 
 const ProtectedRoute = () => {
   // Log context values on every render - MOVED TO TOP
-  console.log("[ProtectedRoute] Component Rendered. Attempting to log state...");
+  console.log('[ProtectedRoute] Component Rendered. Attempting to log state...');
 
   const { user, profile, loading, profileLoading } = useAuth() as AuthContextValue;
   const location = useLocation();
 
   const isLoading = loading || profileLoading;
 
-  console.log("[ProtectedRoute] State Values:", {
+  console.log('[ProtectedRoute] State Values:', {
     loading,
     profileLoading,
     user: !!user,
@@ -41,7 +41,7 @@ const ProtectedRoute = () => {
   });
 
   if (isLoading) {
-    console.log("[ProtectedRoute] State is Loading, returning spinner.");
+    console.log('[ProtectedRoute] State is Loading, returning spinner.');
     return (
       <div className="flex justify-center items-center h-[calc(100vh-var(--header-height))] w-full">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -50,40 +50,40 @@ const ProtectedRoute = () => {
   }
 
   // Logged in state checks
-  console.log("[ProtectedRoute] Loading is false. Evaluating user/profile state.");
+  console.log('[ProtectedRoute] Loading is false. Evaluating user/profile state.');
 
   if (!user) {
-    console.log("[ProtectedRoute] No user found, redirecting to /login.");
+    console.log('[ProtectedRoute] No user found, redirecting to /login.');
     try {
       sessionStorage.setItem(
-        "postLoginRedirectPath",
+        'postLoginRedirectPath',
         location.pathname + location.search + location.hash
       );
     } catch (e) {
-      console.error("Failed to set sessionStorage:", e);
+      console.error('Failed to set sessionStorage:', e);
     }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // At this point, user exists.
-  console.log("[ProtectedRoute] User exists. Checking profile.", { profile }); // Log the profile object itself
+  console.log('[ProtectedRoute] User exists. Checking profile.', { profile }); // Log the profile object itself
 
   if (profile && !profile.username) {
     console.log(
-      "[ProtectedRoute] User exists, profile exists, username MISSING. Redirecting to /onboarding/username."
+      '[ProtectedRoute] User exists, profile exists, username MISSING. Redirecting to /onboarding/username.'
     );
     return <Navigate to="/onboarding/username" state={{ from: location }} replace />;
   }
 
   if (profile && profile.username) {
-    console.log("[ProtectedRoute] User exists, profile exists, username EXISTS. Rendering Outlet.");
+    console.log('[ProtectedRoute] User exists, profile exists, username EXISTS. Rendering Outlet.');
     return <Outlet />;
   }
 
   // Fallback / Error condition:
   // User exists, loading is done, but profile is still null/undefined.
   console.error(
-    "[ProtectedRoute] Fallback Error: User exists but profile is missing after loading.",
+    '[ProtectedRoute] Fallback Error: User exists but profile is missing after loading.',
     { user, profile, loading, profileLoading }
   );
   return (

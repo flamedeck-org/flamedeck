@@ -1,23 +1,23 @@
-import { Color } from "../../../lib/speedscope-core/color";
-import { triangle } from "../../../lib/speedscope-core/lib-utils";
-import type { Theme } from "./theme";
+import { Color } from '../../../lib/speedscope-core/color';
+import { triangle } from '../../../lib/speedscope-core/lib-utils';
+import type { Theme } from './theme';
 
 // These colors are intentionally not exported from this file, because these
 // colors are theme specific, and we want all color values to come from the
 // active theme.
 enum Colors {
-  WHITE = "#FFFFFF",
-  OFF_WHITE = "#F6F6F6",
-  LIGHT_GRAY = "#BDBDBD",
-  GRAY = "#666666",
-  DARK_GRAY = "#222222",
-  OFF_BLACK = "#111111",
-  BLACK = "#000000",
-  DARK_BLUE = "#2F80ED",
-  PALE_DARK_BLUE = "#8EB7ED",
-  GREEN = "#6FCF97",
-  YELLOW = "#FEDC62",
-  ORANGE = "#FFAC02",
+  WHITE = '#FFFFFF',
+  OFF_WHITE = '#F6F6F6',
+  LIGHT_GRAY = '#BDBDBD',
+  GRAY = '#666666',
+  DARK_GRAY = '#222222',
+  OFF_BLACK = '#111111',
+  BLACK = '#000000',
+  DARK_BLUE = '#2F80ED',
+  PALE_DARK_BLUE = '#8EB7ED',
+  GREEN = '#6FCF97',
+  YELLOW = '#FEDC62',
+  ORANGE = '#FFAC02',
 }
 
 const C_0 = 0.25;

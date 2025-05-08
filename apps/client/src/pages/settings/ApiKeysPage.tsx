@@ -1,7 +1,7 @@
 // src/pages/Settings/ApiKeysPage.tsx
-import React, { useState } from "react";
-import { useUserApiKeys, useCreateApiKey } from "@/hooks/useApiKeys";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { useUserApiKeys, useCreateApiKey } from '@/hooks/useApiKeys';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,10 +9,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -20,8 +20,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,16 +31,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { Copy, Loader2, AlertCircle } from "lucide-react";
-import PageHeader from "@/components/PageHeader";
-import { formatRelativeDate } from "@/lib/utils";
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { Copy, Loader2, AlertCircle } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
+import { formatRelativeDate } from '@/lib/utils';
 
 // Define available scopes (could come from a config file)
 const AVAILABLE_SCOPES = [
-  { id: "trace:upload", label: "Upload Traces" },
+  { id: 'trace:upload', label: 'Upload Traces' },
   // Add more scopes here if needed in the future
 ];
 
@@ -48,7 +48,7 @@ function ApiKeysPage() {
   const { data: apiKeys, isLoading: isLoadingKeys, error: keysError } = useUserApiKeys();
   const createApiKeyMutation = useCreateApiKey();
 
-  const [newKeyDescription, setNewKeyDescription] = useState("");
+  const [newKeyDescription, setNewKeyDescription] = useState('');
   const [selectedScopes, setSelectedScopes] = useState<string[]>([AVAILABLE_SCOPES[0].id]); // Default to upload scope
   const [showNewKeyDialog, setShowNewKeyDialog] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<{ id: string; key: string } | null>(null);
@@ -59,7 +59,7 @@ function ApiKeysPage() {
 
   const handleCreateKey = async () => {
     if (selectedScopes.length === 0) {
-      toast.error("Please select at least one scope for the API key.");
+      toast.error('Please select at least one scope for the API key.');
       return;
     }
 
@@ -69,9 +69,9 @@ function ApiKeysPage() {
         onSuccess: (data) => {
           setGeneratedKey({ id: data.apiKeyId, key: data.plainTextKey });
           setShowNewKeyDialog(true);
-          setNewKeyDescription(""); // Reset form
+          setNewKeyDescription(''); // Reset form
           setSelectedScopes([AVAILABLE_SCOPES[0].id]);
-          toast.success("API Key created successfully!");
+          toast.success('API Key created successfully!');
         },
         onError: (error) => {
           toast.error(`Failed to create API key: ${error.message}`);
@@ -83,8 +83,8 @@ function ApiKeysPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard
       .writeText(text)
-      .then(() => toast.success("API Key copied to clipboard!"))
-      .catch(() => toast.error("Failed to copy API key."));
+      .then(() => toast.success('API Key copied to clipboard!'))
+      .catch(() => toast.error('Failed to copy API key.'));
   };
 
   return (
@@ -164,7 +164,7 @@ function ApiKeysPage() {
                     apiKeys.map((key) => (
                       <TableRow
                         key={key.id}
-                        className={`${!key.is_active ? "text-muted-foreground opacity-60" : ""}`}
+                        className={`${!key.is_active ? 'text-muted-foreground opacity-60' : ''}`}
                       >
                         <TableCell className="font-medium truncate max-w-xs">
                           {key.description || <span className="italic">No description</span>}
@@ -178,11 +178,11 @@ function ApiKeysPage() {
                         </TableCell>
                         <TableCell>{formatRelativeDate(key.created_at)}</TableCell>
                         <TableCell>
-                          {key.last_used_at ? format(new Date(key.last_used_at), "PPpp") : "Never"}
+                          {key.last_used_at ? format(new Date(key.last_used_at), 'PPpp') : 'Never'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={key.is_active ? "default" : "destructive"}>
-                            {key.is_active ? "Active" : "Revoked"}
+                          <Badge variant={key.is_active ? 'default' : 'destructive'}>
+                            {key.is_active ? 'Active' : 'Revoked'}
                           </Badge>
                         </TableCell>
                       </TableRow>

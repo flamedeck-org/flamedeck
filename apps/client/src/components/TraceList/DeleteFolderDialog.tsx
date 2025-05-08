@@ -1,5 +1,5 @@
-import React, { memo, useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
+import React, { memo, useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,15 +8,15 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AlertCircle, Loader2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useQuery } from "@tanstack/react-query";
-import { traceApi } from "@/lib/api";
-import type { RecursiveFolderContents } from "@/types";
-import { Skeleton } from "@/components/ui/skeleton";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useQuery } from '@tanstack/react-query';
+import { traceApi } from '@/lib/api';
+import type { RecursiveFolderContents } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DeleteFolderDialogProps {
   isOpen: boolean;
@@ -27,7 +27,7 @@ interface DeleteFolderDialogProps {
   isPending: boolean;
 }
 
-const FOLDER_CONTENTS_QUERY_KEY = "folderContentsForDelete";
+const FOLDER_CONTENTS_QUERY_KEY = 'folderContentsForDelete';
 
 function DeleteFolderDialogComponent({
   isOpen,
@@ -37,7 +37,7 @@ function DeleteFolderDialogComponent({
   onConfirm,
   isPending,
 }: DeleteFolderDialogProps) {
-  const [confirmInput, setConfirmInput] = useState("");
+  const [confirmInput, setConfirmInput] = useState('');
 
   const {
     data: contentsData,
@@ -49,10 +49,10 @@ function DeleteFolderDialogComponent({
     queryFn: async () => {
       const response = await traceApi.getRecursiveFolderContents(folderId);
       if (response.error) {
-        throw new Error(response.error.message || "Failed to fetch folder contents");
+        throw new Error(response.error.message || 'Failed to fetch folder contents');
       }
       if (!response.data) {
-        throw new Error("No data received when fetching folder contents");
+        throw new Error('No data received when fetching folder contents');
       }
       return response.data;
     },
@@ -64,9 +64,9 @@ function DeleteFolderDialogComponent({
 
   useEffect(() => {
     if (isOpen) {
-      setConfirmInput("");
+      setConfirmInput('');
     } else {
-      setConfirmInput("");
+      setConfirmInput('');
     }
   }, [isOpen, folderId]);
 
@@ -116,7 +116,7 @@ function DeleteFolderDialogComponent({
         </>
       );
     }
-    return "Loading folder contents...";
+    return 'Loading folder contents...';
   };
 
   return (
@@ -173,7 +173,7 @@ function DeleteFolderDialogComponent({
           >
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isLoadingContents ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {!isPending && !isLoadingContents ? "Delete Permanently" : "Deleting..."}
+            {!isPending && !isLoadingContents ? 'Delete Permanently' : 'Deleting...'}
           </Button>
         </DialogFooter>
       </DialogContent>

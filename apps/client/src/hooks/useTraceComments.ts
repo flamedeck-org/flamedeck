@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import type { TraceCommentWithAuthor } from "@/lib/api";
-import { traceApi } from "@/lib/api";
-import { useMemo, useCallback } from "react";
+import { useQuery } from '@tanstack/react-query';
+import type { TraceCommentWithAuthor } from '@/lib/api';
+import { traceApi } from '@/lib/api';
+import { useMemo, useCallback } from 'react';
 
 // Helper function to extract unique commented cell IDs for a given type
 const getCommentedCellIdsByType = (
@@ -30,7 +30,7 @@ export function useTraceComments(traceId?: string) {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["traceComments", traceId],
+    queryKey: ['traceComments', traceId],
     queryFn: async () => {
       if (!traceId) return [];
       const response = await traceApi.getTraceComments(traceId);
@@ -41,17 +41,17 @@ export function useTraceComments(traceId?: string) {
   });
 
   const commentedChronoCellIds = useMemo(() => {
-    return getCommentedCellIdsByType(comments, "chrono");
+    return getCommentedCellIdsByType(comments, 'chrono');
   }, [comments]);
 
   // Derive left_heavy-specific cell identifiers for highlighting
   const commentedLeftHeavyCellIds = useMemo(() => {
-    return getCommentedCellIdsByType(comments, "left_heavy");
+    return getCommentedCellIdsByType(comments, 'left_heavy');
   }, [comments]);
 
   // Derive sandwich-specific cell identifiers (if needed later)
   const commentedSandwichCellIds = useMemo(() => {
-    return getCommentedCellIdsByType(comments, "sandwich");
+    return getCommentedCellIdsByType(comments, 'sandwich');
   }, [comments]);
 
   // Optional: Function to get all comments for a specific chrono cell
@@ -60,7 +60,7 @@ export function useTraceComments(traceId?: string) {
       return (
         comments?.filter(
           (comment) =>
-            comment.comment_type === "chrono" && comment.comment_identifier === cellIdentifier
+            comment.comment_type === 'chrono' && comment.comment_identifier === cellIdentifier
         ) || []
       );
     },
@@ -69,7 +69,7 @@ export function useTraceComments(traceId?: string) {
 
   // Optional: Get general/overview comments
   const overviewComments = useMemo(() => {
-    return comments?.filter((comment) => comment.comment_type === "overview") || [];
+    return comments?.filter((comment) => comment.comment_type === 'overview') || [];
   }, [comments]);
 
   return useMemo(

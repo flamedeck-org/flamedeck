@@ -3,7 +3,7 @@ module.exports = {
   tabWidth: 2, // Number of spaces per indentation-level.
   useTabs: false, // Indent lines with spaces instead of tabs.
   semi: true, // Print semicolons at the ends of statements.
-  singleQuote: false, // Use double quotes for strings.
+  singleQuote: true, // Use single quotes for strings.
   quoteProps: "as-needed", // Only add quotes around object properties where required.
   jsxSingleQuote: false, // Use double quotes in JSX.
   trailingComma: "es5", // Trailing commas where valid in ES5 (objects, arrays, etc.)

@@ -1,4 +1,4 @@
-import { Atom } from "../atom";
+import { Atom } from '../atom';
 
 export const enum ColorScheme {
   // Default: respect prefers-color-schema
@@ -11,13 +11,13 @@ export const enum ColorScheme {
   LIGHT,
 }
 
-const localStorageKey = "speedscope-color-scheme";
+const localStorageKey = 'speedscope-color-scheme';
 
 function getStoredPreference(): ColorScheme {
   const storedPreference = window.localStorage && window.localStorage[localStorageKey];
-  if (storedPreference === "DARK") {
+  if (storedPreference === 'DARK') {
     return ColorScheme.DARK;
-  } else if (storedPreference === "LIGHT") {
+  } else if (storedPreference === 'LIGHT') {
     return ColorScheme.LIGHT;
   } else {
     return ColorScheme.SYSTEM;
@@ -25,7 +25,7 @@ function getStoredPreference(): ColorScheme {
 }
 
 function matchMediaDarkColorScheme(): MediaQueryList {
-  return matchMedia("(prefers-color-scheme: dark)");
+  return matchMedia('(prefers-color-scheme: dark)');
 }
 
 function nextColorScheme(scheme: ColorScheme): ColorScheme {
@@ -68,18 +68,18 @@ class ColorSchemeAtom extends Atom<ColorScheme> {
   };
 }
 
-export const colorSchemeAtom = new ColorSchemeAtom(getStoredPreference(), "colorScheme");
+export const colorSchemeAtom = new ColorSchemeAtom(getStoredPreference(), 'colorScheme');
 
 colorSchemeAtom.subscribe(() => {
   const value = colorSchemeAtom.get();
 
   switch (value) {
     case ColorScheme.DARK: {
-      window.localStorage[localStorageKey] = "DARK";
+      window.localStorage[localStorageKey] = 'DARK';
       break;
     }
     case ColorScheme.LIGHT: {
-      window.localStorage[localStorageKey] = "LIGHT";
+      window.localStorage[localStorageKey] = 'LIGHT';
       break;
     }
     case ColorScheme.SYSTEM: {

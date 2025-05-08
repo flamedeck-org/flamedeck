@@ -1,13 +1,13 @@
-import * as tracesApi from "./traces";
-import * as commentApi from "./comments";
-import * as folderApi from "./folders";
-import * as userApi from "./users";
-import * as directoryListingApi from "./directoryListing";
-import * as tracePermissionsApi from "./tracePermissions";
-import * as storageApi from "./storage";
+import * as tracesApi from './traces';
+import * as commentApi from './comments';
+import * as folderApi from './folders';
+import * as userApi from './users';
+import * as directoryListingApi from './directoryListing';
+import * as tracePermissionsApi from './tracePermissions';
+import * as storageApi from './storage';
 
-export * from "./types";
-export * from "./comments";
+export * from './types';
+export * from './comments';
 
 export const traceApi = {
   ...tracesApi,

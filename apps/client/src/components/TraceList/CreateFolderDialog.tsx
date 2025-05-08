@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, useEffect, memo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,11 +8,11 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose, // Import DialogClose for explicit closing
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, FolderPlus } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, FolderPlus } from 'lucide-react';
 
 interface CreateFolderDialogProps {
   isOpen: boolean;
@@ -29,7 +29,7 @@ function CreateFolderDialogComponent({
   isPending,
   triggerElement,
 }: CreateFolderDialogProps) {
-  const [folderName, setFolderName] = useState("");
+  const [folderName, setFolderName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   // Reset state when dialog opens/closes
@@ -37,7 +37,7 @@ function CreateFolderDialogComponent({
     if (!isOpen) {
       setTimeout(() => {
         // Delay reset to allow animation
-        setFolderName("");
+        setFolderName('');
         setError(null);
       }, 150);
     }
@@ -54,11 +54,11 @@ function CreateFolderDialogComponent({
     event.preventDefault();
     const trimmedName = folderName.trim();
     if (trimmedName.length === 0) {
-      setError("Folder name cannot be empty.");
+      setError('Folder name cannot be empty.');
       return;
     }
     if (trimmedName.length > 255) {
-      setError("Folder name is too long (max 255 characters).");
+      setError('Folder name is too long (max 255 characters).');
       return;
     }
     // Potentially add other validation (e.g., invalid characters) here
@@ -90,7 +90,7 @@ function CreateFolderDialogComponent({
                 onChange={handleInputChange}
                 placeholder="e.g., Project Alpha Traces"
                 className="w-full"
-                aria-describedby={error ? "folder-name-error" : undefined}
+                aria-describedby={error ? 'folder-name-error' : undefined}
                 aria-invalid={!!error}
                 disabled={isPending}
               />
@@ -114,7 +114,7 @@ function CreateFolderDialogComponent({
             disabled={isPending || !folderName.trim()}
           >
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {isPending ? "Creating..." : "Create Folder"}
+            {isPending ? 'Creating...' : 'Create Folder'}
           </Button>
         </DialogFooter>
       </DialogContent>

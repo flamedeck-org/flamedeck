@@ -1,21 +1,21 @@
-import React, { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { formatDistanceToNow } from "date-fns";
-import type { TraceCommentWithAuthor } from "@/lib/api";
-import { updateTraceComment, deleteTraceCommentLogically } from "@/lib/api"; // Use the type that includes author info, Import updateTraceComment, Import deleteTraceCommentLogically
-import { getInitials } from "@/lib/utils"; // Assuming a utility for initials
-import CommentForm from "@/components/CommentForm"; // Added CommentForm import
-import { cn } from "@/lib/utils"; // Added cn function for conditional classes
-import { CornerDownRight, MoreHorizontal } from "lucide-react"; // Import Reply icon, Import MoreHorizontal
+import React, { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { formatDistanceToNow } from 'date-fns';
+import type { TraceCommentWithAuthor } from '@/lib/api';
+import { updateTraceComment, deleteTraceCommentLogically } from '@/lib/api'; // Use the type that includes author info, Import updateTraceComment, Import deleteTraceCommentLogically
+import { getInitials } from '@/lib/utils'; // Assuming a utility for initials
+import CommentForm from '@/components/CommentForm'; // Added CommentForm import
+import { cn } from '@/lib/utils'; // Added cn function for conditional classes
+import { CornerDownRight, MoreHorizontal } from 'lucide-react'; // Import Reply icon, Import MoreHorizontal
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"; // Import DropdownMenu components
-import { toast } from "sonner"; // Assuming you use sonner for toasts
-import { useAuth } from "@/contexts/AuthContext";
+} from '@/components/ui/dropdown-menu'; // Import DropdownMenu components
+import { toast } from 'sonner'; // Assuming you use sonner for toasts
+import { useAuth } from '@/contexts/AuthContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +25,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"; // Import AlertDialog
+} from '@/components/ui/alert-dialog'; // Import AlertDialog
 
 export interface StructuredComment extends TraceCommentWithAuthor {
   replies: StructuredComment[];
@@ -60,7 +60,7 @@ export function CommentItem({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // State for delete dialog
 
   const author = comment.author;
-  const authorName = author?.username || author?.first_name || "Unknown User";
+  const authorName = author?.username || author?.first_name || 'Unknown User';
   const avatarUrl = author?.avatar_url;
   const initials = getInitials(authorName); // Use utility or simple logic
 
@@ -92,7 +92,7 @@ export function CommentItem({
       toast.error(`Failed to update comment: ${error.message}`);
       // Optionally keep editing state true on error?
     } else if (data) {
-      toast.success("Comment updated successfully");
+      toast.success('Comment updated successfully');
       setIsEditing(false);
       // Call the callback to update the comment in the parent's state
       // We need to merge the potentially partial 'data' (TraceComment)
@@ -113,12 +113,12 @@ export function CommentItem({
     if (error) {
       toast.error(`Failed to delete comment: ${error.message}`);
     } else {
-      toast.success("Comment deleted");
+      toast.success('Comment deleted');
       // Update the local cache to reflect deletion immediately
       // We create a placeholder object with the deleted flag
       const deletedCommentData: TraceCommentWithAuthor = {
         ...comment,
-        content: "[deleted]", // Optional: Clear content locally too
+        content: '[deleted]', // Optional: Clear content locally too
         is_deleted: true,
         // Clear replies locally if desired, though they exist in DB
         replies: [],
@@ -132,19 +132,19 @@ export function CommentItem({
 
   return (
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-      <div className={cn("flex space-x-3 py-2 relative" /* Removed group */)}>
+      <div className={cn('flex space-x-3 py-2 relative' /* Removed group */)}>
         {/* Indentation Line for Replies */}
         {currentDepth > 0 && <div className="absolute left-0 top-0 bottom-0 w-px bg-border"></div>}
 
         {/* Avatar - Adjust margin based on depth */}
-        <Avatar className={cn("h-8 w-8 mt-1 flex-shrink-0", currentDepth > 0 && "ml-8")}>
+        <Avatar className={cn('h-8 w-8 mt-1 flex-shrink-0', currentDepth > 0 && 'ml-8')}>
           <AvatarImage src={avatarUrl ?? undefined} alt={authorName} />
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
 
         {/* Main Content Area */}
         <div className="flex-1 space-y-0.5 min-w-0">
-          {" "}
+          {' '}
           {/* Reduced space-y */}
           {/* Header Row: Author + Timestamp + Actions */}
           <div className="flex items-center justify-between">

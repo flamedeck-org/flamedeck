@@ -1,8 +1,8 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { ChevronRight } from "lucide-react";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { ChevronRight } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { user } = useAuth();

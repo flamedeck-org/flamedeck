@@ -1,4 +1,4 @@
-import { ViewMode } from "./view-mode";
+import { ViewMode } from './view-mode';
 
 export interface HashParams {
   profileURL?: string;
@@ -9,11 +9,11 @@ export interface HashParams {
 
 function getViewMode(value: string): ViewMode | null {
   switch (value) {
-    case "time-ordered":
+    case 'time-ordered':
       return ViewMode.CHRONO_FLAME_CHART;
-    case "left-heavy":
+    case 'left-heavy':
       return ViewMode.LEFT_HEAVY_FLAME_GRAPH;
-    case "sandwich":
+    case 'sandwich':
       return ViewMode.SANDWICH_VIEW;
     default:
       return null;
@@ -22,21 +22,21 @@ function getViewMode(value: string): ViewMode | null {
 
 export function getHashParams(hashContents = window.location.hash): HashParams {
   try {
-    if (!hashContents.startsWith("#")) {
+    if (!hashContents.startsWith('#')) {
       return {};
     }
-    const components = hashContents.substr(1).split("&");
+    const components = hashContents.substr(1).split('&');
     const result: HashParams = {};
     for (const component of components) {
-      let [key, value] = component.split("=");
+      let [key, value] = component.split('=');
       value = decodeURIComponent(value);
-      if (key === "profileURL") {
+      if (key === 'profileURL') {
         result.profileURL = value;
-      } else if (key === "title") {
+      } else if (key === 'title') {
         result.title = value;
-      } else if (key === "localProfilePath") {
+      } else if (key === 'localProfilePath') {
         result.localProfilePath = value;
-      } else if (key === "view") {
+      } else if (key === 'view') {
         const mode = getViewMode(value);
         if (mode !== null) {
           result.viewMode = mode;

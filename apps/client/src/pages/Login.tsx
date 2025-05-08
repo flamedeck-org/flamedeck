@@ -1,11 +1,11 @@
-import React, { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import Layout from "@/components/Layout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import React, { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login: React.FC = () => {
   const { toast } = useToast();
@@ -17,21 +17,21 @@ const Login: React.FC = () => {
     // Store the intended destination before redirecting to Google
     const from =
       location.state?.from?.pathname ||
-      sessionStorage.getItem("postLoginRedirectPath") ||
-      "/traces";
+      sessionStorage.getItem('postLoginRedirectPath') ||
+      '/traces';
     try {
-      sessionStorage.setItem("postLoginRedirectPath", from);
+      sessionStorage.setItem('postLoginRedirectPath', from);
     } catch (e) {
-      console.error("Failed to set sessionStorage for redirect path:", e);
+      console.error('Failed to set sessionStorage for redirect path:', e);
       // Continue without storing? Or show error? Depends on UX preference.
     }
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider: 'google',
         options: {
           // Redirect to the dedicated callback page
-          redirectTo: window.location.origin + "/auth/callback",
+          redirectTo: window.location.origin + '/auth/callback',
         },
       });
 
@@ -39,9 +39,9 @@ const Login: React.FC = () => {
       // No navigation here, Supabase handles the redirect
     } catch (error) {
       toast({
-        title: "Login failed",
-        description: (error as Error).message || "Something went wrong",
-        variant: "destructive",
+        title: 'Login failed',
+        description: (error as Error).message || 'Something went wrong',
+        variant: 'destructive',
       });
     }
   };

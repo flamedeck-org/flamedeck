@@ -1,8 +1,8 @@
-import { useMemo } from "react";
-import type { User } from "@supabase/supabase-js";
-import type { Tables } from "../integrations/supabase/types"; // Adjust path if needed
+import { useMemo } from 'react';
+import type { User } from '@supabase/supabase-js';
+import type { Tables } from '../integrations/supabase/types'; // Adjust path if needed
 
-type UserProfile = Tables<"user_profiles"> | null | undefined;
+type UserProfile = Tables<'user_profiles'> | null | undefined;
 
 /**
  * Custom hook to determine the best display name for a user.
@@ -26,7 +26,7 @@ export function useDisplayName(profile: UserProfile, user: User | null | undefin
       return user.email;
     }
     // Final fallback
-    return "User";
+    return 'User';
   }, [profile, user]); // Dependencies: profile and user objects
 
   return displayName;

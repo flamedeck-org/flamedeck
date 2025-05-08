@@ -84,14 +84,14 @@ export function itReduce<T, U>(it: Iterable<T>, f: (a: U, b: T) => U, init: U): 
 }
 
 export function zeroPad(s: string, width: number) {
-  return new Array(Math.max(width - s.length, 0) + 1).join("0") + s;
+  return new Array(Math.max(width - s.length, 0) + 1).join('0') + s;
 }
 
 export function formatPercent(percent: number) {
   let formattedPercent = `${percent.toFixed(0)}%`;
-  if (percent === 100) formattedPercent = "100%";
-  else if (percent > 99) formattedPercent = ">99%";
-  else if (percent < 0.01) formattedPercent = "<0.01%";
+  if (percent === 100) formattedPercent = '100%';
+  else if (percent > 99) formattedPercent = '>99%';
+  else if (percent < 0.01) formattedPercent = '<0.01%';
   else if (percent < 1) formattedPercent = `${percent.toFixed(2)}%`;
   else if (percent < 10) formattedPercent = `${percent.toFixed(1)}%`;
   return formattedPercent;
@@ -214,12 +214,12 @@ export function lazyStatic<T>(cb: () => T): () => T {
 }
 
 const base64lookupTable = lazyStatic((): Map<string, number> => {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   const ret = new Map<string, number>();
   for (let i = 0; i < alphabet.length; i++) {
     ret.set(alphabet.charAt(i), i);
   }
-  ret.set("=", -1);
+  ret.set('=', -1);
   return ret;
 });
 
@@ -273,8 +273,8 @@ export function decodeBase64(encoded: string): Uint8Array {
   //     final unit of encoded output will be three characters followed by
   //     one "=" padding character.
   if (encoded.length >= 4) {
-    if (encoded.charAt(encoded.length - 1) === "=") {
-      if (encoded.charAt(encoded.length - 2) === "=") {
+    if (encoded.charAt(encoded.length - 1) === '=') {
+      if (encoded.charAt(encoded.length - 2) === '=') {
         // Case (2)
         byteCount = quartetCount * 3 - 2;
       } else {
@@ -314,10 +314,10 @@ export function decodeBase64(encoded: string): Uint8Array {
     }
 
     bytes[offset++] = (sextet1 << 2) | (sextet2 >> 4);
-    if (enc3 !== "=") {
+    if (enc3 !== '=') {
       bytes[offset++] = ((sextet2 & 15) << 4) | (sextet3 >> 2);
     }
-    if (enc4 !== "=") {
+    if (enc4 !== '=') {
       bytes[offset++] = ((sextet3 & 7) << 6) | sextet4;
     }
   }

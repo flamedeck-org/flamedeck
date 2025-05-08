@@ -1,5 +1,5 @@
-import type { ProfileType } from "@trace-view-pilot/shared-importer";
-import { User } from "@supabase/supabase-js";
+import type { ProfileType } from '@trace-view-pilot/shared-importer';
+import { User } from '@supabase/supabase-js';
 
 export interface UserProfile {
   id: string; // uuid
@@ -21,11 +21,11 @@ export interface TraceMetadata {
   file_size_bytes: number;
   uploaded_at: string; // ISO 8601 timestamp
   updated_at: string; // ISO 8601 timestamp
-  profile_type: ProfileType | "unknown";
+  profile_type: ProfileType | 'unknown';
   notes: string | null;
   owner: UserProfile | null; // Joined user profile data
   folder_id: string | null; // UUID of the parent folder
-  upload_source: "web" | "api"; // Source of the upload
+  upload_source: 'web' | 'api'; // Source of the upload
 }
 
 // Type for uploading new traces (subset of TraceMetadata)
@@ -35,7 +35,7 @@ export interface TraceUpload {
   scenario: string;
   duration_ms: number;
   file_size_bytes: number;
-  profile_type: ProfileType | "unknown";
+  profile_type: ProfileType | 'unknown';
   notes: string | null;
   blob_path: string; // Added temporarily during upload, then becomes part of TraceMetadata
 }

@@ -27,11 +27,11 @@
 
 // Dependencies & polyfills for import from skew
 const RELEASE =
-  typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production";
+  typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
 
 function assert(condition: boolean) {
   if (!RELEASE) {
-    if (!condition) throw new Error("Assertion failed.");
+    if (!condition) throw new Error('Assertion failed.');
   }
 }
 
@@ -332,9 +332,9 @@ export namespace WebGL {
       return this._height;
     }
 
-    constructor(canvas: HTMLCanvasElement = document.createElement("canvas")) {
+    constructor(canvas: HTMLCanvasElement = document.createElement('canvas')) {
       super();
-      const gl = canvas.getContext("webgl", {
+      const gl = canvas.getContext('webgl', {
         alpha: false,
         antialias: false,
         depth: false,
@@ -343,20 +343,20 @@ export namespace WebGL {
       });
 
       if (gl == null) {
-        throw new Error("Setup failure");
+        throw new Error('Setup failure');
       }
 
       this._gl = gl;
       const style = canvas.style;
       canvas.width = 0;
       canvas.height = 0;
-      style.width = style.height = "0";
+      style.width = style.height = '0';
 
-      canvas.addEventListener("webglcontextlost", (e: Event) => {
+      canvas.addEventListener('webglcontextlost', (e: Event) => {
         e.preventDefault();
       });
 
-      canvas.addEventListener("webglcontextrestored", this.handleWebglContextRestored);
+      canvas.addEventListener('webglcontextrestored', this.handleWebglContextRestored);
 
       // Using maps makes these compact in release
       this._blendOperationMap = {
@@ -561,9 +561,9 @@ export namespace WebGL {
         this.ANGLE_instanced_arrays = null;
       }
       if (!this.ANGLE_instanced_arrays) {
-        this.ANGLE_instanced_arrays = this.gl.getExtension("ANGLE_instanced_arrays");
+        this.ANGLE_instanced_arrays = this.gl.getExtension('ANGLE_instanced_arrays');
         if (!this.ANGLE_instanced_arrays) {
-          throw new Error("Failed to get extension ANGLE_instanced_arrays");
+          throw new Error('Failed to get extension ANGLE_instanced_arrays');
         }
       }
       return this.ANGLE_instanced_arrays!;
@@ -648,7 +648,7 @@ export namespace WebGL {
     }
 
     getWebGLInfo(): { renderer: string | null; vendor: string | null; version: string | null } {
-      const ext = this.gl.getExtension("WEBGL_debug_renderer_info");
+      const ext = this.gl.getExtension('WEBGL_debug_renderer_info');
       const renderer = ext ? this.gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : null;
       const vendor = ext ? this.gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) : null;
       const version = this.gl.getParameter(this.gl.VERSION);
@@ -736,7 +736,7 @@ export namespace WebGL {
         }
       }
       if (!this._location) {
-        throw new Error("Failed to get uniform location");
+        throw new Error('Failed to get uniform location');
       }
       return this._location;
     }
@@ -1110,7 +1110,7 @@ export namespace WebGL {
     _compileShader(gl: WebGLRenderingContext, type: GLenum, source: string) {
       const shader = gl.createShader(type);
       if (!shader) {
-        throw new Error("Failed to create shader");
+        throw new Error('Failed to create shader');
       }
       gl.shaderSource(shader, source);
       gl.compileShader(shader);
@@ -1118,7 +1118,7 @@ export namespace WebGL {
         throw new Error(`${gl.getShaderInfoLog(shader)}`);
       }
       if (!this._program) {
-        throw new Error("Tried to attach shader before program was created");
+        throw new Error('Tried to attach shader before program was created');
       }
       gl.attachShader(this._program, shader);
     }

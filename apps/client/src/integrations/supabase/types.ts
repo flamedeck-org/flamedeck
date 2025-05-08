@@ -33,11 +33,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "ai_chat_continuations_trace_id_fkey";
-            columns: ["trace_id"];
+            foreignKeyName: 'ai_chat_continuations_trace_id_fkey';
+            columns: ['trace_id'];
             isOneToOne: false;
-            referencedRelation: "traces";
-            referencedColumns: ["id"];
+            referencedRelation: 'traces';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -101,18 +101,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "folders_parent_folder_id_fkey";
-            columns: ["parent_folder_id"];
+            foreignKeyName: 'folders_parent_folder_id_fkey';
+            columns: ['parent_folder_id'];
             isOneToOne: false;
-            referencedRelation: "folders";
-            referencedColumns: ["id"];
+            referencedRelation: 'folders';
+            referencedColumns: ['id'];
           },
           {
-            foreignKeyName: "folders_user_id_fkey";
-            columns: ["user_id"];
+            foreignKeyName: 'folders_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: false;
-            referencedRelation: "user_profiles";
-            referencedColumns: ["id"];
+            referencedRelation: 'user_profiles';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -203,25 +203,25 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "trace_comments_parent_comment_id_fkey";
-            columns: ["parent_comment_id"];
+            foreignKeyName: 'trace_comments_parent_comment_id_fkey';
+            columns: ['parent_comment_id'];
             isOneToOne: false;
-            referencedRelation: "trace_comments";
-            referencedColumns: ["id"];
+            referencedRelation: 'trace_comments';
+            referencedColumns: ['id'];
           },
           {
-            foreignKeyName: "trace_comments_trace_id_fkey";
-            columns: ["trace_id"];
+            foreignKeyName: 'trace_comments_trace_id_fkey';
+            columns: ['trace_id'];
             isOneToOne: false;
-            referencedRelation: "traces";
-            referencedColumns: ["id"];
+            referencedRelation: 'traces';
+            referencedColumns: ['id'];
           },
           {
-            foreignKeyName: "trace_comments_user_id_fkey";
-            columns: ["user_id"];
+            foreignKeyName: 'trace_comments_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: false;
-            referencedRelation: "user_profiles";
-            referencedColumns: ["id"];
+            referencedRelation: 'user_profiles';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -229,7 +229,7 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
-          role: Database["public"]["Enums"]["trace_role"];
+          role: Database['public']['Enums']['trace_role'];
           trace_id: string;
           updated_at: string;
           user_id: string | null;
@@ -237,7 +237,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
-          role: Database["public"]["Enums"]["trace_role"];
+          role: Database['public']['Enums']['trace_role'];
           trace_id: string;
           updated_at?: string;
           user_id?: string | null;
@@ -245,25 +245,25 @@ export type Database = {
         Update: {
           created_at?: string;
           id?: string;
-          role?: Database["public"]["Enums"]["trace_role"];
+          role?: Database['public']['Enums']['trace_role'];
           trace_id?: string;
           updated_at?: string;
           user_id?: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: "trace_permissions_trace_id_fkey";
-            columns: ["trace_id"];
+            foreignKeyName: 'trace_permissions_trace_id_fkey';
+            columns: ['trace_id'];
             isOneToOne: false;
-            referencedRelation: "traces";
-            referencedColumns: ["id"];
+            referencedRelation: 'traces';
+            referencedColumns: ['id'];
           },
           {
-            foreignKeyName: "trace_permissions_user_id_fkey";
-            columns: ["user_id"];
+            foreignKeyName: 'trace_permissions_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: false;
-            referencedRelation: "user_profiles";
-            referencedColumns: ["id"];
+            referencedRelation: 'user_profiles';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -324,18 +324,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "traces_folder_id_fkey";
-            columns: ["folder_id"];
+            foreignKeyName: 'traces_folder_id_fkey';
+            columns: ['folder_id'];
             isOneToOne: false;
-            referencedRelation: "folders";
-            referencedColumns: ["id"];
+            referencedRelation: 'folders';
+            referencedColumns: ['id'];
           },
           {
-            foreignKeyName: "traces_user_id_fkey";
-            columns: ["user_id"];
+            foreignKeyName: 'traces_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: false;
-            referencedRelation: "user_profiles";
-            referencedColumns: ["id"];
+            referencedRelation: 'user_profiles';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -414,18 +414,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "user_subscriptions_plan_id_fkey";
-            columns: ["plan_id"];
+            foreignKeyName: 'user_subscriptions_plan_id_fkey';
+            columns: ['plan_id'];
             isOneToOne: false;
-            referencedRelation: "subscription_plans";
-            referencedColumns: ["id"];
+            referencedRelation: 'subscription_plans';
+            referencedColumns: ['id'];
           },
           {
-            foreignKeyName: "user_subscriptions_user_id_fkey";
-            columns: ["user_id"];
+            foreignKeyName: 'user_subscriptions_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: true;
-            referencedRelation: "user_profiles";
-            referencedColumns: ["id"];
+            referencedRelation: 'user_profiles';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -438,7 +438,7 @@ export type Database = {
         Args: {
           p_trace_id: string;
           p_user_id: string;
-          min_role: Database["public"]["Enums"]["trace_role"];
+          min_role: Database['public']['Enums']['trace_role'];
         };
         Returns: boolean;
       };
@@ -577,23 +577,23 @@ export type Database = {
         }[];
       };
       gtrgm_compress: {
-        Args: { "": unknown };
+        Args: { '': unknown };
         Returns: unknown;
       };
       gtrgm_decompress: {
-        Args: { "": unknown };
+        Args: { '': unknown };
         Returns: unknown;
       };
       gtrgm_in: {
-        Args: { "": unknown };
+        Args: { '': unknown };
         Returns: unknown;
       };
       gtrgm_options: {
-        Args: { "": unknown };
+        Args: { '': unknown };
         Returns: undefined;
       };
       gtrgm_out: {
-        Args: { "": unknown };
+        Args: { '': unknown };
         Returns: unknown;
       };
       reset_expired_monthly_limits: {
@@ -601,7 +601,7 @@ export type Database = {
         Returns: undefined;
       };
       set_limit: {
-        Args: { "": number };
+        Args: { '': number };
         Returns: number;
       };
       show_limit: {
@@ -609,7 +609,7 @@ export type Database = {
         Returns: number;
       };
       show_trgm: {
-        Args: { "": string };
+        Args: { '': string };
         Returns: string[];
       };
       verify_api_key: {
@@ -622,7 +622,7 @@ export type Database = {
       };
     };
     Enums: {
-      trace_role: "viewer" | "editor" | "owner";
+      trace_role: 'viewer' | 'editor' | 'owner';
     };
     CompositeTypes: {
       trace_with_owner: {
@@ -645,27 +645,27 @@ export type Database = {
   };
 };
 
-type DefaultSchema = Database[Extract<keyof Database, "public">];
+type DefaultSchema = Database[Extract<keyof Database, 'public'>];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof Database;
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        Database[DefaultSchemaTableNameOrOptions['schema']]['Views'])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      Database[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R;
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R;
       }
       ? R
@@ -674,21 +674,21 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof Database;
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Insert: infer I;
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I;
       }
       ? I
@@ -697,21 +697,21 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof Database;
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Update: infer U;
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U;
       }
       ? U
@@ -719,37 +719,37 @@ export type TablesUpdate<
     : never;
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"] | { schema: keyof Database },
+  DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums'] | { schema: keyof Database },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof Database;
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof Database[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  ? Database[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
     : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
+    | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database;
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  ? Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never;
 
 export const Constants = {
   public: {
     Enums: {
-      trace_role: ["viewer", "editor", "owner"],
+      trace_role: ['viewer', 'editor', 'owner'],
     },
   },
 } as const;

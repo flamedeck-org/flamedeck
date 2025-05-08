@@ -1,6 +1,6 @@
-import React, { useCallback } from "react";
-import type { Vec2 } from "../../lib/speedscope-core/math";
-import { useTheme } from "./themes/theme";
+import React, { useCallback } from 'react';
+import type { Vec2 } from '../../lib/speedscope-core/math';
+import { useTheme } from './themes/theme';
 
 interface HovertipProps {
   containerSize: Vec2;
@@ -66,8 +66,8 @@ export function Hovertip(props: HovertipProps) {
         backgroundColor: theme.bgPrimaryColor,
         borderColor: theme.fgPrimaryColor,
         color: theme.fgPrimaryColor,
-        borderWidth: "1px",
-        borderStyle: "solid",
+        borderWidth: '1px',
+        borderStyle: 'solid',
       }}
       ref={updateLocation}
     >

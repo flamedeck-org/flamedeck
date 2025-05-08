@@ -1,2 +1,2 @@
-import TraceList from "./TraceList";
+import TraceList from './TraceList';
 export default TraceList;

@@ -1,8 +1,8 @@
-import { Atom } from "../atom";
-import { clamp, Rect, Vec2 } from "../math";
-import type { CallTreeNode, Frame, Profile, ProfileGroup } from "../profile";
-import { FrameInfo } from "../profile";
-import { objectsHaveShallowEquality } from "../lib-utils";
+import { Atom } from '../atom';
+import { clamp, Rect, Vec2 } from '../math';
+import type { CallTreeNode, Frame, Profile, ProfileGroup } from '../profile';
+import { FrameInfo } from '../profile';
+import { objectsHaveShallowEquality } from '../lib-utils';
 
 export interface FlamechartViewState {
   hover: {
@@ -42,10 +42,10 @@ export type ProfileGroupState = {
 } | null;
 
 export enum FlamechartID {
-  LEFT_HEAVY = "LEFT_HEAVY",
-  CHRONO = "CHRONO",
-  SANDWICH_INVERTED_CALLERS = "SANDWICH_INVERTED_CALLERS",
-  SANDWICH_CALLEES = "SANDWICH_CALLEES",
+  LEFT_HEAVY = 'LEFT_HEAVY',
+  CHRONO = 'CHRONO',
+  SANDWICH_INVERTED_CALLERS = 'SANDWICH_INVERTED_CALLERS',
+  SANDWICH_CALLEES = 'SANDWICH_CALLEES',
 }
 
 const initialFlameChartViewState: FlamechartViewState = {

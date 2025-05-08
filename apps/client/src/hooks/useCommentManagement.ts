@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import type { TraceCommentWithAuthor } from "@/lib/api";
+import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import type { TraceCommentWithAuthor } from '@/lib/api';
 
 // Define a no-op function for unauthenticated state
 const noOp = () => {};
@@ -29,7 +29,7 @@ export function useCommentManagement(traceId: string | undefined, isAuthenticate
 
       console.log(`[useCommentManagement] Updating cache for trace ${traceId}`, updatedComment);
 
-      queryClient.setQueryData<TraceCommentWithAuthor[]>(["traceComments", traceId], (oldData) => {
+      queryClient.setQueryData<TraceCommentWithAuthor[]>(['traceComments', traceId], (oldData) => {
         if (!oldData) return [];
         return oldData.map((comment) =>
           comment.id === updatedComment.id ? updatedComment : comment

@@ -1,8 +1,8 @@
-import { Color } from "@/lib/speedscope-core/color";
-import type { AffineTransform, Rect } from "@/lib/speedscope-core/math";
-import type { Theme } from "@/components/speedscope-ui/themes/theme";
-import { Graphics } from "./graphics";
-import { setUniformAffineTransform, setUniformVec2 } from "./utils";
+import { Color } from '@/lib/speedscope-core/color';
+import type { AffineTransform, Rect } from '@/lib/speedscope-core/math';
+import type { Theme } from '@/components/speedscope-ui/themes/theme';
+import { Graphics } from './graphics';
+import { setUniformAffineTransform, setUniformVec2 } from './utils';
 
 export interface ViewportRectangleRendererProps {
   configSpaceToPhysicalViewSpace: AffineTransform;
@@ -10,7 +10,7 @@ export interface ViewportRectangleRendererProps {
 }
 
 const vertexFormat = new Graphics.VertexFormat();
-vertexFormat.add("position", Graphics.AttributeType.FLOAT, 2);
+vertexFormat.add('position', Graphics.AttributeType.FLOAT, 2);
 
 const vert = `
   attribute vec2 position;
@@ -21,7 +21,7 @@ const vert = `
 `;
 
 const frag = (theme: Theme) => {
-  console.log("theme in overlay rectangle renderer", theme);
+  console.log('theme in overlay rectangle renderer', theme);
   const { r, g, b } = Color.fromCSSHex(theme.fgSecondaryColor);
   const rgb = `${r.toFixed(1)}, ${g.toFixed(1)}, ${b.toFixed(1)}`;
   return `
@@ -75,7 +75,7 @@ export class ViewportRectangleRenderer {
     private gl: Graphics.Context,
     theme: Theme
   ) {
-    console.log("instantiating overlay rectangle renderer");
+    console.log('instantiating overlay rectangle renderer');
     const vertices = [
       [-1, 1],
       [1, 1],
@@ -95,24 +95,24 @@ export class ViewportRectangleRenderer {
   render(props: ViewportRectangleRendererProps) {
     setUniformAffineTransform(
       this.material,
-      "configSpaceToPhysicalViewSpace",
+      'configSpaceToPhysicalViewSpace',
       props.configSpaceToPhysicalViewSpace
     );
 
     // TODO(jlfwong): Pack these into a Vec4 instead
     setUniformVec2(
       this.material,
-      "configSpaceViewportOrigin",
+      'configSpaceViewportOrigin',
       props.configSpaceViewportRect.origin
     );
-    setUniformVec2(this.material, "configSpaceViewportSize", props.configSpaceViewportRect.size);
+    setUniformVec2(this.material, 'configSpaceViewportSize', props.configSpaceViewportRect.size);
     // TODO(jlfwong): Pack these into a Vec4 instead
 
     const viewport = this.gl.viewport;
-    this.material.setUniformVec2("physicalOrigin", viewport.x, viewport.y);
-    this.material.setUniformVec2("physicalSize", viewport.width, viewport.height);
+    this.material.setUniformVec2('physicalOrigin', viewport.x, viewport.y);
+    this.material.setUniformVec2('physicalSize', viewport.width, viewport.height);
 
-    this.material.setUniformFloat("framebufferHeight", this.gl.renderTargetHeightInPixels);
+    this.material.setUniformFloat('framebufferHeight', this.gl.renderTargetHeightInPixels);
 
     this.gl.setBlendState(
       Graphics.BlendOperation.SOURCE_ALPHA,

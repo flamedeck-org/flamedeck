@@ -1,30 +1,30 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import type { SubmitHandler } from "react-hook-form";
-import { useForm } from "react-hook-form";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { Folder } from "@/lib/api";
-import { traceApi } from "@/lib/api";
-import type { TraceUpload, ApiError } from "@/types";
-import { AlertCircle, Loader2, Edit } from "lucide-react";
-import { useTraceProcessor } from "./hooks/useTraceProcessor";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { FolderSelectDialog } from "@/components/FolderSelectDialog";
-import { getFolderViewQueryKey } from "@/components/TraceList/hooks/useTraces";
-import { getSubscriptionUsageQueryKey } from "@/hooks/useSubscriptionUsage";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import type { SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { Folder } from '@/lib/api';
+import { traceApi } from '@/lib/api';
+import type { TraceUpload, ApiError } from '@/types';
+import { AlertCircle, Loader2, Edit } from 'lucide-react';
+import { useTraceProcessor } from './hooks/useTraceProcessor';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { FolderSelectDialog } from '@/components/FolderSelectDialog';
+import { getFolderViewQueryKey } from '@/components/TraceList/hooks/useTraces';
+import { getSubscriptionUsageQueryKey } from '@/hooks/useSubscriptionUsage';
 
 // Define the shape of our form data
 type FormFields = Omit<
   TraceUpload,
-  "blob_path" | "duration_ms" | "profile_type" | "id" | "created_at" | "user_id" | "file_name"
+  'blob_path' | 'duration_ms' | 'profile_type' | 'id' | 'created_at' | 'user_id' | 'file_name'
 >;
 
 // Define component props
@@ -52,7 +52,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
     isLoading: isLoadingSelectedFolder,
     error: selectedFolderError,
   } = useQuery<Folder | null, ApiError>({
-    queryKey: ["folder", selectedFolderId],
+    queryKey: ['folder', selectedFolderId],
     queryFn: async () => {
       if (!selectedFolderId) return null;
       const response = await traceApi.getFolder(selectedFolderId);
@@ -67,11 +67,11 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
 
   // Determine display text based on query state (memoized)
   const targetFolderInfo = useMemo(() => {
-    if (selectedFolderId === null) return "My Traces (Root)";
-    if (isLoadingSelectedFolder) return "Loading folder name...";
+    if (selectedFolderId === null) return 'My Traces (Root)';
+    if (isLoadingSelectedFolder) return 'Loading folder name...';
     if (selectedFolderError) return `Error: ${selectedFolderError.message}`;
     if (selectedFolderData) return selectedFolderData.name;
-    return "Unknown Folder";
+    return 'Unknown Folder';
   }, [selectedFolderId, isLoadingSelectedFolder, selectedFolderError, selectedFolderData]);
 
   // Determine if target folder has an error (memoized)
@@ -88,12 +88,12 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
     formState: { errors, dirtyFields },
   } = useForm<FormFields>({
     defaultValues: {
-      commit_sha: "",
-      branch: "",
-      scenario: "",
-      notes: "",
+      commit_sha: '',
+      branch: '',
+      scenario: '',
+      notes: '',
     },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   // Use the custom hook for processing
@@ -106,10 +106,10 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       setFile(initialFile);
       // Trigger processing immediately if initial file is provided
       // (useTraceProcessor hook depends on the 'file' state)
-      const fileNameWithoutExt = initialFile.name.split(".").slice(0, -1).join(".");
+      const fileNameWithoutExt = initialFile.name.split('.').slice(0, -1).join('.');
       if (!dirtyFields.scenario) {
         // Only set if not already dirty
-        setValue("scenario", fileNameWithoutExt, { shouldDirty: true });
+        setValue('scenario', fileNameWithoutExt, { shouldDirty: true });
       }
     } else {
       // If initialFile is removed or not provided, clear the file state
@@ -127,20 +127,20 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       if (selectedFile) {
         if (selectedFile.size > 100 * 1024 * 1024) {
           toast({
-            title: "File too large",
-            description: "Maximum file size is 100MB",
-            variant: "destructive",
+            title: 'File too large',
+            description: 'Maximum file size is 100MB',
+            variant: 'destructive',
           });
           setFile(null);
-          setValue("scenario", "");
+          setValue('scenario', '');
           return;
         }
         setFile(selectedFile);
-        const fileNameWithoutExt = selectedFile.name.split(".").slice(0, -1).join(".");
-        setValue("scenario", fileNameWithoutExt, { shouldDirty: true });
+        const fileNameWithoutExt = selectedFile.name.split('.').slice(0, -1).join('.');
+        setValue('scenario', fileNameWithoutExt, { shouldDirty: true });
       } else {
         setFile(null);
-        setValue("scenario", "");
+        setValue('scenario', '');
       }
     },
     [toast, setValue]
@@ -150,7 +150,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
     setFile(null);
     // Also clear potential processing errors related to the old file
     setUploadError(null);
-    setValue("scenario", "");
+    setValue('scenario', '');
     // If we clear the file, and there was an initial file, we might want to inform the parent
     // This depends on whether the UploadDialog is intended to be fully standalone
     // or if the parent needs to know the initial file was discarded.
@@ -166,20 +166,20 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       if (droppedFile) {
         if (droppedFile.size > 100 * 1024 * 1024) {
           toast({
-            title: "File too large",
-            description: "Maximum file size is 100MB",
-            variant: "destructive",
+            title: 'File too large',
+            description: 'Maximum file size is 100MB',
+            variant: 'destructive',
           });
           setFile(null);
-          setValue("scenario", "");
+          setValue('scenario', '');
           return;
         }
         setFile(droppedFile);
-        const fileNameWithoutExt = droppedFile.name.split(".").slice(0, -1).join(".");
-        setValue("scenario", fileNameWithoutExt, { shouldDirty: true });
+        const fileNameWithoutExt = droppedFile.name.split('.').slice(0, -1).join('.');
+        setValue('scenario', fileNameWithoutExt, { shouldDirty: true });
       } else {
         setFile(null);
-        setValue("scenario", "");
+        setValue('scenario', '');
       }
     },
     [toast, setValue]
@@ -194,7 +194,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
     (folderId: string | null) => {
       setSelectedFolderId(folderId);
       if (folderId) {
-        queryClient.invalidateQueries({ queryKey: ["folder", folderId] });
+        queryClient.invalidateQueries({ queryKey: ['folder', folderId] });
       }
       setIsMoveDialogOpen(false);
     },
@@ -206,26 +206,26 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
     async (formData) => {
       // Add file null check inside callback
       if (!file) {
-        toast({ title: "No file selected", /*...*/ variant: "destructive" });
+        toast({ title: 'No file selected', /*...*/ variant: 'destructive' });
         return;
       }
       // Add processing checks inside callback
       if (isProcessing) {
-        toast({ title: "Processing in progress" /*...*/ });
+        toast({ title: 'Processing in progress' /*...*/ });
         return;
       }
       if (processingError) {
         toast({
-          title: "Cannot Upload",
+          title: 'Cannot Upload',
           description: `The selected file failed processing: ${processingError}. Please select a different file.`,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return;
       }
       if (!processedFile || processedDurationMs === null || !profileType) {
-        toast({ title: "Processing Not Complete", /*...*/ variant: "destructive" });
+        toast({ title: 'Processing Not Complete', /*...*/ variant: 'destructive' });
         console.error(
-          "Submit called but processedFile, processedDurationMs, or profileType is missing",
+          'Submit called but processedFile, processedDurationMs, or profileType is missing',
           { processedFile, processedDurationMs, profileType }
         );
         return;
@@ -233,9 +233,9 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       // Add check for folder loading error inside callback
       if (isTargetFolderError && selectedFolderId) {
         toast({
-          title: "Cannot Upload",
-          description: "Target folder details could not be loaded. Please go back and try again.",
-          variant: "destructive",
+          title: 'Cannot Upload',
+          description: 'Target folder details could not be loaded. Please go back and try again.',
+          variant: 'destructive',
         });
         return;
       }
@@ -244,7 +244,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       setUploadError(null);
 
       try {
-        const finalMetadata: Omit<TraceUpload, "blob_path"> = {
+        const finalMetadata: Omit<TraceUpload, 'blob_path'> = {
           ...formData,
           duration_ms: processedDurationMs,
           profile_type: profileType,
@@ -263,15 +263,15 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
         if (response.error) {
           setUploadError(response.error.message);
           toast({
-            title: "Upload failed",
+            title: 'Upload failed',
             description: response.error.message,
-            variant: "destructive",
+            variant: 'destructive',
           });
         } else {
           // const newTraceId = response.data?.id;
           toast({
-            title: "Trace saved",
-            description: "Your trace file has been processed and uploaded successfully",
+            title: 'Trace saved',
+            description: 'Your trace file has been processed and uploaded successfully',
             // action: newTraceId ? (
             //   <ToastAction
             //     altText="View Trace"
@@ -282,7 +282,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
             // ) : undefined,
           });
 
-          queryClient.invalidateQueries({ queryKey: getFolderViewQueryKey(selectedFolderId, "") });
+          queryClient.invalidateQueries({ queryKey: getFolderViewQueryKey(selectedFolderId, '') });
           if (user?.id) {
             queryClient.invalidateQueries({ queryKey: getSubscriptionUsageQueryKey(user.id) });
           }
@@ -293,14 +293,14 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
           if (selectedFolderId) {
             navigate(`/traces/folder/${selectedFolderId}`);
           } else {
-            navigate("/traces");
+            navigate('/traces');
           }
         }
       } catch (error) {
         const errorMessage =
-          error instanceof Error ? error.message : "An unknown error occurred during upload.";
+          error instanceof Error ? error.message : 'An unknown error occurred during upload.';
         setUploadError(errorMessage);
-        toast({ title: "Upload failed", description: errorMessage, variant: "destructive" });
+        toast({ title: 'Upload failed', description: errorMessage, variant: 'destructive' });
       } finally {
         setIsUploading(false);
       }
@@ -368,10 +368,10 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       <div className="flex items-center justify-between mb-4">
         <div
           className={cn(
-            "text-sm p-3 rounded-md flex-grow mr-2",
+            'text-sm p-3 rounded-md flex-grow mr-2',
             isTargetFolderError
-              ? "bg-destructive/10 text-destructive"
-              : "bg-muted text-muted-foreground"
+              ? 'bg-destructive/10 text-destructive'
+              : 'bg-muted text-muted-foreground'
           )}
         >
           Uploading to: <span className="font-medium text-foreground">{targetFolderInfo}</span>
@@ -390,8 +390,8 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       <form onSubmit={handleRHFSubmit(onSubmit)} className="space-y-6">
         <div
           className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            file ? "border-primary/50" : "border-border hover:border-primary/30"
-          } ${isProcessing ? "cursor-wait" : ""}`}
+            file ? 'border-primary/50' : 'border-border hover:border-primary/30'
+          } ${isProcessing ? 'cursor-wait' : ''}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         >
@@ -414,7 +414,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
               </div>
               <div>
                 <p className="text-sm font-medium">
-                  Drag and drop your trace file, or{" "}
+                  Drag and drop your trace file, or{' '}
                   <label className="text-primary cursor-pointer hover:underline">
                     browse
                     <Input
@@ -455,7 +455,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
             <div className="space-y-2">
               <p className="text-sm font-medium">{file.name}</p>
               <p className="text-xs text-muted-foreground">
-                {(file.size / 1024 / 1024).toFixed(2)} MB | Duration:{" "}
+                {(file.size / 1024 / 1024).toFixed(2)} MB | Duration:{' '}
                 {(processedDurationMs / 1000).toFixed(2)}s
               </p>
               <Button type="button" variant="outline" onClick={clearFile} size="sm">
@@ -478,11 +478,11 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
           <Input
             id="scenario"
             placeholder="e.g. cold start"
-            {...register("scenario", { required: "Scenario is required" })}
+            {...register('scenario', { required: 'Scenario is required' })}
             className={cn(
               errors.scenario &&
                 dirtyFields.scenario &&
-                "border-destructive focus-visible:ring-destructive"
+                'border-destructive focus-visible:ring-destructive'
             )}
           />
           {errors.scenario && dirtyFields.scenario && (
@@ -494,11 +494,11 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="commit_sha">Commit SHA</Label>
-              <Input id="commit_sha" placeholder="e.g. a1b2c3d4" {...register("commit_sha")} />
+              <Input id="commit_sha" placeholder="e.g. a1b2c3d4" {...register('commit_sha')} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="branch">Branch</Label>
-              <Input id="branch" placeholder="e.g. main" {...register("branch")} />
+              <Input id="branch" placeholder="e.g. main" {...register('branch')} />
             </div>
           </div>
 
@@ -508,7 +508,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
               id="notes"
               placeholder="Additional information about this trace..."
               rows={3}
-              {...register("notes")}
+              {...register('notes')}
             />
           </div>
         </div>
@@ -520,7 +520,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
             </Button>
           )}
           <Button type="submit" disabled={isSubmitDisabled}>
-            {isUploading ? "Uploading..." : isProcessing ? "Processing..." : "Upload Trace"}
+            {isUploading ? 'Uploading...' : isProcessing ? 'Processing...' : 'Upload Trace'}
           </Button>
         </div>
       </form>

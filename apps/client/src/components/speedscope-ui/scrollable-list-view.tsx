@@ -1,8 +1,8 @@
 // A simple implementation of an efficient scrolling list view which
 // renders only items within the viewport + a couple extra items.
 
-import type { JSX } from "react";
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import type { JSX } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 
 export interface ListItem {
   size: number;
@@ -16,7 +16,7 @@ interface RangeResult {
 
 interface ScrollableListViewProps {
   items: ListItem[];
-  axis: "x" | "y";
+  axis: 'x' | 'y';
   renderItems: (
     firstVisibleIndex: number,
     lastVisibleIndex: number
@@ -37,9 +37,9 @@ export const ScrollableListView = ({
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
 
-  const widthOrHeight = axis === "x" ? "width" : "height";
-  const leftOrTop = axis === "x" ? "left" : "top";
-  const scrollLeftOrScrollTop = axis === "x" ? "scrollLeft" : "scrollTop";
+  const widthOrHeight = axis === 'x' ? 'width' : 'height';
+  const leftOrTop = axis === 'x' ? 'left' : 'top';
+  const scrollLeftOrScrollTop = axis === 'x' ? 'scrollLeft' : 'scrollTop';
 
   // This is kind of a weird hack, but I'm not sure what the better of doing something like this is.
   const offset = initialIndexInView
@@ -122,9 +122,9 @@ export const ScrollableListView = ({
       }
     };
 
-    window.addEventListener("resize", resizeListener);
+    window.addEventListener('resize', resizeListener);
     return () => {
-      window.removeEventListener("resize", resizeListener);
+      window.removeEventListener('resize', resizeListener);
     };
   }, [widthOrHeight]);
 

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useCallback, useMemo } from 'react';
 import {
   Pagination,
   PaginationContent,
@@ -6,7 +6,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
+} from '@/components/ui/pagination';
 
 interface TracePaginationProps {
   currentPage: number;
@@ -60,7 +60,7 @@ const TracePaginationComponent: React.FC<TracePaginationProps> = ({
           <PaginationItem>
             <PaginationPrevious
               onClick={handlePrevious}
-              className={currentPage === 0 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              className={currentPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
               aria-disabled={currentPage === 0}
             />
           </PaginationItem>
@@ -71,7 +71,7 @@ const TracePaginationComponent: React.FC<TracePaginationProps> = ({
             <PaginationNext
               onClick={handleNext}
               className={
-                currentPage >= totalPages - 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+                currentPage >= totalPages - 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
               }
               aria-disabled={currentPage >= totalPages - 1}
             />

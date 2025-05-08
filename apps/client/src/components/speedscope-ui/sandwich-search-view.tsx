@@ -1,6 +1,6 @@
-import React, { memo, useContext, useMemo } from "react";
-import { SearchView } from "./search-view";
-import { SandwichViewContext } from "./sandwich-view";
+import React, { memo, useContext, useMemo } from 'react';
+import { SearchView } from './search-view';
+import { SandwichViewContext } from './sandwich-view';
 
 export const SandwichSearchView = memo(() => {
   const sandwichViewContext = useContext(SandwichViewContext);

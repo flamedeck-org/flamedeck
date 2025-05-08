@@ -1,6 +1,6 @@
-import { Vec2, Rect, AffineTransform } from "@/lib/speedscope-core/math";
-import { Graphics } from "./graphics";
-import { setUniformAffineTransform } from "./utils";
+import { Vec2, Rect, AffineTransform } from '@/lib/speedscope-core/math';
+import { Graphics } from './graphics';
+import { setUniformAffineTransform } from './utils';
 
 export interface TextureRendererProps {
   texture: Graphics.Texture;
@@ -45,8 +45,8 @@ export class TextureRenderer {
 
   constructor(private gl: Graphics.Context) {
     const vertexFormat = new Graphics.VertexFormat();
-    vertexFormat.add("position", Graphics.AttributeType.FLOAT, 2);
-    vertexFormat.add("uv", Graphics.AttributeType.FLOAT, 2);
+    vertexFormat.add('position', Graphics.AttributeType.FLOAT, 2);
+    vertexFormat.add('uv', Graphics.AttributeType.FLOAT, 2);
 
     const vertices = [
       { pos: [-1, 1], uv: [0, 1] },
@@ -68,10 +68,10 @@ export class TextureRenderer {
   }
 
   render(props: TextureRendererProps) {
-    this.material.setUniformSampler("texture", props.texture, 0);
+    this.material.setUniformSampler('texture', props.texture, 0);
     setUniformAffineTransform(
       this.material,
-      "uvTransform",
+      'uvTransform',
       (() => {
         const { srcRect, texture } = props;
         const physicalToUV = AffineTransform.withTranslation(new Vec2(0, 1))
@@ -88,7 +88,7 @@ export class TextureRenderer {
     );
     setUniformAffineTransform(
       this.material,
-      "positionTransform",
+      'positionTransform',
       (() => {
         const { dstRect } = props;
 

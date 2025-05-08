@@ -7,22 +7,22 @@ import {
   useImperativeHandle,
   useEffect,
   memo,
-} from "react";
+} from 'react';
 
-import type { CallTreeNode } from "../../lib/speedscope-core/profile";
-import type { AffineTransform } from "../../lib/speedscope-core/math";
-import { Rect, Vec2 } from "../../lib/speedscope-core/math";
-import { formatPercent } from "../../lib/speedscope-core/lib-utils.ts";
-import { FlamechartMinimapView } from "./flamechart-minimap-view";
+import type { CallTreeNode } from '../../lib/speedscope-core/profile';
+import type { AffineTransform } from '../../lib/speedscope-core/math';
+import { Rect, Vec2 } from '../../lib/speedscope-core/math';
+import { formatPercent } from '../../lib/speedscope-core/lib-utils.ts';
+import { FlamechartMinimapView } from './flamechart-minimap-view';
 
-import { Sizes } from "./style";
-import { FlamechartDetailView } from "./flamechart-detail-view";
-import { FlamechartPanZoomView, type HoverPayload } from "./flamechart-pan-zoom-view";
-import type { FlamechartViewProps as FlamechartViewContainerProps } from "./flamechart-view-container";
-import { ProfileSearchContext } from "./search-view";
-import { FlamechartSearchView } from "./flamechart-search-view";
-import { ContextMenu, ContextMenuDivider } from "@/components/ui/context-menu";
-import { useState } from "react";
+import { Sizes } from './style';
+import { FlamechartDetailView } from './flamechart-detail-view';
+import { FlamechartPanZoomView, type HoverPayload } from './flamechart-pan-zoom-view';
+import type { FlamechartViewProps as FlamechartViewContainerProps } from './flamechart-view-container';
+import { ProfileSearchContext } from './search-view';
+import { FlamechartSearchView } from './flamechart-search-view';
+import { ContextMenu, ContextMenuDivider } from '@/components/ui/context-menu';
+import { useState } from 'react';
 
 // Define the handle type that will be exposed via the ref
 // This should match the methods we want to call on FlamechartPanZoomView

@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import type { NewTraceComment, ApiError } from "@/lib/api";
-import { traceApi } from "@/lib/api";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import React, { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import type { NewTraceComment, ApiError } from '@/lib/api';
+import { traceApi } from '@/lib/api';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProfileCommentFormProps {
   traceId: string;
@@ -26,32 +26,32 @@ const ProfileCommentForm: React.FC<ProfileCommentFormProps> = ({
   commentIdentifier,
   onCommentPosted,
   onCancel,
-  placeholder = "Add a comment...",
+  placeholder = 'Add a comment...',
   autoFocus = false,
 }) => {
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState('');
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
-    setContent("");
+    setContent('');
   }, [commentIdentifier, commentType]);
 
   const commentMutation = useMutation({
     mutationFn: (newComment: NewTraceComment & { trace_id: string }) =>
       traceApi.createTraceComment(newComment, user.id),
     onSuccess: () => {
-      setContent("");
-      queryClient.invalidateQueries({ queryKey: ["traceComments", traceId] });
-      toast({ title: "Comment posted!" });
+      setContent('');
+      queryClient.invalidateQueries({ queryKey: ['traceComments', traceId] });
+      toast({ title: 'Comment posted!' });
       onCommentPosted?.();
     },
     onError: (error: ApiError) => {
       toast({
-        title: "Error posting comment",
-        description: error.message || "An unknown error occurred.",
-        variant: "destructive",
+        title: 'Error posting comment',
+        description: error.message || 'An unknown error occurred.',
+        variant: 'destructive',
       });
     },
   });
@@ -73,7 +73,7 @@ const ProfileCommentForm: React.FC<ProfileCommentFormProps> = ({
   };
 
   const handleCancel = () => {
-    setContent("");
+    setContent('');
     onCancel?.();
   };
 
@@ -105,7 +105,7 @@ const ProfileCommentForm: React.FC<ProfileCommentFormProps> = ({
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Posting...
             </>
           ) : (
-            "Post Comment"
+            'Post Comment'
           )}
         </Button>
       </div>

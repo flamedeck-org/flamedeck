@@ -1,31 +1,31 @@
-import { useState, useMemo } from "react";
-import type { InfiniteData } from "@tanstack/react-query";
-import { useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
-import type { Folder } from "@/lib/api";
-import { traceApi } from "@/lib/api";
-import type { TraceMetadata } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import type { PostgrestError } from "@supabase/supabase-js";
+import { useState, useMemo } from 'react';
+import type { InfiniteData } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
+import type { Folder } from '@/lib/api';
+import { traceApi } from '@/lib/api';
+import type { TraceMetadata } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 type ExplicitFolderViewData = {
-  path: Pick<Folder, "id" | "name">[];
+  path: Pick<Folder, 'id' | 'name'>[];
   currentFolder: Folder | null;
   childFolders: Folder[];
   childTraces: TraceMetadata[];
 };
 
 const TRACE_LIST_PAGE_SIZE = 10;
-export const FOLDER_VIEW_QUERY_KEY = "folderView";
+export const FOLDER_VIEW_QUERY_KEY = 'folderView';
 
 export function getFolderViewQueryKey(folderId: string | null, searchQuery: string) {
-  return [FOLDER_VIEW_QUERY_KEY, folderId || "root", searchQuery];
+  return [FOLDER_VIEW_QUERY_KEY, folderId || 'root', searchQuery];
 }
 
 export function useTraces() {
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const queryClient = useQueryClient();
 
   const { folderId: folderIdFromParams } = useParams<{ folderId?: string }>();
@@ -49,13 +49,13 @@ export function useTraces() {
   >({
     queryKey: getFolderViewQueryKey(currentFolderId, searchQuery),
     queryFn: async ({ pageParam = 0 }) => {
-      if (!user?.id) throw new Error("User not authenticated");
+      if (!user?.id) throw new Error('User not authenticated');
 
       console.log(
-        `[RPC] Fetching view for folder: ${currentFolderId || "root"}, page: ${pageParam}, search: ${searchQuery}`
+        `[RPC] Fetching view for folder: ${currentFolderId || 'root'}, page: ${pageParam}, search: ${searchQuery}`
       );
 
-      const { data, error } = await supabase.rpc("get_folder_view_data", {
+      const { data, error } = await supabase.rpc('get_folder_view_data', {
         p_user_id: user.id,
         p_folder_id: currentFolderId,
         p_page: pageParam,
@@ -64,11 +64,11 @@ export function useTraces() {
       });
 
       if (error) {
-        console.error("Error fetching folder view data:", error);
+        console.error('Error fetching folder view data:', error);
         toast({
-          title: "Error loading folder contents",
+          title: 'Error loading folder contents',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         });
         throw error;
       }
@@ -95,13 +95,13 @@ export function useTraces() {
   const deleteTraceMutation = useMutation({
     mutationFn: (traceId: string) => traceApi.deleteTrace(traceId),
     onSuccess: (data, traceId) => {
-      toast({ title: "Trace deleted successfully" });
+      toast({ title: 'Trace deleted successfully' });
       queryClient.invalidateQueries({
-        queryKey: [FOLDER_VIEW_QUERY_KEY, currentFolderId || "root", searchQuery],
+        queryKey: [FOLDER_VIEW_QUERY_KEY, currentFolderId || 'root', searchQuery],
       });
     },
     onError: (error: PostgrestError, traceId) => {
-      toast({ title: "Error deleting trace", description: error.message, variant: "destructive" });
+      toast({ title: 'Error deleting trace', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -111,11 +111,11 @@ export function useTraces() {
     onSuccess: (data, variables) => {
       toast({ title: `Folder "${variables.name}" created successfully` });
       queryClient.invalidateQueries({
-        queryKey: [FOLDER_VIEW_QUERY_KEY, variables.parentFolderId || "root", searchQuery],
+        queryKey: [FOLDER_VIEW_QUERY_KEY, variables.parentFolderId || 'root', searchQuery],
       });
     },
     onError: (error: PostgrestError, variables) => {
-      toast({ title: "Error creating folder", description: error.message, variant: "destructive" });
+      toast({ title: 'Error creating folder', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -137,7 +137,7 @@ export function useTraces() {
     TRACE_LIST_PAGE_SIZE,
     fetchNextPage,
     hasNextPage,
-    isLoading: status === "pending",
+    isLoading: status === 'pending',
     isFetchingNextPage,
     searchQuery,
     setSearchQuery,

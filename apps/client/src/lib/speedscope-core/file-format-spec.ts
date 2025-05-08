@@ -4,7 +4,7 @@ export namespace FileFormat {
   export type Profile = EventedProfile | SampledProfile;
 
   export interface File {
-    $schema: "https://www.speedscope.app/file-format-schema.json";
+    $schema: 'https://www.speedscope.app/file-format-schema.json';
 
     // Data shared between profiles
     shared: {
@@ -44,8 +44,8 @@ export namespace FileFormat {
   }
 
   export enum ProfileType {
-    EVENTED = "evented",
-    SAMPLED = "sampled",
+    EVENTED = 'evented',
+    SAMPLED = 'sampled',
   }
 
   export interface IProfile {
@@ -112,16 +112,16 @@ export namespace FileFormat {
   }
 
   export type ValueUnit =
-    | "none"
-    | "nanoseconds"
-    | "microseconds"
-    | "milliseconds"
-    | "seconds"
-    | "bytes";
+    | 'none'
+    | 'nanoseconds'
+    | 'microseconds'
+    | 'milliseconds'
+    | 'seconds'
+    | 'bytes';
 
   export enum EventType {
-    OPEN_FRAME = "O",
-    CLOSE_FRAME = "C",
+    OPEN_FRAME = 'O',
+    CLOSE_FRAME = 'C',
   }
 
   interface IEvent {

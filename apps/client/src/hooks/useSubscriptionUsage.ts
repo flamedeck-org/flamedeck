@@ -1,10 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
-import type { SubscriptionUsage } from "@/lib/api/subscription";
-import { getUserSubscriptionUsage } from "@/lib/api/subscription";
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import type { SubscriptionUsage } from '@/lib/api/subscription';
+import { getUserSubscriptionUsage } from '@/lib/api/subscription';
 
 // Define a constant for the base query key
-export const SUBSCRIPTION_USAGE_QUERY_KEY = "subscriptionUsage";
+export const SUBSCRIPTION_USAGE_QUERY_KEY = 'subscriptionUsage';
 
 /**
  * Generates the React Query key for fetching user subscription usage.
@@ -31,7 +31,7 @@ export const useSubscriptionUsage = () => {
       const { data, error } = await getUserSubscriptionUsage(userId);
       if (error) {
         // Don't necessarily throw, component can handle null data + error state
-        console.error("Failed to fetch subscription usage:", error);
+        console.error('Failed to fetch subscription usage:', error);
         return null;
       }
       return data;
