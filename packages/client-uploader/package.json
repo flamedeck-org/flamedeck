@@ -1,21 +1,24 @@
 {
   "name": "@flamedeck/upload",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "Client library for uploading traces to Flamedeck.",
   "type": "module",
-  "main": "./dist/flamedeck-upload.umd.js",
-  "module": "./dist/flamedeck-upload.es.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/flamedeck-upload.es.js",
-      "require": "./dist/flamedeck-upload.umd.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
   "files": [
-    "*.js",
-    "*.d.ts"
+    "dist"
   ],
   "keywords": [
     "flamedeck",
@@ -30,8 +33,8 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2",
-    "vite": "^5.0.0",
-    "vite-plugin-dts": "^4.5.3"
+    "fs-extra": "^11.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
   }
 }
