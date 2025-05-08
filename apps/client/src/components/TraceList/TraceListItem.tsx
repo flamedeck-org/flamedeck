@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -85,7 +85,6 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
   const { openModal: openShareModal } = useSharingModal();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
 
@@ -165,11 +164,6 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
   const handleStopPropagation = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
   }, []);
-
-  const commitShortSha = useMemo(
-    () => (trace.commit_sha ? trace.commit_sha.substring(0, 7) : 'N/A'),
-    [trace.commit_sha]
-  );
 
   const traceIdentifier = useMemo(
     () => trace.scenario || `ID: ${trace.id.substring(0, 7)}`,
@@ -364,17 +358,6 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
       )}
     </>
   );
-};
-
-// Need to find formatBytes function if it's not imported/available globally
-// Placeholder:
-const formatBytes = (bytes: number, decimals = 2) => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
 export const TraceListItem = memo(TraceListItemComponent);

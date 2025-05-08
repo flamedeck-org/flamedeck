@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { FolderSelectDialog } from '@/components/FolderSelectDialog';
 import { traceApi } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
