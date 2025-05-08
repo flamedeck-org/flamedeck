@@ -1,29 +1,47 @@
-import js from "@eslint/js";
-import globals from "globals";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    ignores: [
+      "dist/", 
+      "node_modules/", 
+      ".nx/", 
+      ".yarn/", 
+      "tmp/", 
+      "**/*.gen.ts", 
+      "coverage/", 
+      "apps/client/dist/"
+    ]
+  },
+  {
     files: ["**/*.{ts,tsx}"],
+    ignores: [
+      "**/*.config.js", 
+      "**/*.config.ts", 
+      "**/*.config.cjs",
+      "**/vite-env.d.ts" // Often not included in main tsconfig
+    ],
     languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
+      parser: tseslint.parser,
+      parserOptions: {
+        project: [
+          "./apps/client/tsconfig.app.json",
+          "./packages/shared-importer/tsconfig.json",
+        ],
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
+      '@typescript-eslint': tseslint.plugin,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
-      ],
-      "@typescript-eslint/no-unused-vars": "off",
+      "no-debugger": "warn",
+      "no-console": ["warn", { "allow": ["warn", "error"] }],
+      "no-dupe-keys": "error",
+      "no-empty": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+      "@typescript-eslint/consistent-type-imports": "warn",
     },
   }
 );
