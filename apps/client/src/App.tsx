@@ -14,7 +14,7 @@ import ApiKeysPage from './pages/settings/ApiKeysPage';
 import Upload from './pages/Upload';
 import NotFound from './pages/NotFound';
 import TraceViewerPage from './pages/TraceViewerPage';
-import DocsGettingStartedPage from './pages/DocsGettingStartedPage';
+import DocsApiKeysPage from './pages/DocsApiKeysPage';
 import DocsCliUploadPage from './pages/DocsCliUploadPage';
 import DocsNpmUploadPage from './pages/DocsNpmUploadPage';
 import DocsLayout from './components/docs/DocsLayout';
@@ -32,6 +32,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { Loader2 } from 'lucide-react';
 import UsernameStep from './pages/Onboarding/UsernameStep';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import { HelmetProvider } from 'react-helmet-async';
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -76,8 +77,8 @@ const AppRoutes = () => {
 
       {/* Documentation Routes - accessible to all */}
       <Route path="/docs" element={<DocsLayout />}>
-        <Route index element={<Navigate to="/docs/getting-started" replace />} />
-        <Route path="getting-started" element={<DocsGettingStartedPage />} />
+        <Route index element={<Navigate to="/docs/api-keys" replace />} />
+        <Route path="api-keys" element={<DocsApiKeysPage />} />
         <Route path="cli-upload" element={<DocsCliUploadPage />} />
         <Route path="npm-upload" element={<DocsNpmUploadPage />} />
       </Route>
@@ -117,29 +118,31 @@ const App = () => {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <SharingModalProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <ScrollToTop />
-              <div className="h-full w-full flex flex-col speedscope-app-container relative">
-                <Navbar />
-                <GLCanvas
-                  theme={theme}
-                  setGLCanvas={glCanvasAtom.set}
-                  canvasContext={canvasContext}
-                />
-                <AppRoutes />
-              </div>
-            </BrowserRouter>
-            <SharingModal />
-          </TooltipProvider>
-        </SharingModalProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SharingModalProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <ScrollToTop />
+                <div className="h-full w-full flex flex-col speedscope-app-container relative">
+                  <Navbar />
+                  <GLCanvas
+                    theme={theme}
+                    setGLCanvas={glCanvasAtom.set}
+                    canvasContext={canvasContext}
+                  />
+                  <AppRoutes />
+                </div>
+              </BrowserRouter>
+              <SharingModal />
+            </TooltipProvider>
+          </SharingModalProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 };
 

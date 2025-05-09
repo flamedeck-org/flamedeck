@@ -42,8 +42,8 @@ function DocsSidebarNav({ className, onLinkClick, ...props }: DocsSidebarNavProp
 
   return (
     <nav className={cn('flex flex-col space-y-1', className)} {...props}>
-      <DocsNavLink to="/docs/getting-started" onClick={handleLinkClick}>
-        Getting Started
+      <DocsNavLink to="/docs/api-keys" onClick={handleLinkClick}>
+        API Keys
       </DocsNavLink>
       <DocsNavLink to="/docs/cli-upload" onClick={handleLinkClick}>
         CLI Upload
