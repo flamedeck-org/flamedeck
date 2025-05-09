@@ -17,6 +17,7 @@ import TraceViewerPage from './pages/TraceViewerPage';
 import DocsApiKeysPage from './pages/DocsApiKeysPage';
 import DocsCliUploadPage from './pages/DocsCliUploadPage';
 import DocsNpmUploadPage from './pages/DocsNpmUploadPage';
+import DocsReactNativePage from './pages/DocsReactNativePage';
 import DocsLayout from './components/docs/DocsLayout';
 import { useTheme } from './components/speedscope-ui/themes/theme';
 import { useAtom } from './lib/speedscope-core/atom';
@@ -81,6 +82,7 @@ const AppRoutes = () => {
         <Route path="api-keys" element={<DocsApiKeysPage />} />
         <Route path="cli-upload" element={<DocsCliUploadPage />} />
         <Route path="npm-upload" element={<DocsNpmUploadPage />} />
+        <Route path="react-native" element={<DocsReactNativePage />} />
       </Route>
 
       {/* Public Trace Viewer Route - outside ProtectedRoute */}
