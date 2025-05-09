@@ -1,0 +1,28 @@
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info, AlertTriangle } from 'lucide-react';
+import { DocsPager } from '@/components/docs/DocsPager';
+
+# Api Keys
+
+## Obtaining an API Key
+
+To interact with the FlameDeck API, you first need an API key. Follow these steps to generate one:
+
+1.  **Navigate to Settings:** Log in to your FlameDeck account and go to the [Settings page](/settings).
+2.  **Access API Keys:** Select the "API Keys" section from the settings menu (usually located at `/settings/api-keys`).
+3.  **Create New Key:** Click on the "Create New API Key" button.
+4.  **Name Your Key:** Give your key a descriptive name (e.g., "CI/CD Pipeline Key", "Local Dev Key") to help you identify its purpose later.
+5.  **Select Scopes:** Choose the permissions (scopes) that this key will have. See the section below for more details on scopes. It's best practice to grant only the necessary permissions.
+6.  **Generate & Copy:** Click "Generate Key". Your new API key will be displayed **only once**. Make sure to copy it immediately and store it securely. **Do not share your API key or commit it to version control.**
+
+## Understanding Scopes
+
+Scopes define the specific actions an API key is allowed to perform. When creating a key, you select the scopes it should have. This follows the principle of least privilege, enhancing security.
+
+Currently, the following scopes are available:
+
+- `trace:upload`: Allows the API key to upload new trace files via the `/api/upload-trace` endpoint.
+
+_More scopes may be added in the future as API functionality expands. Remember to keep your API keys confidential and manage their scopes appropriately._
+
+<DocsPager title="CLI Upload" href="/docs/cli-upload" />

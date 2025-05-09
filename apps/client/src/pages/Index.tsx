@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,35 @@ import { UploadCloud, Database, BarChart, Search, Users, Code } from 'lucide-rea
 function Index() {
   return (
     <>
+      <Helmet>
+        <title>FlameDeck: Collaborative Performance Trace Viewer</title>
+        <meta
+          name="description"
+          content="View, analyze, and collaborate on performance profiles and trace files online with FlameDeck. Share insights and debug performance issues faster. Supports Speedscope format and more."
+        />
+        <meta property="og:title" content="FlameDeck: Collaborative Performance Trace Viewer" />
+        <meta
+          property="og:description"
+          content="View, analyze, and collaborate on performance profiles and trace files online with FlameDeck."
+        />
+        <meta property="og:type" content="website" />
+        {/* <meta property="og:image" content="YOUR_FLAMEDECK_IMAGE_URL_HERE.png" /> */}
+        {/* If you have a general OG image, uncomment the line above and provide the URL */}
+        {/* The og:url should be the canonical URL for this specific page. 
+            For the index page, it's usually the root domain. 
+            It's often better to set this dynamically if your site is deployed to multiple URLs (e.g., previews) or for other pages. 
+            For now, I'll leave the placeholder as it requires the actual domain which might not be in index.html or might need to be dynamic. */}
+        <meta property="og:url" content="https://www.flamedeck.com" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@flamedeckapp" />
+        <meta name="twitter:title" content="FlameDeck: Collaborative Performance Trace Viewer" />
+        <meta
+          name="twitter:description"
+          content="View, analyze, and collaborate on performance profiles and trace files online with FlameDeck."
+        />
+        {/* <meta name="twitter:image" content="YOUR_FLAMEDECK_IMAGE_URL_HERE.png" /> */}
+        {/* If you have a general Twitter image, uncomment the line above and provide the URL */}
+      </Helmet>
       <Layout>
         {/* Hero Section */}
         <div className="min-h-[80vh] flex flex-col items-center justify-center py-24 px-4 text-center bg-gradient-to-b from-background to-background/90">
