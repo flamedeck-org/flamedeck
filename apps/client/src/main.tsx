@@ -1,3 +1,10 @@
+import * as Sentry from '@sentry/react';
+
+Sentry.init({
+  dsn: 'https://04fc875675ab756acc66d38a2006fa0b@o151703.ingest.us.sentry.io/4509277364551680',
+  sendDefaultPii: true,
+});
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';

@@ -5,6 +5,7 @@ import { componentTagger } from 'lovable-tagger';
 import { viteCommonjs } from '@originjs/vite-plugin-commonjs';
 import mdx from '@mdx-js/rollup';
 import rehypeHighlight from 'rehype-highlight';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -17,6 +18,16 @@ export default defineConfig(({ mode }) => ({
     react(),
     viteCommonjs(),
     mode === 'development' && componentTagger(),
+    mode !== 'development' &&
+      sentryVitePlugin({
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        telemetry: false,
+        release: {
+          name: process.env.VERCEL_GIT_COMMIT_SHA,
+        },
+      }),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -26,5 +37,8 @@ export default defineConfig(({ mode }) => ({
         '../../packages/shared-importer/src'
       ),
     },
+  },
+  build: {
+    sourcemap: true,
   },
 }));

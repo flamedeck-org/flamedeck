@@ -13,6 +13,7 @@
     "@nx/esbuild": "^20.8.1",
     "@nx/eslint": "^21.0.2",
     "@nx/vite": "^21.0.2",
+    "@sentry/vite-plugin": "^3.4.0",
     "@types/node": "^22.5.5",
     "eslint": "^9.9.0",
     "eslint-config-prettier": "^10.1.3",
