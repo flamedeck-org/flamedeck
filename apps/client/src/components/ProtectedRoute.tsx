@@ -1,10 +1,10 @@
-import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 // Assuming AuthContext is at ../contexts/AuthContext.tsx relative to components/
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2, AlertCircle } from 'lucide-react'; // Keep if you want a loading spinner
 import { Button } from './ui/button'; // Ensure correct path
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from './ui/card'; // Import Card components
+import { LoggedInViewErrorBoundary } from './feedback/LoggedInViewErrorBoundary'; // Import the new error boundary
 
 // Define the shape of the profile object you expect from useAuth
 // Adjust this based on your actual user_profiles table structure
@@ -77,7 +77,11 @@ const ProtectedRoute = () => {
 
   if (profile && profile.username) {
     console.log('[ProtectedRoute] User exists, profile exists, username EXISTS. Rendering Outlet.');
-    return <Outlet />;
+    return (
+      <LoggedInViewErrorBoundary>
+        <Outlet />
+      </LoggedInViewErrorBoundary>
+    );
   }
 
   // Fallback / Error condition:
