@@ -51,6 +51,9 @@ function DocsSidebarNav({ className, onLinkClick, ...props }: DocsSidebarNavProp
       <DocsNavLink to="/docs/npm-upload" onClick={handleLinkClick}>
         NPM Package Upload
       </DocsNavLink>
+      <DocsNavLink to="/docs/react-native" onClick={handleLinkClick}>
+        React Native Upload
+      </DocsNavLink>
     </nav>
   );
 }
