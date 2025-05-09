@@ -1,14 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import * as Sentry from '@sentry/react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types';
 
 import { fetchUserProfile } from '@/lib/api/users';
-import type { ApiResponse, UserProfileData } from '@/types';
-
-type UserProfile = UserProfileData;
+import type { ApiResponse, UserProfile } from '@/types';
 
 interface AuthContextType {
   session: Session | null;
@@ -64,6 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       queryClient.removeQueries({ queryKey: userProfileQueryKey(user?.id ?? '') });
       queryClient.clear();
     } catch (error) {
+      Sentry.captureException(error);
       setSession(null);
       setUser(null);
       setLoading(false);
@@ -72,7 +71,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [queryClient, user?.id]);
 
   useEffect(() => {
-    console.log('[AuthContext] useEffect mount. Setting up listeners and checks.');
     setLoading(true);
     let isMounted = true;
     let getSessionResolved = false;
@@ -80,54 +78,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const checkLoadingComplete = () => {
       if (getSessionResolved && firstAuthStateEventProcessed && isMounted) {
-        console.log(
-          '[AuthContext] Both getSession and first auth event processed. Setting loading = false.'
-        );
         setLoading(false);
       }
     };
 
-    console.log('[AuthContext] Setting up onAuthStateChange listener...');
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, currentSession) => {
       if (!isMounted) return;
-      console.log('[AuthContext] onAuthStateChange event:', _event, 'Session:', currentSession);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
 
       if (!firstAuthStateEventProcessed) {
-        console.log('[AuthContext] First onAuthStateChange event processed.');
         firstAuthStateEventProcessed = true;
         checkLoadingComplete();
       }
 
       if (_event === 'SIGNED_OUT') {
-        console.log('[AuthContext] SIGNED_OUT event, clearing RQ profile cache.');
         queryClient.clear();
       }
     });
 
-    console.log('[AuthContext] Performing initial getSession...');
     supabase.auth
       .getSession()
       .then(({ data: { session: initialSession } }) => {
         if (!isMounted) return;
-        console.log('[AuthContext] getSession() resolved. Session:', initialSession);
         setSession((prev) => prev ?? initialSession);
         setUser((prev) => prev ?? initialSession?.user ?? null);
         getSessionResolved = true;
         checkLoadingComplete();
       })
       .catch((error) => {
+        Sentry.captureException(error);
         if (!isMounted) return;
-        console.error('[AuthContext] Error during initial getSession() check:', error);
         getSessionResolved = true;
         checkLoadingComplete();
       });
 
     return () => {
-      console.log('[AuthContext] useEffect cleanup. Unsubscribing.');
       isMounted = false;
       subscription.unsubscribe();
     };
