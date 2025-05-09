@@ -1,0 +1,37 @@
+{
+  "name": "@flamedeck/react-native-upload",
+  "version": "0.1.0",
+  "description": "A package to facilitate capturing and uploading React Native performance profiles to Flamedeck.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "react-native",
+    "flamedeck",
+    "profiling",
+    "performance"
+  ],
+  "author": "Flamedeck Team <hello@flamedeck.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@flamedeck/upload": "workspace:*",
+    "expo-file-system": "*",
+    "react-native-release-profiler": "*"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-native": ">=0.60.0"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ]
+}
