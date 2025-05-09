@@ -1,17 +1,14 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import SharedPageSEO from '@/components/seo/SharedPageSEO';
 
 const Login: React.FC = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
 
   const handleGoogleLogin = async () => {
     // Store the intended destination before redirecting to Google
@@ -48,6 +45,12 @@ const Login: React.FC = () => {
 
   return (
     <Layout hideNav>
+      <SharedPageSEO
+        pageTitle="Login"
+        description="Sign in to FlameDeck to access your performance traces, collaborate with your team, and analyze profiles."
+        path="/login"
+        ogType="website"
+      />
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
