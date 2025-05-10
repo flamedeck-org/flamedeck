@@ -123,7 +123,7 @@ const Login: React.FC = () => {
               </svg>
               Sign in with Google
             </Button>
-            <Button onClick={handleGitHubLogin} className="w-full" variant="outline">
+            {/* <Button onClick={handleGitHubLogin} className="w-full" variant="outline">
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -131,7 +131,7 @@ const Login: React.FC = () => {
                 />
               </svg>
               Sign in with GitHub
-            </Button>
+            </Button> */}
           </CardContent>
 
           <CardFooter className="flex justify-center text-sm text-muted-foreground">
