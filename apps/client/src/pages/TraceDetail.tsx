@@ -145,9 +145,12 @@ const TraceDetail: React.FC = () => {
 
   const { allComments, isLoading: commentsLoading, error: commentsError } = useTraceComments(id);
 
+  // Determine authentication status
+  const isAuthenticated = !!currentUser;
+
   // Use the new hook
   const { replyingToCommentId, handleStartReply, handleCancelReply, handleCommentUpdate } =
-    useCommentManagement(id);
+    useCommentManagement(id, isAuthenticated);
 
   // Structure the comments
   const structuredComments = useMemo(() => {
