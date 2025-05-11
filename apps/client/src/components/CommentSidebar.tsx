@@ -109,29 +109,29 @@ const CommentSidebar: React.FC<CommentSidebarProps> = ({
               Error loading comments: {error.message}
             </div>
           ) : // Show sign-in prompt if not authenticated and no comments would otherwise show
-          relevantComments.length === 0 && !isAuthenticated ? (
-            <SignInPrompt />
-          ) : // Show standard empty message if authenticated and no comments
-          relevantComments.length === 0 && isAuthenticated ? (
-            <div className="px-4 py-8 text-sm text-muted-foreground text-center">
-              {emptyMessage}
-            </div>
-          ) : (
-            // Render comments if they exist (only possible if authenticated)
-            relevantComments.map((comment) => (
-              <CommentItem
-                key={comment.id}
-                comment={comment}
-                traceId={traceId}
-                replyingToCommentId={replyingToCommentId}
-                onStartReply={onStartReply}
-                onCancelReply={onCancelReply}
-                onCommentUpdated={onCommentUpdated}
-                showReplyButton={false}
-                currentDepth={0}
-              />
-            ))
-          )}
+            relevantComments.length === 0 && !isAuthenticated ? (
+              <SignInPrompt />
+            ) : // Show standard empty message if authenticated and no comments
+              relevantComments.length === 0 && isAuthenticated ? (
+                <div className="px-4 py-8 text-sm text-muted-foreground text-center">
+                  {emptyMessage}
+                </div>
+              ) : (
+                // Render comments if they exist (only possible if authenticated)
+                relevantComments.map((comment) => (
+                  <CommentItem
+                    key={comment.id}
+                    comment={comment}
+                    traceId={traceId}
+                    replyingToCommentId={replyingToCommentId}
+                    onStartReply={onStartReply}
+                    onCancelReply={onCancelReply}
+                    onCommentUpdated={onCommentUpdated}
+                    showReplyButton={false}
+                    currentDepth={0}
+                  />
+                ))
+              )}
         </div>
       </ScrollArea>
 
