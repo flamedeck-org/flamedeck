@@ -1,6 +1,6 @@
 import type { Profile, FrameInfo } from '@flamedeck/speedscope-core/profile.ts';
 import { StackListProfileBuilder } from '@flamedeck/speedscope-core/profile.ts';
-import { getOrInsert } from '@flamedeck/speedscope-core/lib-utils';
+import { getOrInsert } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { ByteFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
 
 /**

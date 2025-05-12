@@ -1,6 +1,6 @@
 import type { ProfileGroup } from '@flamedeck/speedscope-core/profile.ts';
 import { StackListProfileBuilder } from '@flamedeck/speedscope-core/profile.ts';
-import { itMap, getOrInsert } from '@flamedeck/speedscope-core/lib-utils';
+import { itMap, getOrInsert } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { TimeFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
 import type { TextFileContent } from './importer-utils.ts';
 

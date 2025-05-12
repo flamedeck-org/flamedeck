@@ -1,6 +1,6 @@
 import type { Profile, FrameInfo, ProfileGroup } from '@flamedeck/speedscope-core/profile.ts';
 import { CallTreeProfileBuilder } from '@flamedeck/speedscope-core/profile.ts';
-import { getOrInsert, lastOf, sortBy, itForEach } from '@flamedeck/speedscope-core/lib-utils';
+import { getOrInsert, lastOf, sortBy, itForEach } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { TimeFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
 import type { OldCPUProfile } from './v8cpuFormatter.ts';
 import { chromeTreeToNodes } from './v8cpuFormatter.ts';
@@ -302,7 +302,7 @@ export function importFromChromeCPUProfile(chromeProfile: CPUProfile): Profile {
       lca = shouldPlaceOnTopOfPreviousStack(lca.callFrame.functionName)
         ? lastOf(prevStack)
         : lca.parent || null
-    ) {}
+    ) { }
 
     // Close frames that are no longer open
     while (prevStack.length > 0 && lastOf(prevStack) != lca) {

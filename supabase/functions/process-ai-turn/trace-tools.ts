@@ -1,6 +1,6 @@
 // Imports now relative to process-ai-turn folder
 import { Frame, ProfileGroup } from '../../../packages/speedscope-core/src/profile.ts';
-import { formatPercent } from '../../../packages/speedscope-import/src/index.ts';
+import { formatPercent } from '../../../packages/speedscope-core/src/lib-utils.ts';
 import { z } from 'https://esm.sh/zod@3.23.8';
 
 // --- Tool Schema for OpenAI ---

@@ -1,6 +1,6 @@
 import type { Profile, FrameInfo } from '@flamedeck/speedscope-core/profile.ts';
 import { CallTreeProfileBuilder } from '@flamedeck/speedscope-core/profile.ts';
-import { getOrInsert } from '@flamedeck/speedscope-core/lib-utils';
+import { getOrInsert } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { TimeFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
 
 interface Allocations {

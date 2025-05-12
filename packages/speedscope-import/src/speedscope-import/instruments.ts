@@ -13,10 +13,10 @@ import {
   lastOf,
   getOrElse,
   zeroPad,
-} from '@flamedeck/speedscope-core/lib-utils';
-import { ByteFormatter, TimeFormatter } from '@flamedeck/speedscope-core/value-formatters';
-import type { TextFileContent } from './importer-utils';
-import { MaybeCompressedDataReader } from './importer-utils';
+} from '@flamedeck/speedscope-core/lib-utils.ts';
+import { ByteFormatter, TimeFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
+import type { TextFileContent } from './importer-utils.ts';
+import { MaybeCompressedDataReader } from './importer-utils.ts';
 
 function parseTSV<T>(contents: TextFileContent): T[] {
   const lines = [...contents.splitLines()].map((l) => l.split('\t'));
@@ -821,7 +821,7 @@ function paternMatchObjectiveC(
 ////////////////////////////////////////////////////////////////////////////////
 
 export class UID {
-  constructor(public index: number) {}
+  constructor(public index: number) { }
 }
 
 function parseBinaryPlist(bytes: Uint8Array): any {
@@ -847,7 +847,7 @@ class BinaryPlistParser {
   objects: number[] = [];
   offsetTable: number[] = [];
 
-  constructor(public view: DataView) {}
+  constructor(public view: DataView) { }
 
   parseRoot(): any {
     const trailer = this.view.byteLength - 32;

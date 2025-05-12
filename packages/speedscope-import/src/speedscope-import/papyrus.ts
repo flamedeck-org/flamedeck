@@ -24,7 +24,7 @@
 
 import type { Profile } from '@flamedeck/speedscope-core/profile.ts';
 import { CallTreeProfileBuilder, Frame } from '@flamedeck/speedscope-core/profile.ts';
-import { KeyedSet, lastOf } from '@flamedeck/speedscope-core/lib-utils';
+import { KeyedSet, lastOf } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { TimeFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
 import type { TextFileContent } from './importer-utils.ts';
 

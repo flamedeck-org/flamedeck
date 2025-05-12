@@ -1,10 +1,10 @@
-import { sortBy, zeroPad, getOrInsert, lastOf } from '@flamedeck/speedscope-core/lib-utils';
-import type { ProfileGroup, FrameInfo, Profile } from '@flamedeck/speedscope-core/profile';
+import { sortBy, zeroPad, getOrInsert, lastOf } from '@flamedeck/speedscope-core/lib-utils.ts';
+import type { ProfileGroup, FrameInfo, Profile } from '@flamedeck/speedscope-core/profile.ts';
 import {
   CallTreeProfileBuilder,
   StackListProfileBuilder,
-} from '@flamedeck/speedscope-core/profile';
-import { TimeFormatter } from '@flamedeck/speedscope-core/value-formatters';
+} from '@flamedeck/speedscope-core/profile.ts';
+import { TimeFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
 
 // This file concerns import from the "Trace Event Format", authored by Google
 // and used for Google's own chrome://trace.
@@ -427,8 +427,7 @@ function eventListToProfile(
 
     if (b == null) {
       console.warn(
-        `Tried to end frame "${
-          frameInfoForEvent(e, exporterSource).key
+        `Tried to end frame "${frameInfoForEvent(e, exporterSource).key
         }", but the stack was empty. Doing nothing instead.`
       );
       return;

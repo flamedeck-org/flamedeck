@@ -87,7 +87,7 @@
 
 import type { FrameInfo, Profile, ProfileGroup } from '@flamedeck/speedscope-core/profile.ts';
 import { CallTreeProfileBuilder, Frame } from '@flamedeck/speedscope-core/profile.ts';
-import { getOrElse, getOrInsert, KeyedSet } from '@flamedeck/speedscope-core/lib-utils';
+import { getOrElse, getOrInsert, KeyedSet } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { ByteFormatter, TimeFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
 import type { TextFileContent } from './importer-utils.ts';
 
@@ -99,7 +99,7 @@ class CallGraph {
   constructor(
     private fileName: string,
     private fieldName: string
-  ) {}
+  ) { }
 
   private getOrInsertFrame(info: FrameInfo): Frame {
     return Frame.getOrInsert(this.frameSet, info);
@@ -567,8 +567,8 @@ class CallgrindParser {
         if (this.prevCostLineNumbers.length <= i) {
           throw new Error(
             `Line ${this.lineNum} has a subposition on column ${i} but ` +
-              `previous cost line has only ${this.prevCostLineNumbers.length} ` +
-              `columns. Line contents: ${line}`
+            `previous cost line has only ${this.prevCostLineNumbers.length} ` +
+            `columns. Line contents: ${line}`
           );
         }
         const prevCostForSubposition = this.prevCostLineNumbers[i];
@@ -580,7 +580,7 @@ class CallgrindParser {
           if (isNaN(offset)) {
             throw new Error(
               `Line ${this.lineNum} has a subposition on column ${i} but ` +
-                `the offset is not a number. Line contents: ${line}`
+              `the offset is not a number. Line contents: ${line}`
             );
           }
           nums.push(prevCostForSubposition + offset);
