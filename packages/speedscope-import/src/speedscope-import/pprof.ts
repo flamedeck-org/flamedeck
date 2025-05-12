@@ -1,37 +1,66 @@
-import * as profileProto from './profile.proto.js';
+import {
+  type Profile as PerfToolsIProfile,
+  type Location as PerfToolsILocation,
+  type Function as PerfToolsIFunction,
+  type Long as PerfToolsILong,
+  decodeProfile,
+} from './profile.proto.ts';
 import type { FrameInfo, Profile } from '@flamedeck/speedscope-core/profile.ts';
 import { StackListProfileBuilder } from '@flamedeck/speedscope-core/profile.ts';
 import { lastOf } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { TimeFormatter, ByteFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
 import type { ImporterDependencies } from './importer-utils.ts';
+import Long from 'long';
 
-const perftools = (profileProto as any).perftools;
-
-interface SampleType {
+interface SampleTypeSpec {
   type: string;
   unit: string;
 }
 
-// type Location =  Location;
-type Location = any;
-// type Profile = perftools.profiles.Profile;
-type PerfToolsProfile = any;
-// type PerfToolsFunction = perftools.profiles.IFunction;
-type PerfToolsFunction = any;
+// Helper to convert proto Long interface to Long class instance if needed
+function toLongClass(
+  val: number | PerfToolsILong | Long | undefined | null,
+  deps: Pick<ImporterDependencies, 'isLong'>
+): Long {
+  if (val == null) return Long.ZERO; // Or handle as error
+  if (deps.isLong(val)) return val as Long; // Already a Long class instance
+  if (typeof val === 'number') return Long.fromNumber(val);
+  // Check if it's the PerfToolsILong interface {low, high, unsigned}
+  if (typeof val === 'object' && 'low' in val && 'high' in val && 'unsigned' in val) {
+    return new Long(val.low, val.high, val.unsigned);
+  }
+  // If it has a toNumber method but wasn't a Long instance (less likely now with direct interface)
+  if (typeof val === 'object' && typeof (val as any).toNumber === 'function') {
+    return Long.fromNumber((val as any).toNumber());
+  }
+  console.warn('toLongClass received unexpected type:', typeof val, val);
+  return Long.ZERO; // Fallback
+}
 
-// Find the index of the SampleType which should be used as our default
-function getSampleTypeIndex(profile: PerfToolsProfile): number {
-  const dflt = profile.defaultSampleType;
-  const sampleTypes = profile.sampleType;
-  const fallback = sampleTypes.length - 1;
+function getSampleTypeIndex(
+  profile: PerfToolsIProfile,
+  deps: Pick<ImporterDependencies, 'isLong'>
+): number {
+  const dfltProto = profile.default_sample_type;
+  const sampleTypesProto = profile.sample_type || [];
+  const fallback = sampleTypesProto.length > 0 ? sampleTypesProto.length - 1 : 0;
 
-  // string_table[0] will always be empty-string, so we can assume dflt === 0 is just the proto
-  // empty-value, and means no defaultSampleType was specified.
-  if (!dflt || !+dflt) {
+  if (!sampleTypesProto.length) return 0;
+
+  if (!dfltProto) {
     return fallback;
   }
+  const dfltLong = toLongClass(dfltProto, deps);
+  if (dfltLong.isZero()) return fallback; // Treat proto zero as unspecified
 
-  const idx = sampleTypes.findIndex((e) => e.type === dflt);
+  const dfltTypeString = String(dfltLong.toNumber()); // Assuming type is referenced by string table index
+
+  const idx = sampleTypesProto.findIndex((e) => {
+    if (e.type == null) return false;
+    const typeLong = toLongClass(e.type, deps);
+    return String(typeLong.toNumber()) === dfltTypeString;
+  });
+
   if (idx === -1) {
     return fallback;
   }
@@ -44,34 +73,51 @@ export function importAsPprofProfile(
 ): Profile | null {
   if (rawProfile.byteLength === 0) return null;
 
-  let protoProfile: PerfToolsProfile;
+  let protoProfile: PerfToolsIProfile;
   try {
-    protoProfile = perftools.profiles.Profile.decode(new Uint8Array(rawProfile));
+    protoProfile = decodeProfile(new Uint8Array(rawProfile)) as PerfToolsIProfile;
   } catch (e) {
+    console.error('Failed to decode pprof profile:', e);
     return null;
   }
 
-  function i32(n: number | { toNumber(): number }): number {
-    if (deps.isLong(n)) {
-      return n.toNumber();
-    }
-    return n as number;
+  // i32 now expects a PerfToolsILong or number, and returns a number.
+  // It uses toLongClass internally for conversion if needed.
+  function i32(n: number | PerfToolsILong | Long | undefined | null): number {
+    return toLongClass(n, deps).toNumber();
   }
 
-  function stringVal(key: number | { toNumber(): number }): string | null {
-    return protoProfile.stringTable[i32(key)] || null;
+  function stringVal(key: number | PerfToolsILong | Long | undefined | null): string | null {
+    if (key == null) return null;
+    const stringTable = protoProfile.string_table || [];
+    const index = i32(key);
+    return stringTable[index] || null;
   }
 
   const frameInfoByFunctionID = new Map<number, FrameInfo>();
 
-  function frameInfoForFunction(f: PerfToolsFunction): FrameInfo | null {
-    const { name, filename, startLine } = f;
+  const functions = protoProfile.function || [];
+  for (const f of functions) {
+    if (f.id != null) {
+      const frameInfo = frameInfoForFunction(f as PerfToolsIFunction, stringVal, i32);
+      if (frameInfo != null) {
+        frameInfoByFunctionID.set(i32(f.id), frameInfo);
+      }
+    }
+  }
 
-    const nameString = (name != null && stringVal(name)) || '(unknown)';
-    const fileNameString = filename != null ? stringVal(filename) : null;
-    const line = startLine != null ? +startLine : null;
+  function frameInfoForFunction(
+    f: PerfToolsIFunction,
+    getStringVal: typeof stringVal,
+    getI32: typeof i32
+  ): FrameInfo | null {
+    const { name, filename, start_line } = f;
 
-    const key = `${nameString}:${fileNameString}:${line}`;
+    const nameString = (name != null && getStringVal(name)) || '(unknown)';
+    const fileNameString = filename != null ? getStringVal(filename) : null;
+    const line = start_line != null ? getI32(start_line) : null;
+
+    const key = `${nameString}:${fileNameString}:${line ?? 'unknown'}`;
 
     const frameInfo: FrameInfo = {
       key,
@@ -82,48 +128,33 @@ export function importAsPprofProfile(
       frameInfo.file = fileNameString;
     }
 
-    if (line != null) {
+    if (line != null && line > 0) {
+      // Ensure line is positive
       frameInfo.line = line;
     }
 
     return frameInfo;
   }
 
-  for (const f of protoProfile.function) {
-    if (f.id) {
-      const frameInfo = frameInfoForFunction(f);
-      if (frameInfo != null) {
-        frameInfoByFunctionID.set(i32(f.id), frameInfo);
-      }
-    }
-  }
+  function frameInfoForLocation(
+    location: PerfToolsILocation,
+    getStringVal: typeof stringVal,
+    getI32: typeof i32
+  ): FrameInfo | null {
+    const { line: linesArray } = location;
+    if (linesArray == null || linesArray.length === 0) return null;
 
-  function frameInfoForLocation(location: Location): FrameInfo | null {
-    const { line } = location;
-    if (line == null || line.length === 0) return null;
+    const lastLineProto = lastOf(linesArray);
+    if (lastLineProto == null) return null;
 
-    // From a comment on profile.proto:
-    //
-    //   Multiple line indicates this location has inlined functions,
-    //   where the last entry represents the caller into which the
-    //   preceding entries were inlined.
-    //
-    //   E.g., if memcpy() is inlined into printf:
-    //      line[0].function_name == "memcpy"
-    //      line[1].function_name == "printf"
-    //
-    // Let's just take the last line then
-    // TODO: Uncomment this type
-    const lastLine: any = lastOf(line);
-    if (lastLine == null) return null;
+    if (lastLineProto.function_id != null) {
+      const funcId = getI32(lastLineProto.function_id);
+      const funcFrame = frameInfoByFunctionID.get(funcId);
 
-    if (lastLine.functionId != null && deps.isLong(lastLine.functionId)) {
-      const funcFrame = frameInfoByFunctionID.get(i32(lastLine.functionId));
-
-      const lineNumber = deps.isLong(lastLine.line) ? lastLine.line.toNumber() : lastLine.line;
+      const lineNumber = lastLineProto.line != null ? getI32(lastLineProto.line) : null;
 
       if (lineNumber != null && lineNumber > 0 && funcFrame != null) {
-        funcFrame.line = lineNumber;
+        return { ...funcFrame, line: lineNumber };
       }
       return funcFrame || null;
     } else {
@@ -132,54 +163,78 @@ export function importAsPprofProfile(
   }
 
   const frameByLocationID = new Map<number, FrameInfo>();
-
-  for (const l of protoProfile.location) {
+  const locations = protoProfile.location || [];
+  for (const l of locations) {
     if (l.id != null) {
-      const frameInfo = frameInfoForLocation(l);
+      const frameInfo = frameInfoForLocation(l as PerfToolsILocation, stringVal, i32);
       if (frameInfo) {
         frameByLocationID.set(i32(l.id), frameInfo);
       }
     }
   }
 
-  const sampleTypes: SampleType[] = protoProfile.sampleType.map((type) => ({
-    type: (type.type != null && stringVal(type.type)) || 'samples',
-    unit: (type.unit != null && stringVal(type.unit)) || 'count',
+  const sample_types_proto = protoProfile.sample_type || [];
+  const resolvedSampleTypes: SampleTypeSpec[] = sample_types_proto.map((typeProto) => ({
+    type: (typeProto.type != null && stringVal(typeProto.type)) || 'samples',
+    unit: (typeProto.unit != null && stringVal(typeProto.unit)) || 'count',
   }));
 
-  const sampleTypeIndex = getSampleTypeIndex(protoProfile);
+  const currentSampleTypeIndex = getSampleTypeIndex(protoProfile, deps);
 
-  if (sampleTypeIndex < 0 || sampleTypeIndex >= sampleTypes.length) {
-    return null;
+  if (
+    currentSampleTypeIndex < 0 ||
+    (resolvedSampleTypes.length > 0 && currentSampleTypeIndex >= resolvedSampleTypes.length)
+  ) {
+    if (resolvedSampleTypes.length === 0 && (protoProfile.sample || []).length > 0) {
+      // continue if no types but samples exist, default to index 0 for values
+    } else {
+      console.warn('Invalid sample type index or no sample types.');
+      return null;
+    }
   }
 
-  const sampleType = sampleTypes[sampleTypeIndex];
+  const currentSampleType =
+    resolvedSampleTypes.length > 0
+      ? resolvedSampleTypes[currentSampleTypeIndex]
+      : { type: 'samples', unit: 'count' };
 
   const profileBuilder = new StackListProfileBuilder();
 
-  switch (sampleType.unit) {
+  switch (currentSampleType.unit) {
     case 'nanoseconds':
     case 'microseconds':
     case 'milliseconds':
     case 'seconds':
-      profileBuilder.setValueFormatter(new TimeFormatter(sampleType.unit));
+      profileBuilder.setValueFormatter(new TimeFormatter(currentSampleType.unit));
       break;
-
     case 'bytes':
       profileBuilder.setValueFormatter(new ByteFormatter());
       break;
   }
-
-  for (const s of protoProfile.sample) {
-    const stack = s.locationId ? s.locationId.map((l) => frameByLocationID.get(i32(l))) : [];
+  const samples = protoProfile.sample || [];
+  for (const s of samples) {
+    const location_ids = s.location_id || [];
+    const stack = location_ids.map((locId) => frameByLocationID.get(i32(locId)));
     stack.reverse();
 
-    if (s.value == null || s.value.length <= sampleTypeIndex) {
-      return null;
+    const values = s.value || [];
+    const valueIndexToUse = resolvedSampleTypes.length > 0 ? currentSampleTypeIndex : 0;
+
+    if (values.length <= valueIndexToUse) {
+      // Skip sample if it doesn't have data for the selected type/index
+      // console.warn(`Sample missing value for index ${valueIndexToUse}`);
+      continue;
     }
 
-    const value = s.value[sampleTypeIndex];
-    profileBuilder.appendSampleWithWeight(stack.filter((f) => f != null) as FrameInfo[], +value);
+    const rawValue = values[valueIndexToUse];
+    if (rawValue == null) continue; // Skip if value is null/undefined
+
+    const numericValue = i32(rawValue);
+
+    profileBuilder.appendSampleWithWeight(
+      stack.filter((f) => f != null) as FrameInfo[],
+      numericValue
+    );
   }
 
   return profileBuilder.build();

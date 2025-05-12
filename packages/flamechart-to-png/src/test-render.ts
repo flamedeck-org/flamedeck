@@ -69,12 +69,20 @@ async function main() {
     }
     console.log('Test script finished.');
   } catch (error) {
-    console.error('Error during test rendering:', error);
+    console.error('Error during test rendering (inside main try/catch):');
+    console.error(error);
+    if (error instanceof Error && error.stack) {
+      console.error('Stack trace:\n', error.stack);
+    }
     process.exit(1);
   }
 }
 
 main().catch((err) => {
-  console.error('Unhandled error in main:', err);
+  console.error('Unhandled error in main promise chain (main().catch):');
+  console.error(err);
+  if (err instanceof Error && err.stack) {
+    console.error('Stack trace:\n', err.stack);
+  }
   process.exit(1);
 });
