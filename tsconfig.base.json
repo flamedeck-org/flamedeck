@@ -17,7 +17,6 @@
     "paths": {
       "@/*": ["apps/client/src/*"],
       "@flamedeck/speedscope-import": ["packages/speedscope-import/src/index.ts"],
-      "@flamedeck/speedscope-core": ["packages/speedscope-core/src/index.ts"],
       "@flamedeck/speedscope-core/*": ["packages/speedscope-core/src/*"],
       "@flamedeck/speedscope-gl": ["packages/speedscope-gl/src/index.ts"],
       "@flamedeck/speedscope-gl/*": ["packages/speedscope-gl/src/*"],
