@@ -161,6 +161,7 @@ export class BufferBackedTextFileContent implements TextFileContent {
         this.chunks[this.chunks.length - 1] += String.fromCharCode(byteArray[i]);
         // The following line forces V8 to flatten the string for performance.
         // It's unusual syntax but part of the original Speedscope code.
+        // @ts-expect-error
         (this.chunks[this.chunks.length - 1] as string) | 0; // Use string type assertion
 
         if (this.chunks[this.chunks.length - 1].length >= TEXT_FILE_CHUNK_SIZE) {

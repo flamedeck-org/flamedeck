@@ -35,6 +35,7 @@ export default tseslint.config(
           './packages/speedscope-gl/tsconfig.json',
           './packages/speedscope-import/tsconfig.json',
           './packages/speedscope-core/tsconfig.json',
+          './packages/flamechart-to-png/tsconfig.json',
         ],
         tsconfigRootDir: import.meta.dirname,
       },
