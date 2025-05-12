@@ -1,0 +1,52 @@
+{
+  "name": "@flamedeck/flamechart-server",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/flamechart-server/src",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "inputs": [
+        "default",
+        "{workspaceRoot}/eslint.config.js",
+        "{workspaceRoot}/.prettierrc.cjs",
+        "{workspaceRoot}/tsconfig.base.json"
+      ],
+      "options": {
+        "lintFilePatterns": ["apps/flamechart-server/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/flamechart-server/tsconfig.json"
+      }
+    },
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "apps/flamechart-server/dist",
+        "main": "apps/flamechart-server/src/index.ts",
+        "tsConfig": "apps/flamechart-server/tsconfig.json",
+        "assets": ["apps/flamechart-server/*.md"],
+        "format": ["esm"],
+        "bundle": true,
+        "platform": "node",
+        "skipTypeCheck": true
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "node apps/flamechart-server/dist/index.js"
+      },
+      "configurations": {
+        "production": {}
+      }
+    }
+  }
+}

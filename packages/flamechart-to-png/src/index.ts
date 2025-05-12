@@ -13,7 +13,6 @@ import type {
 import { lightTheme } from '@flamedeck/speedscope-theme/light-theme'; // Default theme
 import { darkTheme } from '@flamedeck/speedscope-theme/dark-theme';
 import { flamegraphThemeRegistry } from '@flamedeck/speedscope-theme/flamegraph-theme-registry';
-import { Color } from '@flamedeck/speedscope-core/color'; // Needed for theme colors
 
 export interface RenderToPngOptions {
   width?: number;
@@ -24,7 +23,16 @@ export interface RenderToPngOptions {
   endTimeMs?: number;
   mode?: 'light' | 'dark'; // Added mode option
   flamegraphThemeName?: FlamegraphThemeName; // Added flamegraph theme name option
+  startDepth?: number; // Added startDepth option
 }
+
+// --- Constants ---
+const DEFAULT_FRAME_HEIGHT = 18;
+const DEFAULT_FONT = '10px Arial';
+const DEFAULT_WIDTH = 1200;
+const AXIS_HEIGHT_PX = 20; // Height for time axis
+const DEPTH_AXIS_WIDTH_PX = 30; // Width for depth axis
+const TEXT_PADDING = 3;
 
 // --- Color & Utility Functions (Old ones will be removed/replaced) ---
 
@@ -119,6 +127,34 @@ function calculateRenderRange(
   return { startWeight, endWeight, visibleWeight, xFactor, isValidTimeRange };
 }
 
+// --- Height Calculation Logic ---
+
+function calculateFinalCanvasHeight(
+  requestedHeight: number | undefined,
+  widthToCapBy: number,
+  estimatedContentHeight: number,
+  minAxisHeight: number,
+  minFrameHeight: number
+): number {
+  let calculatedHeight: number;
+  if (requestedHeight !== undefined) {
+    calculatedHeight = Math.min(requestedHeight, widthToCapBy);
+    console.log(
+      `[flamechart-to-png] User height ${requestedHeight} provided, capping at width ${widthToCapBy}. Intermediate height: ${calculatedHeight}`
+    );
+  } else {
+    calculatedHeight = Math.min(estimatedContentHeight, widthToCapBy);
+    console.log(
+      `[flamechart-to-png] Height not specified. Estimated: ${estimatedContentHeight}, capping at width ${widthToCapBy}. Intermediate height: ${calculatedHeight}`
+    );
+  }
+  // Ensure a minimum practical height (e.g., axis + 2 rows of frames)
+  const minPracticalHeight = minAxisHeight + minFrameHeight * 2;
+  calculatedHeight = Math.max(minPracticalHeight, calculatedHeight);
+  console.log(`[flamechart-to-png] Final height after min practical check: ${calculatedHeight}`);
+  return calculatedHeight;
+}
+
 // --- Frame Drawing Logic ---
 
 interface DrawFrameParams {
@@ -129,13 +165,13 @@ interface DrawFrameParams {
   startWeight: number;
   endWeight: number;
   xFactor: number;
-  theme: Theme; // Use Theme object
-  frameToColorBucket: Map<string | number, number>; // Pass map directly
+  xAxisOffset: number;
+  theme: Theme;
+  frameToColorBucket: Map<string | number, number>;
   font: string;
   textPadding: number;
 }
 
-// Updated drawFrame to use theme and bucket map
 function drawFrame({
   ctx,
   frame,
@@ -144,6 +180,7 @@ function drawFrame({
   startWeight,
   endWeight,
   xFactor,
+  xAxisOffset,
   theme,
   frameToColorBucket,
   font,
@@ -159,7 +196,7 @@ function drawFrame({
 
   if (visibleDuration <= 0) return;
 
-  const x = (visibleStart - startWeight) * xFactor;
+  const x = xAxisOffset + (visibleStart - startWeight) * xFactor;
   const rectWidth = visibleDuration * xFactor;
 
   if (rectWidth < 0.1) {
@@ -211,12 +248,67 @@ function drawFrame({
   }
 }
 
+// --- Depth Axis Drawing Logic ---
+
+interface DrawDepthAxisParams {
+  ctx: CanvasRenderingContext2D;
+  canvasHeight: number;
+  depthAxisWidth: number;
+  timeAxisHeight: number;
+  frameHeight: number;
+  maxDepth: number;
+  startDepth: number;
+  theme: Theme;
+}
+
+function drawDepthAxis({
+  ctx,
+  canvasHeight,
+  depthAxisWidth,
+  timeAxisHeight,
+  frameHeight,
+  maxDepth,
+  startDepth,
+  theme,
+}: DrawDepthAxisParams): void {
+  // Background
+  ctx.fillStyle = theme.altBgPrimaryColor || theme.bgSecondaryColor;
+  ctx.fillRect(0, 0, depthAxisWidth, canvasHeight);
+
+  // Separator line
+  ctx.fillStyle = theme.fgSecondaryColor;
+  ctx.fillRect(depthAxisWidth - 1, 0, 1, canvasHeight);
+
+  // Text style
+  const fontSize = 10;
+  ctx.font = `${fontSize}px Arial`;
+  ctx.fillStyle = theme.fgPrimaryColor;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+
+  // Draw labels only every 5 levels (or if it's the startDepth)
+  const labelInterval = 5;
+  for (let depth = startDepth; depth <= maxDepth; depth++) {
+    const yPos = timeAxisHeight + (depth - startDepth) * frameHeight + frameHeight / 2;
+
+    // Only draw if the center of the row is visible
+    if (
+      yPos >= timeAxisHeight &&
+      yPos <= canvasHeight &&
+      (depth % labelInterval === 0 || depth === startDepth)
+    ) {
+      ctx.fillText(String(depth), depthAxisWidth - TEXT_PADDING - 2, yPos);
+    }
+  }
+}
+
 // --- Time Axis Drawing Logic ---
 
 interface DrawTimeAxisParams {
   ctx: CanvasRenderingContext2D;
   canvasWidth: number;
   axisHeight: number;
+  xAxisOffset: number;
   startWeight: number;
   endWeight: number;
   xFactor: number;
@@ -228,6 +320,7 @@ function drawTimeAxis({
   ctx,
   canvasWidth,
   axisHeight,
+  xAxisOffset,
   startWeight,
   endWeight,
   xFactor,
@@ -235,12 +328,12 @@ function drawTimeAxis({
   formatValue,
 }: DrawTimeAxisParams): void {
   // Background
-  ctx.fillStyle = theme.altBgPrimaryColor || theme.bgSecondaryColor; // Use an alternate bg or secondary
-  ctx.fillRect(0, 0, canvasWidth, axisHeight);
+  ctx.fillStyle = theme.altBgPrimaryColor || theme.bgSecondaryColor;
+  ctx.fillRect(xAxisOffset, 0, canvasWidth, axisHeight);
 
   // Axis line
   ctx.fillStyle = theme.fgSecondaryColor;
-  ctx.fillRect(0, axisHeight - 1, canvasWidth, 1); // Line at the bottom of the axis area
+  ctx.fillRect(xAxisOffset, axisHeight - 1, canvasWidth, 1);
 
   // Calculate tick interval
   const targetTickDistancePx = 100; // Aim for ticks ~100px apart
@@ -275,11 +368,11 @@ function drawTimeAxis({
   // Draw ticks and labels
   const firstTickWeight = Math.ceil(startWeight / interval) * interval;
   for (let tickWeight = firstTickWeight; tickWeight < endWeight; tickWeight += interval) {
-    const xPos = (tickWeight - startWeight) * xFactor;
+    const xPos = xAxisOffset + (tickWeight - startWeight) * xFactor;
 
     // Draw tick line
     ctx.fillStyle = theme.fgSecondaryColor;
-    ctx.fillRect(xPos - 0.5, 0, 1, axisHeight - 1); // Center line on pixel
+    ctx.fillRect(xPos - 0.5, 0, 1, axisHeight - 1);
 
     // Draw label
     const labelText = formatValue(tickWeight);
@@ -347,22 +440,43 @@ export async function renderToPng(
 
   const flamechart = new Flamechart(flamechartDataSource);
 
-  // Setup Canvas
-  const axisHeightPx = 20; // Height reserved for the time axis
-  const canvasWidth = options.width || 1200;
-  const frameHeightPx = options.frameHeight || 18;
-  // Add axis height and padding below frames
-  const estimatedCanvasHeight = axisHeightPx + (flamechart.getLayers().length + 1) * frameHeightPx;
-  const canvasHeight = options.height || Math.max(axisHeightPx + 50, estimatedCanvasHeight); // Ensure minimum height
-  const font = options.font || '10px Arial';
-  const textPadding = 3;
+  // --- Canvas Setup & Height/Width Calculation ---
+  // Ensure startDepth is a number, default to 0
+  let startDepth = options.startDepth !== undefined ? Number(options.startDepth) : 0;
+  if (isNaN(startDepth)) {
+    console.warn(
+      `[flamechart-to-png] Invalid startDepth value provided (${options.startDepth}), defaulting to 0.`
+    );
+    startDepth = 0;
+  }
 
-  const canvas = createCanvas(canvasWidth, canvasHeight);
+  const frameHeightPx = options.frameHeight || DEFAULT_FRAME_HEIGHT;
+  const font = options.font || DEFAULT_FONT;
+  // Use effective total width from options or default
+  const totalCanvasWidth = options.width || DEFAULT_WIDTH;
+  // Calculate width remaining for flamechart + time axis
+  const flamechartAreaWidth = totalCanvasWidth - DEPTH_AXIS_WIDTH_PX;
+
+  // Calculate final height (using existing helper)
+  const numLayers = flamechart.getLayers().length;
+  const maxDepth = numLayers > 0 ? startDepth + numLayers - 1 : startDepth;
+  const estimatedHeightBasedOnFrames =
+    AXIS_HEIGHT_PX + (numLayers > 0 ? numLayers + 1 : 2) * frameHeightPx;
+  const finalHeight = calculateFinalCanvasHeight(
+    options.height,
+    flamechartAreaWidth, // Cap height based on flamechart area width, not total width
+    estimatedHeightBasedOnFrames,
+    AXIS_HEIGHT_PX,
+    frameHeightPx
+  );
+
+  const canvas = createCanvas(totalCanvasWidth, finalHeight);
   const ctx: CanvasRenderingContext2D = canvas.getContext('2d');
+  // --- End Canvas Setup ---
 
-  // Background
+  // Background (Entire canvas)
   ctx.fillStyle = finalTheme.bgPrimaryColor;
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  ctx.fillRect(0, 0, totalCanvasWidth, finalHeight);
 
   // Check for valid profile weight
   const totalWeight = flamechart.getTotalWeight();
@@ -371,19 +485,23 @@ export async function renderToPng(
     ctx.fillStyle = finalTheme.fgPrimaryColor;
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Profile is empty or has zero total weight.', canvasWidth / 2, canvasHeight / 2);
+    ctx.fillText(
+      'Profile is empty or has zero total weight.',
+      totalCanvasWidth / 2,
+      finalHeight / 2
+    );
     return canvas.toBuffer('image/png');
   }
 
-  // Calculate render range
+  // Calculate render range based on available flamechart width
   const { startWeight, endWeight, visibleWeight, xFactor, isValidTimeRange } = calculateRenderRange(
     activeProfile,
     totalWeight,
-    canvasWidth,
+    flamechartAreaWidth,
     options
   );
 
-  // Handle empty/invalid range before drawing axis
+  // Handle empty/invalid range before drawing axes
   if (visibleWeight <= 0 && isValidTimeRange) {
     console.warn(
       '[flamechart-to-png] Calculated visible weight is 0 or negative, nothing to render in the specified range.'
@@ -391,25 +509,48 @@ export async function renderToPng(
     ctx.fillStyle = finalTheme.fgPrimaryColor;
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Selected time range is empty or too small.', canvasWidth / 2, canvasHeight / 2);
+    ctx.fillText(
+      'Selected time range is empty or too small.',
+      totalCanvasWidth / 2,
+      finalHeight / 2
+    );
     return canvas.toBuffer('image/png');
   }
 
-  // Draw Time Axis FIRST (below background, above frames)
+  // --- Draw Axes ---
+  // Draw Depth Axis
+  drawDepthAxis({
+    ctx,
+    canvasHeight: finalHeight,
+    depthAxisWidth: DEPTH_AXIS_WIDTH_PX,
+    timeAxisHeight: AXIS_HEIGHT_PX,
+    frameHeight: frameHeightPx,
+    maxDepth,
+    startDepth,
+    theme: finalTheme,
+  });
+
+  // Draw Time Axis (shifted right)
   drawTimeAxis({
     ctx,
-    canvasWidth,
-    axisHeight: axisHeightPx,
+    canvasWidth: flamechartAreaWidth,
+    axisHeight: AXIS_HEIGHT_PX,
+    xAxisOffset: DEPTH_AXIS_WIDTH_PX,
     startWeight,
     endWeight,
     xFactor,
     theme: finalTheme,
-    formatValue: flamechartDataSource.formatValue, // Pass the formatter
+    formatValue: flamechartDataSource.formatValue,
   });
+  // --- End Draw Axes ---
 
-  // Draw layers and frames, shifted down by axis height
-  flamechart.getLayers().forEach((layer, layerIndex) => {
-    const y = axisHeightPx + layerIndex * frameHeightPx; // Shift y-coordinate
+  // Get the relevant layers based on startDepth
+  const layersToRender = flamechart.getLayers().slice(startDepth);
+
+  layersToRender.forEach((layer, visibleLayerIndex) => {
+    const actualDepth = startDepth + visibleLayerIndex; // The true depth for labeling and context
+    const y = AXIS_HEIGHT_PX + visibleLayerIndex * frameHeightPx; // Y position for drawing on canvas
+
     layer.forEach((frame) => {
       drawFrame({
         ctx,
@@ -419,10 +560,11 @@ export async function renderToPng(
         startWeight,
         endWeight,
         xFactor,
+        xAxisOffset: DEPTH_AXIS_WIDTH_PX,
         theme: finalTheme,
         frameToColorBucket,
         font,
-        textPadding,
+        textPadding: TEXT_PADDING,
       });
     });
   });

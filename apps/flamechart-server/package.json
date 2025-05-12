@@ -1,0 +1,25 @@
+{
+  "name": "@flamedeck/flamechart-server",
+  "version": "0.0.1",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@flamedeck/flamechart-to-png": "workspace:*",
+    "@flamedeck/speedscope-import": "workspace:*",
+    "express": "^4.19.2",
+    "long": "^5.3.2",
+    "pako": "^2.1.0",
+    "uint8array-json-parser": "^0.0.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/long": "^5.0.0",
+    "@types/node": "^20.14.13",
+    "@types/pako": "^2.0.3",
+    "tsx": "^4.19.4"
+  }
+}
