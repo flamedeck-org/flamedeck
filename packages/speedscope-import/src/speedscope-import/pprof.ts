@@ -12,8 +12,15 @@ interface SampleType {
   unit: string;
 }
 
+// type Location =  Location;
+type Location = any;
+// type Profile = perftools.profiles.Profile;
+type PerfToolsProfile = any;
+// type PerfToolsFunction = perftools.profiles.IFunction;
+type PerfToolsFunction = any;
+
 // Find the index of the SampleType which should be used as our default
-function getSampleTypeIndex(profile: perftools.profiles.Profile): number {
+function getSampleTypeIndex(profile: PerfToolsProfile): number {
   const dflt = profile.defaultSampleType;
   const sampleTypes = profile.sampleType;
   const fallback = sampleTypes.length - 1;
@@ -37,7 +44,7 @@ export function importAsPprofProfile(
 ): Profile | null {
   if (rawProfile.byteLength === 0) return null;
 
-  let protoProfile: perftools.profiles.Profile;
+  let protoProfile: PerfToolsProfile;
   try {
     protoProfile = perftools.profiles.Profile.decode(new Uint8Array(rawProfile));
   } catch (e) {
@@ -57,7 +64,7 @@ export function importAsPprofProfile(
 
   const frameInfoByFunctionID = new Map<number, FrameInfo>();
 
-  function frameInfoForFunction(f: perftools.profiles.IFunction): FrameInfo | null {
+  function frameInfoForFunction(f: PerfToolsFunction): FrameInfo | null {
     const { name, filename, startLine } = f;
 
     const nameString = (name != null && stringVal(name)) || '(unknown)';
@@ -91,7 +98,7 @@ export function importAsPprofProfile(
     }
   }
 
-  function frameInfoForLocation(location: perftools.profiles.ILocation): FrameInfo | null {
+  function frameInfoForLocation(location: Location): FrameInfo | null {
     const { line } = location;
     if (line == null || line.length === 0) return null;
 
@@ -106,7 +113,8 @@ export function importAsPprofProfile(
     //      line[1].function_name == "printf"
     //
     // Let's just take the last line then
-    const lastLine = lastOf(line);
+    // TODO: Uncomment this type
+    const lastLine: any = lastOf(line);
     if (lastLine == null) return null;
 
     if (lastLine.functionId != null && deps.isLong(lastLine.functionId)) {

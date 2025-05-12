@@ -1,5 +1,5 @@
 {
-  "name": "speedscope-import",
+  "name": "@flamedeck/speedscope-import",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "packages/speedscope-import/src",
@@ -22,6 +22,19 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "tsc --noEmit -p packages/speedscope-import/tsconfig.json"
+      }
+    },
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "packages/speedscope-import/dist",
+        "main": "packages/speedscope-import/src/index.ts",
+        "tsConfig": "packages/speedscope-import/tsconfig.json",
+        "assets": ["packages/speedscope-import/*.md"],
+        "format": ["esm"],
+        "bundle": false,
+        "platform": "node"
       }
     }
   }

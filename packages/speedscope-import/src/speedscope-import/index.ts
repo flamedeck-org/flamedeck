@@ -340,7 +340,10 @@ async function _importProfileGroup(
   return { profileGroup, profileType };
 }
 
-export async function importFromFileSystemDirectoryEntry(entry: FileSystemDirectoryEntry) {
+export async function importFromFileSystemDirectoryEntry(
+  entry: FileSystemDirectoryEntry,
+  deps: ImporterDependencies
+) {
   console.log('Importing as Instruments Trace Directory');
-  return importFromInstrumentsTrace(entry);
+  return importFromInstrumentsTrace(entry, deps);
 }

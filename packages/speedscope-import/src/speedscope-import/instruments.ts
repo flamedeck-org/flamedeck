@@ -15,7 +15,7 @@ import {
   zeroPad,
 } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { ByteFormatter, TimeFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
-import type { TextFileContent } from './importer-utils.ts';
+import type { ImporterDependencies, TextFileContent } from './importer-utils.ts';
 import { MaybeCompressedDataReader } from './importer-utils.ts';
 
 function parseTSV<T>(contents: TextFileContent): T[] {
@@ -197,12 +197,12 @@ async function extractDirectoryTree(entry: FileSystemDirectoryEntry): Promise<Tr
   return node;
 }
 
-function readAsArrayBuffer(file: File): Promise<ArrayBuffer> {
-  return MaybeCompressedDataReader.fromFile(file).readAsArrayBuffer();
+function readAsArrayBuffer(file: File, deps: ImporterDependencies): Promise<ArrayBuffer> {
+  return MaybeCompressedDataReader.fromFile(file, deps).readAsArrayBuffer();
 }
 
-function readAsText(file: File): Promise<TextFileContent> {
-  return MaybeCompressedDataReader.fromFile(file).readAsText();
+function readAsText(file: File, deps: ImporterDependencies): Promise<TextFileContent> {
+  return MaybeCompressedDataReader.fromFile(file, deps).readAsText(deps);
 }
 
 function getCoreDirForRun(tree: TraceDirectoryTree, selectedRun: number): TraceDirectoryTree {
@@ -267,17 +267,20 @@ interface Sample {
   backtraceID: number;
 }
 
-async function getRawSampleList(core: TraceDirectoryTree): Promise<Sample[]> {
+async function getRawSampleList(
+  core: TraceDirectoryTree,
+  deps: ImporterDependencies
+): Promise<Sample[]> {
   const stores = getOrThrow(core.subdirectories, 'stores');
   for (const storedir of stores.subdirectories.values()) {
     const schemaFile = storedir.files.get('schema.xml');
     if (!schemaFile) continue;
-    const schema = await readAsText(schemaFile);
+    const schema = await readAsText(schemaFile, deps);
     if (!/name="time-profile"/.exec(schema.firstChunk())) {
       continue;
     }
     const bulkstore = new BinReader(
-      await readAsArrayBuffer(getOrThrow(storedir.files, 'bulkstore'))
+      await readAsArrayBuffer(getOrThrow(storedir.files, 'bulkstore'), deps)
     );
     // Ignore the first 3 words
     bulkstore.readUint32();
@@ -306,7 +309,11 @@ async function getRawSampleList(core: TraceDirectoryTree): Promise<Sample[]> {
   throw new Error('Could not find sample list');
 }
 
-async function getIntegerArrays(samples: Sample[], core: TraceDirectoryTree): Promise<number[][]> {
+async function getIntegerArrays(
+  samples: Sample[],
+  core: TraceDirectoryTree,
+  deps: ImporterDependencies
+): Promise<number[][]> {
   const uniquing = getOrThrow(core.subdirectories, 'uniquing');
   const arrayUniquer = getOrThrow(uniquing.subdirectories, 'arrayUniquer');
   const integeruniquerindex = getOrThrow(arrayUniquer.files, 'integeruniquer.index');
@@ -321,8 +328,8 @@ async function getIntegerArrays(samples: Sample[], core: TraceDirectoryTree): Pr
 
   // This table contains the memory addresses of stack frames
 
-  const indexreader = new BinReader(await readAsArrayBuffer(integeruniquerindex));
-  const datareader = new BinReader(await readAsArrayBuffer(integeruniquerdata));
+  const indexreader = new BinReader(await readAsArrayBuffer(integeruniquerindex, deps));
+  const datareader = new BinReader(await readAsArrayBuffer(integeruniquerdata, deps));
 
   // Header we don't care about
   indexreader.seek(32);
@@ -370,9 +377,12 @@ interface FormTemplateData {
   runs: FormTemplateRunData[];
 }
 
-async function readFormTemplate(tree: TraceDirectoryTree): Promise<FormTemplateData> {
+async function readFormTemplate(
+  tree: TraceDirectoryTree,
+  deps: ImporterDependencies
+): Promise<FormTemplateData> {
   const formTemplate = getOrThrow(tree.files, 'form.template');
-  const archive = readInstrumentsKeyedArchive(await readAsArrayBuffer(formTemplate));
+  const archive = readInstrumentsKeyedArchive(await readAsArrayBuffer(formTemplate, deps));
 
   const version = archive['com.apple.xray.owner.template.version'];
   let selectedRunNumber = 1;
@@ -433,11 +443,12 @@ async function readFormTemplate(tree: TraceDirectoryTree): Promise<FormTemplateD
 
 // Import from a .trace file saved from Mac Instruments.app
 export async function importFromInstrumentsTrace(
-  entry: FileSystemDirectoryEntry
+  entry: FileSystemDirectoryEntry,
+  deps: ImporterDependencies
 ): Promise<ProfileGroup> {
   const tree = await extractDirectoryTree(entry);
 
-  const { version, runs, instrument, selectedRunNumber } = await readFormTemplate(tree);
+  const { version, runs, instrument, selectedRunNumber } = await readFormTemplate(tree, deps);
   if (instrument !== 'com.apple.xray.instrument-type.coresampler2') {
     throw new Error(
       `The only supported instrument from .trace import is "com.apple.xray.instrument-type.coresampler2". Got ${instrument}`
@@ -456,6 +467,7 @@ export async function importFromInstrumentsTrace(
       tree,
       addressToFrameMap,
       runNumber: number,
+      deps,
     });
 
     if (run.number === selectedRunNumber) {
@@ -473,11 +485,12 @@ export async function importRunFromInstrumentsTrace(args: {
   tree: TraceDirectoryTree;
   addressToFrameMap: Map<number, FrameInfo>;
   runNumber: number;
+  deps: ImporterDependencies;
 }): Promise<ProfileGroup> {
   const { fileName, tree, addressToFrameMap, runNumber } = args;
   const core = getCoreDirForRun(tree, runNumber);
-  const samples = await getRawSampleList(core);
-  const arrays = await getIntegerArrays(samples, core);
+  const samples = await getRawSampleList(core, args.deps);
+  const arrays = await getIntegerArrays(samples, core, args.deps);
 
   // We'll try to guess which thread is the main thread by assuming
   // it's the one with the most samples.
@@ -821,7 +834,7 @@ function paternMatchObjectiveC(
 ////////////////////////////////////////////////////////////////////////////////
 
 export class UID {
-  constructor(public index: number) { }
+  constructor(public index: number) {}
 }
 
 function parseBinaryPlist(bytes: Uint8Array): any {
@@ -847,7 +860,7 @@ class BinaryPlistParser {
   objects: number[] = [];
   offsetTable: number[] = [];
 
-  constructor(public view: DataView) { }
+  constructor(public view: DataView) {}
 
   parseRoot(): any {
     const trailer = this.view.byteLength - 32;

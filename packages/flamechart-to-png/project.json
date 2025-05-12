@@ -1,0 +1,48 @@
+{
+  "name": "@flamedeck/flamechart-to-png",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/flamechart-to-png/src",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "inputs": [
+        "default",
+        "{workspaceRoot}/eslint.config.js",
+        "{workspaceRoot}/.prettierrc.cjs",
+        "{workspaceRoot}/tsconfig.base.json"
+      ],
+      "options": {
+        "lintFilePatterns": ["packages/flamechart-to-png/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/flamechart-to-png/tsconfig.json"
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "packages/flamechart-to-png/dist",
+        "main": "packages/flamechart-to-png/src/index.ts",
+        "tsConfig": "packages/flamechart-to-png/tsconfig.json",
+        "assets": ["packages/flamechart-to-png/*.md"]
+      }
+    },
+    "test-render": {
+      "executor": "@nx/js:node",
+      "options": {
+        "buildTarget": "@flamedeck/flamechart-to-png:build",
+        "main": "packages/flamechart-to-png/src/test-render.ts"
+      },
+      "configurations": {
+        "development": {}
+      }
+    }
+  }
+}
