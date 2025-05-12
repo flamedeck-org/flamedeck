@@ -19,7 +19,7 @@ import DocsCliUploadPage from './pages/DocsCliUploadPage';
 import DocsNpmUploadPage from './pages/DocsNpmUploadPage';
 import DocsReactNativePage from './pages/DocsReactNativePage';
 import DocsLayout from './components/docs/DocsLayout';
-import { useTheme } from './components/speedscope-ui/themes/theme';
+import { useTheme } from './components/speedscope-ui/theme.tsx';
 import { useAtom } from './lib/speedscope-core/atom';
 import { glCanvasAtom } from './lib/speedscope-core/app-state/index';
 import { getCanvasContext } from './lib/speedscope-core/app-state/getters';

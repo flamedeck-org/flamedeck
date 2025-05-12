@@ -1,25 +1,24 @@
-import { Rect, AffineTransform, Vec2, clamp } from '../../lib/speedscope-core/math.ts';
-import type { CallTreeNode } from '../../lib/speedscope-core/profile.ts';
-import type { Flamechart, FlamechartFrame } from '../../lib/speedscope-core/flamechart.ts';
-import type { CanvasContext } from '../../lib/speedscope-gl/canvas-context.ts';
-import type { FlamechartRenderer } from '../../lib/speedscope-gl/flamechart-renderer.ts';
+import { Rect, AffineTransform, Vec2, clamp } from '@flamedeck/speedscope-core/math';
+import type { CallTreeNode } from '@flamedeck/speedscope-core/profile';
+import type { Flamechart, FlamechartFrame } from '@flamedeck/speedscope-core/flamechart';
+import type { CanvasContext } from '@flamedeck/speedscope-gl/src/canvas-context';
+import type { FlamechartRenderer } from '@flamedeck/speedscope-gl/src/flamechart-renderer';
 import { Sizes, FontSize, FontFamily } from './style.ts';
 import {
   cachedMeasureTextWidth,
   ELLIPSIS,
   trimTextMid,
   remapRangesToTrimmedText,
-} from '../../lib/speedscope-core/text-utils.ts';
+} from '@flamedeck/speedscope-core/text-utils';
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
-import type { ProfileSearchResults } from '../../lib/speedscope-core/profile-search.ts';
+import { Component } from 'react';
+import type { ProfileSearchResults } from '@/lib/speedscope-core/profile-search';
 import {
   BatchCanvasTextRenderer,
   BatchCanvasRectRenderer,
-} from '../../lib/speedscope-core/canvas-2d-batch-renderers.ts';
-import { Color } from '../../lib/speedscope-core/color.ts';
-import type { Theme } from './themes/theme.tsx';
+} from '@/lib/speedscope-core/canvas-2d-batch-renderers.ts';
+import { Color } from '@flamedeck/speedscope-core/color';
+import type { Theme } from '@flamedeck/speedscope-theme/types';
 
 interface FlamechartFrameLabel {
   configSpaceBounds: Rect;

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Moon, Sun, Check } from 'lucide-react';
 import { useAtom } from '@/lib/speedscope-core/atom'; // Adjusted path
-import { colorSchemeAtom } from '@/components/speedscope-ui/themes/theme'; // Adjusted path
+import { colorSchemeAtom } from '@/components/speedscope-ui/theme'; // Adjusted path
 import { ColorScheme } from '@/lib/speedscope-core/app-state/color-scheme'; // Adjusted path
 import { useTheme } from 'next-themes'; // Import useTheme
 

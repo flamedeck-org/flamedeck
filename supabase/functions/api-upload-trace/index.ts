@@ -13,7 +13,7 @@ import * as pako from 'npm:pako'; // Import pako for Deno
 import { JSON_parse } from 'npm:uint8array-json-parser'; // Import parser for Deno
 import Long from 'npm:long'; // Import Long for Deno
 // Import type from the package index file
-import { type ImporterDependencies } from '../../../packages/shared-importer/src/index.ts';
+import { type ImporterDependencies } from '../../../packages/speedscope-import/src/index.ts';
 import { z } from 'https://esm.sh/zod@3.23.8'; // Import Zod
 // Adjust import to get the ProfileGroup type if needed, and exportProfileGroup
 import {
@@ -21,7 +21,7 @@ import {
   getDurationMsFromProfileGroup, // Import the new utility
   importProfilesFromArrayBuffer,
   ProfileType, // Assuming ProfileType is exported
-} from '../../../packages/shared-importer/src/index.ts';
+} from '../../../packages/speedscope-import/src/index.ts';
 
 // --- Shared Importer ---
 // NOTE: Ensure this relative path is correct from the perspective of the compiled function

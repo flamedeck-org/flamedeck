@@ -27,7 +27,7 @@ import type { StructuredComment } from '@/components/comments';
 import { CommentItem } from '@/components/comments';
 import { Separator } from '@/components/ui/separator';
 import { buttonVariants } from '@/components/ui/button';
-import type { ProfileType } from '@trace-view-pilot/shared-importer';
+import type { ProfileType } from 'packages/speedscope-import/src';
 import type { SpeedscopeViewType } from '@/components/SpeedscopeViewer';
 import { useSharingModal } from '@/hooks/useSharingModal';
 import { useTraceDetails } from '@/hooks/useTraceDetails';

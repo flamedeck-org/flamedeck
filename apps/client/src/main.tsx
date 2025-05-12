@@ -12,7 +12,7 @@ import './index.css';
 // Import highlight.js themes
 import 'highlight.js/styles/github.css'; // Default (light) theme
 import 'highlight.js/styles/github-dark.css'; // Dark theme
-import { ThemeProvider as SpeedscopeThemeProvider } from './components/speedscope-ui/themes/theme'; // Renamed for clarity
+import { ThemeProvider as SpeedscopeThemeProvider } from './components/speedscope-ui/theme.tsx'; // Renamed for clarity
 // Import ThemeProvider from next-themes
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 

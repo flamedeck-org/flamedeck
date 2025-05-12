@@ -1,8 +1,12 @@
 import { Atom } from '../atom';
-import { clamp, Rect, Vec2 } from '../math';
-import type { CallTreeNode, Frame, Profile, ProfileGroup } from '../profile';
-import { FrameInfo } from '../profile';
-import { objectsHaveShallowEquality } from '../lib-utils';
+import { clamp, Rect, Vec2 } from '@flamedeck/speedscope-core/math';
+import type {
+  CallTreeNode,
+  Frame,
+  Profile,
+  ProfileGroup,
+} from '@flamedeck/speedscope-core/profile';
+import { objectsHaveShallowEquality } from '@flamedeck/speedscope-core/lib-utils';
 
 export interface FlamechartViewState {
   hover: {

@@ -12,15 +12,14 @@ import React, {
   useRef,
   useImperativeHandle,
 } from 'react';
-import { Sizes, FontSize } from './style';
 import { InvertedCallerFlamegraphView } from './inverted-caller-flamegraph-view';
 import { CalleeFlamegraphView } from './callee-flamegraph-view';
 import { SandwichSearchView } from './sandwich-search-view';
-import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
-import { sortBy } from '../../lib/speedscope-core/lib-utils';
+import type { ActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state';
+import { sortBy } from '@flamedeck/speedscope-core/lib-utils';
 import { ProfileSearchContext } from './search-view';
-import type { Theme } from './themes/theme';
-import { useTheme } from './themes/theme';
+import type { Theme } from '@flamedeck/speedscope-theme/types';
+import { useTheme } from './theme';
 import {
   SortField,
   SortDirection,

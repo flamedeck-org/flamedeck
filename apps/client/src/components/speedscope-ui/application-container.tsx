@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import { getCanvasContext } from '../../lib/speedscope-core/app-state/getters';
 import { useActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
-import { useTheme } from './themes/theme';
+import { useTheme } from './theme';
 import {
   dragActiveAtom,
   errorAtom,

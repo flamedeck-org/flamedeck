@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SpeedscopeViewType } from '@/components/SpeedscopeViewer';
 import SpeedscopeViewer from '@/components/SpeedscopeViewer';
-import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { getTraceBlob } from '@/lib/api/storage';
@@ -27,12 +26,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAtom } from '../lib/speedscope-core/atom.ts';
-import type { FlamegraphThemeName } from '../components/speedscope-ui/themes/theme.tsx';
+import { flamegraphThemeAtom } from '../components/speedscope-ui/theme';
 import {
-  flamegraphThemeAtom,
   flamegraphThemeDisplayNames,
   flamegraphThemePreviews,
-} from '../components/speedscope-ui/themes/theme.tsx';
+} from '@flamedeck/speedscope-theme/flamegraph-theme-registry';
+import { type FlamegraphThemeName } from '@flamedeck/speedscope-theme/types.ts';
 import { useSharingModal } from '@/hooks/useSharingModal';
 
 // Define a fallback component to display on error

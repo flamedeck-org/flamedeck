@@ -32,10 +32,13 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@trace-view-pilot/shared-importer': path.resolve(
+      '@flamedeck/speedscope-import': path.resolve(
         __dirname,
-        '../../packages/shared-importer/src'
+        '../../packages/speedscope-import/src'
       ),
+      '@flamedeck/speedscope-core': path.resolve(__dirname, '../../packages/speedscope-core/src'),
+      '@flamedeck/speedscope-theme': path.resolve(__dirname, '../../packages/speedscope-theme/src'),
+      '@flamedeck/speedscope-gl': path.resolve(__dirname, '../../packages/speedscope-gl/src'),
     },
   },
   build: {

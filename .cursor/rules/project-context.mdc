@@ -26,11 +26,16 @@ This project is an nx monorepo for a web-based tool designed to view and collabo
 
 ## Packages
 
+* `packages/speedscope-core`: Core logic of speedscope
+* `packages/speedscope-import`: We share the core logic of parsing a profile from a file / array buffer and converting it to the speedscope format between the client and a supabase edge function. To do this we ensure that the code is simple typescript and does not import from any external modules (since Vite and Deno handle module resolution differently).
+* `packages/speedscope-gl`: Flamechart rendering code from speedscope
+* `packages/speedscope-theme`: Theme definitions for flamegraphs
+
 ### `supabase`
 
 The root supabase folder contains database migrations as well as edge functions. Right now the following edge functions exist:
 
-* `/subabase/functions/api-upload-trace`: Allows users with an API key to upload a trace, which is converted to a speescope format, compressed, and stored in the backend. It runs on Deno and uses shared logic from `packages/shared-importer`.
+* `/subabase/functions/api-upload-trace`: Allows users with an API key to upload a trace, which is converted to a speescope format, compressed, and stored in the backend. It runs on Deno and uses shared logic from `packages/speedscope-import`.
 
 ### `apps/client`
 
@@ -64,10 +69,6 @@ Standard Vite/React/TS/Tailwind/Supabase config files (`vite.config.ts`, `tailwi
 #### Database schema
 
 The database schema is defined in [types.ts](mdc:apps/client/src/integrations/supabase/types.ts)
-
-### `packages/shared-importer`
-
-We share the core logic of parsing a profile from a file / array buffer and converting it to the speedscope format between the client and a supabase edge function. To do this we ensure that the code is simple typescript and does not import from any external modules (since Vite and Deno handle module resolution differently).
 
 ## Deployment
 

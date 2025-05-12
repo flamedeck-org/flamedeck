@@ -16,8 +16,14 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["apps/client/src/*"],
-      "@trace-view-pilot/shared-importer": ["packages/shared-importer/src/index.ts"]
+      "@flamedeck/speedscope-import": ["packages/speedscope-import/src/index.ts"],
+      "@flamedeck/speedscope-core": ["packages/speedscope-core/src/index.ts"],
+      "@flamedeck/speedscope-core/*": ["packages/speedscope-core/src/*"],
+      "@flamedeck/speedscope-gl": ["packages/speedscope-gl/src/index.ts"],
+      "@flamedeck/speedscope-gl/*": ["packages/speedscope-gl/src/*"],
+      "@flamedeck/speedscope-theme": ["packages/speedscope-theme/src/index.ts"],
+      "@flamedeck/speedscope-theme/*": ["packages/speedscope-theme/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]
-} 
+}

@@ -1,13 +1,13 @@
 import type { MouseEvent, WheelEvent } from 'react';
-import React, { Component } from 'react';
-import type { Flamechart } from '../../lib/speedscope-core/flamechart';
-import { Rect, Vec2, AffineTransform, clamp } from '../../lib/speedscope-core/math';
-import type { FlamechartRenderer } from '../../lib/speedscope-gl/flamechart-renderer';
+import { Component } from 'react';
+import type { Flamechart } from '@flamedeck/speedscope-core/src/flamechart';
+import { Rect, Vec2, AffineTransform, clamp } from '@flamedeck/speedscope-core/math';
+import type { FlamechartRenderer } from '@flamedeck/speedscope-gl/src/flamechart-renderer';
 import { FontFamily, FontSize, Sizes } from './style';
-import type { CanvasContext } from '../../lib/speedscope-gl/canvas-context';
-import { cachedMeasureTextWidth } from '../../lib/speedscope-core/text-utils';
-import { Color } from '../../lib/speedscope-core/color';
-import type { Theme } from './themes/theme';
+import type { CanvasContext } from '@flamedeck/speedscope-gl/src/canvas-context';
+import { cachedMeasureTextWidth } from '@flamedeck/speedscope-core/text-utils';
+import { Color } from '@flamedeck/speedscope-core/color';
+import type { Theme } from '@flamedeck/speedscope-theme/types';
 
 interface FlamechartMinimapViewProps {
   theme: Theme;

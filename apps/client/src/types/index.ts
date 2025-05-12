@@ -1,4 +1,4 @@
-import type { ProfileType } from '@trace-view-pilot/shared-importer';
+import type { ProfileType } from 'packages/speedscope-import/src';
 import { User } from '@supabase/supabase-js';
 
 export interface UserProfile {
