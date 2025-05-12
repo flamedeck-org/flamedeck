@@ -7,6 +7,8 @@ export interface RenderToPngOptions {
   height?: number;
   frameHeight?: number;
   font?: string;
+  startTimeMs?: number;
+  endTimeMs?: number;
   // TODO: Add theme/color options
 }
 
@@ -77,14 +79,14 @@ export async function renderToPng(
     getTotalWeight: activeProfile.getTotalWeight.bind(activeProfile),
     forEachCall: activeProfile.forEachCall.bind(activeProfile),
     formatValue: activeProfile.formatValue.bind(activeProfile),
-    getColorBucketForFrame: getColorBucketForFramePlaceholder, // Use our placeholder
+    getColorBucketForFrame: getColorBucketForFramePlaceholder,
   };
 
   const flamechart = new Flamechart(flamechartDataSource);
 
   const canvasWidth = options.width || 1200;
   const frameHeightPx = options.frameHeight || 18;
-  const estimatedCanvasHeight = (flamechart.getLayers().length + 2) * frameHeightPx; // +2 for padding/axis
+  const estimatedCanvasHeight = (flamechart.getLayers().length + 2) * frameHeightPx;
   const canvasHeight = options.height || Math.max(200, estimatedCanvasHeight);
 
   const font = options.font || '10px Arial';
@@ -93,14 +95,12 @@ export async function renderToPng(
   const canvas = createCanvas(canvasWidth, canvasHeight);
   const ctx: CanvasRenderingContext2D = canvas.getContext('2d');
 
-  // Set background
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   const totalWeight = flamechart.getTotalWeight();
   if (totalWeight <= 0) {
     console.warn('[flamechart-to-png] Total weight of the flamechart is 0, nothing to render.');
-    // Render a message on the canvas?
     ctx.fillStyle = 'black';
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
@@ -108,30 +108,94 @@ export async function renderToPng(
     return canvas.toBuffer('image/png');
   }
 
-  const xFactor = canvasWidth / totalWeight;
+  let startWeight = 0;
+  let endWeight = totalWeight;
+  const unit = activeProfile.getWeightUnit();
+  let isValidTimeRange = true;
+
+  let msToWeightUnitFactor: number | null = null;
+  if (unit === 'nanoseconds')
+    msToWeightUnitFactor = 1_000_000; // 1ms = 1,000,000 ns
+  else if (unit === 'microseconds')
+    msToWeightUnitFactor = 1_000; // 1ms = 1,000 µs
+  else if (unit === 'milliseconds')
+    msToWeightUnitFactor = 1; // 1ms = 1 ms
+  else if (unit === 'seconds') msToWeightUnitFactor = 0.001; // 1ms = 0.001 s
+
+  if (
+    (options.startTimeMs !== undefined || options.endTimeMs !== undefined) &&
+    msToWeightUnitFactor !== null
+  ) {
+    if (options.startTimeMs !== undefined) {
+      startWeight = Math.max(0, options.startTimeMs * msToWeightUnitFactor);
+    }
+    if (options.endTimeMs !== undefined) {
+      endWeight = Math.min(totalWeight, options.endTimeMs * msToWeightUnitFactor);
+    }
+
+    if (startWeight >= endWeight) {
+      console.warn(
+        `[flamechart-to-png] Invalid time range: startTimeMs (${options.startTimeMs}) resulted in startWeight (${startWeight}) >= endTimeMs (${options.endTimeMs}) resulted in endWeight (${endWeight}). Rendering full chart.`
+      );
+      startWeight = 0;
+      endWeight = totalWeight;
+      isValidTimeRange = false;
+    } else {
+      console.log(
+        `[flamechart-to-png] Rendering weight range: ${startWeight} to ${endWeight} (based on ${
+          options.startTimeMs ?? 'start'
+        }ms to ${options.endTimeMs ?? 'end'}ms)`
+      );
+    }
+  } else if (options.startTimeMs !== undefined || options.endTimeMs !== undefined) {
+    console.warn(
+      `[flamechart-to-png] startTimeMs/endTimeMs provided, but profile unit (${unit}) is not time-based or not recognized for conversion. Ignoring time range.`
+    );
+  }
+
+  const visibleWeight = endWeight - startWeight;
+  if (visibleWeight <= 0 && isValidTimeRange) {
+    console.warn(
+      '[flamechart-to-png] Calculated visible weight is 0 or negative, nothing to render in the specified range.'
+    );
+    ctx.fillStyle = 'black';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Selected time range is empty or too small.', canvasWidth / 2, canvasHeight / 2);
+    return canvas.toBuffer('image/png');
+  }
+
+  const xFactor = canvasWidth / visibleWeight;
 
   flamechart.getLayers().forEach((layer, layerIndex) => {
     const y = layerIndex * frameHeightPx;
     layer.forEach((frame) => {
-      const x = frame.start * xFactor;
-      const rectWidth = (frame.end - frame.start) * xFactor;
+      if (frame.end <= startWeight || frame.start >= endWeight) {
+        return;
+      }
+
+      const visibleStart = Math.max(frame.start, startWeight);
+      const visibleEnd = Math.min(frame.end, endWeight);
+      const visibleDuration = visibleEnd - visibleStart;
+
+      if (visibleDuration <= 0) return;
+
+      const x = (visibleStart - startWeight) * xFactor;
+      const rectWidth = visibleDuration * xFactor;
 
       if (rectWidth < 0.1) {
-        // Skip drawing extremely small rectangles
         return;
       }
 
       const colorBucket = flamechartDataSource.getColorBucketForFrame(frame.node.frame);
       ctx.fillStyle = getFrameColor(frame.node.frame, colorBucket);
-      ctx.fillRect(x, y, rectWidth, frameHeightPx);
+      ctx.fillRect(x, y, Math.max(0, rectWidth), frameHeightPx);
 
-      // Draw border for visibility
       ctx.strokeStyle = '#555';
       ctx.lineWidth = 0.5;
-      ctx.strokeRect(x, y, rectWidth, frameHeightPx);
+      ctx.strokeRect(x, y, Math.max(0, rectWidth), frameHeightPx);
 
-      // Draw text label if there's enough space
-      const minWidthForText = 20; // Arbitrary minimum width to attempt drawing text
+      const minWidthForText = 20;
       if (rectWidth > minWidthForText) {
         ctx.font = font;
         ctx.fillStyle = 'black';
@@ -142,7 +206,6 @@ export async function renderToPng(
         const maxTextWidth = rectWidth - 2 * textPadding;
         let displayText = frameName;
         if (ctx.measureText(displayText).width > maxTextWidth) {
-          // Simple truncation, could be more sophisticated (e.g., ellipsis middle)
           let newLen = displayText.length;
           while (
             ctx.measureText(displayText.substring(0, newLen) + '...').width > maxTextWidth &&
@@ -154,7 +217,6 @@ export async function renderToPng(
         }
 
         if (ctx.measureText(displayText).width <= maxTextWidth && displayText.length > 0) {
-          // Final check
           ctx.fillText(displayText, x + textPadding, y + frameHeightPx / 2);
         }
       }

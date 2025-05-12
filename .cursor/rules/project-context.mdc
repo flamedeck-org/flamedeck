@@ -30,6 +30,7 @@ This project is an nx monorepo for a web-based tool designed to view and collabo
 * `packages/speedscope-import`: We share the core logic of parsing a profile from a file / array buffer and converting it to the speedscope format between the client and a supabase edge function. To do this we ensure that the code is simple typescript and does not import from any external modules (since Vite and Deno handle module resolution differently).
 * `packages/speedscope-gl`: Flamechart rendering code from speedscope
 * `packages/speedscope-theme`: Theme definitions for flamegraphs
+* `packages/flamechart-to-png`: Code for rendering a flamegraph to a png file, using speedscope utils
 
 ### `supabase`
 

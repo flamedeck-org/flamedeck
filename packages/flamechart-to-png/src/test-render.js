@@ -15,16 +15,37 @@ const importerDeps = {
 async function main() {
   console.log('!!!!!!!!!!!! FULL TEST-RENDER.TS SCRIPT STARTED !!!!!!!!!!!!');
   const args = process.argv.slice(2);
-  if (args.length < 1) {
+
+  // Simple argument parsing
+  let profileFilePath = null;
+  let outputFilePath = null;
+  let startTimeMs = undefined;
+  let endTimeMs = undefined;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--start-time-ms' && i + 1 < args.length) {
+      startTimeMs = parseFloat(args[i + 1]);
+      i++; // Skip the value
+    } else if (args[i] === '--end-time-ms' && i + 1 < args.length) {
+      endTimeMs = parseFloat(args[i + 1]);
+      i++; // Skip the value
+    } else if (!profileFilePath) {
+      profileFilePath = path.resolve(args[i]);
+    } else if (!outputFilePath) {
+      outputFilePath = args[i];
+    }
+  }
+
+  if (!profileFilePath) {
     console.error(
-      'Usage: ts-node packages/flamechart-to-png/src/test-render.ts <path-to-profile-file> [output-path.png]'
+      'Usage: ts-node packages/flamechart-to-png/src/test-render.ts <path-to-profile-file> [output-path.png] [--start-time-ms <ms>] [--end-time-ms <ms>]'
     );
     process.exit(1);
   }
 
-  const profileFilePath = path.resolve(args[0]);
-  const outputFilePath =
-    args[1] || `${path.basename(profileFilePath, path.extname(profileFilePath))}-flamechart.png`;
+  if (!outputFilePath) {
+    outputFilePath = `${path.basename(profileFilePath, path.extname(profileFilePath))}-flamechart.png`;
+  }
   const resolvedOutputFilePath = path.resolve(outputFilePath);
 
   try {
@@ -54,14 +75,25 @@ async function main() {
     const defaultWidth = 1200;
     const defaultHeight = 800;
 
-    const pngBuffer = await renderToPng(profileGroup, {
+    const renderOptions = {
       width: defaultWidth,
       height: defaultHeight,
-    });
+    };
+
+    if (startTimeMs !== undefined && !isNaN(startTimeMs)) {
+      renderOptions.startTimeMs = startTimeMs;
+      console.log(`Using start time: ${startTimeMs}ms`);
+    }
+    if (endTimeMs !== undefined && !isNaN(endTimeMs)) {
+      renderOptions.endTimeMs = endTimeMs;
+      console.log(`Using end time: ${endTimeMs}ms`);
+    }
+
+    const pngBuffer = await renderToPng(profileGroup, renderOptions);
 
     if (pngBuffer && pngBuffer.length > 0) {
       await fs.writeFile(resolvedOutputFilePath, pngBuffer);
-      console.log(`Flamegraph PNG (potentially empty for now) saved to: ${resolvedOutputFilePath}`);
+      console.log(`Flamegraph PNG saved to: ${resolvedOutputFilePath}`);
     } else {
       console.log(
         'renderToPng did not return a PNG buffer (or returned an empty one). Check console for logs.'
