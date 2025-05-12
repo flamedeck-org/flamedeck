@@ -1,10 +1,27 @@
-export function encodeProfile(message) {
+export interface Profile {
+  sample_type?: ValueType[];
+  sample?: Sample[];
+  mapping?: Mapping[];
+  location?: Location[];
+  function?: Function[];
+  string_table?: string[];
+  drop_frames?: Long;
+  keep_frames?: Long;
+  time_nanos?: Long;
+  duration_nanos?: Long;
+  period_type?: ValueType;
+  period?: Long;
+  comment?: Long[];
+  default_sample_type?: Long;
+}
+
+export function encodeProfile(message: Profile): Uint8Array {
   let bb = popByteBuffer();
   _encodeProfile(message, bb);
   return toUint8Array(bb);
 }
 
-function _encodeProfile(message, bb) {
+function _encodeProfile(message: Profile, bb: ByteBuffer): void {
   // repeated ValueType sample_type = 1;
   let array$sample_type = message.sample_type;
   if (array$sample_type !== undefined) {
@@ -146,12 +163,12 @@ function _encodeProfile(message, bb) {
   }
 }
 
-export function decodeProfile(binary) {
+export function decodeProfile(binary: Uint8Array): Profile {
   return _decodeProfile(wrapByteBuffer(binary));
 }
 
-function _decodeProfile(bb) {
-  let message = {};
+function _decodeProfile(bb: ByteBuffer): Profile {
+  let message: Profile = {} as any;
 
   end_of_message: while (!isAtEnd(bb)) {
     let tag = readVarint32(bb);
@@ -279,13 +296,18 @@ function _decodeProfile(bb) {
   return message;
 }
 
-export function encodeValueType(message) {
+export interface ValueType {
+  type?: Long;
+  unit?: Long;
+}
+
+export function encodeValueType(message: ValueType): Uint8Array {
   let bb = popByteBuffer();
   _encodeValueType(message, bb);
   return toUint8Array(bb);
 }
 
-function _encodeValueType(message, bb) {
+function _encodeValueType(message: ValueType, bb: ByteBuffer): void {
   // optional int64 type = 1;
   let $type = message.type;
   if ($type !== undefined) {
@@ -301,12 +323,12 @@ function _encodeValueType(message, bb) {
   }
 }
 
-export function decodeValueType(binary) {
+export function decodeValueType(binary: Uint8Array): ValueType {
   return _decodeValueType(wrapByteBuffer(binary));
 }
 
-function _decodeValueType(bb) {
-  let message = {};
+function _decodeValueType(bb: ByteBuffer): ValueType {
+  let message: ValueType = {} as any;
 
   end_of_message: while (!isAtEnd(bb)) {
     let tag = readVarint32(bb);
@@ -335,13 +357,19 @@ function _decodeValueType(bb) {
   return message;
 }
 
-export function encodeSample(message) {
+export interface Sample {
+  location_id?: Long[];
+  value?: Long[];
+  label?: Label[];
+}
+
+export function encodeSample(message: Sample): Uint8Array {
   let bb = popByteBuffer();
   _encodeSample(message, bb);
   return toUint8Array(bb);
 }
 
-function _encodeSample(message, bb) {
+function _encodeSample(message: Sample, bb: ByteBuffer): void {
   // repeated uint64 location_id = 1;
   let array$location_id = message.location_id;
   if (array$location_id !== undefined) {
@@ -382,12 +410,12 @@ function _encodeSample(message, bb) {
   }
 }
 
-export function decodeSample(binary) {
+export function decodeSample(binary: Uint8Array): Sample {
   return _decodeSample(wrapByteBuffer(binary));
 }
 
-function _decodeSample(bb) {
-  let message = {};
+function _decodeSample(bb: ByteBuffer): Sample {
+  let message: Sample = {} as any;
 
   end_of_message: while (!isAtEnd(bb)) {
     let tag = readVarint32(bb);
@@ -443,13 +471,20 @@ function _decodeSample(bb) {
   return message;
 }
 
-export function encodeLabel(message) {
+export interface Label {
+  key?: Long;
+  str?: Long;
+  num?: Long;
+  num_unit?: Long;
+}
+
+export function encodeLabel(message: Label): Uint8Array {
   let bb = popByteBuffer();
   _encodeLabel(message, bb);
   return toUint8Array(bb);
 }
 
-function _encodeLabel(message, bb) {
+function _encodeLabel(message: Label, bb: ByteBuffer): void {
   // optional int64 key = 1;
   let $key = message.key;
   if ($key !== undefined) {
@@ -479,12 +514,12 @@ function _encodeLabel(message, bb) {
   }
 }
 
-export function decodeLabel(binary) {
+export function decodeLabel(binary: Uint8Array): Label {
   return _decodeLabel(wrapByteBuffer(binary));
 }
 
-function _decodeLabel(bb) {
-  let message = {};
+function _decodeLabel(bb: ByteBuffer): Label {
+  let message: Label = {} as any;
 
   end_of_message: while (!isAtEnd(bb)) {
     let tag = readVarint32(bb);
@@ -525,13 +560,26 @@ function _decodeLabel(bb) {
   return message;
 }
 
-export function encodeMapping(message) {
+export interface Mapping {
+  id?: Long;
+  memory_start?: Long;
+  memory_limit?: Long;
+  file_offset?: Long;
+  filename?: Long;
+  build_id?: Long;
+  has_functions?: boolean;
+  has_filenames?: boolean;
+  has_line_numbers?: boolean;
+  has_inline_frames?: boolean;
+}
+
+export function encodeMapping(message: Mapping): Uint8Array {
   let bb = popByteBuffer();
   _encodeMapping(message, bb);
   return toUint8Array(bb);
 }
 
-function _encodeMapping(message, bb) {
+function _encodeMapping(message: Mapping, bb: ByteBuffer): void {
   // optional uint64 id = 1;
   let $id = message.id;
   if ($id !== undefined) {
@@ -603,12 +651,12 @@ function _encodeMapping(message, bb) {
   }
 }
 
-export function decodeMapping(binary) {
+export function decodeMapping(binary: Uint8Array): Mapping {
   return _decodeMapping(wrapByteBuffer(binary));
 }
 
-function _decodeMapping(bb) {
-  let message = {};
+function _decodeMapping(bb: ByteBuffer): Mapping {
+  let message: Mapping = {} as any;
 
   end_of_message: while (!isAtEnd(bb)) {
     let tag = readVarint32(bb);
@@ -685,13 +733,21 @@ function _decodeMapping(bb) {
   return message;
 }
 
-export function encodeLocation(message) {
+export interface Location {
+  id?: Long;
+  mapping_id?: Long;
+  address?: Long;
+  line?: Line[];
+  is_folded?: boolean;
+}
+
+export function encodeLocation(message: Location): Uint8Array {
   let bb = popByteBuffer();
   _encodeLocation(message, bb);
   return toUint8Array(bb);
 }
 
-function _encodeLocation(message, bb) {
+function _encodeLocation(message: Location, bb: ByteBuffer): void {
   // optional uint64 id = 1;
   let $id = message.id;
   if ($id !== undefined) {
@@ -734,12 +790,12 @@ function _encodeLocation(message, bb) {
   }
 }
 
-export function decodeLocation(binary) {
+export function decodeLocation(binary: Uint8Array): Location {
   return _decodeLocation(wrapByteBuffer(binary));
 }
 
-function _decodeLocation(bb) {
-  let message = {};
+function _decodeLocation(bb: ByteBuffer): Location {
+  let message: Location = {} as any;
 
   end_of_message: while (!isAtEnd(bb)) {
     let tag = readVarint32(bb);
@@ -789,13 +845,18 @@ function _decodeLocation(bb) {
   return message;
 }
 
-export function encodeLine(message) {
+export interface Line {
+  function_id?: Long;
+  line?: Long;
+}
+
+export function encodeLine(message: Line): Uint8Array {
   let bb = popByteBuffer();
   _encodeLine(message, bb);
   return toUint8Array(bb);
 }
 
-function _encodeLine(message, bb) {
+function _encodeLine(message: Line, bb: ByteBuffer): void {
   // optional uint64 function_id = 1;
   let $function_id = message.function_id;
   if ($function_id !== undefined) {
@@ -811,12 +872,12 @@ function _encodeLine(message, bb) {
   }
 }
 
-export function decodeLine(binary) {
+export function decodeLine(binary: Uint8Array): Line {
   return _decodeLine(wrapByteBuffer(binary));
 }
 
-function _decodeLine(bb) {
-  let message = {};
+function _decodeLine(bb: ByteBuffer): Line {
+  let message: Line = {} as any;
 
   end_of_message: while (!isAtEnd(bb)) {
     let tag = readVarint32(bb);
@@ -845,13 +906,21 @@ function _decodeLine(bb) {
   return message;
 }
 
-export function encodeFunction(message) {
+export interface Function {
+  id?: Long;
+  name?: Long;
+  system_name?: Long;
+  filename?: Long;
+  start_line?: Long;
+}
+
+export function encodeFunction(message: Function): Uint8Array {
   let bb = popByteBuffer();
   _encodeFunction(message, bb);
   return toUint8Array(bb);
 }
 
-function _encodeFunction(message, bb) {
+function _encodeFunction(message: Function, bb: ByteBuffer): void {
   // optional uint64 id = 1;
   let $id = message.id;
   if ($id !== undefined) {
@@ -888,12 +957,12 @@ function _encodeFunction(message, bb) {
   }
 }
 
-export function decodeFunction(binary) {
+export function decodeFunction(binary: Uint8Array): Function {
   return _decodeFunction(wrapByteBuffer(binary));
 }
 
-function _decodeFunction(bb) {
-  let message = {};
+function _decodeFunction(bb: ByteBuffer): Function {
+  let message: Function = {} as any;
 
   end_of_message: while (!isAtEnd(bb)) {
     let tag = readVarint32(bb);
@@ -940,33 +1009,36 @@ function _decodeFunction(bb) {
   return message;
 }
 
-function pushTemporaryLength(bb) {
+export interface Long {
+  low: number;
+  high: number;
+  unsigned: boolean;
+}
+
+interface ByteBuffer {
+  bytes: Uint8Array;
+  offset: number;
+  limit: number;
+}
+
+function pushTemporaryLength(bb: ByteBuffer): number {
   let length = readVarint32(bb);
   let limit = bb.limit;
   bb.limit = bb.offset + length;
   return limit;
 }
 
-function skipUnknownField(bb, type) {
+function skipUnknownField(bb: ByteBuffer, type: number): void {
   switch (type) {
-    case 0:
-      while (readByte(bb) & 0x80) {}
-      break;
-    case 2:
-      skip(bb, readVarint32(bb));
-      break;
-    case 5:
-      skip(bb, 4);
-      break;
-    case 1:
-      skip(bb, 8);
-      break;
-    default:
-      throw new Error('Unimplemented type: ' + type);
+    case 0: while (readByte(bb) & 0x80) { } break;
+    case 2: skip(bb, readVarint32(bb)); break;
+    case 5: skip(bb, 4); break;
+    case 1: skip(bb, 8); break;
+    default: throw new Error("Unimplemented type: " + type);
   }
 }
 
-function stringToLong(value) {
+function stringToLong(value: string): Long {
   return {
     low: value.charCodeAt(0) | (value.charCodeAt(1) << 16),
     high: value.charCodeAt(2) | (value.charCodeAt(3) << 16),
@@ -974,10 +1046,14 @@ function stringToLong(value) {
   };
 }
 
-function longToString(value) {
+function longToString(value: Long): string {
   let low = value.low;
   let high = value.high;
-  return String.fromCharCode(low & 0xffff, low >>> 16, high & 0xffff, high >>> 16);
+  return String.fromCharCode(
+    low & 0xFFFF,
+    low >>> 16,
+    high & 0xFFFF,
+    high >>> 16);
 }
 
 // The code below was modified from https://github.com/protobufjs/bytebuffer.js
@@ -989,7 +1065,7 @@ let f32_u8 = new Uint8Array(f32.buffer);
 let f64 = new Float64Array(1);
 let f64_u8 = new Uint8Array(f64.buffer);
 
-function intToLong(value) {
+function intToLong(value: number): Long {
   value |= 0;
   return {
     low: value,
@@ -998,41 +1074,41 @@ function intToLong(value) {
   };
 }
 
-let bbStack = [];
+let bbStack: ByteBuffer[] = [];
 
-function popByteBuffer() {
+function popByteBuffer(): ByteBuffer {
   const bb = bbStack.pop();
   if (!bb) return { bytes: new Uint8Array(64), offset: 0, limit: 0 };
   bb.offset = bb.limit = 0;
   return bb;
 }
 
-function pushByteBuffer(bb) {
+function pushByteBuffer(bb: ByteBuffer): void {
   bbStack.push(bb);
 }
 
-function wrapByteBuffer(bytes) {
+function wrapByteBuffer(bytes: Uint8Array): ByteBuffer {
   return { bytes, offset: 0, limit: bytes.length };
 }
 
-function toUint8Array(bb) {
+function toUint8Array(bb: ByteBuffer): Uint8Array {
   let bytes = bb.bytes;
   let limit = bb.limit;
   return bytes.length === limit ? bytes : bytes.subarray(0, limit);
 }
 
-function skip(bb, offset) {
+function skip(bb: ByteBuffer, offset: number): void {
   if (bb.offset + offset > bb.limit) {
     throw new Error('Skip past limit');
   }
   bb.offset += offset;
 }
 
-function isAtEnd(bb) {
+function isAtEnd(bb: ByteBuffer): boolean {
   return bb.offset >= bb.limit;
 }
 
-function grow(bb, count) {
+function grow(bb: ByteBuffer, count: number): number {
   let bytes = bb.bytes;
   let offset = bb.offset;
   let limit = bb.limit;
@@ -1049,7 +1125,7 @@ function grow(bb, count) {
   return offset;
 }
 
-function advance(bb, count) {
+function advance(bb: ByteBuffer, count: number): number {
   let offset = bb.offset;
   if (offset + count > bb.limit) {
     throw new Error('Read past limit');
@@ -1058,17 +1134,17 @@ function advance(bb, count) {
   return offset;
 }
 
-function readBytes(bb, count) {
+function readBytes(bb: ByteBuffer, count: number): Uint8Array {
   let offset = advance(bb, count);
   return bb.bytes.subarray(offset, offset + count);
 }
 
-function writeBytes(bb, buffer) {
+function writeBytes(bb: ByteBuffer, buffer: Uint8Array): void {
   let offset = grow(bb, buffer.length);
   bb.bytes.set(buffer, offset);
 }
 
-function readString(bb, count) {
+function readString(bb: ByteBuffer, count: number): string {
   // Sadly a hand-coded UTF8 decoder is much faster than subarray+TextDecoder in V8
   let offset = advance(bb, count);
   let fromCharCode = String.fromCharCode;
@@ -1077,11 +1153,7 @@ function readString(bb, count) {
   let text = '';
 
   for (let i = 0; i < count; i++) {
-    let c1 = bytes[i + offset],
-      c2,
-      c3,
-      c4,
-      c;
+    let c1 = bytes[i + offset], c2: number, c3: number, c4: number, c: number;
 
     // 1 byte
     if ((c1 & 0x80) === 0) {
@@ -1089,13 +1161,13 @@ function readString(bb, count) {
     }
 
     // 2 bytes
-    else if ((c1 & 0xe0) === 0xc0) {
+    else if ((c1 & 0xE0) === 0xC0) {
       if (i + 1 >= count) text += invalid;
       else {
         c2 = bytes[i + offset + 1];
-        if ((c2 & 0xc0) !== 0x80) text += invalid;
+        if ((c2 & 0xC0) !== 0x80) text += invalid;
         else {
-          c = ((c1 & 0x1f) << 6) | (c2 & 0x3f);
+          c = ((c1 & 0x1F) << 6) | (c2 & 0x3F);
           if (c < 0x80) text += invalid;
           else {
             text += fromCharCode(c);
@@ -1106,15 +1178,15 @@ function readString(bb, count) {
     }
 
     // 3 bytes
-    else if ((c1 & 0xf0) == 0xe0) {
+    else if ((c1 & 0xF0) == 0xE0) {
       if (i + 2 >= count) text += invalid;
       else {
         c2 = bytes[i + offset + 1];
         c3 = bytes[i + offset + 2];
-        if (((c2 | (c3 << 8)) & 0xc0c0) !== 0x8080) text += invalid;
+        if (((c2 | (c3 << 8)) & 0xC0C0) !== 0x8080) text += invalid;
         else {
-          c = ((c1 & 0x0f) << 12) | ((c2 & 0x3f) << 6) | (c3 & 0x3f);
-          if (c < 0x0800 || (c >= 0xd800 && c <= 0xdfff)) text += invalid;
+          c = ((c1 & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F);
+          if (c < 0x0800 || (c >= 0xD800 && c <= 0xDFFF)) text += invalid;
           else {
             text += fromCharCode(c);
             i += 2;
@@ -1124,30 +1196,32 @@ function readString(bb, count) {
     }
 
     // 4 bytes
-    else if ((c1 & 0xf8) == 0xf0) {
+    else if ((c1 & 0xF8) == 0xF0) {
       if (i + 3 >= count) text += invalid;
       else {
         c2 = bytes[i + offset + 1];
         c3 = bytes[i + offset + 2];
         c4 = bytes[i + offset + 3];
-        if (((c2 | (c3 << 8) | (c4 << 16)) & 0xc0c0c0) !== 0x808080) text += invalid;
+        if (((c2 | (c3 << 8) | (c4 << 16)) & 0xC0C0C0) !== 0x808080) text += invalid;
         else {
-          c = ((c1 & 0x07) << 0x12) | ((c2 & 0x3f) << 0x0c) | ((c3 & 0x3f) << 0x06) | (c4 & 0x3f);
-          if (c < 0x10000 || c > 0x10ffff) text += invalid;
+          c = ((c1 & 0x07) << 0x12) | ((c2 & 0x3F) << 0x0C) | ((c3 & 0x3F) << 0x06) | (c4 & 0x3F);
+          if (c < 0x10000 || c > 0x10FFFF) text += invalid;
           else {
             c -= 0x10000;
-            text += fromCharCode((c >> 10) + 0xd800, (c & 0x3ff) + 0xdc00);
+            text += fromCharCode((c >> 10) + 0xD800, (c & 0x3FF) + 0xDC00);
             i += 3;
           }
         }
       }
-    } else text += invalid;
+    }
+
+    else text += invalid;
   }
 
   return text;
 }
 
-function writeString(bb, text) {
+function writeString(bb: ByteBuffer, text: string): void {
   // Sadly a hand-coded UTF8 encoder is much faster than TextEncoder+set in V8
   let n = text.length;
   let byteCount = 0;
@@ -1155,8 +1229,8 @@ function writeString(bb, text) {
   // Write the byte count first
   for (let i = 0; i < n; i++) {
     let c = text.charCodeAt(i);
-    if (c >= 0xd800 && c <= 0xdbff && i + 1 < n) {
-      c = (c << 10) + text.charCodeAt(++i) - 0x35fdc00;
+    if (c >= 0xD800 && c <= 0xDBFF && i + 1 < n) {
+      c = (c << 10) + text.charCodeAt(++i) - 0x35FDC00;
     }
     byteCount += c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4;
   }
@@ -1168,29 +1242,29 @@ function writeString(bb, text) {
   // Then write the bytes
   for (let i = 0; i < n; i++) {
     let c = text.charCodeAt(i);
-    if (c >= 0xd800 && c <= 0xdbff && i + 1 < n) {
-      c = (c << 10) + text.charCodeAt(++i) - 0x35fdc00;
+    if (c >= 0xD800 && c <= 0xDBFF && i + 1 < n) {
+      c = (c << 10) + text.charCodeAt(++i) - 0x35FDC00;
     }
     if (c < 0x80) {
       bytes[offset++] = c;
     } else {
       if (c < 0x800) {
-        bytes[offset++] = ((c >> 6) & 0x1f) | 0xc0;
+        bytes[offset++] = ((c >> 6) & 0x1F) | 0xC0;
       } else {
         if (c < 0x10000) {
-          bytes[offset++] = ((c >> 12) & 0x0f) | 0xe0;
+          bytes[offset++] = ((c >> 12) & 0x0F) | 0xE0;
         } else {
-          bytes[offset++] = ((c >> 18) & 0x07) | 0xf0;
-          bytes[offset++] = ((c >> 12) & 0x3f) | 0x80;
+          bytes[offset++] = ((c >> 18) & 0x07) | 0xF0;
+          bytes[offset++] = ((c >> 12) & 0x3F) | 0x80;
         }
-        bytes[offset++] = ((c >> 6) & 0x3f) | 0x80;
+        bytes[offset++] = ((c >> 6) & 0x3F) | 0x80;
       }
-      bytes[offset++] = (c & 0x3f) | 0x80;
+      bytes[offset++] = (c & 0x3F) | 0x80;
     }
   }
 }
 
-function writeByteBuffer(bb, buffer) {
+function writeByteBuffer(bb: ByteBuffer, buffer: ByteBuffer): void {
   let offset = grow(bb, buffer.limit);
   let from = bb.bytes;
   let to = buffer.bytes;
@@ -1201,16 +1275,16 @@ function writeByteBuffer(bb, buffer) {
   }
 }
 
-function readByte(bb) {
+function readByte(bb: ByteBuffer): number {
   return bb.bytes[advance(bb, 1)];
 }
 
-function writeByte(bb, value) {
+function writeByte(bb: ByteBuffer, value: number): void {
   let offset = grow(bb, 1);
   bb.bytes[offset] = value;
 }
 
-function readFloat(bb) {
+function readFloat(bb: ByteBuffer): number {
   let offset = advance(bb, 4);
   let bytes = bb.bytes;
 
@@ -1222,7 +1296,7 @@ function readFloat(bb) {
   return f32[0];
 }
 
-function writeFloat(bb, value) {
+function writeFloat(bb: ByteBuffer, value: number): void {
   let offset = grow(bb, 4);
   let bytes = bb.bytes;
   f32[0] = value;
@@ -1234,7 +1308,7 @@ function writeFloat(bb, value) {
   bytes[offset++] = f32_u8[3];
 }
 
-function readDouble(bb) {
+function readDouble(bb: ByteBuffer): number {
   let offset = advance(bb, 8);
   let bytes = bb.bytes;
 
@@ -1250,7 +1324,7 @@ function readDouble(bb) {
   return f64[0];
 }
 
-function writeDouble(bb, value) {
+function writeDouble(bb: ByteBuffer, value: number): void {
   let offset = grow(bb, 8);
   let bytes = bb.bytes;
   f64[0] = value;
@@ -1266,15 +1340,18 @@ function writeDouble(bb, value) {
   bytes[offset++] = f64_u8[7];
 }
 
-function readInt32(bb) {
+function readInt32(bb: ByteBuffer): number {
   let offset = advance(bb, 4);
   let bytes = bb.bytes;
   return (
-    bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)
+    bytes[offset] |
+    (bytes[offset + 1] << 8) |
+    (bytes[offset + 2] << 16) |
+    (bytes[offset + 3] << 24)
   );
 }
 
-function writeInt32(bb, value) {
+function writeInt32(bb: ByteBuffer, value: number): void {
   let offset = grow(bb, 4);
   let bytes = bb.bytes;
   bytes[offset] = value;
@@ -1283,7 +1360,7 @@ function writeInt32(bb, value) {
   bytes[offset + 3] = value >> 24;
 }
 
-function readInt64(bb, unsigned) {
+function readInt64(bb: ByteBuffer, unsigned: boolean): Long {
   return {
     low: readInt32(bb),
     high: readInt32(bb),
@@ -1291,24 +1368,24 @@ function readInt64(bb, unsigned) {
   };
 }
 
-function writeInt64(bb, value) {
+function writeInt64(bb: ByteBuffer, value: Long): void {
   writeInt32(bb, value.low);
   writeInt32(bb, value.high);
 }
 
-function readVarint32(bb) {
+function readVarint32(bb: ByteBuffer): number {
   let c = 0;
   let value = 0;
-  let b;
+  let b: number;
   do {
     b = readByte(bb);
-    if (c < 32) value |= (b & 0x7f) << c;
+    if (c < 32) value |= (b & 0x7F) << c;
     c += 7;
   } while (b & 0x80);
   return value;
 }
 
-function writeVarint32(bb, value) {
+function writeVarint32(bb: ByteBuffer, value: number): void {
   value >>>= 0;
   while (value >= 0x80) {
     writeByte(bb, (value & 0x7f) | 0x80);
@@ -1317,41 +1394,24 @@ function writeVarint32(bb, value) {
   writeByte(bb, value);
 }
 
-function readVarint64(bb, unsigned) {
+function readVarint64(bb: ByteBuffer, unsigned: boolean): Long {
   let part0 = 0;
   let part1 = 0;
   let part2 = 0;
-  let b;
+  let b: number;
 
-  b = readByte(bb);
-  part0 = b & 0x7f;
-  if (b & 0x80) {
-    b = readByte(bb);
-    part0 |= (b & 0x7f) << 7;
-    if (b & 0x80) {
-      b = readByte(bb);
-      part0 |= (b & 0x7f) << 14;
-      if (b & 0x80) {
-        b = readByte(bb);
-        part0 |= (b & 0x7f) << 21;
-        if (b & 0x80) {
-          b = readByte(bb);
-          part1 = b & 0x7f;
-          if (b & 0x80) {
-            b = readByte(bb);
-            part1 |= (b & 0x7f) << 7;
-            if (b & 0x80) {
-              b = readByte(bb);
-              part1 |= (b & 0x7f) << 14;
-              if (b & 0x80) {
-                b = readByte(bb);
-                part1 |= (b & 0x7f) << 21;
-                if (b & 0x80) {
-                  b = readByte(bb);
-                  part2 = b & 0x7f;
-                  if (b & 0x80) {
-                    b = readByte(bb);
-                    part2 |= (b & 0x7f) << 7;
+  b = readByte(bb); part0 = (b & 0x7F); if (b & 0x80) {
+    b = readByte(bb); part0 |= (b & 0x7F) << 7; if (b & 0x80) {
+      b = readByte(bb); part0 |= (b & 0x7F) << 14; if (b & 0x80) {
+        b = readByte(bb); part0 |= (b & 0x7F) << 21; if (b & 0x80) {
+
+          b = readByte(bb); part1 = (b & 0x7F); if (b & 0x80) {
+            b = readByte(bb); part1 |= (b & 0x7F) << 7; if (b & 0x80) {
+              b = readByte(bb); part1 |= (b & 0x7F) << 14; if (b & 0x80) {
+                b = readByte(bb); part1 |= (b & 0x7F) << 21; if (b & 0x80) {
+
+                  b = readByte(bb); part2 = (b & 0x7F); if (b & 0x80) {
+                    b = readByte(bb); part2 |= (b & 0x7F) << 7;
                   }
                 }
               }
@@ -1369,73 +1429,53 @@ function readVarint64(bb, unsigned) {
   };
 }
 
-function writeVarint64(bb, value) {
+function writeVarint64(bb: ByteBuffer, value: Long): void {
   let part0 = value.low >>> 0;
   let part1 = ((value.low >>> 28) | (value.high << 4)) >>> 0;
   let part2 = value.high >>> 24;
 
   // ref: src/google/protobuf/io/coded_stream.cc
   let size =
-    part2 === 0
-      ? part1 === 0
-        ? part0 < 1 << 14
-          ? part0 < 1 << 7
-            ? 1
-            : 2
-          : part0 < 1 << 21
-            ? 3
-            : 4
-        : part1 < 1 << 14
-          ? part1 < 1 << 7
-            ? 5
-            : 6
-          : part1 < 1 << 21
-            ? 7
-            : 8
-      : part2 < 1 << 7
-        ? 9
-        : 10;
+    part2 === 0 ?
+      part1 === 0 ?
+        part0 < 1 << 14 ?
+          part0 < 1 << 7 ? 1 : 2 :
+          part0 < 1 << 21 ? 3 : 4 :
+        part1 < 1 << 14 ?
+          part1 < 1 << 7 ? 5 : 6 :
+          part1 < 1 << 21 ? 7 : 8 :
+      part2 < 1 << 7 ? 9 : 10;
 
   let offset = grow(bb, size);
   let bytes = bb.bytes;
 
   switch (size) {
-    case 10:
-      bytes[offset + 9] = (part2 >>> 7) & 0x01;
-    case 9:
-      bytes[offset + 8] = size !== 9 ? part2 | 0x80 : part2 & 0x7f;
-    case 8:
-      bytes[offset + 7] = size !== 8 ? (part1 >>> 21) | 0x80 : (part1 >>> 21) & 0x7f;
-    case 7:
-      bytes[offset + 6] = size !== 7 ? (part1 >>> 14) | 0x80 : (part1 >>> 14) & 0x7f;
-    case 6:
-      bytes[offset + 5] = size !== 6 ? (part1 >>> 7) | 0x80 : (part1 >>> 7) & 0x7f;
-    case 5:
-      bytes[offset + 4] = size !== 5 ? part1 | 0x80 : part1 & 0x7f;
-    case 4:
-      bytes[offset + 3] = size !== 4 ? (part0 >>> 21) | 0x80 : (part0 >>> 21) & 0x7f;
-    case 3:
-      bytes[offset + 2] = size !== 3 ? (part0 >>> 14) | 0x80 : (part0 >>> 14) & 0x7f;
-    case 2:
-      bytes[offset + 1] = size !== 2 ? (part0 >>> 7) | 0x80 : (part0 >>> 7) & 0x7f;
-    case 1:
-      bytes[offset] = size !== 1 ? part0 | 0x80 : part0 & 0x7f;
+    case 10: bytes[offset + 9] = (part2 >>> 7) & 0x01;
+    case 9: bytes[offset + 8] = size !== 9 ? part2 | 0x80 : part2 & 0x7F;
+    case 8: bytes[offset + 7] = size !== 8 ? (part1 >>> 21) | 0x80 : (part1 >>> 21) & 0x7F;
+    case 7: bytes[offset + 6] = size !== 7 ? (part1 >>> 14) | 0x80 : (part1 >>> 14) & 0x7F;
+    case 6: bytes[offset + 5] = size !== 6 ? (part1 >>> 7) | 0x80 : (part1 >>> 7) & 0x7F;
+    case 5: bytes[offset + 4] = size !== 5 ? part1 | 0x80 : part1 & 0x7F;
+    case 4: bytes[offset + 3] = size !== 4 ? (part0 >>> 21) | 0x80 : (part0 >>> 21) & 0x7F;
+    case 3: bytes[offset + 2] = size !== 3 ? (part0 >>> 14) | 0x80 : (part0 >>> 14) & 0x7F;
+    case 2: bytes[offset + 1] = size !== 2 ? (part0 >>> 7) | 0x80 : (part0 >>> 7) & 0x7F;
+    case 1: bytes[offset] = size !== 1 ? part0 | 0x80 : part0 & 0x7F;
   }
 }
 
-function readVarint32ZigZag(bb) {
+function readVarint32ZigZag(bb: ByteBuffer): number {
   let value = readVarint32(bb);
 
   // ref: src/google/protobuf/wire_format_lite.h
   return (value >>> 1) ^ -(value & 1);
 }
 
-function writeVarint32ZigZag(bb, value) {
+function writeVarint32ZigZag(bb: ByteBuffer, value: number): void {
   // ref: src/google/protobuf/wire_format_lite.h
   writeVarint32(bb, (value << 1) ^ (value >> 31));
 }
 
-function readVarint64ZigZag(bb) {
+function readVarint64ZigZag(bb: ByteBuffer): Long {
   let value = readVarint64(bb, /* unsigned */ false);
   let low = value.low;
   let high = value.high;
@@ -1449,7 +1489,7 @@ function readVarint64ZigZag(bb) {
   };
 }
 
-function writeVarint64ZigZag(bb, value) {
+function writeVarint64ZigZag(bb: ByteBuffer, value: Long): void {
   let low = value.low;
   let high = value.high;
   let flip = high >> 31;

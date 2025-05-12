@@ -33,8 +33,9 @@
         "tsConfig": "packages/speedscope-import/tsconfig.json",
         "assets": ["packages/speedscope-import/*.md"],
         "format": ["esm"],
-        "bundle": false,
-        "platform": "node"
+        "bundle": true,
+        "platform": "node",
+        "skipTypeCheck": true
       }
     }
   }
