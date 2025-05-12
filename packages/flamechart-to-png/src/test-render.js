@@ -6,6 +6,8 @@ import { JSON_parse } from 'uint8array-json-parser';
 import Long from 'long';
 import * as pako from 'pako';
 
+// Removed dynamic import for theme validation
+
 const importerDeps = {
   inflate: pako.inflate,
   parseJsonUint8Array: JSON_parse,
@@ -21,24 +23,39 @@ async function main() {
   let outputFilePath = null;
   let startTimeMs = undefined;
   let endTimeMs = undefined;
+  let mode = 'light'; // Default to light mode
+  let flamegraphThemeName = undefined; // Default (system)
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--start-time-ms' && i + 1 < args.length) {
-      startTimeMs = parseFloat(args[i + 1]);
+    const arg = args[i];
+    const value = args[i + 1]; // Potential value for the argument
+
+    if (arg === '--start-time-ms' && value !== undefined) {
+      startTimeMs = parseFloat(value);
       i++; // Skip the value
-    } else if (args[i] === '--end-time-ms' && i + 1 < args.length) {
-      endTimeMs = parseFloat(args[i + 1]);
+    } else if (arg === '--end-time-ms' && value !== undefined) {
+      endTimeMs = parseFloat(value);
+      i++; // Skip the value
+    } else if (arg === '--mode' && value !== undefined) {
+      // No validation, just pass through
+      mode = value;
+      i++; // Skip the value
+    } else if (arg === '--flamegraph-theme' && value !== undefined) {
+      // No validation, just pass through
+      flamegraphThemeName = value;
       i++; // Skip the value
     } else if (!profileFilePath) {
-      profileFilePath = path.resolve(args[i]);
+      profileFilePath = path.resolve(arg);
     } else if (!outputFilePath) {
-      outputFilePath = args[i];
+      outputFilePath = arg;
     }
+    // If none of the above, it might be a flag without a value or unrecognized
+    // We just ignore it in this simple parser
   }
 
   if (!profileFilePath) {
     console.error(
-      'Usage: ts-node packages/flamechart-to-png/src/test-render.ts <path-to-profile-file> [output-path.png] [--start-time-ms <ms>] [--end-time-ms <ms>]'
+      'Usage: node packages/flamechart-to-png/dist/test-render.js <path-to-profile-file> [output-path.png] [--start-time-ms <ms>] [--end-time-ms <ms>] [--mode <mode>] [--flamegraph-theme <theme>]'
     );
     process.exit(1);
   }
@@ -52,7 +69,6 @@ async function main() {
     console.log(`Loading profile from: ${profileFilePath}`);
     const fileContent = await fs.readFile(profileFilePath, 'utf-8');
 
-    // Dynamically import the actual function from speedscope-import
     const { importProfileGroupFromText } = await import('@flamedeck/speedscope-import');
 
     const importResult = await importProfileGroupFromText(
@@ -75,10 +91,17 @@ async function main() {
     const defaultWidth = 1200;
     const defaultHeight = 800;
 
+    // Plain JavaScript object for options
     const renderOptions = {
       width: defaultWidth,
       height: defaultHeight,
+      mode: mode,
     };
+
+    if (flamegraphThemeName) {
+      renderOptions.flamegraphThemeName = flamegraphThemeName;
+      console.log(`Using flamegraph theme: ${flamegraphThemeName}`);
+    }
 
     if (startTimeMs !== undefined && !isNaN(startTimeMs)) {
       renderOptions.startTimeMs = startTimeMs;
@@ -89,6 +112,9 @@ async function main() {
       console.log(`Using end time: ${endTimeMs}ms`);
     }
 
+    console.log(`Using mode: ${mode}`);
+
+    // Call renderToPng without type assertion
     const pngBuffer = await renderToPng(profileGroup, renderOptions);
 
     if (pngBuffer && pngBuffer.length > 0) {
