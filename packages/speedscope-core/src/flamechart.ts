@@ -13,7 +13,7 @@ export interface FlamechartFrame {
 
 type StackLayer = FlamechartFrame[];
 
-interface FlamechartDataSource {
+export interface FlamechartDataSource {
   getTotalWeight(): number;
 
   formatValue(v: number): string;

@@ -1,12 +1,12 @@
+#!/usr/bin/env node
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import type { ImporterDependencies } from '@flamedeck/speedscope-import'; // Static import for TYPE ONLY
-import { renderToPng } from './index';
+import { renderToPng } from '../dist/index.js';
 import { JSON_parse } from 'uint8array-json-parser';
 import Long from 'long';
 import * as pako from 'pako';
 
-const importerDeps: ImporterDependencies = {
+const importerDeps = {
   inflate: pako.inflate,
   parseJsonUint8Array: JSON_parse,
   isLong: Long.isLong,

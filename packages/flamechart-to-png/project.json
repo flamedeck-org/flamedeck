@@ -25,23 +25,27 @@
       }
     },
     "build": {
-      "executor": "@nx/js:tsc",
+      "executor": "@nx/esbuild:esbuild",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "packages/flamechart-to-png/dist",
         "main": "packages/flamechart-to-png/src/index.ts",
         "tsConfig": "packages/flamechart-to-png/tsconfig.json",
-        "assets": ["packages/flamechart-to-png/*.md"]
+        "assets": ["packages/flamechart-to-png/*.md"],
+        "format": ["esm"],
+        "bundle": true,
+        "platform": "node",
+        "skipTypeCheck": true
       }
     },
     "test-render": {
-      "executor": "@nx/js:node",
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
-        "buildTarget": "@flamedeck/flamechart-to-png:build",
-        "main": "packages/flamechart-to-png/src/test-render.ts"
+        "command": "node packages/flamechart-to-png/src/test-render.js"
       },
       "configurations": {
-        "development": {}
+        "production": {}
       }
     }
   }
