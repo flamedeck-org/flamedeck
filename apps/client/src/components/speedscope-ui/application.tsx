@@ -1,64 +1,26 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 
-import type { ProfileGroup } from '../../lib/speedscope-core/profile';
-import { SymbolRemapper, Profile } from '../../lib/speedscope-core/profile';
-import { FontFamily, FontSize, Duration } from './style';
-import { importEmscriptenSymbolMap as importEmscriptenSymbolRemapper } from '../../lib/speedscope-core/emscripten';
+import type { ProfileGroup } from '@flamedeck/speedscope-core/profile';
 import { SandwichViewContainer } from './sandwich-view';
-import { saveToFile } from '../../lib/speedscope-core/file-format';
 import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
 import { LeftHeavyFlamechartView, ChronoFlamechartView } from './flamechart-view-container';
-import type { CanvasContext } from '../../lib/speedscope-gl/canvas-context';
+import type { CanvasContext } from '@flamedeck/speedscope-gl/src/canvas-context';
 import { Toolbar } from './toolbar';
-import { importJavaScriptSourceMapSymbolRemapper } from '../../lib/speedscope-core/js-source-map';
-import type { Theme } from './themes/theme';
+import type { Theme } from '@flamedeck/speedscope-theme/types';
 import { ViewMode } from '../../lib/speedscope-core/view-mode';
-import { canUseXHR } from '../../lib/speedscope-core/app-state';
 import type { ProfileGroupState } from '../../lib/speedscope-core/app-state/profile-group';
 import type { HashParams } from '../../lib/speedscope-core/hash-params';
 import { FlamechartID } from '../../lib/speedscope-core/app-state/profile-group';
 
-const importModule = import('@trace-view-pilot/shared-importer');
+const importModule = import('@flamedeck/speedscope-import');
 
 // Force eager loading of a few code-split modules.
 //
 // We put them all in one place so we can directly control the relative priority
 // of these.
 importModule.then(() => {});
-import('../../lib/speedscope-core/demangle-cpp').then(() => {});
+import('@flamedeck/speedscope-core/demangle-cpp').then(() => {});
 import('source-map').then(() => {});
-
-async function importProfilesFromText(
-  fileName: string,
-  contents: string
-): Promise<ProfileGroup | null> {
-  return (await importModule).importProfileGroupFromText(fileName, contents);
-}
-
-async function importProfilesFromBase64(
-  fileName: string,
-  contents: string
-): Promise<ProfileGroup | null> {
-  return (await importModule).importProfileGroupFromBase64(fileName, contents);
-}
-
-async function importProfilesFromArrayBuffer(
-  fileName: string,
-  contents: ArrayBuffer
-): Promise<ProfileGroup | null> {
-  return (await importModule).importProfilesFromArrayBuffer(fileName, contents);
-}
-
-async function importProfilesFromFile(file: File): Promise<ProfileGroup | null> {
-  return (await importModule).importProfilesFromFile(file);
-}
-async function importFromFileSystemDirectoryEntry(entry: FileSystemDirectoryEntry) {
-  return (await importModule).importFromFileSystemDirectoryEntry(entry);
-}
-
-function isFileSystemDirectoryEntry(entry: FileSystemEntry): entry is FileSystemDirectoryEntry {
-  return entry != null && entry.isDirectory;
-}
 
 interface GLCanvasProps {
   canvasContext: CanvasContext | null;

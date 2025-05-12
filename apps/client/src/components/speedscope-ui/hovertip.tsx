@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import type { Vec2 } from '../../lib/speedscope-core/math';
-import { useTheme } from './themes/theme';
+import { useTheme } from './theme';
 
 interface HovertipProps {
   containerSize: Vec2;

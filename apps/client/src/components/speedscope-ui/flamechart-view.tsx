@@ -1,18 +1,9 @@
-import {
-  Fragment,
-  Component,
-  MouseEvent as ReactMouseEvent,
-  forwardRef,
-  useRef,
-  useImperativeHandle,
-  useEffect,
-  memo,
-} from 'react';
+import { Fragment, forwardRef, useRef, useImperativeHandle, useEffect, memo } from 'react';
 
-import type { CallTreeNode } from '../../lib/speedscope-core/profile';
-import type { AffineTransform } from '../../lib/speedscope-core/math';
-import { Rect, Vec2 } from '../../lib/speedscope-core/math';
-import { formatPercent } from '../../lib/speedscope-core/lib-utils.ts';
+import type { CallTreeNode } from '@flamedeck/speedscope-core/profile';
+import type { AffineTransform } from '@flamedeck/speedscope-core/math';
+import { Rect, Vec2 } from '@flamedeck/speedscope-core/math';
+import { formatPercent } from '@flamedeck/speedscope-core/lib-utils';
 import { FlamechartMinimapView } from './flamechart-minimap-view';
 
 import { Sizes } from './style';
@@ -21,7 +12,7 @@ import { FlamechartPanZoomView, type HoverPayload } from './flamechart-pan-zoom-
 import type { FlamechartViewProps as FlamechartViewContainerProps } from './flamechart-view-container';
 import { ProfileSearchContext } from './search-view';
 import { FlamechartSearchView } from './flamechart-search-view';
-import { ContextMenu, ContextMenuDivider } from '@/components/ui/context-menu';
+import { ContextMenu } from '@/components/ui/context-menu';
 import { useState } from 'react';
 
 // Define the handle type that will be exposed via the ref

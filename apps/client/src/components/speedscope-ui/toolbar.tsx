@@ -1,10 +1,9 @@
-import React, { Fragment, useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import type { ApplicationProps } from './application';
-import { Sizes, FontFamily, FontSize, Duration } from './style';
 import { ProfileSelect } from './profile-select';
-import type { Profile } from '../../lib/speedscope-core/profile';
-import { objectsHaveShallowEquality } from '../../lib/speedscope-core/lib-utils';
-import { colorSchemeToString, useTheme, Theme } from './themes/theme';
+import type { Profile } from '@flamedeck/speedscope-core/profile';
+import { objectsHaveShallowEquality } from '@flamedeck/speedscope-core/lib-utils';
+import { colorSchemeToString } from './theme';
 import { ViewMode } from '../../lib/speedscope-core/view-mode';
 import { viewModeAtom } from '../../lib/speedscope-core/app-state';
 import type { ProfileGroupState } from '../../lib/speedscope-core/app-state/profile-group';

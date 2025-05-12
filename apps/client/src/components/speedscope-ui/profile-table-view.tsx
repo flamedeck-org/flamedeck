@@ -1,6 +1,6 @@
-import React, { memo, useCallback, useMemo, useContext } from 'react';
-import type { Profile, Frame } from '../../lib/speedscope-core/profile';
-import { formatPercent } from '../../lib/speedscope-core/lib-utils';
+import { memo, useCallback, useMemo, useContext } from 'react';
+import type { Profile, Frame } from '@flamedeck/speedscope-core/profile';
+import { formatPercent } from '@flamedeck/speedscope-core/lib-utils';
 import { ColorChit } from './color-chit';
 import type { ListItem } from './scrollable-list-view';
 import { ScrollableListView } from './scrollable-list-view';
@@ -9,7 +9,6 @@ import {
   getFrameToColorBucket,
 } from '../../lib/speedscope-core/app-state/getters';
 import { SandwichViewContext } from './sandwich-view';
-import { Color } from '../../lib/speedscope-core/color';
 import type { SortMethod } from '../../lib/speedscope-core/app-state';
 import {
   SortDirection,
@@ -21,7 +20,7 @@ import {
 } from '../../lib/speedscope-core/app-state';
 import { useAtom } from '../../lib/speedscope-core/atom';
 import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
-import { useTheme } from './themes/theme';
+import { useTheme } from './theme';
 
 interface HBarProps {
   perc: number;

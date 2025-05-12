@@ -1,5 +1,5 @@
 {
-  "name": "@trace-view-pilot/client",
+  "name": "@flamedeck/client",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -11,6 +11,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@flamedeck/speedscope-core": "workspace:*",
+    "@flamedeck/speedscope-import": "workspace:*",
+    "@flamedeck/speedscope-theme": "workspace:*",
     "@hookform/resolvers": "^3.9.0",
     "@mdx-js/react": "^3.1.0",
     "@mdx-js/rollup": "^3.1.0",
@@ -44,7 +47,6 @@
     "@sentry/react": "^9.17.0",
     "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-query": "^5.56.2",
-    "@trace-view-pilot/shared-importer": "workspace:*",
     "@types/long": "^5.0.0",
     "@types/react-textarea-autosize": "^4.3.6",
     "@types/uuid": "^10.0.0",

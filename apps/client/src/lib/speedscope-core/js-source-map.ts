@@ -27,8 +27,8 @@
 import type { MappingItem, RawSourceMap, SourceMapConsumer } from 'source-map';
 const sourceMapModule = import('source-map');
 
-import type { Frame, SymbolRemapper } from './profile';
-import { findIndexBisect } from './lib-utils';
+import type { Frame, SymbolRemapper } from '@flamedeck/speedscope-core/profile';
+import { findIndexBisect } from '@flamedeck/speedscope-core/lib-utils';
 
 const DEBUG = false;
 

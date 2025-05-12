@@ -1,6 +1,6 @@
-import type { Profile, Frame, CallTreeNode } from './profile';
-import type { Flamechart, FlamechartFrame } from './flamechart';
-import { Rect, Vec2 } from './math';
+import type { Profile, Frame, CallTreeNode } from '@flamedeck/speedscope-core/profile';
+import type { Flamechart, FlamechartFrame } from '@flamedeck/speedscope-core/flamechart';
+import { Rect, Vec2 } from '@flamedeck/speedscope-core/math';
 
 export enum FlamechartType {
   CHRONO_FLAME_CHART,

@@ -1,6 +1,6 @@
-import { memoizeByShallowEquality, noop } from '../../lib/speedscope-core/lib-utils';
-import type { Profile, Frame } from '../../lib/speedscope-core/profile';
-import { Flamechart } from '../../lib/speedscope-core/flamechart';
+import { memoizeByShallowEquality, noop } from '@flamedeck/speedscope-core/lib-utils';
+import type { Profile, Frame } from '@flamedeck/speedscope-core/profile';
+import { Flamechart } from '@flamedeck/speedscope-core/flamechart';
 import type {
   FlamechartViewContainerProps,
   FlamechartViewHandle,
@@ -16,8 +16,8 @@ import {
   getFrameToColorBucket,
 } from '../../lib/speedscope-core/app-state/getters';
 import { FlamechartWrapper } from './flamechart-wrapper';
-import React, { memo, forwardRef, useRef, useImperativeHandle } from 'react';
-import { useTheme } from './themes/theme';
+import { memo, forwardRef, useRef, useImperativeHandle } from 'react';
+import { useTheme } from './theme';
 import { FlamechartID } from '../../lib/speedscope-core/app-state/profile-group';
 import { flattenRecursionAtom, glCanvasAtom } from '../../lib/speedscope-core/app-state';
 import { useAtom } from '../../lib/speedscope-core/atom';

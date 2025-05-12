@@ -1,8 +1,8 @@
-import type { Profile } from '../../lib/speedscope-core/profile';
+import type { Profile } from '@flamedeck/speedscope-core/profile';
 import type { Ref } from 'react';
 import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
-import { fuzzyMatchStrings } from '../../lib/speedscope-core/fuzzy-find';
-import { sortBy } from '../../lib/speedscope-core/lib-utils';
+import { fuzzyMatchStrings } from '@/lib/speedscope-core/fuzzy-find';
+import { sortBy } from '@flamedeck/speedscope-core/lib-utils';
 
 interface ProfileSelectRowProps {
   setProfileIndexToView: (profileIndex: number) => void;

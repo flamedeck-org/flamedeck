@@ -1,7 +1,7 @@
 import { memo, forwardRef, useRef, useImperativeHandle } from 'react';
-import { memoizeByShallowEquality, noop } from '../../lib/speedscope-core/lib-utils';
-import type { Profile, Frame } from '../../lib/speedscope-core/profile';
-import { Flamechart } from '../../lib/speedscope-core/flamechart';
+import { memoizeByShallowEquality, noop } from '@flamedeck/speedscope-core/lib-utils';
+import type { Profile, Frame } from '@flamedeck/speedscope-core/profile';
+import { Flamechart } from '@flamedeck/speedscope-core/flamechart';
 import type {
   FlamechartViewContainerProps,
   FlamechartViewHandle,
@@ -20,7 +20,7 @@ import { FlamechartWrapper } from './flamechart-wrapper';
 import { FlamechartID } from '../../lib/speedscope-core/app-state/profile-group';
 import { flattenRecursionAtom, glCanvasAtom } from '../../lib/speedscope-core/app-state';
 import { useAtom } from '../../lib/speedscope-core/atom';
-import { useTheme } from './themes/theme';
+import { useTheme } from './theme';
 
 const getInvertedCallerProfile = memoizeByShallowEquality(
   ({

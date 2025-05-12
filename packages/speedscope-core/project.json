@@ -1,0 +1,28 @@
+{
+  "name": "@flamedeck/speedscope-core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/speedscope-core/src",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "inputs": [
+        "default",
+        "{workspaceRoot}/eslint.config.js",
+        "{workspaceRoot}/.prettierrc.cjs",
+        "{workspaceRoot}/tsconfig.base.json"
+      ],
+      "options": {
+        "lintFilePatterns": ["packages/speedscope-core/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/speedscope-core/tsconfig.json"
+      }
+    }
+  }
+}

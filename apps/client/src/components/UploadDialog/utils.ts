@@ -1,16 +1,21 @@
 import {
   importProfileGroupFromText,
   importProfilesFromArrayBuffer,
-  type ImporterDependencies,
-} from '@trace-view-pilot/shared-importer';
-import type { ProfileType } from '@trace-view-pilot/shared-importer';
-import {
   exportProfileGroup,
   getDurationMsFromProfileGroup,
-} from '@trace-view-pilot/shared-importer';
+  type ImporterDependencies,
+  type ProfileType,
+} from '@flamedeck/speedscope-import';
 import * as pako from 'pako'; // Import pako for client-side use
 import { JSON_parse } from 'uint8array-json-parser'; // Import parser for client-side use
 import Long from 'long'; // Import Long for client-side
+import { type ProfileGroup } from '@flamedeck/speedscope-core/profile';
+
+type ProcessedTraceData = {
+  processedFile: File;
+  durationMs: number;
+  profileType: ProfileType;
+};
 
 /**
  * Processes a raw trace file using Speedscope import/export functions.

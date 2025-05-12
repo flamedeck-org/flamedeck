@@ -1,4 +1,4 @@
-import type { Profile } from '../profile';
+import type { Profile } from '@flamedeck/speedscope-core/profile';
 import { getProfileToView } from './getters';
 import { flattenRecursionAtom, profileGroupAtom } from '.';
 import type { FlamechartViewState, SandwichViewState } from './profile-group';

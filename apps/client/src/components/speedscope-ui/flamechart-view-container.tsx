@@ -1,11 +1,11 @@
 import type { MouseEvent } from 'react';
-import React, { memo, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
-import type { CanvasContext } from '../../lib/speedscope-gl/canvas-context';
-import { Flamechart } from '../../lib/speedscope-core/flamechart';
-import type { FlamechartRendererOptions } from '../../lib/speedscope-gl/flamechart-renderer';
-import { FlamechartRenderer } from '../../lib/speedscope-gl/flamechart-renderer';
-import type { Frame, Profile, CallTreeNode } from '../../lib/speedscope-core/profile';
-import { memoizeByShallowEquality } from '../../lib/speedscope-core/lib-utils';
+import { memo, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
+import type { CanvasContext } from '@flamedeck/speedscope-gl/src/canvas-context';
+import { Flamechart } from '@flamedeck/speedscope-core/flamechart';
+import type { FlamechartRendererOptions } from '@flamedeck/speedscope-gl/flamechart-renderer';
+import { FlamechartRenderer } from '@flamedeck/speedscope-gl/flamechart-renderer';
+import type { Frame, Profile, CallTreeNode } from '@flamedeck/speedscope-core/profile';
+import { memoizeByShallowEquality } from '@flamedeck/speedscope-core/lib-utils';
 import { FlamechartView } from './flamechart-view';
 import {
   getRowAtlas,
@@ -13,12 +13,12 @@ import {
   getCanvasContext,
   createGetCSSColorForFrame,
   getFrameToColorBucket,
-} from '../../lib/speedscope-core/app-state/getters';
-import type { Vec2, Rect } from '../../lib/speedscope-core/math';
-import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
+} from '@/lib/speedscope-core/app-state/getters';
+import type { Vec2, Rect } from '@flamedeck/speedscope-core/math';
+import type { ActiveProfileState } from '@/lib/speedscope-core/app-state/active-profile-state';
 import { FlamechartSearchContextProvider } from './flamechart-search-view';
-import type { Theme } from './themes/theme';
-import { useTheme } from './themes/theme';
+import type { Theme } from '@flamedeck/speedscope-theme/types';
+import { useTheme } from './theme';
 import type { FlamechartViewState } from '../../lib/speedscope-core/app-state/profile-group';
 import { FlamechartID } from '../../lib/speedscope-core/app-state/profile-group';
 import { profileGroupAtom } from '../../lib/speedscope-core/app-state';

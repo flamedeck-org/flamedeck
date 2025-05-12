@@ -1,0 +1,28 @@
+{
+  "name": "speedscope-import",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/speedscope-import/src",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "inputs": [
+        "default",
+        "{workspaceRoot}/eslint.config.js",
+        "{workspaceRoot}/.prettierrc.cjs",
+        "{workspaceRoot}/tsconfig.base.json"
+      ],
+      "options": {
+        "lintFilePatterns": ["packages/speedscope-import/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/speedscope-import/tsconfig.json"
+      }
+    }
+  }
+}
