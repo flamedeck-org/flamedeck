@@ -47,6 +47,16 @@
       "configurations": {
         "production": {}
       }
+    },
+    "test-agent": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "node packages/flamechart-to-png/src/performance-agent.js"
+      },
+      "configurations": {
+        "production": {}
+      }
     }
   }
 }

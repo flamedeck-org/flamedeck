@@ -548,7 +548,6 @@ export async function renderToPng(
   const layersToRender = flamechart.getLayers().slice(startDepth);
 
   layersToRender.forEach((layer, visibleLayerIndex) => {
-    const actualDepth = startDepth + visibleLayerIndex; // The true depth for labeling and context
     const y = AXIS_HEIGHT_PX + visibleLayerIndex * frameHeightPx; // Y position for drawing on canvas
 
     layer.forEach((frame) => {
