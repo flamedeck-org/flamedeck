@@ -50,4 +50,5 @@ vec3 colorForBucket(float t) {
 export const peachFlamegraphThemeLight: FlamegraphTheme = {
   colorForBucket,
   colorForBucketGLSL,
+  flamegraphTextColor: '#000000',
 };
