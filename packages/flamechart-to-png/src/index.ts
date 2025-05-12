@@ -1,5 +1,9 @@
 import type { Frame, Profile, ProfileGroup } from '@flamedeck/speedscope-core/profile';
-import { Flamechart, type FlamechartDataSource } from '@flamedeck/speedscope-core/flamechart';
+import {
+  Flamechart,
+  type FlamechartDataSource,
+  type FlamechartFrame,
+} from '@flamedeck/speedscope-core/flamechart';
 import { createCanvas, type CanvasRenderingContext2D } from 'canvas';
 
 export interface RenderToPngOptions {
@@ -47,6 +51,151 @@ function getFrameColor(frame: Frame, colorBucket: number): string {
     return 'hsl(39, 100%, 50%)'; // orange
   }
   return simpleHashColor(frame.name, colorBucket);
+}
+
+// --- Rendering Range Calculation ---
+
+interface RenderRangeResult {
+  startWeight: number;
+  endWeight: number;
+  visibleWeight: number;
+  xFactor: number;
+  isValidTimeRange: boolean;
+}
+
+function calculateRenderRange(
+  profile: Profile,
+  totalWeight: number,
+  canvasWidth: number,
+  options: RenderToPngOptions
+): RenderRangeResult {
+  let startWeight = 0;
+  let endWeight = totalWeight;
+  const unit = profile.getWeightUnit();
+  let isValidTimeRange = true;
+
+  let msToWeightUnitFactor: number | null = null;
+  if (unit === 'nanoseconds') msToWeightUnitFactor = 1_000_000;
+  else if (unit === 'microseconds') msToWeightUnitFactor = 1_000;
+  else if (unit === 'milliseconds') msToWeightUnitFactor = 1;
+  else if (unit === 'seconds') msToWeightUnitFactor = 0.001;
+
+  if (
+    (options.startTimeMs !== undefined || options.endTimeMs !== undefined) &&
+    msToWeightUnitFactor !== null
+  ) {
+    if (options.startTimeMs !== undefined) {
+      startWeight = Math.max(0, options.startTimeMs * msToWeightUnitFactor);
+    }
+    if (options.endTimeMs !== undefined) {
+      endWeight = Math.min(totalWeight, options.endTimeMs * msToWeightUnitFactor);
+    }
+
+    if (startWeight >= endWeight) {
+      console.warn(
+        `[flamechart-to-png] Invalid time range: startTimeMs (${options.startTimeMs}) resulted in startWeight (${startWeight}) >= endTimeMs (${options.endTimeMs}) resulted in endWeight (${endWeight}). Rendering full chart.`
+      );
+      startWeight = 0;
+      endWeight = totalWeight;
+      isValidTimeRange = false;
+    } else {
+      console.log(
+        `[flamechart-to-png] Rendering weight range: ${startWeight} to ${endWeight} (based on ${
+          options.startTimeMs ?? 'start'
+        }ms to ${options.endTimeMs ?? 'end'}ms)`
+      );
+    }
+  } else if (options.startTimeMs !== undefined || options.endTimeMs !== undefined) {
+    console.warn(
+      `[flamechart-to-png] startTimeMs/endTimeMs provided, but profile unit (${unit}) is not time-based or not recognized for conversion. Ignoring time range.`
+    );
+  }
+
+  const visibleWeight = endWeight - startWeight;
+  const xFactor = canvasWidth / (visibleWeight > 0 ? visibleWeight : 1); // Avoid division by zero
+
+  return { startWeight, endWeight, visibleWeight, xFactor, isValidTimeRange };
+}
+
+// --- Frame Drawing Logic ---
+
+interface DrawFrameParams {
+  ctx: CanvasRenderingContext2D;
+  frame: FlamechartFrame;
+  y: number;
+  frameHeightPx: number;
+  startWeight: number;
+  endWeight: number;
+  xFactor: number;
+  getColorBucket: (frame: Frame) => number;
+  font: string;
+  textPadding: number;
+}
+
+function drawFrame({
+  ctx,
+  frame,
+  y,
+  frameHeightPx,
+  startWeight,
+  endWeight,
+  xFactor,
+  getColorBucket,
+  font,
+  textPadding,
+}: DrawFrameParams): void {
+  if (frame.end <= startWeight || frame.start >= endWeight) {
+    return;
+  }
+
+  const visibleStart = Math.max(frame.start, startWeight);
+  const visibleEnd = Math.min(frame.end, endWeight);
+  const visibleDuration = visibleEnd - visibleStart;
+
+  if (visibleDuration <= 0) return;
+
+  const x = (visibleStart - startWeight) * xFactor;
+  const rectWidth = visibleDuration * xFactor;
+
+  if (rectWidth < 0.1) {
+    return;
+  }
+
+  const colorBucket = getColorBucket(frame.node.frame);
+  ctx.fillStyle = getFrameColor(frame.node.frame, colorBucket);
+  ctx.fillRect(x, y, Math.max(0, rectWidth), frameHeightPx);
+
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 0.5;
+  ctx.strokeRect(x, y, Math.max(0, rectWidth), frameHeightPx);
+
+  // Draw text label
+  const minWidthForText = 20;
+  if (rectWidth > minWidthForText) {
+    ctx.font = font;
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const frameName = frame.node.frame.name;
+    const maxTextWidth = rectWidth - 2 * textPadding;
+    let displayText = frameName;
+
+    if (ctx.measureText(displayText).width > maxTextWidth) {
+      let newLen = displayText.length;
+      while (
+        ctx.measureText(displayText.substring(0, newLen) + '...').width > maxTextWidth &&
+        newLen > 1
+      ) {
+        newLen--;
+      }
+      displayText = displayText.substring(0, newLen) + (newLen < frameName.length ? '...' : '');
+    }
+
+    if (ctx.measureText(displayText).width <= maxTextWidth && displayText.length > 0) {
+      ctx.fillText(displayText, x + textPadding, y + frameHeightPx / 2);
+    }
+  }
 }
 
 /**
@@ -108,52 +257,15 @@ export async function renderToPng(
     return canvas.toBuffer('image/png');
   }
 
-  let startWeight = 0;
-  let endWeight = totalWeight;
-  const unit = activeProfile.getWeightUnit();
-  let isValidTimeRange = true;
+  // Calculate render range
+  const { startWeight, endWeight, visibleWeight, xFactor, isValidTimeRange } = calculateRenderRange(
+    activeProfile,
+    totalWeight,
+    canvasWidth,
+    options
+  );
 
-  let msToWeightUnitFactor: number | null = null;
-  if (unit === 'nanoseconds')
-    msToWeightUnitFactor = 1_000_000; // 1ms = 1,000,000 ns
-  else if (unit === 'microseconds')
-    msToWeightUnitFactor = 1_000; // 1ms = 1,000 µs
-  else if (unit === 'milliseconds')
-    msToWeightUnitFactor = 1; // 1ms = 1 ms
-  else if (unit === 'seconds') msToWeightUnitFactor = 0.001; // 1ms = 0.001 s
-
-  if (
-    (options.startTimeMs !== undefined || options.endTimeMs !== undefined) &&
-    msToWeightUnitFactor !== null
-  ) {
-    if (options.startTimeMs !== undefined) {
-      startWeight = Math.max(0, options.startTimeMs * msToWeightUnitFactor);
-    }
-    if (options.endTimeMs !== undefined) {
-      endWeight = Math.min(totalWeight, options.endTimeMs * msToWeightUnitFactor);
-    }
-
-    if (startWeight >= endWeight) {
-      console.warn(
-        `[flamechart-to-png] Invalid time range: startTimeMs (${options.startTimeMs}) resulted in startWeight (${startWeight}) >= endTimeMs (${options.endTimeMs}) resulted in endWeight (${endWeight}). Rendering full chart.`
-      );
-      startWeight = 0;
-      endWeight = totalWeight;
-      isValidTimeRange = false;
-    } else {
-      console.log(
-        `[flamechart-to-png] Rendering weight range: ${startWeight} to ${endWeight} (based on ${
-          options.startTimeMs ?? 'start'
-        }ms to ${options.endTimeMs ?? 'end'}ms)`
-      );
-    }
-  } else if (options.startTimeMs !== undefined || options.endTimeMs !== undefined) {
-    console.warn(
-      `[flamechart-to-png] startTimeMs/endTimeMs provided, but profile unit (${unit}) is not time-based or not recognized for conversion. Ignoring time range.`
-    );
-  }
-
-  const visibleWeight = endWeight - startWeight;
+  // Handle empty/invalid range
   if (visibleWeight <= 0 && isValidTimeRange) {
     console.warn(
       '[flamechart-to-png] Calculated visible weight is 0 or negative, nothing to render in the specified range.'
@@ -165,61 +277,22 @@ export async function renderToPng(
     return canvas.toBuffer('image/png');
   }
 
-  const xFactor = canvasWidth / visibleWeight;
-
+  // Draw layers and frames
   flamechart.getLayers().forEach((layer, layerIndex) => {
     const y = layerIndex * frameHeightPx;
     layer.forEach((frame) => {
-      if (frame.end <= startWeight || frame.start >= endWeight) {
-        return;
-      }
-
-      const visibleStart = Math.max(frame.start, startWeight);
-      const visibleEnd = Math.min(frame.end, endWeight);
-      const visibleDuration = visibleEnd - visibleStart;
-
-      if (visibleDuration <= 0) return;
-
-      const x = (visibleStart - startWeight) * xFactor;
-      const rectWidth = visibleDuration * xFactor;
-
-      if (rectWidth < 0.1) {
-        return;
-      }
-
-      const colorBucket = flamechartDataSource.getColorBucketForFrame(frame.node.frame);
-      ctx.fillStyle = getFrameColor(frame.node.frame, colorBucket);
-      ctx.fillRect(x, y, Math.max(0, rectWidth), frameHeightPx);
-
-      ctx.strokeStyle = '#555';
-      ctx.lineWidth = 0.5;
-      ctx.strokeRect(x, y, Math.max(0, rectWidth), frameHeightPx);
-
-      const minWidthForText = 20;
-      if (rectWidth > minWidthForText) {
-        ctx.font = font;
-        ctx.fillStyle = 'black';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-
-        const frameName = frame.node.frame.name;
-        const maxTextWidth = rectWidth - 2 * textPadding;
-        let displayText = frameName;
-        if (ctx.measureText(displayText).width > maxTextWidth) {
-          let newLen = displayText.length;
-          while (
-            ctx.measureText(displayText.substring(0, newLen) + '...').width > maxTextWidth &&
-            newLen > 1
-          ) {
-            newLen--;
-          }
-          displayText = displayText.substring(0, newLen) + (newLen < frameName.length ? '...' : '');
-        }
-
-        if (ctx.measureText(displayText).width <= maxTextWidth && displayText.length > 0) {
-          ctx.fillText(displayText, x + textPadding, y + frameHeightPx / 2);
-        }
-      }
+      drawFrame({
+        ctx,
+        frame,
+        y,
+        frameHeightPx,
+        startWeight,
+        endWeight,
+        xFactor,
+        getColorBucket: flamechartDataSource.getColorBucketForFrame, // Pass the function
+        font,
+        textPadding,
+      });
     });
   });
 
