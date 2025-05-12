@@ -1,3 +1,6 @@
 {
-  "imports": {}
+  "imports": {
+    "@flamedeck/speedscope-import/": "../../../packages/speedscope-import/src/",
+    "@flamedeck/speedscope-core/": "../../../packages/speedscope-core/src/"
+  }
 }

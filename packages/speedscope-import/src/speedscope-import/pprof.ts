@@ -1,7 +1,7 @@
 import * as profileProto from './profile.proto.js';
 import type { FrameInfo, Profile } from '@flamedeck/speedscope-core/profile.ts';
 import { StackListProfileBuilder } from '@flamedeck/speedscope-core/profile.ts';
-import { lastOf } from '@flamedeck/speedscope-core/lib-utils';
+import { lastOf } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { TimeFormatter, ByteFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
 import type { ImporterDependencies } from './importer-utils.ts';
 

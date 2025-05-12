@@ -528,11 +528,11 @@ function SharingModalImpl() {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {/* Increased max-width */}
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader className="pr-16">
+        <DialogHeader className="pr-10">
           {' '}
           {/* Add padding to prevent overlap with close button */}
           {/* Use fetched trace name, fallback to ID or placeholder */}
-          <DialogTitle className="truncate">
+          <DialogTitle>
             {isLoadingDetails ? (
               <Skeleton className="h-6 w-48" />
             ) : (
@@ -540,7 +540,7 @@ function SharingModalImpl() {
             )}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-6">{renderContent()}</div>
+        <div className="space-y-4">{renderContent()}</div>
         <DialogFooter className="sm:justify-between pt-2">
           <Button type="button" variant="outline" onClick={handleCopyLink}>
             <LinkIcon className="mr-2 h-4 w-4" /> Copy link
