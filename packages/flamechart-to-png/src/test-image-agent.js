@@ -318,7 +318,6 @@ async function runAgentWithLangGraph(profileGroup, outputDir) {
       messages: { value: (x, y) => x.concat(y), default: () => [] },
       iterationCount: { value: (x, y) => x + 1, default: () => 0 },
       maxIterations: { value: (x, y) => y, default: () => 5 }, // Set default here or in initial state
-      // Removed static state from graph definition as it's passed in initial state
     },
   });
 
