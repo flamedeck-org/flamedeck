@@ -159,8 +159,7 @@ serve(async (req) => {
     } = validationResult.data;
 
     console.log(
-      `Validated metadata - fileName: ${fileName}, scenario: ${scenario}, folderId: ${
-        folderId ?? 'none'
+      `Validated metadata - fileName: ${fileName}, scenario: ${scenario}, folderId: ${folderId ?? 'none'
       }, public: ${isPublic}`
     );
 

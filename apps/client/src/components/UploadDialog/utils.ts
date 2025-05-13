@@ -37,7 +37,6 @@ export async function processAndPrepareTraceUpload(
   const importerDeps: ImporterDependencies = {
     inflate: pako.inflate,
     parseJsonUint8Array: JSON_parse,
-    isLong: (obj): obj is Long => Long.isLong(obj),
     LongType: Long,
   };
 
