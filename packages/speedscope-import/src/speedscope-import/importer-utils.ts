@@ -4,11 +4,19 @@ export type ParseJsonUint8ArrayFn = (data: Uint8Array) => unknown;
 // Define the specific shape needed for the 'Long' library's isLong function
 export type IsLongFn = (obj: any) => obj is { toNumber(): number };
 
+// Define a structural type matching the parts of `typeof Long` we need
+export interface LongType {
+  ZERO: { toNumber(): number; isZero(): boolean }; // Add methods used in pprof.ts
+  new (low: number, high: number, unsigned?: boolean): { toNumber(): number; isZero(): boolean };
+  fromNumber(value: number, unsigned?: boolean): { toNumber(): number; isZero(): boolean };
+  isLong: IsLongFn; // Reuse IsLongFn for consistency
+}
+
 // Interface for the dependency object
 export interface ImporterDependencies {
   inflate: InflateFn;
   parseJsonUint8Array: ParseJsonUint8ArrayFn;
-  isLong: IsLongFn;
+  LongType: LongType;
 }
 
 export interface ProfileDataSource {

@@ -44,14 +44,6 @@ const viewToCommentTypeMap: Record<SpeedscopeViewType, string> = {
   sandwich: 'sandwich',
 };
 
-// Define the type for snapshot result state
-interface SnapshotResultState {
-  requestId: string;
-  status: 'success' | 'error';
-  data?: string; // imageDataUrl
-  error?: string;
-}
-
 // Define the type for the generator function expected by the prop
 type SnapshotGenerator = (viewType: string, frameKey?: string) => Promise<string | null>;
 
@@ -221,15 +213,6 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
     };
   }, [selectedCommentInfoByView, view, activeProfileState, flattenRecursion, handleCloseSidebar]);
 
-  // State for managing snapshot results to send back to chat
-  const [snapshotResultForClient, setSnapshotResultForClient] =
-    useState<SnapshotResultState | null>(null);
-
-  const clearSnapshotResult = useCallback(() => {
-    console.log('[SpeedscopeViewer] Clearing snapshot result for chat.');
-    setSnapshotResultForClient(null);
-  }, []);
-
   // --- Snapshot Logic ---
   const generateSnapshotCallback = useCallback(
     async (requestedViewType: string, frameKey?: string): Promise<string | null> => {
@@ -346,35 +329,6 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
     [glCanvas, chronoViewRef, leftHeavyViewRef, sandwichViewRef]
   );
 
-  // For ChatContainer - triggers snapshot generation and updates the snapshotResultForClient state
-  const handleTriggerSnapshotForChat = useCallback(
-    async (requestId: string, viewType: string, frameKey?: string) => {
-      console.log(
-        `[SpeedscopeViewer] Chat requested snapshot for ${viewType}, requestId ${requestId}`
-      );
-      if (!glCanvas) {
-        console.error('[SpeedscopeViewer] Cannot generate snapshot: glCanvas not available.');
-        setSnapshotResultForClient({ requestId, status: 'error', error: 'Canvas not available.' });
-        return;
-      }
-
-      try {
-        const imageDataUrl = await generateSnapshotCallback(viewType, frameKey);
-        if (imageDataUrl) {
-          setSnapshotResultForClient({ requestId, status: 'success', data: imageDataUrl });
-        } else {
-          throw new Error('Snapshot generation returned null.');
-        }
-      } catch (error: unknown) {
-        console.error('[SpeedscopeViewer] Snapshot generation failed:', error);
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to generate snapshot.';
-        setSnapshotResultForClient({ requestId, status: 'error', error: errorMessage });
-      }
-    },
-    [glCanvas, generateSnapshotCallback]
-  );
-
   // Register the snapshot generator with the parent
   useEffect(() => {
     if (onRegisterSnapshotter) {
@@ -470,15 +424,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
         )}
 
         {/* Chat Feature - Render the container */}
-        {/* Disabling this for now as it's not working */}
-        {/* {!isLoading && !error && profileGroup && (
-          <ChatContainer 
-            traceId={traceId}
-            triggerSnapshot={handleTriggerSnapshotForChat}
-            snapshotResult={snapshotResultForClient}
-            clearSnapshotResult={clearSnapshotResult}
-          />
-        )} */}
+        {!isLoading && !error && profileGroup && <ChatContainer traceId={traceId} />}
       </div>
     </div>
   );

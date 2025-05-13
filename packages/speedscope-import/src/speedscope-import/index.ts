@@ -57,8 +57,8 @@ export async function importProfileGroupFromText(
   fileName: string,
   contents: string,
   deps: ImporterDependencies
-): Promise<ImportResult | null> {
-  return await importProfileGroup(new TextProfileDataSource(fileName, contents), deps);
+): Promise<ImportResult> {
+  return await _importProfileGroup(new TextProfileDataSource(fileName, contents), deps);
 }
 
 export async function importProfileGroupFromBase64(
@@ -82,12 +82,32 @@ export async function importProfilesFromFile(
 export async function importProfilesFromArrayBuffer(
   fileName: string,
   buffer: ArrayBuffer,
-  deps: ImporterDependencies
-): Promise<ImportResult | null> {
-  return importProfileGroup(
-    MaybeCompressedDataReader.fromArrayBuffer(fileName, buffer, deps),
-    deps
-  );
+  depsOverride?: Partial<ImporterDependencies>
+): Promise<ImportResult> {
+  const defaultDeps: ImporterDependencies = {
+    inflate: (data) => {
+      try {
+        const pako = require('pako');
+        return pako.inflate(data);
+      } catch (e) {
+        return data;
+      }
+    },
+    parseJsonUint8Array: (data) => {
+      try {
+        const parser = require('uint8array-json-parser');
+        return parser.JSON_parse(data);
+      } catch (e) {
+        console.error('Failed to parse JSON from Uint8Array', e);
+        throw e;
+      }
+    },
+    isLong: (obj): obj is Long => Long.isLong(obj),
+    LongType: Long,
+  };
+  const deps = { ...defaultDeps, ...depsOverride };
+  const dataSource = MaybeCompressedDataReader.fromArrayBuffer(fileName, buffer, deps);
+  return await _importProfileGroup(dataSource, deps);
 }
 
 async function importProfileGroup(

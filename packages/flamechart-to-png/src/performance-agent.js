@@ -8,7 +8,29 @@ import * as pako from 'pako';
 import { OpenAI } from 'openai'; // Import OpenAI
 import { z } from 'zod'; // Added for argument validation
 
-export function formatPercent(percent) {
+/**
+ * Formats a template string by removing leading/trailing newlines and unnecessary indentation.
+ */
+export function formatPrompt(strings, ...values) {
+  // Join the strings and values to get the full template string
+  const result = strings.reduce(
+    (acc, str, i) => acc + str + (values[i] !== undefined ? values[i] : ''),
+    ''
+  );
+
+  // Find the minimum leading whitespace in the non-empty lines
+  const lines = result.split('\n');
+  const leadingWhitespace = Math.min(
+    ...lines.filter((line) => line.trim()).map((line) => line.match(/^\s*/)?.[0]?.length ?? 0)
+  );
+
+  // Remove the leading whitespace
+  const trimmedResult = lines.map((line) => line.slice(leadingWhitespace)).join('\n');
+
+  return trimmedResult.replace(/^\n+|\n+$/g, '');
+}
+
+function formatPercent(percent) {
   let formattedPercent = `${percent.toFixed(0)}%`;
   if (percent === 100) formattedPercent = '100%';
   else if (percent > 99) formattedPercent = '>99%';
@@ -85,7 +107,7 @@ const tools = [
           },
           count: {
             type: 'integer',
-            description: 'The maximum number of top functions to return. Defaults to 10.',
+            description: 'The maximum number of top functions to return. Defaults to 30.',
             minimum: 1,
           },
         },
@@ -170,12 +192,23 @@ async function encodeImageToBase64(filePath) {
   }
 }
 
-const INITIAL_PROMPT = `You are a performance analysis assistant. Analyze the provided flamegraph screenshot (which shows the entire flamegraph) to identify potential performance bottlenecks. Use the 'generate_flamegraph_screenshot' tool to request zoomed-in views or different perspectives (e.g., different time ranges or depths) to investigate further. You can use the get_top_functions tool to get a list of the top functions by self or total time. Your goal is to pinpoint areas of high resource consumption or latency. Describe your observations and reasoning for each step. Stop when you have identified a likely bottleneck or after a few investigation steps.`;
+const INITIAL_PROMPT = formatPrompt`
+You are a performance analysis assistant. 
+
+- Your goal is to pinpoint areas of high resource consumption or latency. 
+- Describe your observations and reasoning for each step. 
+- Stop when you have identified a likely bottleneck or after a few investigation steps.
+
+- You can use the 'generate_flamegraph_screenshot' tool to request zoomed-in views or different perspectives (e.g., different time ranges or depths) to investigate further.
+- You can use the 'get_top_functions' tool to get a list of the top functions by self or total time. 
+
+If you think you have identified a bottleneck, you can stop the analysis and provide a concise summary of your findings, and why you think it's a bottleneck.
+`;
 
 // --- NEW: get_top_functions Tool Execution Logic ---
 const getTopFunctionsArgsSchema = z.object({
   sortBy: z.enum(['self', 'total']),
-  count: z.number().int().positive().optional().default(10),
+  count: z.number().int().positive().optional().default(30),
 });
 
 /**

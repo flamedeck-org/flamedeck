@@ -9,8 +9,7 @@ import type { FrameInfo, Profile } from '@flamedeck/speedscope-core/profile.ts';
 import { StackListProfileBuilder } from '@flamedeck/speedscope-core/profile.ts';
 import { lastOf } from '@flamedeck/speedscope-core/lib-utils.ts';
 import { TimeFormatter, ByteFormatter } from '@flamedeck/speedscope-core/value-formatters.ts';
-import type { ImporterDependencies } from './importer-utils.ts';
-import Long from 'long';
+import type { ImporterDependencies, LongType } from './importer-utils.ts';
 
 interface SampleTypeSpec {
   type: string;
@@ -19,27 +18,26 @@ interface SampleTypeSpec {
 
 // Helper to convert proto Long interface to Long class instance if needed
 function toLongClass(
-  val: number | PerfToolsILong | Long | undefined | null,
-  deps: Pick<ImporterDependencies, 'isLong'>
-): Long {
-  if (val == null) return Long.ZERO; // Or handle as error
-  if (deps.isLong(val)) return val as Long; // Already a Long class instance
-  if (typeof val === 'number') return Long.fromNumber(val);
-  // Check if it's the PerfToolsILong interface {low, high, unsigned}
+  val: number | PerfToolsILong | any | undefined | null,
+  deps: Pick<ImporterDependencies, 'LongType'>
+): any {
+  const LongClass = deps.LongType;
+  if (val == null) return LongClass.ZERO;
+  if (LongClass.isLong(val)) return val;
+  if (typeof val === 'number') return LongClass.fromNumber(val);
   if (typeof val === 'object' && 'low' in val && 'high' in val && 'unsigned' in val) {
-    return new Long(val.low, val.high, val.unsigned);
+    return new LongClass(val.low, val.high, val.unsigned);
   }
-  // If it has a toNumber method but wasn't a Long instance (less likely now with direct interface)
   if (typeof val === 'object' && typeof (val as any).toNumber === 'function') {
-    return Long.fromNumber((val as any).toNumber());
+    return LongClass.fromNumber((val as any).toNumber());
   }
   console.warn('toLongClass received unexpected type:', typeof val, val);
-  return Long.ZERO; // Fallback
+  return LongClass.ZERO;
 }
 
 function getSampleTypeIndex(
   profile: PerfToolsIProfile,
-  deps: Pick<ImporterDependencies, 'isLong'>
+  deps: Pick<ImporterDependencies, 'LongType'>
 ): number {
   const dfltProto = profile.default_sample_type;
   const sampleTypesProto = profile.sample_type || [];
@@ -51,9 +49,9 @@ function getSampleTypeIndex(
     return fallback;
   }
   const dfltLong = toLongClass(dfltProto, deps);
-  if (dfltLong.isZero()) return fallback; // Treat proto zero as unspecified
+  if (dfltLong.isZero()) return fallback;
 
-  const dfltTypeString = String(dfltLong.toNumber()); // Assuming type is referenced by string table index
+  const dfltTypeString = String(dfltLong.toNumber());
 
   const idx = sampleTypesProto.findIndex((e) => {
     if (e.type == null) return false;
@@ -69,7 +67,7 @@ function getSampleTypeIndex(
 
 export function importAsPprofProfile(
   rawProfile: ArrayBuffer,
-  deps: Pick<ImporterDependencies, 'isLong'>
+  deps: Pick<ImporterDependencies, 'LongType'>
 ): Profile | null {
   if (rawProfile.byteLength === 0) return null;
 
@@ -81,13 +79,11 @@ export function importAsPprofProfile(
     return null;
   }
 
-  // i32 now expects a PerfToolsILong or number, and returns a number.
-  // It uses toLongClass internally for conversion if needed.
-  function i32(n: number | PerfToolsILong | Long | undefined | null): number {
+  function i32(n: number | PerfToolsILong | any | undefined | null): number {
     return toLongClass(n, deps).toNumber();
   }
 
-  function stringVal(key: number | PerfToolsILong | Long | undefined | null): string | null {
+  function stringVal(key: number | PerfToolsILong | any | undefined | null): string | null {
     if (key == null) return null;
     const stringTable = protoProfile.string_table || [];
     const index = i32(key);
@@ -129,7 +125,6 @@ export function importAsPprofProfile(
     }
 
     if (line != null && line > 0) {
-      // Ensure line is positive
       frameInfo.line = line;
     }
 
@@ -221,13 +216,11 @@ export function importAsPprofProfile(
     const valueIndexToUse = resolvedSampleTypes.length > 0 ? currentSampleTypeIndex : 0;
 
     if (values.length <= valueIndexToUse) {
-      // Skip sample if it doesn't have data for the selected type/index
-      // console.warn(`Sample missing value for index ${valueIndexToUse}`);
       continue;
     }
 
     const rawValue = values[valueIndexToUse];
-    if (rawValue == null) continue; // Skip if value is null/undefined
+    if (rawValue == null) continue;
 
     const numericValue = i32(rawValue);
 
