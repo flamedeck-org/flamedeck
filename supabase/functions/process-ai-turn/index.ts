@@ -262,7 +262,6 @@ Deno.serve(async (req) => {
           metadata?: Record<string, unknown>,
           name?: string
         ) => {
-          // Log all parameters to understand their structure
           console.log('[SERVER] handleToolStart Invoked. Parameters:');
           console.log(`  tool (first arg): ${JSON.stringify(tool, null, 2)}`);
           console.log(`  input: ${JSON.stringify(input, null, 2)}`);
@@ -270,9 +269,8 @@ Deno.serve(async (req) => {
           console.log(`  parentRunId: ${parentRunId}`);
           console.log(`  tags: ${JSON.stringify(tags, null, 2)}`);
           console.log(`  metadata: ${JSON.stringify(metadata, null, 2)}`);
-          console.log(`  name (optional last arg): ${name}`);
+          console.log(`  name (optional last arg for handleToolStart): ${name}`);
 
-          // Attempt to get the tool name from common Langchain structures
           let identifiedToolName =
             name || tool?.name || tool?.id?.[2] || tool?.id?.[tool?.id?.length - 1]; // tool.id can be an array like ["langchain", "tools", "ToolName"]
           if (typeof identifiedToolName !== 'string' || !identifiedToolName) {
@@ -284,7 +282,7 @@ Deno.serve(async (req) => {
           currentToolName = identifiedToolName;
 
           console.log(
-            `[SERVER] handleToolStart: Identified Name: ${currentToolName}, Input: ${input}, ID=${runId}. Resetting LLM stream segment.`
+            `[SERVER] handleToolStart: SET currentToolName to: "${currentToolName}". Identified Name: ${identifiedToolName}, Input: ${input}, ID=${runId}. Resetting LLM stream segment.`
           );
           llmStreamingActiveForCurrentSegment = false;
           const payloadToSend = {
@@ -304,10 +302,12 @@ Deno.serve(async (req) => {
           parentRunId?: string,
           name?: string
         ) => {
-          // Prioritize name from callback, then currentToolName (set by handleToolStart), then default
+          console.log(
+            `[SERVER] handleToolEnd Invoked. name param: "${name}", currentToolName before logic: "${currentToolName}", runId: ${runId}`
+          );
           const toolNameForEvent = name || currentToolName || 'unknown_tool_ended';
           console.log(
-            `[SERVER] handleToolEnd: Name: ${toolNameForEvent}, Output: ${output}, ID=${runId}. Resetting LLM stream segment.`
+            `[SERVER] handleToolEnd: Using toolNameForEvent: "${toolNameForEvent}", Output: ${output}, ID=${runId}. Resetting LLM stream segment.`
           );
           llmStreamingActiveForCurrentSegment = false;
           if (typeof output === 'string' && output.startsWith('Error:')) {
@@ -325,13 +325,21 @@ Deno.serve(async (req) => {
             );
             await channel.send({ type: 'broadcast', event: 'ai_response', payload: payloadToSend });
           }
-          if (currentToolName === toolNameForEvent) currentToolName = null;
+          if (currentToolName === toolNameForEvent) {
+            console.log(
+              `[SERVER] handleToolEnd: Clearing currentToolName (was "${currentToolName}") because it matches toolNameForEvent.`
+            );
+            currentToolName = null;
+          }
         },
         handleToolError: async (err: any, runId: string, parentRunId?: string, name?: string) => {
+          console.log(
+            `[SERVER] handleToolError Invoked. name param: "${name}", currentToolName before logic: "${currentToolName}", runId: ${runId}`
+          );
           const toolNameForEvent = name || currentToolName || 'unknown_tool_error';
           const errorMessage = err instanceof Error ? err.message : String(err);
           console.error(
-            `[SERVER] handleToolError: Name: ${toolNameForEvent}, Error: ${errorMessage}, ID=${runId}. Resetting LLM stream segment.`
+            `[SERVER] handleToolError: Using toolNameForEvent: "${toolNameForEvent}", Error: ${errorMessage}, ID=${runId}. Resetting LLM stream segment.`
           );
           llmStreamingActiveForCurrentSegment = false;
           const payloadToSend = {
@@ -344,7 +352,12 @@ Deno.serve(async (req) => {
             JSON.stringify(payloadToSend, null, 2)
           );
           await channel.send({ type: 'broadcast', event: 'ai_response', payload: payloadToSend });
-          if (currentToolName === toolNameForEvent) currentToolName = null;
+          if (currentToolName === toolNameForEvent) {
+            console.log(
+              `[SERVER] handleToolError: Clearing currentToolName (was "${currentToolName}") because it matches toolNameForEvent.`
+            );
+            currentToolName = null;
+          }
         },
       },
     ];
