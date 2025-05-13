@@ -7,7 +7,7 @@ import Long from 'long';
 import { JSON_parse } from 'uint8array-json-parser';
 
 const app = express();
-const port = process.env.PORT || 3001; // Default to 3001 if PORT not set
+const port = process.env.PORT || 3000;
 
 const importerDeps = {
   inflate: pako.inflate,
