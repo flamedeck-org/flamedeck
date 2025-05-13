@@ -18,41 +18,14 @@ export type ProfileLoadResult = {
   profileType: ProfileType;
 } | null;
 
-// Reusable function to load and parse profile data from storage
-export async function loadProfileData(
-  supabaseAdmin: SupabaseClient,
-  blobPath: string
+// New function to parse an already fetched ArrayBuffer
+export async function parseProfileBuffer(
+  profileArrayBuffer: ArrayBuffer,
+  fileName: string
 ): Promise<ProfileLoadResult> {
-  const pathParts = blobPath.split('/');
-  const bucketName = pathParts.shift();
-  const filePath = pathParts.join('/');
-
-  if (!bucketName || !filePath) {
-    throw new Error(`Invalid blobPath format: ${blobPath}`);
-  }
-
-  console.log(`[Shared Loader] Fetching trace from storage bucket '${bucketName}': ${filePath}`);
-
-  const { data: blob, error: downloadError } = await supabaseAdmin.storage
-    .from(bucketName)
-    .download(filePath);
-
-  if (downloadError) {
-    console.error(`[Shared Loader] Download error object for ${filePath}:`, downloadError);
-    throw new Error(
-      `Failed to download trace (${filePath}) from bucket ${bucketName}: ${
-        downloadError.message || JSON.stringify(downloadError)
-      }`
-    );
-  }
-  if (!blob) {
-    throw new Error(`Trace file not found or empty (${filePath}) in bucket ${bucketName}.`);
-  }
-
-  console.log('[Shared Loader] Trace downloaded, decompressing...');
-  const arrayBuffer = await blob.arrayBuffer();
-  const decompressed = pako.inflate(new Uint8Array(arrayBuffer));
-  console.log('[Shared Loader] Trace decompressed.');
+  console.log('[Shared Loader] Decompressing profile buffer...');
+  const decompressed = pako.inflate(new Uint8Array(profileArrayBuffer));
+  console.log('[Shared Loader] Profile buffer decompressed.');
 
   // Ensure Long is imported correctly from CDN
   if (!Long || !Long.isLong) {
@@ -66,19 +39,19 @@ export async function loadProfileData(
     LongType: Long, // <-- Provide the Long class imported from CDN
   };
 
-  console.log('[Shared Loader] Importing profile group...');
+  console.log('[Shared Loader] Importing profile group from buffer...');
   const importResult = await importProfilesFromArrayBuffer(
-    filePath.split('/').pop() || 'tracefile', // Use filename from path
+    fileName, // Use the provided filename
     decompressed.buffer,
     importerDeps // Pass the complete deps object
   );
 
   if (!importResult?.profileGroup) {
     throw new Error(
-      `Failed to import profile group from trace data (Path: ${filePath}). Importer returned null/empty.`
+      `Failed to import profile group from trace data (File: ${fileName}). Importer returned null/empty.`
     );
   }
 
-  console.log('[Shared Loader] Profile group imported successfully.');
+  console.log('[Shared Loader] Profile group imported successfully from buffer.');
   return importResult; // Return the full importResult object
 }
