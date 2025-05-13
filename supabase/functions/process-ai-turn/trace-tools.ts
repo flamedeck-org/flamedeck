@@ -37,11 +37,6 @@ export const getSnapshotToolSchema = {
           description:
             "The specific flamegraph view to capture: 'time_ordered' (chronological view), 'left_heavy' (aggregated by call frequency), 'sandwich_caller' (who calls a function), or 'sandwich_callee' (who a function calls).",
         },
-        // Optional: Add frame identifier if needed for sandwich view
-        // frameIdentifier: {
-        //   type: "string" as const,
-        //   description: "The name or key of the frame required for 'sandwich_caller' or 'sandwich_callee' views."
-        // }
       },
       required: ['viewType'],
     },

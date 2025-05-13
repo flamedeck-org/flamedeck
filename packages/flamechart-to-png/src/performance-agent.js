@@ -6,6 +6,17 @@ import { JSON_parse } from 'uint8array-json-parser';
 import Long from 'long';
 import * as pako from 'pako';
 import { OpenAI } from 'openai'; // Import OpenAI
+import { z } from 'zod'; // Added for argument validation
+
+export function formatPercent(percent) {
+  let formattedPercent = `${percent.toFixed(0)}%`;
+  if (percent === 100) formattedPercent = '100%';
+  else if (percent > 99) formattedPercent = '>99%';
+  else if (percent < 0.01) formattedPercent = '<0.01%';
+  else if (percent < 1) formattedPercent = `${percent.toFixed(2)}%`;
+  else if (percent < 10) formattedPercent = `${percent.toFixed(1)}%`;
+  return formattedPercent;
+}
 
 // --- OpenAI Client Initialization ---
 // Ensure OPENAI_API_KEY environment variable is set
@@ -24,7 +35,7 @@ const tools = [
   {
     type: 'function',
     function: {
-      name: 'generateFlamegraphScreenshot',
+      name: 'generate_flamegraph_screenshot',
       description:
         'Generates a PNG screenshot of the flamegraph for a specific time range, theme, or depth. Used to visualize different parts or states of the performance profile.',
       parameters: {
@@ -56,6 +67,33 @@ const tools = [
       },
     },
   },
+  // --- NEW: get_top_functions Tool Definition ---
+  {
+    type: 'function',
+    function: {
+      name: 'get_top_functions',
+      description:
+        'Retrieves a list of the top N functions from the loaded trace profile based on their total or self execution time. Used to quickly identify computationally expensive functions.',
+      parameters: {
+        type: 'object',
+        properties: {
+          sortBy: {
+            type: 'string',
+            enum: ['self', 'total'],
+            description:
+              "Sort functions by 'self' time (time spent only in the function) or 'total' time (time spent in the function and its children).",
+          },
+          count: {
+            type: 'integer',
+            description: 'The maximum number of top functions to return. Defaults to 10.',
+            minimum: 1,
+          },
+        },
+        required: ['sortBy'],
+      },
+    },
+  },
+  // --- End NEW Tool ---
 ];
 
 /**
@@ -132,6 +170,93 @@ async function encodeImageToBase64(filePath) {
   }
 }
 
+const INITIAL_PROMPT = `You are a performance analysis assistant. Analyze the provided flamegraph screenshot (which shows the entire flamegraph) to identify potential performance bottlenecks. Use the 'generate_flamegraph_screenshot' tool to request zoomed-in views or different perspectives (e.g., different time ranges or depths) to investigate further. You can use the get_top_functions tool to get a list of the top functions by self or total time. Your goal is to pinpoint areas of high resource consumption or latency. Describe your observations and reasoning for each step. Stop when you have identified a likely bottleneck or after a few investigation steps.`;
+
+// --- NEW: get_top_functions Tool Execution Logic ---
+const getTopFunctionsArgsSchema = z.object({
+  sortBy: z.enum(['self', 'total']),
+  count: z.number().int().positive().optional().default(10),
+});
+
+/**
+ * Tool function wrapper to be called by the agent for get_top_functions.
+ * Handles argument parsing and calls the core logic.
+ * @param {import('@flamedeck/speedscope-core/dist/profile').ProfileGroup} profileGroup
+ * @param {object} args Arguments provided by the AI model
+ * @returns {object} Result object with success status and data/error message.
+ */
+async function callGetTopFunctionsTool(profileGroup, args) {
+  console.log(`[Agent Tool] AI requested top functions with args:`, args);
+
+  if (!profileGroup?.profiles?.length) {
+    console.error('[Agent Tool getTopFunctions] Profile data is missing or invalid.');
+    return { success: false, error: 'Profile data is missing or invalid.' };
+  }
+  const profile = profileGroup.profiles[0];
+
+  // Validate arguments using Zod
+  const parseResult = getTopFunctionsArgsSchema.safeParse(args);
+  if (!parseResult.success) {
+    const errorMsg = `Invalid arguments provided to get_top_functions: ${parseResult.error.message}`;
+    console.error(`[Agent Tool getTopFunctions] ${errorMsg}`);
+    return { success: false, error: errorMsg };
+  }
+  const { sortBy, count } = parseResult.data;
+
+  try {
+    console.log(`[Agent Tool] Calculating top ${count} functions by ${sortBy} time.`);
+    const totalNonIdle = profile.getTotalNonIdleWeight();
+
+    // Use forEachFrame to gather frames
+    const frameList = [];
+    profile.forEachFrame((frame) => {
+      frameList.push(frame); // Store all frames initially
+    });
+
+    // Filter out the root frame(s) by name
+    const allFrames = frameList.filter(
+      (frame) => frame.name !== '[root]' && frame.name !== '(speedscope root)'
+    );
+
+    // Sort the filtered frames
+    allFrames.sort((a, b) => {
+      const weightA = sortBy === 'self' ? a.getSelfWeight() : a.getTotalWeight();
+      const weightB = sortBy === 'self' ? b.getSelfWeight() : b.getTotalWeight();
+      return weightB - weightA; // Sort descending
+    });
+
+    // Take top N
+    const topN = allFrames.slice(0, count);
+
+    // Format output string
+    const results = topN.map((frame, index) => {
+      const totalWeight = frame.getTotalWeight();
+      const selfWeight = frame.getSelfWeight();
+      const totalPerc = totalNonIdle === 0 ? 0 : (100.0 * totalWeight) / totalNonIdle;
+      const selfPerc = totalNonIdle === 0 ? 0 : (100.0 * selfWeight) / totalNonIdle;
+      return (
+        `${index + 1}. ${frame.name || '(unknown)'}: ` +
+        `Total: ${profile.formatValue(totalWeight)} (${formatPercent(totalPerc)}), ` +
+        `Self: ${profile.formatValue(selfWeight)} (${formatPercent(selfPerc)})`
+      );
+    });
+
+    const resultString =
+      results.length === 0
+        ? 'No function data found matching the criteria.'
+        : `Top ${results.length} functions sorted by ${sortBy} time:\n${results.join('\n')}`;
+
+    console.log(`[Agent Tool getTopFunctions] Success.`);
+    return { success: true, data: resultString };
+  } catch (error) {
+    console.error('[Agent Tool getTopFunctions] Error executing:', error);
+    const errorMsg =
+      error instanceof Error ? error.message : 'Unknown error calculating top functions.';
+    return { success: false, error: `Error executing tool: ${errorMsg}` };
+  }
+}
+// --- End NEW Tool Execution Logic ---
+
 /**
  * Main agent logic.
  *
@@ -168,16 +293,13 @@ async function runAgent(profileGroup, outputDir) {
     const initialScreenshotPath = initialToolResult.outputPath;
     console.log(`[Agent] Initial screenshot generated: ${initialScreenshotPath}`);
 
-    // --- AI Agent Interaction Loop ---
-    const initialPrompt = `You are a performance analysis assistant. Analyze the provided flamegraph screenshot (${path.basename(initialScreenshotPath)}) to identify potential performance bottlenecks. Use the 'generateFlamegraphScreenshot' tool to request zoomed-in views or different perspectives (e.g., different time ranges, themes, depths) to investigate further. Your goal is to pinpoint areas of high resource consumption or latency. Describe your observations and reasoning for each step. Stop when you have identified a likely bottleneck or after a few investigation steps.`;
-
     const initialBase64Image = await encodeImageToBase64(initialScreenshotPath);
 
     // Start the conversation with the initial prompt and image
     conversationHistory.push({
       role: 'user',
       content: [
-        { type: 'text', text: initialPrompt },
+        { type: 'text', text: INITIAL_PROMPT },
         {
           type: 'image_url',
           image_url: {
@@ -213,7 +335,7 @@ async function runAgent(profileGroup, outputDir) {
 
           // Process tool calls sequentially
           for (const toolCall of message.tool_calls) {
-            if (toolCall.function.name === 'generateFlamegraphScreenshot') {
+            if (toolCall.function.name === 'generate_flamegraph_screenshot') {
               currentAnalysisStep++;
               const args = JSON.parse(toolCall.function.arguments || '{}');
 
@@ -279,6 +401,41 @@ async function runAgent(profileGroup, outputDir) {
                   content: nextUserMessageContent,
                 });
               }
+            } else if (toolCall.function.name === 'get_top_functions') {
+              // --- NEW: Handle get_top_functions ---
+              console.log('[Agent] Handling get_top_functions tool call');
+              const args = JSON.parse(toolCall.function.arguments || '{}');
+              const toolResult = await callGetTopFunctionsTool(profileGroup, args);
+
+              let toolResponseContent;
+              if (toolResult.success) {
+                toolResponseContent = JSON.stringify({
+                  status: 'Success',
+                  data: toolResult.data,
+                });
+                console.log(`[Agent] Tool get_top_functions success. Result:
+${toolResult.data}`);
+              } else {
+                toolResponseContent = JSON.stringify({
+                  status: 'Error',
+                  error: toolResult.error,
+                });
+                console.error(`[Agent] Tool get_top_functions failed: ${toolResult.error}`);
+              }
+
+              // Add tool result message to history
+              conversationHistory.push({
+                tool_call_id: toolCall.id,
+                role: 'tool',
+                name: toolCall.function.name,
+                content: toolResponseContent,
+              });
+
+              // Unlike the screenshot tool, we don't necessarily need to send a new user message
+              // immediately after getting top functions, unless the AI needs prompting.
+              // The AI should respond based on the tool result in the next iteration.
+
+              // --- End NEW Handling ---
             } else {
               console.warn(`[Agent] Received unhandled tool call: ${toolCall.function.name}`);
               // Add a placeholder tool result for unhandled tools
