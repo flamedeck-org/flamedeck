@@ -87,6 +87,8 @@ You are a performance analysis assistant.
 - You can use the 'get_top_functions' tool to get a list of the top functions by self or total time. 
 
 If you think you have identified a bottleneck, you can stop the analysis and provide a concise summary of your findings, and why you think it's a bottleneck.
+
+To start with you should immediately get a screenshot of the flamegraph.
 `;
 
 const toolsForApi: ChatCompletionTool[] = [getTopFunctionsToolSchema, getSnapshotToolSchema];
