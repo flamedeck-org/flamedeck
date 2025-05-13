@@ -140,9 +140,9 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     }
 
     return (
-      <div className="fixed bottom-24 right-6 w-96 h-[32rem] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-xl flex flex-col z-40 overflow-hidden">
+      <div className="fixed bottom-24 right-6 w-[28rem] h-[calc(100vh-15rem)] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-xl flex flex-col z-40 overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center p-3 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <div className="flex justify-between items-center pl-3 pr-3 pt-1 pb-1 border-b dark:border-gray-700 bg-background">
           <h3 className="font-semibold text-gray-800 dark:text-gray-100">AI Trace Analysis</h3>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close Chat">
             <X className="h-4 w-4" />
@@ -158,13 +158,12 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
                 className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${
-                    msg.sender === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : msg.sender === 'error'
-                        ? 'bg-red-100 text-red-700 border border-red-300'
-                        : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
-                  }`}
+                  className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${msg.sender === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : msg.sender === 'error'
+                      ? 'bg-red-100 text-red-700 border border-red-300'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
+                    }`}
                 >
                   {msg.text}
                 </div>
@@ -188,7 +187,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
         </ScrollArea>
 
         {/* Input Area */}
-        <div className="p-3 border-t dark:border-gray-700 flex items-center space-x-2 bg-gray-50 dark:bg-gray-700 chat-input-area">
+        <div className="p-3 border-t dark:border-gray-700 flex items-center space-x-2 bg-background chat-input-area">
           <Input
             type="text"
             placeholder="Ask about the trace..."
