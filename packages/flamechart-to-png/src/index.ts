@@ -213,7 +213,7 @@ function drawFrame({
   ctx.fillRect(x, y, Math.max(0, rectWidth), frameHeightPx);
 
   // Draw border
-  ctx.strokeStyle = '#555'; // TODO: Use theme color for border?
+  ctx.strokeStyle = theme.bgPrimaryColor;
   ctx.lineWidth = 0.5;
   ctx.strokeRect(x, y, Math.max(0, rectWidth), frameHeightPx);
 
@@ -272,7 +272,7 @@ function drawDepthAxis({
   theme,
 }: DrawDepthAxisParams): void {
   // Background
-  ctx.fillStyle = theme.altBgPrimaryColor || theme.bgSecondaryColor;
+  ctx.fillStyle = theme.bgPrimaryColor;
   ctx.fillRect(0, 0, depthAxisWidth, canvasHeight);
 
   // Separator line
@@ -328,7 +328,7 @@ function drawTimeAxis({
   formatValue,
 }: DrawTimeAxisParams): void {
   // Background
-  ctx.fillStyle = theme.altBgPrimaryColor || theme.bgSecondaryColor;
+  ctx.fillStyle = theme.bgPrimaryColor;
   ctx.fillRect(xAxisOffset, 0, canvasWidth, axisHeight);
 
   // Axis line
