@@ -13,110 +13,106 @@ To provide an interactive chat interface where users can ask questions about a l
 - **Large Trace Files & Context Limits:** Trace files are often too large for LLM context windows.
   - **Solution:** The backend (`process-ai-turn`) fetches the file from Supabase Storage using the `traceId`. It generates a concise summary using the `speedscope-import` package and includes this summary in the system prompt.
 - **Tool Execution & Context:** The AI needs to request specific data (e.g., top functions, flamegraph snapshot).
-  - **Solution (Server-side Tools):** For data computable from the trace file (like top functions), a tool schema is provided to the OpenAI API. When requested, `process-ai-turn` executes the tool logic using the loaded trace data and sends the result back to the API.
-  - **Solution (Client-side Tools - Snapshot):** For actions requiring client-side rendering (like flamegraph snapshots), a different flow is needed:
-    1.  AI requests the `get_flamegraph_snapshot` tool.
-    2.  `process-ai-turn` stores the necessary conversation state (history, tool call info) in a temporary database table (`ai_chat_continuations`) associated with a unique `request_id` (the tool call ID).
-    3.  `process-ai-turn` sends a `request_snapshot` message via Realtime to the client, including the `request_id`.
-    4.  The client generates the snapshot and sends a `snapshot_result` message via WebSocket back to `trace-analysis-socket`, including the `request_id` and image data.
-    5.  `trace-analysis-socket` receives the result, fetches the stored state from the database using `request_id`, deletes the state record, and re-invokes `process-ai-turn` with a special `continue_with_tool_result` payload containing the state and the snapshot result.
-    6.  `process-ai-turn` receives the continuation payload, formats the tool result message, and sends the final completion request (with the tool result included) to the OpenAI API to get the final user-facing response.
+  - **Solution (Server-side Tools - Top Functions):** For data computable from the trace file (like top functions), a tool schema is provided to the OpenAI API. When requested, `process-ai-turn` executes the tool logic using the loaded trace data and sends the result back to the API.
+  - **Solution (Server-side Tools - Snapshot via Flamechart Server):** For flamegraph snapshots:
+    1.  AI requests the `get_flamegraph_snapshot` tool, potentially with rendering parameters (view type, dimensions, theme, etc.).
+    2.  `process-ai-turn` loads the raw profile data from Supabase Storage.
+    3.  It makes an HTTP POST request to the dedicated `flamechart-server` API (`/render`) with the raw profile data and the specified rendering options.
+    4.  The `flamechart-server` returns a PNG image buffer.
+    5.  `process-ai-turn` uploads this PNG buffer to a designated Supabase Storage bucket (e.g., `ai-snapshots/<userId>/<filename>.png`), securing it with RLS policies so users can only access their own snapshots.
+    6.  `process-ai-turn` constructs a tool result message containing the public (but RLS-protected) URL of the uploaded PNG.
+    7.  This result is then sent back to the OpenAI API as part of the conversation to get the final user-facing response.
 - **Statelessness:** Edge Functions are stateless.
-  - **Solution:** Context (`traceId`, `userId`, `history`) is passed between functions. Trace data is fetched from Storage on demand. Temporary state for client-side tool calls is managed via the database table.
-- **Real-time Updates:** Users need asynchronous AI responses and client-side tool requests.
-  - **Solution:** Supabase Realtime is used by `process-ai-turn` to stream AI response chunks and errors back to the client, and also to request client-side actions (like snapshots).
+  - **Solution:** Context (`traceId`, `userId`, `history`) is passed between functions. Trace data is fetched from Storage on demand.
+- **Real-time Updates:** Users need asynchronous AI responses.
+  - **Solution:** Supabase Realtime is used by `process-ai-turn` to stream AI response chunks and errors back to the client.
 
 ## Components
 
 1.  **Client-Side UI (`apps/client/src/components/Chat/`)**
 
     - `FloatingChatButton.tsx`: Toggles chat window visibility.
-    - `ChatWindow.tsx`: Renders messages, input. Manages scroll state (including user scroll detection).
+    - `ChatWindow.tsx`: Renders messages (including images via URL), input. Manages scroll state.
     - `ChatContainer.tsx`: Client orchestrator.
       - Manages WebSocket (`useTraceAnalysisSocket`) and Supabase Realtime connections.
       - Handles chat state (`isChatOpen`, `chatMessages`, etc.) and controls `ChatWindow`.
       - Sends `start_analysis` and `user_prompt` via WebSocket.
       - Receives WebSocket acks/errors.
-      - Receives Realtime messages for AI stream (`model_chunk_start/append/end`, `error`) **and** `request_snapshot` events.
-      - **Triggers snapshot generation** (communicating with `SpeedscopeViewer` via props/context - _Needs implementation detail_) upon receiving `request_snapshot`.
-      - Sends `snapshot_result` back via WebSocket.
+      - Receives Realtime messages for AI stream (`model_chunk_start/append/end`, `error`, `tool_start`).
+      - **Does NOT handle snapshot generation or results directly.** The AI response will contain an image URL if a snapshot was requested.
 
 2.  **WebSocket Hook (`apps/client/src/hooks/useTraceAnalysisSocket.ts`)**
 
     - Manages raw WebSocket lifecycle, message sending/receiving.
 
-3.  **Client Snapshot Logic (`apps/client/src/components/SpeedscopeViewer.tsx` - Proposed)**
-
-    - Needs modification to accept a prop/context function (e.g., `generateSnapshot`) from its parent page.
-    - Implements the logic to capture the canvas content using `canvas.toDataURL()` based on the requested `viewType`.
-
-4.  **WebSocket Handler (`supabase/functions/trace-analysis-socket/index.ts`)**
+3.  **WebSocket Handler (`supabase/functions/trace-analysis-socket/index.ts`)**
 
     - Manages WebSocket connections.
-    - Receives `start_analysis`, `user_prompt`, and `snapshot_result` messages.
-    - On `start_analysis` / `user_prompt`: Invokes `process-ai-turn` asynchronously (initial request).
-    - On `snapshot_result`:
-      - Uses Supabase admin client to fetch state from `ai_chat_continuations` using `requestId`.
-      - Deletes the state record.
-      - Invokes `process-ai-turn` asynchronously with `continue_with_tool_result` payload.
+    - Receives `start_analysis` and `user_prompt` messages.
+    - On `start_analysis` / `user_prompt`: Invokes `process-ai-turn` asynchronously.
+    - **Does NOT handle `snapshot_result` messages from the client.**
     - Sends WebSocket acks (`connection_ack`, `waiting_for_model`).
 
-5.  **AI Processor (`supabase/functions/process-ai-turn/index.ts`)**
+4.  **AI Processor (`supabase/functions/process-ai-turn/index.ts`)**
 
     - An Edge Function invoked asynchronously.
-    - Handles initial requests (`start_analysis`, `user_prompt`) and continuation requests (`continue_with_tool_result`).
     - Uses Supabase admin client to query DB for `blob_path`.
-    - Uses **shared loader** (`_shared/profile-loader.ts`) to download, decompress, and parse the trace file using `speedscope-import`.
+    - Uses **shared loader** (`_shared/profile-loader.ts`) to download and parse the trace file (for summary) and to get the raw profile text (for snapshots).
     - Generates trace summary.
-    - Uses the `openai` library directly (not LangChain agents).
-    - **On initial request:**
-      - Formats messages (system prompt, summary, history, user prompt).
-      - Calls OpenAI Chat Completions API with tool schemas (`tools`) and `tool_choice: 'auto'`.
-      - **If snapshot tool requested:** Stores state (`userId`, `traceId`, `message_history`, `tool_call`) in `ai_chat_continuations` table, sends `request_snapshot` via Realtime to client, **ends execution**.
-      - **If other tool requested:** Executes tool locally (e.g., `executeGetTopFunctions`), appends assistant message + tool result to history, makes second OpenAI call (`stream: true`), streams response via Realtime.
-      - **If no tool requested:** Makes second OpenAI call with original messages (`stream: true`), streams response via Realtime.
-    - **On `continue_with_tool_result` request:**
-      - Retrieves original state and snapshot result from payload.
-      - Constructs tool result message.
+    - Uses the `openai` library directly.
+    - Formats messages (system prompt, summary, history, user prompt).
+    - Calls OpenAI Chat Completions API with tool schemas (`tools`) and `tool_choice: 'auto'`.
+    - **If `get_flamegraph_snapshot` tool requested:**
+      - Retrieves rendering arguments from the tool call.
+      - Fetches the raw profile data text.
+      - Makes an HTTP POST to the `flamechart-server` (URL from env var) with the profile text and rendering arguments.
+      - Receives PNG image buffer.
+      - Uploads PNG to Supabase Storage (e.g., `ai-snapshots/<userId>/trace-<traceId>-<timestamp>.png`).
+      - Gets the public URL of the uploaded image.
+      - Constructs the tool result message (containing the image URL).
       - Appends assistant message (tool request) + tool result message to history.
-      - Makes OpenAI call (`stream: true`) with updated history.
-      - Streams response via Realtime.
+      - Makes a second OpenAI call (`stream: true`) with updated history.
+      - Streams response (which should reference the image) via Realtime.
+    - **If other tool requested (e.g., `get_top_functions`):** Executes tool locally, appends assistant message + tool result to history, makes second OpenAI call (`stream: true`), streams response via Realtime.
+    - **If no tool requested:** Makes OpenAI call with original messages (`stream: true`), streams response via Realtime.
     - Sends Realtime messages (`model_chunk_start/append/end`, `tool_start`, `error`).
 
-6.  **Shared Loader (`supabase/functions/_shared/profile-loader.ts`)**
+5.  **Shared Loader (`supabase/functions/_shared/profile-loader.ts`)**
 
     - Contains `loadProfileData` function.
-    - Takes `blobPath`, downloads from storage, decompresses, parses using `speedscope-import`, returns `{ profileGroup, profileType }`.
+    - Takes `blobPath`, downloads from storage, (optionally provides raw text), decompresses, parses using `speedscope-import`, returns `{ profileGroup, profileType }`.
 
-7.  **Shared Tools (`supabase/functions/process-ai-turn/trace-tools.ts` - currently local)**
+6.  **Shared Tools (`supabase/functions/process-ai-turn/trace-tools.ts`)**
 
-    - Defines tool schemas for OpenAI (e.g., `getTopFunctionsToolSchema`).
+    - Defines tool schemas for OpenAI (e.g., `getTopFunctionsToolSchema`, `getSnapshotToolSchema` with parameters for viewType, width, height, theme, etc.).
     - Contains execution logic for server-side tools (e.g., `executeGetTopFunctions`).
 
-8.  **Database Table (`public.ai_chat_continuations`)**
-    - Stores temporary state for pending client-side tool calls (snapshots).
-    - Fields: `request_id`, `user_id`, `trace_id`, `message_history`, `tool_call`, `created_at`.
-    - Requires cleanup mechanism (e.g., TTL or cron job).
+7.  **Flamechart Server (`apps/flamechart-server`)**
 
-## Data Flow Example (Snapshot Request)
+    - External server providing an HTTP API (`POST /render`) for rendering profiles to PNG.
+    - Takes raw profile data and rendering options as input.
+    - Returns a PNG image buffer.
+    - Environment variable `FLAMECHART_SERVER_URL` in `process-ai-turn` points to this server.
 
-1.  User asks a question requiring a visual (e.g., "Show me the callees for function X").
+8.  **Supabase Storage (Bucket: `ai-snapshots`)**
+    - Stores the generated PNG snapshots.
+    - Path: `ai-snapshots/<userId>/trace-<traceId>-<timestamp>.png`
+    - RLS Policy: Enforces that users can only read snapshots where the `<userId>` in the path matches their authenticated `auth.uid()`.
+
+## Data Flow Example (Snapshot Request - New Architecture)
+
+1.  User asks a question requiring a visual (e.g., "Show me the callees for function X as a flamegraph").
 2.  Client sends `user_prompt` via WebSocket.
 3.  `trace-analysis-socket` invokes `process-ai-turn` (initial).
-4.  `process-ai-turn` loads profile, calls OpenAI API (1st call) with tool schemas.
-5.  OpenAI responds requesting `get_flamegraph_snapshot` tool with specific `viewType` and `tool_call_id`.
-6.  `process-ai-turn` stores current `message_history`, `tool_call`, etc. in `ai_chat_continuations` table using `tool_call_id` as `request_id`.
-7.  `process-ai-turn` sends `{ type: 'request_snapshot', requestId, viewType }` via Realtime to client.
-8.  `process-ai-turn` (initial invocation) finishes.
-9.  `ChatContainer` receives Realtime message.
-10. `ChatContainer` triggers snapshot generation in `SpeedscopeViewer` (needs implementation).
-11. `SpeedscopeViewer` generates data URL.
-12. `ChatContainer` sends `{ type: 'snapshot_result', requestId, status: 'success', imageDataUrl }` via WebSocket.
-13. `trace-analysis-socket` receives `snapshot_result`.
-14. `trace-analysis-socket` fetches state from `ai_chat_continuations` using `requestId`, then deletes the row.
-15. `trace-analysis-socket` invokes `process-ai-turn` (continuation) with state + result.
-16. `process-ai-turn` (continuation) receives payload.
-17. It reconstructs history including the assistant tool request and the tool result (containing the image data URL).
-18. It calls OpenAI API (2nd call) with updated history and `stream: true`.
-19. It streams the final LLM response (which should reference the snapshot) back to the client via Realtime (`model_chunk_append`, etc.).
-20. Client displays the final streamed response.
+4.  `process-ai-turn` loads profile data (summary and raw text).
+5.  `process-ai-turn` calls OpenAI API (1st call) with tool schemas.
+6.  OpenAI responds requesting `get_flamegraph_snapshot` tool with specific parameters (e.g., `viewType`, `width`, etc.) and `tool_call_id`.
+7.  `process-ai-turn` sends a `tool_start` message via Realtime to the client.
+8.  `process-ai-turn` makes an HTTP POST request to the `flamechart-server` with the raw profile text and rendering parameters.
+9.  `flamechart-server` renders the PNG and returns the image buffer.
+10. `process-ai-turn` uploads the PNG buffer to Supabase Storage at `ai-snapshots/<userId>/<filename>.png`.
+11. `process-ai-turn` gets the public (RLS-protected) URL for the uploaded image.
+12. It reconstructs conversation history including the assistant's tool request message and the tool result message (containing the image URL).
+13. It calls OpenAI API (2nd call) with updated history and `stream: true`.
+14. It streams the final LLM response (which should reference the snapshot via its URL) back to the client via Realtime (`model_chunk_append`, etc.).
+15. Client displays the final streamed response, rendering the image from the URL.
