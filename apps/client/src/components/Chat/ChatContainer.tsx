@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTraceAnalysisSocket } from '@/hooks/useTraceAnalysisSocket';
 import {
   FloatingChatButton,
@@ -198,9 +198,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
     setIsWaitingForModel(false);
     // Update initial system message
     if (chatMessages.length === 0) {
-      setChatMessages([
-        { id: uuidv4(), sender: 'system', text: 'Connecting to AI analysis...' },
-      ]);
+      setChatMessages([{ id: uuidv4(), sender: 'system', text: 'Connecting to AI analysis...' }]);
     }
     sendRawSocketMessage({
       type: 'start_analysis',
@@ -231,14 +229,19 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
     console.log('[ChatContainer] Processing lastSocketMessage:', lastSocketMessage);
 
     if (lastSocketMessage.type === 'server_ready') {
-      console.log('[ChatContainer] Received server_ready message from WebSocket:', lastSocketMessage.message);
+      console.log(
+        '[ChatContainer] Received server_ready message from WebSocket:',
+        lastSocketMessage.message
+      );
       // Potentially update a system message here if needed, or just log
       // For now, we expect start_analysis to be sent by another effect
     } else if (lastSocketMessage.type === 'connection_ack') {
       console.log('[ChatContainer] WebSocket ACK received:', lastSocketMessage.message);
       setChatMessages((prev) => {
         const connectingMsgIndex = prev.findIndex(
-          (msg) => msg.text === 'Connecting to analysis service...' || msg.text === 'Connecting to AI analysis...'
+          (msg) =>
+            msg.text === 'Connecting to analysis service...' ||
+            msg.text === 'Connecting to AI analysis...'
         );
         if (connectingMsgIndex !== -1) {
           const updated = [...prev];
@@ -271,8 +274,14 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
       ]);
       setChatError(errorMsg);
       setIsWaitingForModel(false);
-    } else if (lastSocketMessage.type !== 'connection_ack' && lastSocketMessage.type !== 'server_ready') {
-      console.log("[ChatContainer] Received other/unexpected direct WS message:", lastSocketMessage);
+    } else if (
+      lastSocketMessage.type !== 'connection_ack' &&
+      lastSocketMessage.type !== 'server_ready'
+    ) {
+      console.log(
+        '[ChatContainer] Received other/unexpected direct WS message:',
+        lastSocketMessage
+      );
     }
   }, [lastSocketMessage]);
 
@@ -281,13 +290,18 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
     if (socketErrorEvent) {
       // Check for ignorable 1006 closure FIRST
       if (socketErrorEvent instanceof CloseEvent && socketErrorEvent.code === 1006) {
-        console.warn("[ChatContainer] WebSocket CloseEvent 1006 (Abnormal Closure) detected by socketErrorEvent handler. Usually means server dropped connection without a clean handshake.");
+        console.warn(
+          '[ChatContainer] WebSocket CloseEvent 1006 (Abnormal Closure) detected by socketErrorEvent handler. Usually means server dropped connection without a clean handshake.'
+        );
         setIsWaitingForModel(false);
         return;
       }
 
       // If it wasn't the ignorable 1006 error, proceed to handle other errors
-      console.log("[ChatContainer] socketErrorEvent handler processing other error:", socketErrorEvent);
+      console.log(
+        '[ChatContainer] socketErrorEvent handler processing other error:',
+        socketErrorEvent
+      );
       let errorMsg = 'WebSocket connection error.';
 
       if (socketErrorEvent instanceof Error) {
@@ -330,8 +344,11 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
 
         const historyToSend = chatMessages
           .filter((msg) => msg.sender === 'user' || msg.sender === 'model')
-          .slice(-10)
+          // For now send the entire history
+          // .slice(-10)
           .map((msg) => ({ sender: msg.sender, text: msg.text }));
+
+        console.log(historyToSend);
 
         sendRawSocketMessage({
           type: 'user_prompt',
