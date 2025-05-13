@@ -98,7 +98,7 @@ To provide an interactive chat interface where users can ask questions about a l
 7.  **Flamechart Server (`apps/flamechart-server`)**
 
     - External server providing an HTTP API (`POST /render`) for rendering profiles to PNG.
-    - Takes raw profile data (now sent as `application/octet-stream` from an `ArrayBuffer`) and rendering options as input.
+    - Takes raw profile data (now sent as `text/plain` from an `ArrayBuffer`) and rendering options as input.
     - Returns a PNG image buffer.
     - Environment variable `FLAMECHART_SERVER_URL` in `process-ai-turn` points to this server.
 
