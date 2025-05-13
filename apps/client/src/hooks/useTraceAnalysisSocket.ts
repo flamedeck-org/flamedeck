@@ -26,12 +26,12 @@ export function useTraceAnalysisSocket() {
       console.log('WebSocket already connected.');
       return;
     }
-    console.log(`Attempting to connect to WebSocket at: ${WS_URL}`);
+    console.log(`[useTraceAnalysisSocket] Attempting to connect to WebSocket at: ${WS_URL}`);
     setError(null); // Clear previous errors
     socketRef.current = new WebSocket(WS_URL);
 
     socketRef.current.onopen = () => {
-      console.log('WebSocket connection established');
+      console.log('[useTraceAnalysisSocket] WebSocket .onopen event triggered.');
       setIsConnected(true);
       setError(null);
     };
@@ -39,7 +39,7 @@ export function useTraceAnalysisSocket() {
     socketRef.current.onmessage = (event) => {
       try {
         const message: SocketMessage = JSON.parse(event.data);
-        console.log('WebSocket message received:', message);
+        console.log('[useTraceAnalysisSocket] WebSocket message received:', message);
         setLastMessage(message);
       } catch (e) {
         console.error('Failed to parse WebSocket message:', event.data, e);
@@ -48,19 +48,19 @@ export function useTraceAnalysisSocket() {
     };
 
     socketRef.current.onerror = (event) => {
-      console.error('WebSocket error:', event);
+      console.error('[useTraceAnalysisSocket] WebSocket .onerror event:', event);
       setError(event);
       setIsConnected(false);
       // Attempt to reconnect or notify user? For now, just log.
     };
 
     socketRef.current.onclose = (event) => {
-      console.log('WebSocket connection closed:', event.code, event.reason);
+      console.log(`[useTraceAnalysisSocket] WebSocket .onclose event. Code: ${event.code}, Reason: '${event.reason}', WasClean: ${event.wasClean}`);
       setIsConnected(false);
       socketRef.current = null;
       // Optionally implement automatic reconnection logic here
       if (!event.wasClean) {
-        console.warn('WebSocket connection closed unexpectedly.');
+        console.warn('[useTraceAnalysisSocket] WebSocket connection closed unexpectedly.');
         setError(event);
       }
     };
@@ -68,7 +68,7 @@ export function useTraceAnalysisSocket() {
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
-      console.log('Closing WebSocket connection');
+      console.log('[useTraceAnalysisSocket] Closing WebSocket connection (disconnect called).');
       socketRef.current.close(1000, 'User requested disconnect'); // 1000 is normal closure
       // State updates (isConnected=false, etc.) are handled by the onclose handler
     }
@@ -77,7 +77,7 @@ export function useTraceAnalysisSocket() {
   const sendMessage = useCallback((message: string | object) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       const messageToSend = typeof message === 'string' ? message : JSON.stringify(message);
-      console.log('Sending WebSocket message:', messageToSend);
+      console.log('[useTraceAnalysisSocket] Sending WebSocket message:', messageToSend);
       socketRef.current.send(messageToSend);
     } else {
       console.error('WebSocket is not connected. Cannot send message.');

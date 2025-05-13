@@ -23,6 +23,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
   const chatWindowRef = useRef<ChatWindowHandle>(null); // <-- Create ref for ChatWindow
   const [isInitialAnalysisRequested, setIsInitialAnalysisRequested] = useState<boolean>(false);
   const previousTraceIdRef = useRef<string | null>(null); // Ref to track previous traceId
+  const analysisSentForCurrentTraceRef = useRef<boolean>(false); // Ref to track if initial analysis was sent for this traceId
 
   const {
     connect: connectSocket,
@@ -46,6 +47,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
     if (isChatOpen && userId && traceId) {
       // Connect WebSocket
       if (!isSocketConnected) {
+        console.log('[ChatContainer] isChatOpen, calling connectSocket().');
         connectSocket();
       }
 
@@ -133,12 +135,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
         .subscribe((status, err) => {
           if (status === 'SUBSCRIBED') {
             console.log(
-              `[ChatContainer] Realtime SUBSCRIBED. isSocketConnected: ${isSocketConnected}`
+              `[ChatContainer] Realtime SUBSCRIBED.` // Removed socket check here
             ); // Log connection status
-            if (isSocketConnected) {
-              console.log('[ChatContainer] Calling sendStartAnalysis from subscribe callback.'); // Log the call
-              sendStartAnalysis();
-            }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             setChatError(`Realtime connection failed: ${status}`);
             setChatMessages((prev) => [
@@ -185,55 +183,62 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
       console.log(
         `[ChatContainer] traceId changed from ${previousTraceIdRef.current} to ${traceId}. Resetting analysis flag.`
       );
-      setIsInitialAnalysisRequested(false);
+      analysisSentForCurrentTraceRef.current = false; // Reset flag on trace change
       previousTraceIdRef.current = traceId; // Update the ref for next comparison
     }
   }, [traceId]);
 
   // Helper function to send start_analysis (Remove model details)
   const sendStartAnalysis = useCallback(() => {
-    if (isSocketConnected && userId && traceId && !isInitialAnalysisRequested) {
-      console.log('[ChatContainer] Condition met. Sending initial analysis request...');
-      setChatError(null);
-      setIsWaitingForModel(false);
-      // Update initial system message
-      if (chatMessages.length === 0) {
-        setChatMessages([
-          { id: uuidv4(), sender: 'system', text: 'Connecting to analysis service...' },
-        ]);
-      }
-      sendRawSocketMessage({
-        type: 'start_analysis',
-        userId: userId,
-        traceId: traceId,
-      });
-
-      // Log setting the flag
-      console.log('[ChatContainer] Setting isInitialAnalysisRequested to true.');
-      setIsInitialAnalysisRequested(true);
-    } else {
-      console.log('[ChatContainer] Condition NOT met. Skipping initial analysis request.');
+    // Conditions checked in the effect below
+    console.log(`[ChatContainer] Sending start_analysis for trace ${traceId}`);
+    setChatMessages([]); // Clear previous messages
+    analysisSentForCurrentTraceRef.current = true; // Mark as sent for this trace
+    setChatError(null);
+    setIsWaitingForModel(false);
+    // Update initial system message
+    if (chatMessages.length === 0) {
+      setChatMessages([
+        { id: uuidv4(), sender: 'system', text: 'Connecting to AI analysis...' },
+      ]);
     }
-  }, [
-    isSocketConnected,
-    userId,
-    traceId,
-    sendRawSocketMessage,
-    chatMessages.length,
-    isInitialAnalysisRequested,
-  ]);
+    sendRawSocketMessage({
+      type: 'start_analysis',
+      userId: userId,
+      traceId: traceId,
+    });
+  }, [userId, traceId, sendRawSocketMessage]);
+
+  // --- Effect to send initial analysis request when socket connects ---
+  useEffect(() => {
+    if (
+      isChatOpen &&
+      isSocketConnected &&
+      userId &&
+      traceId &&
+      !analysisSentForCurrentTraceRef.current // Only send if not already sent for this trace
+    ) {
+      sendStartAnalysis();
+    }
+    // Dependency array includes all conditions checked
+  }, [isChatOpen, isSocketConnected, userId, traceId, sendStartAnalysis]);
 
   // Effect to handle initial connection/ack from WebSocket
   useEffect(() => {
     // Handle the ack message "Requesting initial analysis..."
-    if (
-      lastSocketMessage?.type === 'connection_ack' &&
-      lastSocketMessage.message === 'Requesting initial analysis...'
-    ) {
-      console.log('WebSocket ACK received:', lastSocketMessage.message);
+    if (!lastSocketMessage) return;
+
+    console.log('[ChatContainer] Processing lastSocketMessage:', lastSocketMessage);
+
+    if (lastSocketMessage.type === 'server_ready') {
+      console.log('[ChatContainer] Received server_ready message from WebSocket:', lastSocketMessage.message);
+      // Potentially update a system message here if needed, or just log
+      // For now, we expect start_analysis to be sent by another effect
+    } else if (lastSocketMessage.type === 'connection_ack') {
+      console.log('[ChatContainer] WebSocket ACK received:', lastSocketMessage.message);
       setChatMessages((prev) => {
         const connectingMsgIndex = prev.findIndex(
-          (msg) => msg.text === 'Connecting to analysis service...'
+          (msg) => msg.text === 'Connecting to analysis service...' || msg.text === 'Connecting to AI analysis...'
         );
         if (connectingMsgIndex !== -1) {
           const updated = [...prev];
@@ -257,7 +262,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
       // console.log("WebSocket received waiting_for_model");
       setIsWaitingForModel(true);
       setChatError(null);
-    } else if (lastSocketMessage?.type === 'error') {
+    } else if (lastSocketMessage.type === 'error') {
       // console.error("WebSocket direct error message:", lastSocketMessage.message); // REMOVE
       const errorMsg = lastSocketMessage.message ?? 'Unknown WebSocket error';
       setChatMessages((prev) => [
@@ -266,9 +271,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
       ]);
       setChatError(errorMsg);
       setIsWaitingForModel(false);
-    } else if (lastSocketMessage && lastSocketMessage.type !== 'connection_ack') {
-      // Log any other unexpected direct message types except the ignored ack
-      // console.log("[ChatContainer] Received other direct WS message:", lastSocketMessage); // REMOVE
+    } else if (lastSocketMessage.type !== 'connection_ack' && lastSocketMessage.type !== 'server_ready') {
+      console.log("[ChatContainer] Received other/unexpected direct WS message:", lastSocketMessage);
     }
   }, [lastSocketMessage]);
 
@@ -277,13 +281,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
     if (socketErrorEvent) {
       // Check for ignorable 1006 closure FIRST
       if (socketErrorEvent instanceof CloseEvent && socketErrorEvent.code === 1006) {
-        // console.log("[ChatContainer] Handling: Ignoring ignorable CloseEvent (1006)."); // REMOVE
+        console.warn("[ChatContainer] WebSocket CloseEvent 1006 (Abnormal Closure) detected by socketErrorEvent handler. Usually means server dropped connection without a clean handshake.");
         setIsWaitingForModel(false);
         return;
       }
 
       // If it wasn't the ignorable 1006 error, proceed to handle other errors
-      // console.log("[ChatContainer] Handling: Processing as potentially displayable error."); // REMOVE
+      console.log("[ChatContainer] socketErrorEvent handler processing other error:", socketErrorEvent);
       let errorMsg = 'WebSocket connection error.';
 
       if (socketErrorEvent instanceof Error) {
