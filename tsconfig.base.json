@@ -21,7 +21,8 @@
       "@flamedeck/speedscope-gl": ["packages/speedscope-gl/src/index.ts"],
       "@flamedeck/speedscope-gl/*": ["packages/speedscope-gl/src/*"],
       "@flamedeck/speedscope-theme": ["packages/speedscope-theme/src/index.ts"],
-      "@flamedeck/speedscope-theme/*": ["packages/speedscope-theme/src/*"]
+      "@flamedeck/speedscope-theme/*": ["packages/speedscope-theme/src/*"],
+      "@flamedeck/flamechart-to-png": ["packages/flamechart-to-png/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
