@@ -12,21 +12,49 @@ const port = process.env.PORT || 3000;
 const importerDeps = {
   inflate: pako.inflate,
   parseJsonUint8Array: JSON_parse,
-  isLong: Long.isLong,
+  LongType: Long,
 };
 
 // Middleware to parse text/plain request bodies
-app.use(express.text({ type: 'text/plain', limit: '10mb' })); // Adjust limit as needed
+app.use(express.raw({ type: 'text/plain', limit: '10mb' })); // Use express.raw to get buffer
 
 app.post('/render', async (req: Request, res: Response) => {
   console.log('Received /render request');
   try {
-    const profileText = req.body;
-    if (typeof profileText !== 'string' || profileText.length === 0) {
-      return res.status(400).send('Request body must contain profile data as plain text.');
+    // const profileText = req.body; // Will be a string with express.text
+    const bodyBuffer = req.body as Buffer; // Will be a Buffer with express.raw
+
+    if (!(bodyBuffer instanceof Buffer) || bodyBuffer.length === 0) {
+      return res.status(400).send('Request body must contain profile data and cannot be empty.');
     }
 
-    console.log(`Profile text received, length: ${profileText.length}`);
+    console.log(`Raw body buffer received, length: ${bodyBuffer.length}`);
+    // console.log(`First 100 chars of profileText: ${profileText.substring(0, 100)}`); // Old log
+
+    let profileJsonText: string;
+
+    // Check for gzip magic bytes (0x1f, 0x8b)
+    if (bodyBuffer.length > 2 && bodyBuffer[0] === 0x1f && bodyBuffer[1] === 0x8b) {
+      console.log('Detected gzipped input. Inflating...');
+      try {
+        // pako is already imported and available
+        profileJsonText = pako.inflate(bodyBuffer, { to: 'string' });
+      } catch (e: any) {
+        console.error('Failed to decompress gzipped input:', e);
+        return res.status(400).send(`Invalid gzipped data: ${e.message}`);
+      }
+    } else {
+      console.log('Input is not gzipped or too short. Assuming plain text UTF-8.');
+      profileJsonText = bodyBuffer.toString('utf-8');
+    }
+
+    if (profileJsonText.length === 0) {
+      return res.status(400).send('Processed profile data is empty.');
+    }
+
+    console.log(
+      `First 100 chars of processed profile JSON text: ${profileJsonText.substring(0, 100)}`
+    );
 
     // Extract options from query parameters
     const {
@@ -72,7 +100,7 @@ app.post('/render', async (req: Request, res: Response) => {
     console.log('Importing profile...');
     const importResult = await importProfileGroupFromText(
       'uploaded-profile', // filename placeholder
-      profileText,
+      profileJsonText, // Use the processed (decompressed if necessary) JSON string
       importerDeps
     );
 

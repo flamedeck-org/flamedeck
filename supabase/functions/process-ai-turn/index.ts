@@ -89,7 +89,6 @@ You are a performance analysis assistant.
 If you think you have identified a bottleneck, you can stop the analysis and provide a concise summary of your findings, and why you think it's a bottleneck.
 `;
 
-
 const toolsForApi: ChatCompletionTool[] = [getTopFunctionsToolSchema, getSnapshotToolSchema];
 
 Deno.serve(async (req) => {
@@ -165,15 +164,19 @@ Deno.serve(async (req) => {
 
     // Correct the path: remove leading "traces/" if present, as the .from('traces') already specifies the bucket.
     let pathInBucket = blobPath;
-    const bucketNamePrefix = "traces/";
+    const bucketNamePrefix = 'traces/';
     if (blobPath.startsWith(bucketNamePrefix)) {
       pathInBucket = blobPath.substring(bucketNamePrefix.length);
       console.log(`[process-ai-turn] Corrected blobPath (path in bucket): ${pathInBucket}`);
     } else {
-      console.log(`[process-ai-turn] blobPath does not start with '${bucketNamePrefix}', using as is: ${pathInBucket}`);
+      console.log(
+        `[process-ai-turn] blobPath does not start with '${bucketNamePrefix}', using as is: ${pathInBucket}`
+      );
     }
 
-    console.log(`[process-ai-turn] Attempting to download from bucket 'traces' with path: ${pathInBucket}`);
+    console.log(
+      `[process-ai-turn] Attempting to download from bucket 'traces' with path: ${pathInBucket}`
+    );
     const { data: blobData, error: blobError } = await supabaseAdmin.storage
       .from('traces') // Assuming 'traces' is the bucket name
       .download(pathInBucket); // Use the corrected path
@@ -190,14 +193,19 @@ Deno.serve(async (req) => {
     const profileText = await blobData.text(); // Get raw text for snapshots
     console.log(`[process-ai-turn] Profile text downloaded, length: ${profileText.length}`);
     const profileArrayBuffer = await blobData.arrayBuffer(); // Get ArrayBuffer for parsing
-    console.log(`[process-ai-turn] Profile ArrayBuffer obtained, length: ${profileArrayBuffer.byteLength}`);
+    console.log(
+      `[process-ai-turn] Profile ArrayBuffer obtained, length: ${profileArrayBuffer.byteLength}`
+    );
     // ---------------------------------------------------------
 
     // --- Parse profile for summary & other tools (use the downloaded ArrayBuffer) ---
     console.log(`[process-ai-turn] Parsing profile from buffer...`);
     // Extract filename from pathInBucket for the parser
     const fileNameForParser = pathInBucket.split('/').pop() || 'tracefile';
-    const loadedData: ProfileLoadResult = await parseProfileBuffer(profileArrayBuffer, fileNameForParser);
+    const loadedData: ProfileLoadResult = await parseProfileBuffer(
+      profileArrayBuffer,
+      fileNameForParser
+    );
 
     if (!loadedData?.profileGroup) {
       throw new Error(`Failed to load profile data for trace ${traceId}`);
@@ -288,7 +296,7 @@ Deno.serve(async (req) => {
             const renderResponse = await fetch(renderUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'text/plain' },
-              body: profileText, // Send the raw profile text downloaded earlier
+              body: profileArrayBuffer, // Send the ArrayBuffer directly, not profileText
             });
 
             if (!renderResponse.ok) {
