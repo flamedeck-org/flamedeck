@@ -8,7 +8,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
 import { getDurationMsFromProfileGroup } from '../../../packages/speedscope-import/src/index.ts';
-import { loadProfileData, type ProfileLoadResult } from '../_shared/profile-loader.ts'; // <-- Import shared loader
+import { parseProfileBuffer, type ProfileLoadResult } from '../_shared/profile-loader.ts'; // <-- Import parseProfileBuffer
 import {
   executeGetTopFunctions,
   getSnapshotToolSchema,
@@ -21,6 +21,8 @@ import {
 } from 'npm:openai/resources/chat/completions';
 
 console.log(`Function process-ai-turn booting up!`);
+
+const MODEL_NAME = 'o4-mini';
 
 // IMPORTANT: Set these environment variables in your Supabase project settings
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
@@ -51,15 +53,42 @@ function mapHistoryToOpenAIMessages(history: { sender: 'user' | 'model'; text: s
   return mapped;
 }
 
+/**
+ * Formats a template string by removing leading/trailing newlines and unnecessary indentation.
+ */
+function formatPrompt(strings, ...values) {
+  // Join the strings and values to get the full template string
+  const result = strings.reduce(
+    (acc, str, i) => acc + str + (values[i] !== undefined ? values[i] : ''),
+    ''
+  );
+
+  // Find the minimum leading whitespace in the non-empty lines
+  const lines = result.split('\n');
+  const leadingWhitespace = Math.min(
+    ...lines.filter((line) => line.trim()).map((line) => line.match(/^\s*/)?.[0]?.length ?? 0)
+  );
+
+  // Remove the leading whitespace
+  const trimmedResult = lines.map((line) => line.slice(leadingWhitespace)).join('\n');
+
+  return trimmedResult.replace(/^\n+|\n+$/g, '');
+}
+
 // --- System Prompt ---
-const SYSTEM_PROMPT = `You are an expert performance analysis assistant specializing in interpreting trace files in the Speedscope format. 
-Analyze the provided trace data summary and answer user questions about performance bottlenecks, function timings, and call stacks. 
+const SYSTEM_PROMPT = formatPrompt`
+You are a performance analysis assistant. 
 
-You have access to the following tools:
-1. get_top_functions - Use this to request the top N functions by time (total or self time)
-2. get_flamegraph_snapshot - Use this to generate a visual snapshot of the flamegraph in different views (time_ordered, left_heavy, sandwich_caller, sandwich_callee)
+- Your goal is to pinpoint areas of high resource consumption or latency. 
+- Describe your observations and reasoning for each step. 
+- Stop when you have identified a likely bottleneck or after a few investigation steps.
 
-Use these tools to answer questions that require specific data not present in the summary. Be concise and focus on actionable insights.`;
+- You can use the 'generate_flamegraph_screenshot' tool to request zoomed-in views or different perspectives (e.g., different time ranges or depths) to investigate further.
+- You can use the 'get_top_functions' tool to get a list of the top functions by self or total time. 
+
+If you think you have identified a bottleneck, you can stop the analysis and provide a concise summary of your findings, and why you think it's a bottleneck.
+`;
+
 
 const toolsForApi: ChatCompletionTool[] = [getTopFunctionsToolSchema, getSnapshotToolSchema];
 
@@ -107,7 +136,6 @@ Deno.serve(async (req) => {
     const prompt = payload.prompt;
     const traceId = payload.traceId;
     const history = payload.history || [];
-    const modelName = payload.modelName || 'gpt-4o-mini';
 
     if (!userId || !prompt || !traceId) {
       throw new Error('Missing required fields: userId, prompt, traceId');
@@ -133,13 +161,25 @@ Deno.serve(async (req) => {
     const blobPath = traceRecord.blob_path;
 
     // --- Download raw profile text for potential snapshot use ---
-    console.log(`[process-ai-turn] Downloading profile blob: ${blobPath}`);
+    console.log(`[process-ai-turn] Original blobPath from DB: ${blobPath}`);
+
+    // Correct the path: remove leading "traces/" if present, as the .from('traces') already specifies the bucket.
+    let pathInBucket = blobPath;
+    const bucketNamePrefix = "traces/";
+    if (blobPath.startsWith(bucketNamePrefix)) {
+      pathInBucket = blobPath.substring(bucketNamePrefix.length);
+      console.log(`[process-ai-turn] Corrected blobPath (path in bucket): ${pathInBucket}`);
+    } else {
+      console.log(`[process-ai-turn] blobPath does not start with '${bucketNamePrefix}', using as is: ${pathInBucket}`);
+    }
+
+    console.log(`[process-ai-turn] Attempting to download from bucket 'traces' with path: ${pathInBucket}`);
     const { data: blobData, error: blobError } = await supabaseAdmin.storage
       .from('traces') // Assuming 'traces' is the bucket name
-      .download(blobPath);
+      .download(pathInBucket); // Use the corrected path
 
     if (blobError || !blobData) {
-      console.error(`[process-ai-turn] Failed to download blob ${blobPath}:`, blobError);
+      console.error(`[process-ai-turn] Failed to download blob ${pathInBucket}:`, blobError);
       await channel.send({
         type: 'broadcast',
         event: 'ai_response',
@@ -147,13 +187,18 @@ Deno.serve(async (req) => {
       });
       throw new Error(`Failed to download profile data blob: ${blobError?.message}`);
     }
-    const profileText = await blobData.text(); // Get raw text
+    const profileText = await blobData.text(); // Get raw text for snapshots
     console.log(`[process-ai-turn] Profile text downloaded, length: ${profileText.length}`);
+    const profileArrayBuffer = await blobData.arrayBuffer(); // Get ArrayBuffer for parsing
+    console.log(`[process-ai-turn] Profile ArrayBuffer obtained, length: ${profileArrayBuffer.byteLength}`);
     // ---------------------------------------------------------
 
-    // --- Parse profile for summary & other tools (use the downloaded text) ---
-    console.log(`[process-ai-turn] Parsing profile for summary...`);
-    const loadedData: ProfileLoadResult = await loadProfileData(supabaseAdmin, blobPath);
+    // --- Parse profile for summary & other tools (use the downloaded ArrayBuffer) ---
+    console.log(`[process-ai-turn] Parsing profile from buffer...`);
+    // Extract filename from pathInBucket for the parser
+    const fileNameForParser = pathInBucket.split('/').pop() || 'tracefile';
+    const loadedData: ProfileLoadResult = await parseProfileBuffer(profileArrayBuffer, fileNameForParser);
+
     if (!loadedData?.profileGroup) {
       throw new Error(`Failed to load profile data for trace ${traceId}`);
     }
@@ -185,7 +230,7 @@ Deno.serve(async (req) => {
 
     // --- First API Call (Check for tool use) ---
     const initialResponse = await openai.chat.completions.create({
-      model: modelName || 'gpt-4o-mini',
+      model: MODEL_NAME,
       messages: initialMessages,
       tools: toolsForApi, // <-- Pass tool schema
       tool_choice: 'auto', // <-- Let model decide
@@ -203,7 +248,6 @@ Deno.serve(async (req) => {
       initialMessages.push(assistantMessageForHistory); // Add assistant's turn to history
 
       // Process each tool call requested by the model
-      let wasSnapshotCalled = false; // Flag to track if snapshot tool was called
       for (const toolCall of responseMessage.tool_calls) {
         // Send tool start event via Realtime
         await channel.send({
@@ -222,7 +266,6 @@ Deno.serve(async (req) => {
 
           if (toolCall.function.name === getSnapshotToolSchema.function.name) {
             // --- Execute Snapshot Tool ---
-            wasSnapshotCalled = true; // Set the flag
             console.log('[process-ai-turn] Executing snapshot tool...', toolArgs);
 
             // 1. Construct Flamechart Server Request
@@ -327,8 +370,7 @@ Deno.serve(async (req) => {
         JSON.stringify(initialMessages, null, 2)
       );
       const secondStream = await openai.chat.completions.create({
-        // Use vision model if snapshot was called, otherwise use requested model
-        model: wasSnapshotCalled ? 'gpt-4o' : modelName || 'gpt-4o-mini',
+        model: MODEL_NAME,
         messages: initialMessages, // Send history + assistant msg + tool results
         stream: true, // Stream the final response
       });
@@ -353,7 +395,7 @@ Deno.serve(async (req) => {
       console.log(`[process-ai-turn] No tool call requested. Streaming initial response.`);
       // Re-request with streaming if no tool call.
       const stream = await openai.chat.completions.create({
-        model: modelName || 'gpt-4o-mini',
+        model: MODEL_NAME,
         messages: initialMessages,
         stream: true,
       });
