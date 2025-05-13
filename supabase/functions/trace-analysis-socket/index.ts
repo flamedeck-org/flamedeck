@@ -39,21 +39,17 @@ serve(async (req: Request) => {
     });
   }
 
-  // Upgrade connection
-  const { socket, response: upgradeResponse } = Deno.upgradeWebSocket(req);
+  const { socket, response } = Deno.upgradeWebSocket(req, {
+    headers: new Headers(corsHeaders), // Pass CORS headers directly
+  });
 
-  // Add CORS headers to the WebSocket upgrade response
-  for (const [key, value] of Object.entries(corsHeaders)) {
-    upgradeResponse.headers.set(key, value);
-  }
-
-  // Listen for websocket events
+  // Listen for websocket events (using the structure from the older working version, but with our enhanced logs)
   socket.onopen = () => {
-    console.log('WebSocket connection opened! Waiting for start_analysis.');
+    console.log("WebSocket connection opened! Waiting for start_analysis.");
   };
 
   socket.onmessage = async (event) => {
-    console.log('WebSocket message received:', event.data);
+    console.log('[trace-analysis-socket] WebSocket message received:', event.data);
     let parsedData;
     try {
       parsedData = JSON.parse(event.data);
@@ -106,7 +102,6 @@ serve(async (req: Request) => {
           history: [],
         };
 
-        // --- Add detailed logging and try/catch around invocation ---
         console.log(
           '[trace-analysis-socket] Preparing to invoke process-ai-turn with payload:',
           initialPayload
@@ -115,7 +110,6 @@ serve(async (req: Request) => {
           const { data: invokeData, error: initialInvokeError } =
             await supabaseClient.functions.invoke('process-ai-turn', { body: initialPayload });
 
-          // Log result regardless of error status for debugging
           console.log(
             '[trace-analysis-socket] Invocation result - Data:',
             invokeData,
@@ -135,7 +129,6 @@ serve(async (req: Request) => {
               })
             );
           }
-          // Response will come via Realtime if invocation succeeded
         } catch (invokeCatchError) {
           console.error(
             '[trace-analysis-socket] Caught exception during function invocation:',
@@ -144,20 +137,16 @@ serve(async (req: Request) => {
           socket.send(
             JSON.stringify({
               type: 'error',
-              // Check if invokeCatchError is an instance of Error
               message: `Internal error invoking analysis function: ${invokeCatchError instanceof Error ? invokeCatchError.message : String(invokeCatchError)}`,
             })
           );
         }
-        // -----------------------------------------------------------
       } else if (parsedData.type === 'user_prompt') {
-        // --- Get context DIRECTLY from payload ---
         const { userId, traceId, prompt: userPrompt, history } = parsedData;
         console.log(
           `[trace-analysis-socket] User prompt received. User: ${userId}, Trace: ${traceId}`
         );
 
-        // Validate required fields from payload
         if (!userId || !traceId || !userPrompt) {
           console.error(
             '[trace-analysis-socket] user_prompt message missing required fields (userId, traceId, prompt).'
@@ -202,7 +191,65 @@ serve(async (req: Request) => {
             })
           );
         }
-        // Success means the function was invoked; result comes via Realtime
+      } else if (parsedData.type === 'snapshot_result') { // Copied from old version
+        console.log("[trace-analysis-socket] Received snapshot_result:", parsedData);
+        const { requestId, status, imageDataUrl, errorMessage } = parsedData;
+
+        if (!requestId) {
+          console.error("[trace-analysis-socket] snapshot_result missing requestId.");
+          return;
+        }
+
+        console.log(`[trace-analysis-socket] Fetching continuation state for request ${requestId}...`);
+        const { data: continuationRecord, error: fetchError } = await supabaseClient
+          .from('ai_chat_continuations')
+          .select('*')
+          .eq('tool_call_id', requestId)
+          .single();
+
+        if (fetchError || !continuationRecord) {
+          console.error(`[trace-analysis-socket] Failed to fetch or find continuation state for ${requestId}:`, fetchError);
+          socket.send(JSON.stringify({ type: "error", message: `Processing error: Could not retrieve state for request ${requestId}. It might have expired.` }));
+          return;
+        }
+
+        console.log(`[trace-analysis-socket] Deleting continuation state for request ${requestId}...`);
+        const { error: deleteError } = await supabaseClient
+          .from('ai_chat_continuations')
+          .delete()
+          .eq('tool_call_id', requestId);
+
+        if (deleteError) {
+          console.error(`[trace-analysis-socket] Failed to delete continuation state for ${requestId}:`, deleteError);
+        }
+
+        const toolResultPayload = {
+          toolCallId: continuationRecord.tool_call.id,
+          status: status,
+          content: status === 'success' ? imageDataUrl : errorMessage,
+        };
+
+        const continuationPayload = {
+          type: 'continue_with_tool_result',
+          continuationState: {
+            userId: continuationRecord.user_id,
+            traceId: continuationRecord.trace_id,
+            message_history: continuationRecord.message_history,
+            tool_call: continuationRecord.tool_call,
+          },
+          toolResult: toolResultPayload
+        };
+
+        console.log(`[trace-analysis-socket] Invoking process-ai-turn for continuation of request ${requestId}...`);
+        const { error: invokeError } = await supabaseClient.functions.invoke(
+          'process-ai-turn',
+          { body: continuationPayload }
+        );
+
+        if (invokeError) {
+          console.error("[trace-analysis-socket] Error invoking process-ai-turn for continuation:", invokeError);
+          socket.send(JSON.stringify({ type: "error", message: `Failed to continue AI processing: ${invokeError.message}` }));
+        }
       } else {
         console.warn('Received unknown message type:', parsedData.type);
         socket.send(JSON.stringify({ type: 'echo_unknown', payload: parsedData }));
@@ -212,7 +259,6 @@ serve(async (req: Request) => {
       socket.send(
         JSON.stringify({
           type: 'error',
-          // Check if error is an instance of Error
           message: error instanceof Error ? error.message : 'An internal error occurred.',
         })
       );
@@ -220,12 +266,12 @@ serve(async (req: Request) => {
   };
 
   socket.onerror = (error) => {
-    console.error('WebSocket error:', error);
+    console.error("WebSocket error:", error);
   };
 
   socket.onclose = (event) => {
-    console.log('WebSocket connection closed:', event.code, event.reason);
+    console.log("WebSocket connection closed:", event.code, event.reason);
   };
 
-  return upgradeResponse; // Return the response (now with CORS headers) to finalize the upgrade
+  return response; // Return the response to finalize the upgrade
 });
