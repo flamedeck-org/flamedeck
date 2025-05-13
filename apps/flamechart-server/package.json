@@ -10,6 +10,7 @@
   "dependencies": {
     "@flamedeck/flamechart-to-png": "workspace:*",
     "@flamedeck/speedscope-import": "workspace:*",
+    "@sentry/node": "^9.18.0",
     "express": "^4.19.2",
     "long": "^5.3.2",
     "pako": "^2.1.0",

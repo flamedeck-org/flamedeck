@@ -1,3 +1,5 @@
+import './instrument';
+
 import express, { Request, Response } from 'express';
 import { renderToPng, RenderToPngOptions } from '@flamedeck/flamechart-to-png';
 import { importProfileGroupFromText } from '@flamedeck/speedscope-import';
