@@ -29,12 +29,12 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const FLAMECHART_SERVER_URL = Deno.env.get('FLAMECHART_SERVER_URL');
 
-const MODEL_NAME = Deno.env.get('MODEL_NAME') || 'gpt-4o';
+// We need a reasoning model for this complex task
+const MODEL_NAME = Deno.env.get('AI_ANALYSIS_MODEL') || 'o4-mini';
 
 const llm = new ChatOpenAI({
   apiKey: OPENAI_API_KEY,
   modelName: MODEL_NAME,
-  temperature: 0,
   streaming: true,
 });
 
@@ -74,6 +74,8 @@ You are a performance analysis assistant.
 - You can use the 'get_top_functions' tool to get a list of the top functions by self or total time.
 
 If you think you have identified a bottleneck, provide a concise summary.
+
+Start by generating a flamegraph screenshot of the entire trace.
 
 Trace Summary:
 {trace_summary}
@@ -713,6 +715,7 @@ Deno.serve(async (req) => {
 
     console.log('[Graph Main] Invoking LangGraph app stream...');
     // Pass recursionLimit directly in the second argument for app.stream config
+    // @ts-ignore - recursionLimit is a valid option for app.stream
     const stream = await app.stream(initialState, { recursionLimit: 25 });
 
     for await (const event of stream) {

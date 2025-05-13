@@ -128,9 +128,16 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
     console.log('[GenerateFlamegraphSnapshotTool] Called with args:', args);
 
     if (!this.profileArrayBuffer || this.profileArrayBuffer.byteLength === 0) {
-      const errorMessage = 'Error: profileArrayBuffer is missing or empty.';
+      const errorMessage =
+        'Error: profileArrayBuffer is missing or empty for GenerateFlamegraphSnapshotTool.';
       console.error(`[GenerateFlamegraphSnapshotTool] ${errorMessage}`);
-      return JSON.stringify({ status: 'Error', error: errorMessage });
+      return JSON.stringify({
+        status: 'Error',
+        error: errorMessage,
+        base64Image: null,
+        publicUrl: null,
+        message: errorMessage,
+      });
     }
 
     const queryParams = new URLSearchParams();
@@ -147,22 +154,47 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
     try {
       const renderResponse = await fetch(renderUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/octet-stream' },
+        headers: { 'Content-Type': 'text/plain' },
         body: this.profileArrayBuffer,
       });
 
+      console.log(
+        `[GenerateFlamegraphSnapshotTool] Render server responded with status: ${renderResponse.status}`
+      );
+
       if (!renderResponse.ok) {
-        const errorText = await renderResponse.text();
+        let errorText = 'Failed to get error text from response.';
+        try {
+          errorText = await renderResponse.text();
+        } catch (textError: any) {
+          console.error(
+            '[GenerateFlamegraphSnapshotTool] Error getting text from error response:',
+            textError
+          );
+          errorText = `Status ${renderResponse.status}, but failed to parse error body: ${textError.message || String(textError)}`;
+        }
         const errorMessage = `Error: Failed to render flamechart (status ${renderResponse.status}): ${errorText}`;
         console.error(`[GenerateFlamegraphSnapshotTool] ${errorMessage}`);
-        return JSON.stringify({ status: 'Error', error: errorMessage });
+        return JSON.stringify({
+          status: 'Error',
+          error: errorMessage,
+          base64Image: null,
+          publicUrl: null,
+          message: errorMessage,
+        });
       }
 
       const pngBuffer = await renderResponse.arrayBuffer();
       if (!pngBuffer || pngBuffer.byteLength === 0) {
         const msg = 'Error: Received empty PNG buffer from flamechart server.';
         console.error('[GenerateFlamegraphSnapshotTool]', msg);
-        return JSON.stringify({ status: 'Error', error: msg });
+        return JSON.stringify({
+          status: 'Error',
+          error: msg,
+          base64Image: null,
+          publicUrl: null,
+          message: msg,
+        });
       }
       console.log(
         `[GenerateFlamegraphSnapshotTool] PNG buffer received, length: ${pngBuffer.byteLength}`
@@ -179,27 +211,33 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       if (uploadError) {
         const errorMessage = `Error: Storage upload failed: ${uploadError.message}`;
         console.error('[GenerateFlamegraphSnapshotTool] Failed to upload snapshot:', uploadError);
-        return JSON.stringify({ status: 'Error', error: errorMessage });
+        return JSON.stringify({
+          status: 'Error',
+          error: errorMessage,
+          base64Image: null,
+          publicUrl: null,
+          message: errorMessage,
+        });
       }
 
       const { data: publicUrlData } = this.supabaseAdmin.storage
         .from('ai-snapshots')
         .getPublicUrl(storagePath);
+      const base64Image = encodeBase64(pngBuffer); // Encode here for all success cases
 
       if (!publicUrlData?.publicUrl) {
-        const errorMessage = 'Error: Could not get public URL for generated snapshot.';
-        console.error('[GenerateFlamegraphSnapshotTool] Failed to get public URL.');
-        const base64Image = encodeBase64(pngBuffer);
+        const warningMessage =
+          'Warning: Could not get public URL for generated snapshot, but PNG was created and encoded.';
+        console.warn(`[GenerateFlamegraphSnapshotTool] ${warningMessage}`);
         return JSON.stringify({
           status: 'SuccessWithWarning',
           publicUrl: null,
           base64Image: base64Image,
-          message: `Snapshot generated and base64 encoded, but failed to get public URL. ${errorMessage}`,
-          error: errorMessage,
+          message: warningMessage,
+          error: 'Failed to get public URL after successful upload.',
         });
       }
 
-      const base64Image = encodeBase64(pngBuffer);
       const successMessage = `Snapshot generated. Public URL: ${publicUrlData.publicUrl}. Image data included.`;
       console.log(`[GenerateFlamegraphSnapshotTool] ${successMessage}`);
 
@@ -209,10 +247,17 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         base64Image: base64Image,
         message: successMessage,
       });
-    } catch (fetchError) {
-      const errorMessage = `Error: Exception during flamechart server call: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`;
-      console.error(`[GenerateFlamegraphSnapshotTool] ${errorMessage}`);
-      return JSON.stringify({ status: 'Error', error: errorMessage });
+    } catch (fetchError: any) {
+      // Catch all errors from the fetch operation and subsequent processing
+      const errorMessage = `Error: Exception during flamechart server interaction or subsequent processing: ${fetchError.message || String(fetchError)}`;
+      console.error(`[GenerateFlamegraphSnapshotTool] Unhandled exception in _call:`, fetchError);
+      return JSON.stringify({
+        status: 'Error',
+        error: errorMessage,
+        base64Image: null,
+        publicUrl: null,
+        message: errorMessage,
+      });
     }
   }
 }
