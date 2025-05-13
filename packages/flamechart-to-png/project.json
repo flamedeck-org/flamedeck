@@ -57,6 +57,16 @@
       "configurations": {
         "production": {}
       }
+    },
+    "test-image-agent": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "node packages/flamechart-to-png/src/test-image-agent.js"
+      },
+      "configurations": {
+        "production": {}
+      }
     }
   }
 }

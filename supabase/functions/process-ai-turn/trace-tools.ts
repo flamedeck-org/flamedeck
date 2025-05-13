@@ -4,6 +4,7 @@ import { formatPercent } from '../../../packages/speedscope-core/src/lib-utils.t
 import { z } from 'zod';
 import { StructuredTool } from '@langchain/core/tools';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { encodeBase64 } from 'jsr:@std/encoding/base64';
 
 // --- Get Top Functions Tool ---
 const topFunctionsSchema = z.object({
@@ -112,7 +113,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
     super();
   }
 
-  protected async _call(args: z.infer<typeof snapshotSchema>): Promise<string> {
+  protected async _call(args: z.infer<typeof snapshotSchema>): Promise<any> {
     console.log('[GenerateFlamegraphSnapshotTool] Called with args:', args);
 
     // Add a log to check the profileArrayBuffer state
@@ -183,9 +184,23 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         return errorMessage;
       }
 
-      const result = `Snapshot generated successfully: ${publicUrlData.publicUrl}`;
-      console.log(`[GenerateFlamegraphSnapshotTool] Snapshot success. URL: ${result}`);
-      return result;
+      const base64Image = encodeBase64(pngBuffer);
+
+      console.log(
+        `[GenerateFlamegraphSnapshotTool] Snapshot success. URL: ${publicUrlData.publicUrl}. Returning multimodal content.`
+      );
+
+      // Return the multimodal content array for the LLM to process the image
+      return [
+        {
+          type: 'text',
+          text: `Generated flamegraph. You can also view it at: ${publicUrlData.publicUrl}`,
+        },
+        {
+          type: 'image_url',
+          image_url: { url: `data:image/png;base64,${base64Image}` },
+        },
+      ];
     } catch (fetchError) {
       const errorMessage = `Error: Exception during flamechart server call: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`;
       console.error(`[GenerateFlamegraphSnapshotTool] ${errorMessage}`);
