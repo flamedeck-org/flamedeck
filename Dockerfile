@@ -29,6 +29,10 @@ RUN yarn install --immutable
 # !!! Make sure '@flamedeck/flamechart-server' is the correct project name for NX build !!!
 RUN yarn nx build @flamedeck/flamechart-server
 
+# --- DIAGNOSTIC STEP: Check start of bundled output ---
+RUN echo "--- Start of Bundled index.js ---" && head -n 50 /app/apps/flamechart-server/dist/index.js && echo "--- End of Bundled index.js ---"
+# --- END DIAGNOSTIC STEP ---
+
 
 # --- Stage 2: Runner ---
 # Use a slim image for the final stage
@@ -38,22 +42,21 @@ WORKDIR /app
 # Enable Corepack in the runner stage too
 RUN corepack enable
 
+# Install fontconfig and a default font for node-canvas text rendering
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y fontconfig fonts-dejavu-core && \
+    rm -rf /var/lib/apt/lists/*
+
 ENV NODE_ENV=production
 
-# Copy root dependency files for production install & Yarn binary cache
-COPY package.json yarn.lock ./
-COPY .yarnrc.yml ./
-COPY .yarn ./.yarn
-
-# Install ONLY production dependencies for the entire workspace
-# Using the Yarn version managed by Corepack
-RUN yarn workspaces focus --all --production # Yarn Berry command to install prod deps for workspaces
+# Copy the entire node_modules from the builder stage
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy ONLY the built server app from the builder stage
 # Using the outputPath specified in project.json
 COPY --from=builder /app/apps/flamechart-server/dist ./apps/flamechart-server/dist
 
 # Update CMD to use the correct path based on project.json
-CMD ["node", "apps/flamechart-server/dist/main.js"]
+CMD ["node", "apps/flamechart-server/dist/index.js"]
 
 EXPOSE 3000

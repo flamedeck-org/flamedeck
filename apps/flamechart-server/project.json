@@ -35,7 +35,8 @@
         "format": ["esm"],
         "bundle": true,
         "platform": "node",
-        "skipTypeCheck": true
+        "skipTypeCheck": true,
+        "external": []
       }
     },
     "start": {
