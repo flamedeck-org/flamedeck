@@ -113,7 +113,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
     (): ImporterDependencies => ({
       inflate: pako.inflate,
       parseJsonUint8Array: JSON_parse,
-      isLong: Long.isLong,
+      LongType: Long,
     }),
     []
   );
@@ -171,6 +171,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
         })
         .catch((err) => {
           if (isCancelled) return;
+          console.error(err);
           setError(
             `An error occurred during import: ${err instanceof Error ? err.message : String(err)}`
           );
