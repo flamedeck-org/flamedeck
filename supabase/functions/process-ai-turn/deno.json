@@ -1,6 +1,24 @@
 {
   "imports": {
     "@flamedeck/speedscope-import/": "../../../packages/speedscope-import/src/",
-    "@flamedeck/speedscope-core/": "../../../packages/speedscope-core/src/"
+    "@flamedeck/speedscope-core/": "../../../packages/speedscope-core/src/",
+    "jsr:@supabase/functions-js/edge-runtime.d.ts": "jsr:@supabase/functions-js/edge-runtime.d.ts",
+    "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2",
+    "npm:openai@^4.0.0": "npm:openai@^4.33.0",
+
+    "@langchain/core": "npm:@langchain/core@0.2.29",
+    "@langchain/core/prompts": "npm:@langchain/core@0.2.29/prompts",
+    "@langchain/core/messages": "npm:@langchain/core@0.2.29/messages",
+    "@langchain/core/tools": "npm:@langchain/core@0.2.29/tools",
+
+    "@langchain/openai": "npm:@langchain/openai@0.3.17",
+    "langchain": "npm:langchain@0.2.10",
+    "langchain/agents": "npm:langchain@0.2.10/agents",
+
+    "zod": "npm:zod@3.22.4",
+
+    "../../../packages/speedscope-import/src/index.ts": "../../../packages/speedscope-import/src/index.ts",
+    "../_shared/profile-loader.ts": "../_shared/profile-loader.ts",
+    "./trace-tools.ts": "./trace-tools.ts"
   }
 }
