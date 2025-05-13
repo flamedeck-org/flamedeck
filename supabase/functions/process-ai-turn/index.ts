@@ -165,18 +165,22 @@ async function initialSetupNode(state: AgentState): Promise<Partial<AgentState>>
 
     console.log('[Graph SetupNode] Profile loaded and parsed. Summary generated.');
 
-    // Add SystemMessage here if not present, using the generated traceSummary
+    // Prepare the messages with the system prompt
     const systemPromptContent = SYSTEM_PROMPT_TEMPLATE_STRING.replace(
       '{trace_summary}',
       traceSummary
     );
-    let initialMessages = [...state.messages];
-    if (initialMessages.length === 0 || initialMessages[0]._getType() !== 'system') {
-      initialMessages = [new SystemMessage(systemPromptContent), ...initialMessages];
+    // state.messages already contains initial user prompt + history from Deno.serve
+    let updatedMessages = [...state.messages];
+    if (updatedMessages.length > 0 && updatedMessages[0]._getType() === 'system') {
+      // If first message is already a system message, update its content
+      (updatedMessages[0] as SystemMessage).content = systemPromptContent;
     } else {
-      (initialMessages[0] as SystemMessage).content = systemPromptContent; // Update if already exists
+      // Otherwise, prepend the new system message
+      updatedMessages.unshift(new SystemMessage(systemPromptContent));
     }
-    return { profileArrayBuffer, profileData, traceSummary, messages: initialMessages };
+
+    return { profileArrayBuffer, profileData, traceSummary, messages: updatedMessages };
   } catch (error) {
     console.error('[Graph SetupNode] Critical error during setup:', error);
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -191,8 +195,6 @@ async function initialSetupNode(state: AgentState): Promise<Partial<AgentState>>
 
 async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Partial<AgentState>> {
   console.log(`[Graph AgentNode] Iteration ${state.iterationCount}. Calling LLM.`);
-  // Create a mutable copy of llmStreamingActive and currentToolName for callbacks
-  // as state object might be immutable within this specific call if passed around by LangGraph.
   let callbackState = {
     llmStreamingActiveForCurrentSegment: state.llmStreamingActiveForCurrentSegment,
     currentToolName: state.currentToolName,
@@ -256,8 +258,6 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
         console.log(
           `[Callback] Tool End: ${toolNameForEvent}. Output (first 100 chars): ${output.substring(0, 100)}`
         );
-        // Note: Tool output itself is handled by the graph. This callback is for signalling.
-        // If the output string *itself* is an error message from the tool, we can signal tool_error here.
         if (typeof output === 'string') {
           try {
             const parsedOutput = JSON.parse(output);
@@ -280,8 +280,7 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
           callbackState.currentToolName = null;
       },
       handleToolError: async (err: any, runId: string, parentRunId?: string, tags?: string[]) => {
-        // Determine tool name carefully if direct `name` param is not in this specific signature
-        const toolNameForEvent = callbackState.currentToolName || 'unknown_tool_error'; // Fallback to active tool
+        const toolNameForEvent = callbackState.currentToolName || 'unknown_tool_error';
         const errorMessage = err instanceof Error ? err.message : String(err);
         callbackState.llmStreamingActiveForCurrentSegment = false;
         console.error(`[Callback] Tool Error from LLM/Agent level for ${toolNameForEvent}:`, err);
@@ -300,17 +299,25 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
     },
   ];
 
-  let messagesForLLM = [...state.messages];
-  const lastMessage = state.messages[state.messages.length - 1];
+  let messagesForLLMInvocation = [...state.messages];
+  const lastMessageFromState = state.messages[state.messages.length - 1];
 
-  if (lastMessage instanceof ToolMessage && lastMessage.name === 'generate_flamegraph_screenshot') {
+  // Handle adding image to LLM input if last message was a successful screenshot tool call
+  if (
+    lastMessageFromState instanceof ToolMessage &&
+    lastMessageFromState.name === 'generate_flamegraph_screenshot'
+  ) {
     try {
-      const toolOutput = JSON.parse(lastMessage.content as string);
-      if (toolOutput.status === 'Success' && toolOutput.outputPath) {
+      const toolOutput = JSON.parse(lastMessageFromState.content as string);
+      if (
+        (toolOutput.status === 'Success' || toolOutput.status === 'SuccessWithWarning') &&
+        toolOutput.base64Image
+      ) {
         console.log(
-          `[Graph AgentNode] Detected successful screenshot tool output with outputPath: ${toolOutput.outputPath}`
+          `[Graph AgentNode] Detected successful screenshot tool output with base64Image.`
         );
-        messagesForLLM.push(
+        // This message is for the LLM invocation, not persisted in state unless explicitly added later
+        messagesForLLMInvocation.push(
           new HumanMessage({
             content: [
               {
@@ -324,67 +331,65 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
             ],
           })
         );
-      } else if (toolOutput.status === 'Success' && toolOutput.publicUrl) {
-        console.log(
-          `[Graph AgentNode] Detected successful screenshot tool output with publicUrl: ${toolOutput.publicUrl}`
-        );
-        messagesForLLM.push(
-          new HumanMessage(
-            toolOutput.message ||
-              `Screenshot generated. You can view it at: ${toolOutput.publicUrl}. Please analyze based on this URL.`
-          )
-        );
       } else {
         console.log(
           `[Graph AgentNode] Screenshot tool did not return usable image data (status: ${toolOutput.status}).`
         );
-        // Potentially add a message like "Tool execution finished, but no image was provided in the expected format."
-        // For now, the LLM will see the JSON output of the tool.
       }
     } catch (e) {
       console.error(
         '[Graph AgentNode] Error parsing screenshot tool output for image handling:',
         e
       );
-      // LLM will see the raw JSON output if parsing fails.
     }
   }
 
-  // Ensure System Message is first if not already
-  // initialSetupNode should already do this, but as a safeguard or if flow changes:
-  if (messagesForLLM.length === 0 || messagesForLLM[0]._getType() !== 'system') {
+  // Ensure System Message is correctly placed (initialSetupNode should handle this primarily)
+  // This is a safeguard for the messages being passed to the LLM.
+  if (
+    messagesForLLMInvocation.length === 0 ||
+    messagesForLLMInvocation[0]._getType() !== 'system'
+  ) {
     const systemPromptContent = SYSTEM_PROMPT_TEMPLATE_STRING.replace(
       '{trace_summary}',
       state.traceSummary
     );
-    messagesForLLM = [
+    messagesForLLMInvocation = [
       new SystemMessage(systemPromptContent),
-      ...messagesForLLM.filter((m) => m._getType() !== 'system'),
+      ...messagesForLLMInvocation.filter((m) => m._getType() !== 'system'),
     ];
-  } else if (messagesForLLM[0]._getType() === 'system') {
-    // Ensure summary is up-to-date in existing system message
-    (messagesForLLM[0] as SystemMessage).content = SYSTEM_PROMPT_TEMPLATE_STRING.replace(
+  } else if (messagesForLLMInvocation[0]._getType() === 'system') {
+    (messagesForLLMInvocation[0] as SystemMessage).content = SYSTEM_PROMPT_TEMPLATE_STRING.replace(
       '{trace_summary}',
       state.traceSummary
     );
   }
 
-  const modelWithTools = llm.bindTools(messagesForLLM);
+  const currentTools = [
+    new TopFunctionsTool(state.profileData),
+    new GenerateFlamegraphSnapshotTool(
+      state.supabaseAdmin,
+      state.flamechartServerUrl!,
+      state.profileArrayBuffer!,
+      state.userId,
+      state.traceId
+    ),
+  ];
+  const modelWithTools = llm.bindTools(currentTools);
+  const response = await modelWithTools.invoke(messagesForLLMInvocation, {
+    callbacks: langChainCallbacks,
+  });
 
-  // For LCEL chains with agent_scratchpad, you typically use an agent executor structure.
-  // Here, we are more directly invoking the LLM with tools.
-  // The `agent_scratchpad` placeholder might be less relevant unless replicating AgentExecutor logic.
-  // OpenAI tools calling typically expects a sequence of messages.
-  // We pass all `messagesForLLM` as the history. The last message is the current human input or tool response.
-
-  // The agent needs the entire message history formatted correctly.
-  // If messagesForLLM is the complete history, it can be passed directly.
-  const response = await modelWithTools.invoke(messagesForLLM, { callbacks: langChainCallbacks });
+  // The new state for messages includes the original state.messages plus the new AI response.
+  // The HumanMessage with image (if added) was only for the LLM call and is not persisted here
+  // unless we explicitly add it to newMessages. For now, assuming it's not persisted in the chat history.
+  const newMessages = [...state.messages, response];
 
   return {
-    messages: [...state.messages, response],
+    messages: newMessages, // Return the new complete message history
     llmStreamingActiveForCurrentSegment: callbackState.llmStreamingActiveForCurrentSegment,
     currentToolName: callbackState.currentToolName,
+    iterationCount: state.iterationCount + 1,
   };
 }
 
@@ -403,6 +408,9 @@ async function toolHandlerNode(
   const lastMessage = state.messages[state.messages.length - 1] as AIMessage;
   if (!lastMessage.tool_calls || lastMessage.tool_calls.length === 0) {
     console.warn('[Graph ToolHandlerNode] Called without tool_calls in last message.');
+    // If no tools, return the current state messages (no change)
+    // or return {} if messages should not be redundantly set by this node in this case.
+    // For (x,y)=>y reducer, returning current state is fine if no changes.
     return { messages: state.messages };
   }
   console.log(
@@ -416,26 +424,46 @@ async function toolHandlerNode(
     new TopFunctionsTool(state.profileData!),
     new GenerateFlamegraphSnapshotTool(
       state.supabaseAdmin,
-      state.flamechartServerUrl,
+      state.flamechartServerUrl!,
       state.profileArrayBuffer!,
       state.userId,
       state.traceId
     ),
   ];
 
-  // Similar to agentNode, manage callback state for tool execution phase if needed
   let callbackState = {
     llmStreamingActiveForCurrentSegment: state.llmStreamingActiveForCurrentSegment,
-    // currentToolName is more for LLM <-> Tool interaction, here we are just executing
   };
 
   for (const call of toolInvocations) {
     const toolInstance = tools.find((t) => t.name === call.name);
+    const toolCallIdFromAI = call.id;
+
+    if (!toolCallIdFromAI || typeof toolCallIdFromAI !== 'string') {
+      const errMsg = `Tool call from AI (name: ${call.name}) is missing a valid string ID. Received ID: ${toolCallIdFromAI}`;
+      console.error(`[Graph ToolHandlerNode] ${errMsg}`, call);
+      toolResults.push(
+        new ToolMessage({
+          content: `Error: ${errMsg}`,
+          tool_call_id: toolCallIdFromAI || crypto.randomUUID(),
+          name: call.name,
+        })
+      );
+      await state.realtimeChannel.send({
+        type: 'broadcast',
+        event: 'ai_response',
+        payload: { type: 'tool_error', toolName: call.name, message: errMsg },
+      });
+      continue;
+    }
+
     if (toolInstance) {
       try {
-        console.log(`[Graph ToolHandlerNode] Calling tool: ${call.name} with args:`, call.args);
-        // Manually send tool_start via Realtime
-        callbackState.llmStreamingActiveForCurrentSegment = false; // Reset before tool output
+        console.log(
+          `[Graph ToolHandlerNode] Calling tool: ${call.name} with id: ${toolCallIdFromAI} and args:`,
+          call.args
+        );
+        callbackState.llmStreamingActiveForCurrentSegment = false;
         await state.realtimeChannel.send({
           type: 'broadcast',
           event: 'ai_response',
@@ -446,26 +474,22 @@ async function toolHandlerNode(
           },
         });
 
-        const output = await toolInstance.invoke(call.args); // Assuming args are already parsed by LLM
+        const output = await toolInstance.invoke(call.args);
 
-        // Ensure tool_call_id is a string, fallback to new UUID if undefined
-        const toolCallId = typeof call.id === 'string' ? call.id : crypto.randomUUID();
         toolResults.push(
           new ToolMessage({
             content: output as string,
-            tool_call_id: toolCallId,
+            tool_call_id: toolCallIdFromAI,
             name: call.name,
           })
         );
         console.log(
           `[Graph ToolHandlerNode] Tool ${call.name} output (first 100 chars): ${(output as string).substring(0, 100)}`
         );
-
-        // Manually send tool_end or tool_error via Realtime
         let toolFailed = false;
         if (typeof output === 'string') {
           try {
-            const parsedOutput = JSON.parse(output); // Assuming tools return JSON string
+            const parsedOutput = JSON.parse(output);
             if (parsedOutput.status === 'Error') {
               toolFailed = true;
               await state.realtimeChannel.send({
@@ -482,19 +506,16 @@ async function toolHandlerNode(
             /* not a JSON error from tool */
           }
         }
-        if (!toolFailed) {
-          // For now, a generic tool_end is implicit by the next LLM response.
-          // Or send a simple text message via Realtime if needed:
-          // await state.realtimeChannel.send({ type: 'broadcast', event: 'ai_response', payload: { type: 'tool_output_text', toolName: call.name, message: `Tool ${call.name} finished.` } });
-        }
       } catch (e) {
-        console.error(`[Graph ToolHandlerNode] Error executing tool ${call.name}:`, e);
         const errorMsg = e instanceof Error ? e.message : String(e);
-        const toolCallId = typeof call.id === 'string' ? call.id : crypto.randomUUID();
+        console.error(
+          `[Graph ToolHandlerNode] Error executing tool ${call.name} (id: ${toolCallIdFromAI}):`,
+          e
+        );
         toolResults.push(
           new ToolMessage({
             content: `Error: ${errorMsg}`,
-            tool_call_id: toolCallId,
+            tool_call_id: toolCallIdFromAI,
             name: call.name,
           })
         );
@@ -509,103 +530,112 @@ async function toolHandlerNode(
         });
       }
     } else {
-      console.error(`[Graph ToolHandlerNode] Unknown tool called: ${call.name}`);
-      const toolCallId = typeof call.id === 'string' ? call.id : crypto.randomUUID();
+      const unknownToolErrorMsg = `Unknown tool called: ${call.name}`;
+      console.error(`[Graph ToolHandlerNode] ${unknownToolErrorMsg} (id: ${toolCallIdFromAI})`);
       toolResults.push(
         new ToolMessage({
-          content: `Error: Unknown tool ${call.name}`,
-          tool_call_id: toolCallId,
+          content: `Error: ${unknownToolErrorMsg}`,
+          tool_call_id: toolCallIdFromAI,
           name: call.name,
         })
       );
       await state.realtimeChannel.send({
         type: 'broadcast',
         event: 'ai_response',
-        payload: { type: 'tool_error', toolName: call.name, message: 'Unknown tool called.' },
+        payload: { type: 'tool_error', toolName: call.name, message: unknownToolErrorMsg },
       });
     }
   }
+
+  const newMessages = [...state.messages, ...toolResults];
   return {
-    messages: [...state.messages, ...toolResults],
-    llmStreamingActiveForCurrentSegment: callbackState.llmStreamingActiveForCurrentSegment, // Persist potential change
+    messages: newMessages, // Return the new complete message history
+    llmStreamingActiveForCurrentSegment: callbackState.llmStreamingActiveForCurrentSegment,
   };
 }
 
 const AgentState = Annotation.Root({
   messages: Annotation<BaseMessage[]>({
-    reducer: (x, y) => x.concat(y),
+    reducer: (x, y) => y,
     default: () => [],
   }),
   supabaseAdmin: Annotation<null | SupabaseClient>({
     reducer: (x, y) => y ?? x,
     default: () => null,
-  }), // Static after init
-  realtimeChannel: Annotation<null | any>({ reducer: (x, y) => y ?? x, default: () => null }), // Static after init
-  userId: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }), // Static
-  traceId: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }), // Static
+  }),
+  realtimeChannel: Annotation<null | any>({ reducer: (x, y) => y ?? x, default: () => null }),
+  userId: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
+  traceId: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
   profileArrayBuffer: Annotation<ArrayBuffer | null>({
     reducer: (x, y) => y ?? x,
     default: () => null,
-  }), // Set by initialSetupNode
-  profileData: Annotation<null | any>({ reducer: (x, y) => y ?? x, default: () => null }), // Set by initialSetupNode
-  traceSummary: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => '' }), // Set by initialSetupNode
+  }),
+  profileData: Annotation<null | any>({ reducer: (x, y) => y ?? x, default: () => null }),
+  traceSummary: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => '' }),
   flamechartServerUrl: Annotation<string | null>({
     reducer: (x, y) => y ?? x,
     default: () => null,
-  }), // Static
+  }),
   llmStreamingActiveForCurrentSegment: Annotation<boolean>({
     reducer: (x, y) => y ?? x,
     default: () => false,
   }),
   currentToolName: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
-  iterationCount: Annotation<number>({ reducer: (x, y) => (x ?? 0) + (y ?? 1), default: () => 0 }), // Increment per agent-tool cycle
+  iterationCount: Annotation<number>({ reducer: (x, y) => y, default: () => 0 }),
   maxIterations: Annotation<number>({ reducer: (x, y) => y ?? x, default: () => 7 }),
 });
 
 const workflow = new StateGraph(AgentState)
   .addNode('initialSetup', initialSetupNode)
   .addNode('agent', agentNode)
-  .addNode('toolHandler', toolHandlerNode)
-  .addEdge('__start__', 'initialSetup')
-  .addEdge('initialSetup', 'agent')
-  .addEdge('agent', 'toolHandler')
-  .addEdge('toolHandler', 'agent');
+  .addNode('toolHandler', toolHandlerNode);
 
+// Set the entry point
+workflow.setEntryPoint('initialSetup'); // Or '__start__' if that's your convention
+
+// Define edges
+workflow.addEdge('initialSetup', 'agent');
+workflow.addEdge('toolHandler', 'agent'); // After tools are handled, go back to the agent to process results
+
+// Conditional Pges from Agent
 workflow.addConditionalEdges(
-  'agent',
+  'agent', // Source Node
   (state: AgentState) => {
     const lastMessage = state.messages[state.messages.length - 1];
     if (
-      lastMessage._getType() === 'ai' &&
+      lastMessage?._getType() === 'ai' && // Check if lastMessage is defined
       (lastMessage as AIMessage).tool_calls &&
       (lastMessage as AIMessage).tool_calls!.length > 0
     ) {
       console.log('[Graph Router] Agent called tools. Routing to toolHandler.');
-      return 'toolHandler';
+      return 'toolHandler'; // Route to toolHandler if tools are called
     }
+
+    // If no tools are called, check other stopping conditions
     if (state.iterationCount >= state.maxIterations) {
-      console.log('[Graph Router] Max iterations reached. Ending.');
+      console.log('[Graph Router] Max iterations reached. Ending graph.');
       return END;
     }
     if (
+      lastMessage?.content && // Check if lastMessage and content are defined
       typeof lastMessage.content === 'string' &&
       (lastMessage.content.toLowerCase().includes('bottleneck identified') ||
         lastMessage.content.toLowerCase().includes('analysis complete'))
     ) {
-      console.log('[Graph Router] AI indicated analysis complete. Ending.');
+      console.log('[Graph Router] AI indicated analysis complete. Ending graph.');
       return END;
     }
+
     console.log(
-      '[Graph Router] No tool calls from AI, or stopping condition not met by AI text. Ending current turn/loop.'
+      '[Graph Router] No tool calls from AI, and no explicit end condition met. Ending graph for this turn.'
     );
-    return END; // End the current processing loop. New user input would start a new graph invocation.
+    return END; // If no tools and no other stop condition, end the current autonomous run.
   },
   {
-    toolHandler: 'toolHandler',
-    [END]: END,
+    toolHandler: 'toolHandler', // Mapping for the 'toolHandler' route
+    [END]: END, // Mapping for the END route
   }
 );
-workflow.addEdge('toolHandler', 'agent'); // Loop back to agent after tools execute
 
 const app = workflow.compile();
 
@@ -649,13 +679,12 @@ Deno.serve(async (req) => {
   const realtimeChannel = supabaseAdmin.channel(`private-chat-results-${userId}`);
 
   try {
-    // Subscribe might be async and needs to complete before sending.
-    // Using a try/catch for subscribe is good practice.
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
+      // Corrected Promise generic type
       realtimeChannel.subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
           console.log(`[Realtime] Subscribed to channel for user ${userId}`);
-          resolve(status);
+          resolve(); // Resolve with no value for Promise<void>
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
           console.error(`[Realtime] Subscription error for user ${userId}:`, status, err);
           reject(err || new Error(`Realtime subscription failed with status: ${status}`));
@@ -674,28 +703,25 @@ Deno.serve(async (req) => {
       traceId,
       profileArrayBuffer: null,
       profileData: null,
-      traceSummary: '', // Will be populated by initialSetupNode
+      traceSummary: '',
       flamechartServerUrl: FLAMECHART_SERVER_URL!,
       llmStreamingActiveForCurrentSegment: false,
       currentToolName: null,
-      iterationCount: 0, // Start at 0, first agent call will be iteration 1 due to +1 in channel def
+      iterationCount: 0,
       maxIterations: 7,
     };
 
     console.log('[Graph Main] Invoking LangGraph app stream...');
-    const stream = await app.stream(initialState, { recursionLimit: 25 }); // recursionLimit for safety
+    // Pass recursionLimit directly in the second argument for app.stream config
+    const stream = await app.stream(initialState, { recursionLimit: 25 });
 
     for await (const event of stream) {
-      // console.log("[Graph Stream Event]", JSON.stringify(event, null, 2)); // For debugging graph flow
       if (event[END] !== undefined) {
-        // Check if the END sentinel is a key in the event chunk
         console.log('[Graph Stream] Reached END state in graph execution stream.');
-        // The final AI message is already in event[END].messages if END is the last node's output
       }
     }
 
     console.log('[Graph Main] LangGraph app stream finished.');
-    // Ensure final "end" message is sent after all processing
     await realtimeChannel.send({
       type: 'broadcast',
       event: 'ai_response',
@@ -715,7 +741,6 @@ Deno.serve(async (req) => {
       `[Graph Main] CRITICAL ERROR in Deno.serve for user ${userId}: ${errorMsg}`,
       error
     );
-    // Attempt to send error over Realtime, but channel might be issue if subscribe failed.
     try {
       await realtimeChannel.send({
         type: 'broadcast',
