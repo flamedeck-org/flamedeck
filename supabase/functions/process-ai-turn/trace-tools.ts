@@ -27,7 +27,7 @@ export const getSnapshotToolSchema = {
   function: {
     name: 'get_flamegraph_snapshot',
     description:
-      'Captures and returns a real-time visual snapshot of the flamegraph from the currently loaded trace. Use this whenever a user asks to see or visualize the flamegraph, or when you need to analyze the visual structure of the profile. The snapshot will be returned as an image that you can then analyze and describe to the user.',
+      'Captures and returns a visual snapshot of the flamegraph from the currently loaded trace. Use this whenever a user asks to see or visualize the flamegraph, or when you need to analyze the visual structure of the profile. The snapshot will be returned as an image that you can then analyze and describe to the user.',
     parameters: {
       type: 'object' as const,
       properties: {
@@ -35,7 +35,33 @@ export const getSnapshotToolSchema = {
           type: 'string' as const,
           enum: ['time_ordered', 'left_heavy', 'sandwich_caller', 'sandwich_callee'],
           description:
-            "The specific flamegraph view to capture: 'time_ordered' (chronological view), 'left_heavy' (aggregated by call frequency), 'sandwich_caller' (who calls a function), or 'sandwich_callee' (who a function calls).",
+            "The specific flamegraph view to capture: 'time_ordered' (chronological view), 'left_heavy' (aggregated by call frequency), 'sandwich_caller' (who calls a function), or 'sandwich_callee' (who a function calls). Default is 'time_ordered'.",
+        },
+        width: {
+          type: 'number' as const,
+          description: 'Optional. Width of the output PNG in pixels. Defaults to 1200.',
+        },
+        height: {
+          type: 'number' as const,
+          description: 'Optional. Maximum height of the output PNG in pixels. Defaults to 800.',
+        },
+        mode: {
+          type: 'string' as const,
+          enum: ['light', 'dark'],
+          description: "Optional. Theme mode, either 'light' or 'dark'. Defaults to 'light'.",
+        },
+        startTimeMs: {
+          type: 'number' as const,
+          description: 'Optional. Start time in milliseconds to zoom into for the snapshot.',
+        },
+        endTimeMs: {
+          type: 'number' as const,
+          description: 'Optional. End time in milliseconds to zoom into for the snapshot.',
+        },
+        startDepth: {
+          type: 'number' as const,
+          description:
+            'Optional. The depth level (stack frame row) to start rendering from (0-indexed). Defaults to 0.',
         },
       },
       required: ['viewType'],
@@ -112,6 +138,6 @@ export function executeGetTopFunctions(profileGroup: ProfileGroup | null, args: 
   } catch (toolError) {
     console.error(`[Tool executeGetTopFunctions] Error:`, toolError);
     // Explicit return on error
-    return `Error executing tool: ${toolError.message}`;
+    return `Error executing tool: ${toolError instanceof Error ? toolError.message : String(toolError)}`;
   }
 }

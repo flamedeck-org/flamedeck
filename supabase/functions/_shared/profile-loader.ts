@@ -1,7 +1,8 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import * as pako from 'https://esm.sh/pako@2.1.0';
 import { JSON_parse } from 'npm:uint8array-json-parser';
-import Long from 'npm:long';
+// Import Long from CDN for Deno
+import Long from 'https://esm.sh/long@5.2.3';
 // Import from speedscope-import (adjust path based on _shared location)
 // Assuming _shared is one level up from where packages are relative to functions/process-ai-turn
 import {
@@ -53,17 +54,23 @@ export async function loadProfileData(
   const decompressed = pako.inflate(new Uint8Array(arrayBuffer));
   console.log('[Shared Loader] Trace decompressed.');
 
+  // Ensure Long is imported correctly from CDN
+  if (!Long || !Long.isLong) {
+    throw new Error('[Shared Loader] Failed to import Long library from CDN.');
+  }
+
+  // Construct dependencies, now including LongType
   const importerDeps: ImporterDependencies = {
     inflate: pako.inflate,
     parseJsonUint8Array: JSON_parse,
-    isLong: Long.isLong,
+    LongType: Long, // <-- Provide the Long class imported from CDN
   };
 
   console.log('[Shared Loader] Importing profile group...');
   const importResult = await importProfilesFromArrayBuffer(
     filePath.split('/').pop() || 'tracefile', // Use filename from path
     decompressed.buffer,
-    importerDeps
+    importerDeps // Pass the complete deps object
   );
 
   if (!importResult?.profileGroup) {

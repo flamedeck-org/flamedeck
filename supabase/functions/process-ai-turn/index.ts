@@ -26,6 +26,7 @@ console.log(`Function process-ai-turn booting up!`);
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const FLAMECHART_SERVER_URL = Deno.env.get('FLAMECHART_SERVER_URL');
 
 // --- Map history to OpenAI message format ---
 function mapHistoryToOpenAIMessages(history: { sender: 'user' | 'model'; text: string }[]) {
@@ -69,8 +70,10 @@ Deno.serve(async (req) => {
   }
 
   // Check for required environment variables
-  if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.error('Missing environment variables');
+  if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !FLAMECHART_SERVER_URL) {
+    console.error(
+      'Missing environment variables (OpenAI Key, Supabase URL/Key, Flamechart Server URL)'
+    );
     return new Response(JSON.stringify({ error: 'Internal configuration error.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
@@ -83,12 +86,13 @@ Deno.serve(async (req) => {
     payload = await req.json();
   } catch (error) {
     console.error('Failed to parse request body or missing fields:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Bad Request' }), {
+    // Check if error is an instance of Error before accessing .message
+    const errorMessage = error instanceof Error ? error.message : 'Bad Request';
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     });
   }
-  const requestType = payload.type; // e.g., 'start_analysis', 'user_prompt', 'continue_with_tool_result'
 
   // Common setup
   const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
@@ -99,66 +103,260 @@ Deno.serve(async (req) => {
   let channel: any; // SupabaseRealtimeChannel type might not be easily importable
 
   try {
-    if (requestType === 'continue_with_tool_result') {
-      // --- Handle Continuation ---
-      console.log('[process-ai-turn] Handling continue_with_tool_result');
-      const { continuationState, toolResult } = payload;
-      userId = continuationState.userId; // Get userId for channel
-      const originalHistory = continuationState.message_history;
-      const originalToolCall = continuationState.tool_call;
-      const traceId = continuationState.traceId; // Get traceId if needed for logging
+    userId = payload.userId;
+    const prompt = payload.prompt;
+    const traceId = payload.traceId;
+    const history = payload.history || [];
+    const modelName = payload.modelName || 'gpt-4o-mini';
 
-      if (!userId) throw new Error('Missing userId in continuation state');
-      channel = supabaseAdmin.channel(`private-chat-results-${userId}`);
+    if (!userId || !prompt || !traceId) {
+      throw new Error('Missing required fields: userId, prompt, traceId');
+    }
+    channel = supabaseAdmin.channel(`private-chat-results-${userId}`);
 
-      // 1. Reconstruct message history for next API call
-      const messagesForAPI: ChatCompletionMessageParam[] = [
-        ...originalHistory, // History *before* assistant tool request
-        {
-          role: 'assistant',
-          content: originalToolCall.content ?? '', // Use original assistant message content (should be "")
-          tool_calls: [originalToolCall], // Re-add the tool call info
-        },
-      ];
+    // --- Load Profile Data ---
+    const { data: traceRecord, error: dbError } = await supabaseAdmin
+      .from('traces')
+      .select('blob_path')
+      .eq('id', traceId)
+      .single();
 
-      // Special handling for image data URL - convert to content array with image_url
-      if (toolResult.status === 'success' && toolResult.content.startsWith('data:image/')) {
-        messagesForAPI.push({
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Here is the flamegraph snapshot you requested. Please analyze what you see in this image.',
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: toolResult.content,
-              },
-            },
-          ],
+    if (dbError || !traceRecord?.blob_path) {
+      console.error(`Failed to get trace record for ID ${traceId}:`, dbError);
+      await channel.send({
+        type: 'broadcast',
+        event: 'ai_response',
+        payload: { type: 'error', message: `Could not find trace data for ID ${traceId}.` },
+      });
+      throw new Error(`Trace record not found for ID ${traceId}`);
+    }
+    const blobPath = traceRecord.blob_path;
+
+    // --- Download raw profile text for potential snapshot use ---
+    console.log(`[process-ai-turn] Downloading profile blob: ${blobPath}`);
+    const { data: blobData, error: blobError } = await supabaseAdmin.storage
+      .from('traces') // Assuming 'traces' is the bucket name
+      .download(blobPath);
+
+    if (blobError || !blobData) {
+      console.error(`[process-ai-turn] Failed to download blob ${blobPath}:`, blobError);
+      await channel.send({
+        type: 'broadcast',
+        event: 'ai_response',
+        payload: { type: 'error', message: 'Failed to load profile data from storage.' },
+      });
+      throw new Error(`Failed to download profile data blob: ${blobError?.message}`);
+    }
+    const profileText = await blobData.text(); // Get raw text
+    console.log(`[process-ai-turn] Profile text downloaded, length: ${profileText.length}`);
+    // ---------------------------------------------------------
+
+    // --- Parse profile for summary & other tools (use the downloaded text) ---
+    console.log(`[process-ai-turn] Parsing profile for summary...`);
+    const loadedData: ProfileLoadResult = await loadProfileData(supabaseAdmin, blobPath);
+    if (!loadedData?.profileGroup) {
+      throw new Error(`Failed to load profile data for trace ${traceId}`);
+    }
+    const profileData = loadedData.profileGroup;
+    const profileType = loadedData.profileType;
+    const summary = JSON.stringify(
+      {
+        name: profileData.name ?? 'N/A',
+        profileType: profileType ?? 'N/A',
+        totalDurationMs: getDurationMsFromProfileGroup(profileData) ?? 'N/A',
+      },
+      null,
+      2
+    );
+    // ---------------------------------
+
+    // --- Initial Message Formatting ---
+    const historyMessages = mapHistoryToOpenAIMessages(history);
+    const initialMessages: ChatCompletionMessageParam[] = [
+      {
+        role: 'system',
+        content: `${SYSTEM_PROMPT}\n\nTrace Summary:\n${summary}`,
+      },
+      ...historyMessages,
+      { role: 'user', content: prompt },
+    ];
+
+    console.log(`Sending initial request to OpenAI API for user ${userId}...`);
+
+    // --- First API Call (Check for tool use) ---
+    const initialResponse = await openai.chat.completions.create({
+      model: modelName || 'gpt-4o-mini',
+      messages: initialMessages,
+      tools: toolsForApi, // <-- Pass tool schema
+      tool_choice: 'auto', // <-- Let model decide
+    });
+
+    const responseMessage = initialResponse.choices[0]?.message;
+
+    // --- Check if ANY Tool needs to be called ---
+    if (responseMessage?.tool_calls) {
+      console.log(`[process-ai-turn] Tool call(s) requested:`, responseMessage.tool_calls);
+      const assistantMessageForHistory: ChatCompletionMessageParam = {
+        ...responseMessage,
+        content: responseMessage.content ?? '', // Use empty string if null
+      };
+      initialMessages.push(assistantMessageForHistory); // Add assistant's turn to history
+
+      // Process each tool call requested by the model
+      let wasSnapshotCalled = false; // Flag to track if snapshot tool was called
+      for (const toolCall of responseMessage.tool_calls) {
+        // Send tool start event via Realtime
+        await channel.send({
+          type: 'broadcast',
+          event: 'ai_response',
+          payload: {
+            type: 'tool_start',
+            toolName: toolCall.function.name,
+            message: `Using tool: ${toolCall.function.name}...`,
+          },
         });
-      } else {
-        // For error cases or non-image data
-        messagesForAPI.push({
+
+        let toolResultContent: string;
+        try {
+          const toolArgs = JSON.parse(toolCall.function.arguments);
+
+          if (toolCall.function.name === getSnapshotToolSchema.function.name) {
+            // --- Execute Snapshot Tool ---
+            wasSnapshotCalled = true; // Set the flag
+            console.log('[process-ai-turn] Executing snapshot tool...', toolArgs);
+
+            // 1. Construct Flamechart Server Request
+            const queryParams = new URLSearchParams();
+            queryParams.set('viewType', toolArgs.viewType || 'time_ordered'); // Required, use default
+            if (toolArgs.width) queryParams.set('width', toolArgs.width.toString());
+            if (toolArgs.height) queryParams.set('height', toolArgs.height.toString());
+            if (toolArgs.mode) queryParams.set('mode', toolArgs.mode);
+            if (toolArgs.flamegraphThemeName)
+              queryParams.set('flamegraphThemeName', toolArgs.flamegraphThemeName);
+            if (toolArgs.startTimeMs)
+              queryParams.set('startTimeMs', toolArgs.startTimeMs.toString());
+            if (toolArgs.endTimeMs) queryParams.set('endTimeMs', toolArgs.endTimeMs.toString());
+            if (toolArgs.startDepth) queryParams.set('startDepth', toolArgs.startDepth.toString());
+
+            const renderUrl = `${FLAMECHART_SERVER_URL}/render?${queryParams.toString()}`;
+            console.log(`[process-ai-turn] Calling flamechart server: ${renderUrl}`);
+
+            // 2. Call Flamechart Server
+            const renderResponse = await fetch(renderUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: profileText, // Send the raw profile text downloaded earlier
+            });
+
+            if (!renderResponse.ok) {
+              const errorText = await renderResponse.text();
+              console.error(
+                `[process-ai-turn] Flamechart server error (${renderResponse.status}): ${errorText}`
+              );
+              throw new Error(
+                `Failed to render flamechart (status ${renderResponse.status}): ${errorText}`
+              );
+            }
+
+            // 3. Get PNG buffer
+            const pngBuffer = await renderResponse.arrayBuffer();
+            console.log(`[process-ai-turn] PNG buffer received, length: ${pngBuffer.byteLength}`);
+
+            // 4. Upload to Supabase Storage
+            const timestamp = Date.now();
+            // New path includes userId
+            const storagePath = `ai-snapshots/${userId}/trace-${traceId}-${timestamp}.png`;
+            console.log(`[process-ai-turn] Uploading PNG to storage: ${storagePath}`);
+            const { error: uploadError } = await supabaseAdmin.storage
+              .from('ai-snapshots') // Use the requested bucket name
+              .upload(storagePath, pngBuffer, { contentType: 'image/png' });
+
+            if (uploadError) {
+              console.error('[process-ai-turn] Failed to upload snapshot to storage:', uploadError);
+              throw new Error(`Storage upload failed: ${uploadError.message}`);
+            }
+
+            // 5. Get Public URL
+            const { data: publicUrlData } = supabaseAdmin.storage
+              .from('ai-snapshots') // Use the requested bucket name
+              .getPublicUrl(storagePath);
+
+            if (!publicUrlData?.publicUrl) {
+              console.error('[process-ai-turn] Failed to get public URL for snapshot.');
+              throw new Error('Could not get public URL for generated snapshot.');
+            }
+            toolResultContent = `Snapshot generated successfully: ${publicUrlData.publicUrl}`; // Result is the URL
+            console.log(`[process-ai-turn] Snapshot uploaded. Public URL: ${toolResultContent}`);
+
+            // --- End Snapshot Tool Execution ---
+          } else if (toolCall.function.name === getTopFunctionsToolSchema.function.name) {
+            // --- Execute Top Functions Tool (Existing Logic) ---
+            toolResultContent = executeGetTopFunctions(profileData, toolArgs);
+            // --- End Top Functions Tool ---
+          } else {
+            // Handle unknown tool
+            console.warn(
+              `[process-ai-turn] Model requested unknown tool: ${toolCall.function.name}`
+            );
+            toolResultContent = `Error: Unknown tool requested: ${toolCall.function.name}`;
+          }
+        } catch (e) {
+          console.error(
+            `[process-ai-turn] Error parsing tool args or executing tool ${toolCall.function.name}:`,
+            e
+          );
+          // Check if e is an instance of Error before accessing .message
+          const toolErrorMessage = e instanceof Error ? e.message : String(e);
+          toolResultContent = `Error: Failed to execute tool ${toolCall.function.name} - ${toolErrorMessage}`;
+        }
+
+        // Append the tool result message for the next API call
+        initialMessages.push({
+          tool_call_id: toolCall.id,
           role: 'tool',
-          tool_call_id: toolResult.toolCallId,
-          content: toolResult.content, // Use error message
+          // If it was a snapshot, the content is the URL string
+          // If it was top functions, content is the formatted string
+          // If it was an error, content is the error message
+          content: toolResultContent,
         });
-      }
+      } // End loop over tool calls
 
-      // 2. Make the second API call (streaming final response)
+      // --- Second API Call (With Tool Results) & Stream ---
       console.log(
-        `[process-ai-turn] Sending final request to OpenAI after tool result... Messages: ${messagesForAPI.length}`
+        '[process-ai-turn] Sending second request to OpenAI with tool results...',
+        JSON.stringify(initialMessages, null, 2)
       );
-      const stream = await openai.chat.completions.create({
-        model: 'gpt-4o', // Use gpt-4o with vision capabilities
-        messages: messagesForAPI,
-        stream: true,
-        max_tokens: 1000, // Limit response length
+      const secondStream = await openai.chat.completions.create({
+        // Use vision model if snapshot was called, otherwise use requested model
+        model: wasSnapshotCalled ? 'gpt-4o' : modelName || 'gpt-4o-mini',
+        messages: initialMessages, // Send history + assistant msg + tool results
+        stream: true, // Stream the final response
       });
 
-      // 3. Stream response via Realtime
+      // Stream the response from the SECOND call
+      let firstChunkSent = false;
+      for await (const chunk of secondStream) {
+        const contentChunk = chunk.choices[0]?.delta?.content || '';
+        if (contentChunk) {
+          const payloadType = firstChunkSent ? 'model_chunk_append' : 'model_chunk_start';
+          await channel.send({
+            type: 'broadcast',
+            event: 'ai_response',
+            payload: { type: payloadType, chunk: contentChunk },
+          });
+          firstChunkSent = true;
+        }
+      }
+      // ------------------------------------------
+    } else {
+      // --- No Tool Call: Stream Response from First Call ---
+      console.log(`[process-ai-turn] No tool call requested. Streaming initial response.`);
+      // Re-request with streaming if no tool call.
+      const stream = await openai.chat.completions.create({
+        model: modelName || 'gpt-4o-mini',
+        messages: initialMessages,
+        stream: true,
+      });
       let firstChunkSent = false;
       for await (const chunk of stream) {
         const contentChunk = chunk.choices[0]?.delta?.content || '';
@@ -172,279 +370,22 @@ Deno.serve(async (req) => {
           firstChunkSent = true;
         }
       }
-      // ---------------------------
-    } else {
-      // Handle initial analysis or user prompt
-      // --- Standard Request Handling ---
-      userId = payload.userId;
-      const prompt = payload.prompt;
-      const traceId = payload.traceId;
-      const history = payload.history || [];
-      const modelName = payload.modelName || 'gpt-4o-mini';
-      const modelProvider = payload.modelProvider || 'openai';
-
-      if (!userId || !prompt || !traceId) {
-        throw new Error('Missing required fields: userId, prompt, traceId');
-      }
-      channel = supabaseAdmin.channel(`private-chat-results-${userId}`);
-
-      // --- Load Profile Data ---
-      const { data: traceRecord, error: dbError } = await supabaseAdmin
-        .from('traces')
-        .select('blob_path')
-        .eq('id', traceId)
-        .single();
-      if (dbError || !traceRecord?.blob_path) {
-        /* ... handle error ... */
-      }
-      const blobPath = traceRecord.blob_path;
-      const loadedData: ProfileLoadResult = await loadProfileData(supabaseAdmin, blobPath);
-      if (!loadedData?.profileGroup) {
-        throw new Error(`Failed to load profile data for trace ${traceId}`);
-      }
-      const profileData = loadedData.profileGroup;
-      const profileType = loadedData.profileType;
-      const summary = JSON.stringify(
-        {
-          name: profileData.name ?? 'N/A',
-          profileType: profileType ?? 'N/A', // Use profileType from result
-          totalDurationMs: getDurationMsFromProfileGroup(profileData) ?? 'N/A',
-          frameCount: profileData.shared?.frames?.length ?? 'N/A',
-        },
-        null,
-        2
-      );
-      // ---------------------------------
-
-      // --- Initial Message Formatting ---
-      const historyMessages = mapHistoryToOpenAIMessages(history);
-      const initialMessages: ChatCompletionMessageParam[] = [
-        {
-          role: 'system',
-          content: `${SYSTEM_PROMPT}\n\nTrace Summary:\n${summary}`,
-        },
-        ...historyMessages,
-        { role: 'user', content: prompt },
-      ];
-
-      console.log(`Sending initial request to OpenAI API for user ${userId}...`);
-
-      // --- First API Call (Check for tool use) ---
-      const initialResponse = await openai.chat.completions.create({
-        model: modelName || 'gpt-4o-mini',
-        messages: initialMessages,
-        tools: toolsForApi, // <-- Pass tool schema
-        tool_choice: 'auto', // <-- Let model decide
-        // stream: false, // Cannot stream when checking for tool calls first
-      });
-
-      const responseMessage = initialResponse.choices[0]?.message;
-
-      // --- Check if Snapshot tool needs to be called ---
-      const snapshotToolCall = responseMessage?.tool_calls?.find(
-        (call) =>
-          call.type === 'function' && call.function.name === getSnapshotToolSchema.function.name
-      );
-
-      if (snapshotToolCall) {
-        console.log(`[process-ai-turn] Snapshot tool call requested:`, snapshotToolCall);
-
-        // 1. Generate request ID (can use tool call ID or generate new)
-        const requestId = snapshotToolCall.id; // Use tool_call_id as the request ID
-
-        // 2. Store state needed for continuation in the database
-        const stateToStore = {
-          user_id: userId,
-          trace_id: traceId,
-          message_history: initialMessages, // History *before* assistant/tool messages
-          tool_call: snapshotToolCall, // The specific tool call object
-          tool_call_id: snapshotToolCall.id, // Add the tool_call_id for lookup
-        };
-        console.log(`[process-ai-turn] Storing continuation state for request ${requestId}...`);
-        const { error: insertError } = await supabaseAdmin
-          .from('ai_chat_continuations')
-          .insert(stateToStore);
-
-        if (insertError) {
-          console.error('[process-ai-turn] Failed to store continuation state:', insertError);
-          throw new Error(`Failed to store continuation state: ${insertError.message}`);
-        }
-        console.log(`[process-ai-turn] Continuation state stored successfully.`);
-
-        // 3. Send request to client via Realtime
-        const snapshotArgs = JSON.parse(snapshotToolCall.function.arguments);
-        await channel.send({
-          type: 'broadcast',
-          event: 'ai_response', // Reuse event type
-          payload: {
-            type: 'request_snapshot',
-            requestId: requestId,
-            viewType: snapshotArgs.viewType,
-            // frameKey: snapshotArgs.frameKey // Include if needed
-          },
-        });
-        console.log(`[process-ai-turn] Snapshot request sent to client via Realtime.`);
-
-        // 4. End this execution - waiting for client response trigger
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: 'Snapshot requested from client.',
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200, // Indicate request accepted, processing deferred
-          }
-        );
-      } else if (responseMessage?.tool_calls) {
-        // --- Handle OTHER Tool Calls (like get_top_functions) ---
-        console.log(
-          `[process-ai-turn] Non-snapshot tool call requested:`,
-          responseMessage.tool_calls
-        );
-        const assistantMessageForHistory: ChatCompletionMessageParam = {
-          ...responseMessage,
-          content: responseMessage.content ?? '', // Use empty string if null
-        };
-        initialMessages.push(assistantMessageForHistory);
-        for (const toolCall of responseMessage.tool_calls) {
-          if (toolCall.function.name === getTopFunctionsToolSchema.function.name) {
-            // Send tool start event via Realtime
-            await channel.send({
-              type: 'broadcast',
-              event: 'ai_response',
-              payload: {
-                type: 'tool_start',
-                toolName: toolCall.function.name,
-                message: `Using tool: ${toolCall.function.name}...`,
-              },
-            });
-
-            let toolResultContent: string;
-            try {
-              const toolArgs = JSON.parse(toolCall.function.arguments);
-              toolResultContent = executeGetTopFunctions(profileData, toolArgs);
-            } catch (e) {
-              console.error(`[process-ai-turn] Error parsing tool args or executing tool:`, e);
-              toolResultContent = `Error: Failed to execute tool ${toolCall.function.name} - ${e.message}`;
-            }
-
-            // Send tool end event via Realtime (optional)
-            // await channel.send({ type: 'broadcast', event: 'ai_response', payload: { type: 'tool_end', output: toolResultContent } });
-
-            // *** Log tool result before adding ***
-            console.log(
-              `[process-ai-turn] Tool call ${toolCall.id} result content (type: ${typeof toolResultContent}):`,
-              toolResultContent
-            );
-            // *************************************
-
-            // Append the tool result message for the next API call
-            initialMessages.push({
-              tool_call_id: toolCall.id,
-              role: 'tool',
-              content: toolResultContent,
-            });
-          } else {
-            console.warn(
-              `[process-ai-turn] Model requested unknown tool: ${toolCall.function.name}`
-            );
-            // Optionally append an error message back?
-          }
-        }
-        // --- Second API Call (With Tool Results) & Stream ---
-        console.log('[process-ai-turn] Sending second request to OpenAI with tool results...');
-        // *** Log the exact messages being sent ***
-        console.log(
-          '[process-ai-turn] Messages for API call 2:',
-          JSON.stringify(initialMessages, null, 2)
-        );
-        // ****************************************
-        const secondStream = await openai.chat.completions.create({
-          model: modelName || 'gpt-4o-mini',
-          messages: initialMessages, // Send history + assistant msg + tool results
-          stream: true, // Stream the final response
-        });
-
-        // Stream the response from the SECOND call
-        let firstChunkSent = false;
-        for await (const chunk of secondStream) {
-          const contentChunk = chunk.choices[0]?.delta?.content || '';
-          if (contentChunk) {
-            // ... (publish model_chunk_start/append via Realtime) ...
-            const payloadType = firstChunkSent ? 'model_chunk_append' : 'model_chunk_start';
-            await channel.send({
-              type: 'broadcast',
-              event: 'ai_response',
-              payload: { type: payloadType, chunk: contentChunk },
-            });
-            firstChunkSent = true;
-          }
-        }
-        // ------------------------------------------
-      } else {
-        // --- No Tool Call: Stream Response from First Call ---
-        console.log(`[process-ai-turn] No tool call requested. Streaming initial response.`);
-        // If the initial response wasn't streamed, we need to send its content.
-        // For simplicity now, let's re-request with streaming if no tool call.
-        // TODO: Optimize this - potentially check initial response content first.
-        const stream = await openai.chat.completions.create({
-          model: modelName || 'gpt-4o-mini',
-          messages: initialMessages,
-          stream: true,
-        });
-        let firstChunkSent = false;
-        for await (const chunk of stream) {
-          const contentChunk = chunk.choices[0]?.delta?.content || '';
-          if (contentChunk) {
-            // ... (publish model_chunk_start/append via Realtime) ...
-            const payloadType = firstChunkSent ? 'model_chunk_append' : 'model_chunk_start';
-            await channel.send({
-              type: 'broadcast',
-              event: 'ai_response',
-              payload: { type: payloadType, chunk: contentChunk },
-            });
-            firstChunkSent = true;
-          }
-        }
-        // -------------------------------------------------------
-      }
-
-      // --- Send stream end signal / Return Success (only if not waiting for snapshot) ---
-      if (!snapshotToolCall) {
-        // Only send end/return if we didn't request a snapshot
-        await channel.send({
-          type: 'broadcast',
-          event: 'ai_response',
-          payload: { type: 'model_response_end' },
-        });
-        console.log(`Finished streaming response for user ${userId}`);
-        return new Response(JSON.stringify({ success: true, message: 'AI response processed.' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        });
-      }
+      // -------------------------------------------------------
     }
 
-    // --- Common stream end signal ---
-    if (channel) {
-      // Ensure channel exists before sending end signal
-      await channel.send({
-        type: 'broadcast',
-        event: 'ai_response',
-        payload: { type: 'model_response_end' },
-      });
-      console.log(`Finished processing request for user ${userId}`);
-      return new Response(JSON.stringify({ success: true, message: 'AI response processed.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
-    }
+    // --- Send stream end signal / Return Success (Now always happens here) ---
+    await channel.send({
+      type: 'broadcast',
+      event: 'ai_response',
+      payload: { type: 'model_response_end' },
+    });
+    console.log(`Finished processing request for user ${userId}`);
+    return new Response(JSON.stringify({ success: true, message: 'AI response processed.' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    });
   } catch (error) {
-    console.error(
-      `Error processing request for user ${userId || 'unknown'}, type ${requestType}:`,
-      error
-    );
+    console.error(`Error processing request for user ${userId || 'unknown'}:`, error);
     // Publish error to Realtime if possible
     if (channel) {
       try {
@@ -453,6 +394,7 @@ Deno.serve(async (req) => {
           event: 'ai_response',
           payload: {
             type: 'error',
+            // Check if error is an instance of Error before accessing .message
             message:
               error instanceof Error
                 ? error.message
@@ -460,10 +402,12 @@ Deno.serve(async (req) => {
           },
         });
       } catch (e) {
-        /* ... */
+        console.warn('Failed to send error over Realtime channel:', e);
       }
     }
-    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
+    // Check if error is an instance of Error before accessing .message
+    const finalErrorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+    return new Response(JSON.stringify({ error: finalErrorMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });

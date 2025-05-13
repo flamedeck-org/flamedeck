@@ -22,6 +22,7 @@ import {
   importProfilesFromArrayBuffer,
   ProfileType, // Assuming ProfileType is exported
 } from '../../../packages/speedscope-import/src/index.ts';
+import { ProfileGroup } from '@flamedeck/speedscope-core/profile.ts';
 
 // --- Shared Importer ---
 // NOTE: Ensure this relative path is correct from the perspective of the compiled function
@@ -46,8 +47,6 @@ const queryParamsSchema = z.object({
   folderId: z.string().uuid('Invalid folder ID format').nullable().optional(), // Allow optional folderId
   public: z.boolean().optional().default(false), // Add public parameter
 });
-
-type QueryParams = z.infer<typeof queryParamsSchema>;
 
 serve(async (req) => {
   // 1. Handle CORS preflight request
@@ -169,7 +168,7 @@ serve(async (req) => {
     const importerDeps: ImporterDependencies = {
       inflate: pako.inflate,
       parseJsonUint8Array: JSON_parse,
-      isLong: Long.isLong,
+      LongType: Long,
     };
 
     // 5. Import Processing

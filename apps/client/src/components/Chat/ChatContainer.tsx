@@ -10,33 +10,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth to get user ID
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
 import type { RealtimeChannel } from '@supabase/supabase-js'; // Import type for channel ref
-import {
-  HumanMessage,
-  AIMessage as LangChainAIMessage,
-  BaseMessage,
-} from '@langchain/core/messages'; // Import Langchain message types if needed for type checking history mapping
-
-// Define the type for the snapshot result prop
-interface SnapshotResultProp {
-  requestId: string;
-  status: 'success' | 'error';
-  data?: string; // imageDataUrl
-  error?: string;
-}
 
 interface ChatContainerProps {
   traceId: string | null;
-  triggerSnapshot: (requestId: string, viewType: string, frameKey?: string) => void; // Prop to trigger snapshot
-  snapshotResult: SnapshotResultProp | null; // Prop receiving the result
-  clearSnapshotResult: () => void; // Prop to clear the result after sending
 }
 
-export const ChatContainer: React.FC<ChatContainerProps> = ({
-  traceId,
-  triggerSnapshot,
-  snapshotResult,
-  clearSnapshotResult,
-}) => {
+export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
   const { user } = useAuth(); // Get user from Auth context
   const userId = user?.id;
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -83,14 +62,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
           const payload = message.payload;
           let newError: string | null = null;
           let forceScroll = false; // Flag to determine if scroll should be forced
-
-          if (payload.type === 'request_snapshot') {
-            console.log('[ChatContainer] Received snapshot request:', payload);
-            // Call the trigger function passed via props
-            triggerSnapshot(payload.requestId, payload.viewType, payload.frameKey);
-            // Don't add this request to chat messages
-            return; // Stop processing this message further here
-          }
 
           setChatMessages((prevMessages) => {
             const messageId = uuidv4(); // Generate ID within state update if needed
@@ -141,7 +112,10 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
               currentMessageRef.current = null;
               forceScroll = true; // <-- Force scroll for errors
             } else {
-              console.warn('Received unknown payload type via Realtime:', payload.type);
+              // Only log unknown types if they are not 'request_snapshot'
+              if (payload.type !== 'request_snapshot') {
+                console.warn('Received unknown payload type via Realtime:', payload.type);
+              }
             }
             return updatedMessages;
           });
@@ -202,15 +176,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       }
     };
     // Rerun when chat opens/closes, or when userId/traceId become available/change
-  }, [
-    isChatOpen,
-    userId,
-    traceId,
-    isSocketConnected,
-    connectSocket,
-    disconnectSocket,
-    triggerSnapshot,
-  ]);
+  }, [isChatOpen, userId, traceId, isSocketConnected, connectSocket, disconnectSocket]);
 
   // --- Effect to reset flag only when traceId changes ---
   useEffect(() => {
@@ -343,22 +309,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       setIsWaitingForModel(false);
     }
   }, [socketErrorEvent]);
-
-  // --- Effect to send snapshot result back via WebSocket ---
-  useEffect(() => {
-    if (snapshotResult) {
-      console.log('[ChatContainer] Sending snapshot result via WebSocket:', snapshotResult);
-      sendRawSocketMessage({
-        type: 'snapshot_result',
-        requestId: snapshotResult.requestId,
-        status: snapshotResult.status,
-        imageDataUrl: snapshotResult.data,
-        errorMessage: snapshotResult.error,
-      });
-      // Clear the result prop in the parent component
-      clearSnapshotResult();
-    }
-  }, [snapshotResult, sendRawSocketMessage, clearSnapshotResult]);
 
   // handleSendMessage (Add userId and traceId to user_prompt)
   const handleSendMessage = useCallback(
