@@ -40,7 +40,7 @@ The root supabase folder contains database migrations as well as edge functions.
 
 ### `apps/client`
 
-This is the frontend client for the trace viewer, which allows for uploading, organizing, viewing, and commenting on traces, among other things.
+This is the frontend client for the trace viewer, which allows for uploading, organizing, viewing, and commenting on traces, among other things. It is deployed to https://www.flamedeck.com.
 
 *   `src/`: Main application source code.
     *   `components/`: Reusable UI components. This is where the speedscope UI lives
@@ -70,6 +70,10 @@ Standard Vite/React/TS/Tailwind/Supabase config files (`vite.config.ts`, `tailwi
 #### Database schema
 
 The database schema is defined in [types.ts](mdc:apps/client/src/integrations/supabase/types.ts)
+
+### `apps/flamechart-server`
+
+A server deployed to fly.io which provides an API for rendering flamecharts (via `packages/flamechart-to-png`)
 
 ## Deployment
 
