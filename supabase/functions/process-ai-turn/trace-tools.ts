@@ -77,7 +77,8 @@ export class TopFunctionsTool extends StructuredTool {
       return `Top ${results.length} functions sorted by ${sortBy} time:\n${results.join('\n')}`;
     } catch (toolError) {
       console.error(`[TopFunctionsTool] Error:`, toolError);
-      return `Error executing TopFunctionsTool: ${toolError instanceof Error ? toolError.message : String(toolError)}`;
+      const errorMsg = toolError instanceof Error ? toolError.message : String(toolError);
+      return `Error executing TopFunctionsTool: ${errorMsg}`;
     }
   }
 }
@@ -88,19 +89,29 @@ const snapshotSchema = z.object({
     .enum(['time_ordered', 'left_heavy', 'sandwich_caller', 'sandwich_callee'])
     .default('time_ordered')
     .describe(
-      "The specific flamegraph view to capture: 'time_ordered' (chronological view), 'left_heavy' (aggregated by call frequency), 'sandwich_caller' (who calls a function), or 'sandwich_callee' (who a function calls). Default is 'time_ordered'."
+      "The specific flamegraph view to capture: 'time_ordered', 'left_heavy', 'sandwich_caller', or 'sandwich_callee'."
     ),
-  width: z.number().optional().default(1200).describe('Width of the flamegraph image in pixels.'),
-  height: z.number().optional().default(800).describe('Height of the flamegraph image in pixels.'),
+  width: z
+    .number()
+    .int()
+    .optional()
+    .default(1200)
+    .describe('Width of the flamegraph image in pixels.'),
+  height: z
+    .number()
+    .int()
+    .optional()
+    .default(800)
+    .describe('Height of the flamegraph image in pixels.'),
   startTimeMs: z.number().optional().describe('Start time in milliseconds for a zoomed view.'),
   endTimeMs: z.number().optional().describe('End time in milliseconds for a zoomed view.'),
-  startDepth: z.number().optional().describe('Start depth for a zoomed view (stack depth).'),
+  startDepth: z.number().int().optional().describe('Start depth for a zoomed view (stack depth).'),
 });
 
 export class GenerateFlamegraphSnapshotTool extends StructuredTool {
   readonly name = 'generate_flamegraph_screenshot';
   readonly description =
-    'Generates a flamegraph screenshot (PNG image) of the current trace. Returns a public URL to the image.';
+    'Generates a flamegraph screenshot (PNG). Returns JSON string with {status, publicUrl, base64Image, message}.';
   readonly schema = snapshotSchema;
 
   constructor(
@@ -113,19 +124,14 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
     super();
   }
 
-  protected async _call(args: z.infer<typeof snapshotSchema>): Promise<any> {
+  protected async _call(args: z.infer<typeof snapshotSchema>): Promise<string> {
     console.log('[GenerateFlamegraphSnapshotTool] Called with args:', args);
 
-    // Add a log to check the profileArrayBuffer state
     if (!this.profileArrayBuffer || this.profileArrayBuffer.byteLength === 0) {
-      const errorMessage =
-        'Error: [GenerateFlamegraphSnapshotTool] profileArrayBuffer is null, undefined, or empty before sending to flamechart server.';
-      console.error(errorMessage);
-      return errorMessage;
+      const errorMessage = 'Error: profileArrayBuffer is missing or empty.';
+      console.error(`[GenerateFlamegraphSnapshotTool] ${errorMessage}`);
+      return JSON.stringify({ status: 'Error', error: errorMessage });
     }
-    console.log(
-      `[GenerateFlamegraphSnapshotTool] profileArrayBuffer byteLength before fetch: ${this.profileArrayBuffer.byteLength}`
-    );
 
     const queryParams = new URLSearchParams();
     queryParams.set('viewType', args.viewType);
@@ -141,7 +147,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
     try {
       const renderResponse = await fetch(renderUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'application/octet-stream' },
         body: this.profileArrayBuffer,
       });
 
@@ -149,10 +155,15 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         const errorText = await renderResponse.text();
         const errorMessage = `Error: Failed to render flamechart (status ${renderResponse.status}): ${errorText}`;
         console.error(`[GenerateFlamegraphSnapshotTool] ${errorMessage}`);
-        return errorMessage;
+        return JSON.stringify({ status: 'Error', error: errorMessage });
       }
 
       const pngBuffer = await renderResponse.arrayBuffer();
+      if (!pngBuffer || pngBuffer.byteLength === 0) {
+        const msg = 'Error: Received empty PNG buffer from flamechart server.';
+        console.error('[GenerateFlamegraphSnapshotTool]', msg);
+        return JSON.stringify({ status: 'Error', error: msg });
+      }
       console.log(
         `[GenerateFlamegraphSnapshotTool] PNG buffer received, length: ${pngBuffer.byteLength}`
       );
@@ -163,15 +174,12 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
 
       const { error: uploadError } = await this.supabaseAdmin.storage
         .from('ai-snapshots')
-        .upload(storagePath, pngBuffer, { contentType: 'image/png' });
+        .upload(storagePath, pngBuffer, { contentType: 'image/png', upsert: true });
 
       if (uploadError) {
         const errorMessage = `Error: Storage upload failed: ${uploadError.message}`;
-        console.error(
-          '[GenerateFlamegraphSnapshotTool] Failed to upload snapshot to storage:',
-          uploadError
-        );
-        return errorMessage;
+        console.error('[GenerateFlamegraphSnapshotTool] Failed to upload snapshot:', uploadError);
+        return JSON.stringify({ status: 'Error', error: errorMessage });
       }
 
       const { data: publicUrlData } = this.supabaseAdmin.storage
@@ -180,31 +188,31 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
 
       if (!publicUrlData?.publicUrl) {
         const errorMessage = 'Error: Could not get public URL for generated snapshot.';
-        console.error('[GenerateFlamegraphSnapshotTool] Failed to get public URL for snapshot.');
-        return errorMessage;
+        console.error('[GenerateFlamegraphSnapshotTool] Failed to get public URL.');
+        const base64Image = encodeBase64(pngBuffer);
+        return JSON.stringify({
+          status: 'SuccessWithWarning',
+          publicUrl: null,
+          base64Image: base64Image,
+          message: `Snapshot generated and base64 encoded, but failed to get public URL. ${errorMessage}`,
+          error: errorMessage,
+        });
       }
 
       const base64Image = encodeBase64(pngBuffer);
+      const successMessage = `Snapshot generated. Public URL: ${publicUrlData.publicUrl}. Image data included.`;
+      console.log(`[GenerateFlamegraphSnapshotTool] ${successMessage}`);
 
-      console.log(
-        `[GenerateFlamegraphSnapshotTool] Snapshot success. URL: ${publicUrlData.publicUrl}. Returning multimodal content.`
-      );
-
-      // Return the multimodal content array for the LLM to process the image
-      return [
-        {
-          type: 'text',
-          text: `Generated flamegraph. You can also view it at: ${publicUrlData.publicUrl}`,
-        },
-        {
-          type: 'image_url',
-          image_url: { url: `data:image/png;base64,${base64Image}` },
-        },
-      ];
+      return JSON.stringify({
+        status: 'Success',
+        publicUrl: publicUrlData.publicUrl,
+        base64Image: base64Image,
+        message: successMessage,
+      });
     } catch (fetchError) {
       const errorMessage = `Error: Exception during flamechart server call: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`;
       console.error(`[GenerateFlamegraphSnapshotTool] ${errorMessage}`);
-      return errorMessage;
+      return JSON.stringify({ status: 'Error', error: errorMessage });
     }
   }
 }
