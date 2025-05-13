@@ -140,7 +140,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
     try {
       const renderResponse = await fetch(renderUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/octet-stream' },
+        headers: { 'Content-Type': 'text/plain' },
         body: this.profileArrayBuffer,
       });
 

@@ -78,6 +78,7 @@ Trace Summary:
 `;
 
 Deno.serve(async (req) => {
+  console.log('[SERVER] Received request'); // Log request received
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -96,6 +97,7 @@ Deno.serve(async (req) => {
   let payload;
   try {
     payload = await req.json();
+    console.log('[SERVER] Parsed payload:', JSON.stringify(payload, null, 2));
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Bad Request';
     return new Response(JSON.stringify({ error: errorMessage }), {
@@ -117,6 +119,9 @@ Deno.serve(async (req) => {
     const userPrompt = payload.prompt;
     const traceId = payload.traceId;
     const history = payload.history || [];
+    console.log(
+      `[SERVER] UserID: ${userId}, TraceID: ${traceId}, Prompt: "${userPrompt}", History items: ${history.length}`
+    );
 
     if (!userId || !userPrompt || !traceId) {
       throw new Error('Missing required fields: userId, prompt, traceId');
@@ -202,44 +207,58 @@ Deno.serve(async (req) => {
     );
     // ---------------------------------
 
+    console.log('[SERVER] Profile data loaded and parsed successfully.');
+    console.log('[SERVER] Trace Summary:', traceSummary);
+
     const tools = [
       new TopFunctionsTool(profileData),
       new GenerateFlamegraphSnapshotTool(
-        supabaseAdmin as SupabaseClient, // Cast because Langchain might not have Supabase types
+        supabaseAdmin as SupabaseClient,
         FLAMECHART_SERVER_URL!,
         profileArrayBuffer,
-        userId,
-        traceId
+        userId!,
+        traceId!
       ),
     ];
+    console.log('[SERVER] Tools instantiated.');
 
     const promptTemplate = ChatPromptTemplate.fromMessages([
       SystemMessagePromptTemplate.fromTemplate(SYSTEM_PROMPT_TEMPLATE),
       new MessagesPlaceholder('chat_history'),
       HumanMessagePromptTemplate.fromTemplate('{input}'),
-      new MessagesPlaceholder('agent_scratchpad'), // For agent intermediate steps
+      new MessagesPlaceholder('agent_scratchpad'),
     ]);
+    console.log('[SERVER] Prompt template created.');
 
     const agent = await createOpenAIFunctionsAgent({ llm, tools, prompt: promptTemplate });
     const agentExecutor = new AgentExecutor({ agent, tools });
+    console.log('[SERVER] Agent and executor created.');
 
     const langchainHistory = mapHistoryToLangchainMessages(history);
+    console.log('[SERVER] Langchain history mapped:', JSON.stringify(langchainHistory, null, 2));
 
-    console.log('[Langchain] Invoking agent with prompt:', userPrompt);
+    console.log('[SERVER] Invoking agentExecutor.stream() with input:', userPrompt);
     const stream = await agentExecutor.stream({
       input: userPrompt,
       chat_history: langchainHistory,
-      trace_summary: traceSummary, // Passed to system prompt template
+      trace_summary: traceSummary,
     });
 
     let currentToolCallId: string | null = null;
     let currentToolName: string | null = null;
     let accumulatedLlmOutput = '';
     let firstChunkSent = false;
+    let streamCounter = 0;
 
+    console.log('[SERVER] Starting to iterate agent stream...');
     for await (const chunk of stream) {
-      // console.log("[STREAM CHUNK]", JSON.stringify(chunk, null, 2)); // For debugging stream content
+      streamCounter++;
+      console.log(
+        `[SERVER] Stream chunk ${streamCounter} RECEIVED:`,
+        JSON.stringify(chunk, null, 2)
+      );
 
+      // Handle tool start from logs (this seems to be for when the agent decides to call a tool)
       if (
         chunk.log?.length > 0 &&
         chunk.log.some((logItem: any) => logItem.lc_event_name === 'on_tool_start')
@@ -252,32 +271,46 @@ Deno.serve(async (req) => {
             ? toolStartLog.id.join('_')
             : String(toolStartLog.id);
           currentToolName = toolStartLog.name;
-          console.log(`[Langchain] Tool Start: ${currentToolName}, ID: ${currentToolCallId}`);
-          await channel.send({
-            type: 'broadcast',
-            event: 'ai_response',
-            payload: {
-              type: 'tool_start',
-              toolName: currentToolName,
-              message: `Using tool: ${currentToolName}...`,
-            },
-          });
+          const logMsg = `[SERVER] Identified Tool Start in chunk ${streamCounter}. Tool: ${currentToolName}, ID: ${currentToolCallId}`;
+          console.log(logMsg);
+          const payloadToSend = {
+            type: 'tool_start',
+            toolName: currentToolName,
+            message: `Using tool: ${currentToolName}...`,
+          };
+          console.log(
+            `[SERVER] SENDING to client (tool_start):`,
+            JSON.stringify(payloadToSend, null, 2)
+          );
+          await channel.send({ type: 'broadcast', event: 'ai_response', payload: payloadToSend });
         }
       }
 
+      // Handle messages array (for AIMessageChunks and ToolMessages)
       if (chunk.messages && chunk.messages.length > 0) {
+        console.log(
+          `[SERVER] Chunk ${streamCounter} has ${chunk.messages.length} messages. Processing...`
+        );
         for (const message of chunk.messages) {
+          console.log(
+            `[SERVER] Processing message in chunk ${streamCounter}:`,
+            JSON.stringify(message, null, 2)
+          );
           if (
             message.constructor.name === 'AIMessageChunk' &&
-            typeof message.content === 'string'
+            typeof message.content === 'string' &&
+            message.content.length > 0 // Only stream non-empty content
           ) {
             accumulatedLlmOutput += message.content;
             const payloadType = firstChunkSent ? 'model_chunk_append' : 'model_chunk_start';
-            await channel.send({
-              type: 'broadcast',
-              event: 'ai_response',
-              payload: { type: payloadType, chunk: message.content },
-            });
+            const logMsg = `[SERVER] Identified AIMessageChunk in chunk ${streamCounter}. Content: "${message.content}". Type: ${payloadType}`;
+            console.log(logMsg);
+            const payloadToSend = { type: payloadType, chunk: message.content };
+            console.log(
+              `[SERVER] SENDING to client (${payloadType}):`,
+              JSON.stringify(payloadToSend, null, 2)
+            );
+            await channel.send({ type: 'broadcast', event: 'ai_response', payload: payloadToSend });
             firstChunkSent = true;
           } else if (
             message.constructor.name === 'ToolMessage' &&
@@ -291,38 +324,91 @@ Deno.serve(async (req) => {
               typeof message.content === 'string'
                 ? message.content
                 : JSON.stringify(message.content);
-            console.log(`[Langchain] Tool End: ${currentToolName}, Result: ${toolOutputContent}`);
-
+            console.log(
+              `[SERVER] Identified ToolMessage in chunk ${streamCounter} for ${currentToolName}. Result: ${toolOutputContent}`
+            );
             if (toolOutputContent.startsWith('Error:')) {
               console.warn(
-                `[Langchain] Tool ${currentToolName} reported an error: ${toolOutputContent}`
+                `[SERVER] Tool ${currentToolName} reported an error: ${toolOutputContent}`
+              );
+              const payloadToSend = {
+                type: 'tool_error',
+                toolName: currentToolName,
+                message: toolOutputContent,
+              };
+              console.log(
+                `[SERVER] SENDING to client (tool_error):`,
+                JSON.stringify(payloadToSend, null, 2)
               );
               await channel.send({
                 type: 'broadcast',
                 event: 'ai_response',
-                payload: {
-                  type: 'tool_error',
-                  toolName: currentToolName,
-                  message: toolOutputContent,
-                },
+                payload: payloadToSend,
               });
             }
+            console.log(
+              `[SERVER] Resetting firstChunkSent to false after tool ${currentToolName} processed.`
+            );
+            firstChunkSent = false;
             currentToolCallId = null;
             currentToolName = null;
+          } else {
+            if (message.constructor.name === 'AIMessageChunk' && message.content === '') {
+              console.log(
+                `[SERVER] Message in chunk ${streamCounter} was an EMPTY AIMessageChunk. Skipping.`
+              );
+            } else {
+              console.log(
+                `[SERVER] Message in chunk ${streamCounter} was not a streamable AIMessageChunk or relevant ToolMessage. Type: ${message.constructor.name}`
+              );
+            }
           }
         }
       }
+
+      // Handle final agent output (if present directly in chunk.output)
+      // This seems to be where the complete response comes after tool execution in your logs
+      if (chunk.output && typeof chunk.output === 'string' && chunk.output.length > 0) {
+        console.log(`[SERVER] Chunk ${streamCounter} has DIRECT OUTPUT string: "${chunk.output}"`);
+        accumulatedLlmOutput += chunk.output; // Accumulate if needed, though this is likely a complete segment
+        const payloadType = firstChunkSent ? 'model_chunk_append' : 'model_chunk_start';
+        console.log(`[SERVER] Treating direct chunk.output as ${payloadType}.`);
+        const payloadToSend = { type: payloadType, chunk: chunk.output };
+        console.log(
+          `[SERVER] SENDING to client (${payloadType} from chunk.output):`,
+          JSON.stringify(payloadToSend, null, 2)
+        );
+        await channel.send({ type: 'broadcast', event: 'ai_response', payload: payloadToSend });
+        firstChunkSent = true;
+        // Since this is often a final output for a step, consider if a model_response_end should follow *if* no more AIMessageChunks are expected for this thought.
+        // However, the main model_response_end after the loop is probably sufficient.
+      }
+
+      if (
+        !(chunk.messages && chunk.messages.length > 0) &&
+        !(chunk.output && typeof chunk.output === 'string' && chunk.output.length > 0)
+      ) {
+        console.log(
+          `[SERVER] Chunk ${streamCounter} had no processable messages in .messages and no direct .output string.`
+        );
+      }
     }
 
-    console.log('[Langchain] Stream ended. Accumulated output:', accumulatedLlmOutput);
+    console.log('[SERVER] Agent stream iteration ended.');
+    console.log('[SERVER] Final accumulated LLM output (for logging only):', accumulatedLlmOutput);
 
+    const finalPayload = { type: 'model_response_end' };
+    console.log(
+      '[SERVER] Sending to client (model_response_end): ',
+      JSON.stringify(finalPayload, null, 2)
+    );
     await channel.send({
       type: 'broadcast',
       event: 'ai_response',
-      payload: { type: 'model_response_end' },
+      payload: finalPayload,
     });
 
-    console.log(`Finished processing Langchain request for user ${userId}`);
+    console.log(`[SERVER] Finished processing Langchain request for user ${userId}`);
     return new Response(
       JSON.stringify({ success: true, message: 'AI response processed with Langchain.' }),
       {
@@ -331,10 +417,10 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    // Corrected console.error and ensure error message is a string
     const errorMessageString = error instanceof Error ? error.message : String(error);
     console.error(
-      `Error processing Langchain request for user ${userId || 'unknown'}: ${errorMessageString}`
+      `[SERVER] CRITICAL ERROR in Deno.serve for user ${userId || 'unknown'}: ${errorMessageString}`,
+      error // Log the full error object for stack trace
     );
 
     if (channel) {
