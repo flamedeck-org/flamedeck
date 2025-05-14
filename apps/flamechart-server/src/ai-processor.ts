@@ -31,7 +31,6 @@ console.log('[Node AI Processor] Module initialized.'); // Changed log message
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const FLAMECHART_SERVER_URL = process.env.FLAMECHART_SERVER_URL;
 
 // We need a reasoning model for this complex task
 const MODEL_NAME = process.env.AI_ANALYSIS_MODEL || 'o4-mini';
@@ -95,7 +94,6 @@ interface AgentState {
   profileArrayBuffer: ArrayBuffer | null;
   profileData: any | null; // ProfileGroup type from speedscope-core
   traceSummary: string;
-  flamechartServerUrl: string;
 
   // For managing LangChain streaming callbacks
   llmStreamingActiveForCurrentSegment: boolean;
@@ -392,7 +390,6 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
     new TopFunctionsTool(state.profileData),
     new GenerateFlamegraphSnapshotTool(
       state.supabaseAdmin,
-      state.flamechartServerUrl!,
       state.profileArrayBuffer!,
       state.userId,
       state.traceId
@@ -464,7 +461,6 @@ async function toolHandlerNode(
     new TopFunctionsTool(state.profileData!),
     new GenerateFlamegraphSnapshotTool(
       state.supabaseAdmin,
-      state.flamechartServerUrl!,
       state.profileArrayBuffer!,
       state.userId,
       state.traceId
@@ -614,10 +610,6 @@ const AgentStateAnnotations = Annotation.Root({
   }),
   profileData: Annotation<null | any>({ reducer: (x, y) => y ?? x, default: () => null }),
   traceSummary: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => '' }),
-  flamechartServerUrl: Annotation<string | null>({
-    reducer: (x, y) => y ?? x,
-    default: () => null,
-  }),
   llmStreamingActiveForCurrentSegment: Annotation<boolean>({
     reducer: (x, y) => y,
     default: () => false,
@@ -679,9 +671,15 @@ export interface ProcessAiTurnPayload {
 export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise<void> {
   const { userId, prompt: userPrompt, traceId, history = [] } = payload;
 
-  if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !FLAMECHART_SERVER_URL) {
-    console.error('[Node AI Processor] Missing critical environment variables for AI processing.');
-    throw new Error('Internal configuration error: Missing AI environment variables.');
+  const missingEnvVars: string[] = [];
+  if (!OPENAI_API_KEY) missingEnvVars.push('OPENAI_API_KEY');
+  if (!SUPABASE_URL) missingEnvVars.push('SUPABASE_URL');
+  if (!SUPABASE_SERVICE_ROLE_KEY) missingEnvVars.push('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (missingEnvVars.length > 0) {
+    const errorMessage = `Missing critical environment variables: ${missingEnvVars.join(', ')}`;
+    console.error(`[Node AI Processor] ${errorMessage}`);
+    throw new Error(`Internal configuration error: ${errorMessage}`);
   }
 
   const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
@@ -718,7 +716,6 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
       profileArrayBuffer: null,
       profileData: null,
       traceSummary: '',
-      flamechartServerUrl: FLAMECHART_SERVER_URL!,
       llmStreamingActiveForCurrentSegment: false,
       currentToolName: null,
       iterationCount: 0,
