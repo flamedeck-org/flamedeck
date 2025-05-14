@@ -138,10 +138,15 @@ app.post('/api/v1/render', async (req: Request, res: Response) => {
 
 app.post('/api/v1/ai/process-turn', async (req: Request, res: Response) => {
   console.log('[Express] Received /api/v1/ai/process-turn request');
-  const internalAuthToken = req.headers['x-internal-auth-token'];
 
-  if (internalAuthToken !== process.env.PROCESS_AI_TURN_SECRET) {
-    console.warn('[Express] Unauthorized attempt to access /api/v1/ai/process-turn');
+  const expectedSecret = process.env.PROCESS_AI_TURN_SECRET;
+  const receivedToken = req.headers['x-internal-auth-token'] as string | undefined; // Explicitly type
+
+  // Original comparison that is failing
+  if (receivedToken !== expectedSecret) {
+    console.warn(
+      '[Express] Unauthorized attempt to access /api/v1/ai/process-turn. Secrets do not match (original comparison).'
+    );
     return res.status(401).send('Unauthorized');
   }
 

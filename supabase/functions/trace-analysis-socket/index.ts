@@ -17,7 +17,7 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 // New environment variables for calling the Node.js server
-const FLAMECHART_SERVER_BASE_URL = Deno.env.get('FLAMECHART_SERVER_BASE_URL');
+const FLAMECHART_SERVER_BASE_URL = Deno.env.get('FLAMECHART_SERVER_URL');
 const PROCESS_AI_TURN_SECRET = Deno.env.get('PROCESS_AI_TURN_SECRET');
 
 serve(async (req: Request) => {

@@ -4,6 +4,13 @@ import { z } from 'zod';
 import { StructuredTool } from '@langchain/core/tools';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+// Imports needed for direct rendering logic
+import { renderToPng, RenderToPngOptions } from '@flamedeck/flamechart-to-png';
+import { importProfileGroupFromText, ImporterDependencies } from '@flamedeck/speedscope-import';
+import pako from 'pako';
+import Long from 'long';
+import { JSON_parse } from 'uint8array-json-parser';
+
 // --- Get Top Functions Tool ---
 const topFunctionsSchema = z.object({
   sortBy: z.enum(['self', 'total']).default('total').describe("Sort by 'self' or 'total' time."),
@@ -82,12 +89,9 @@ export class TopFunctionsTool extends StructuredTool {
 
 // --- Generate Flamegraph Snapshot Tool ---
 const snapshotSchema = z.object({
-  viewType: z
-    .enum(['time_ordered', 'left_heavy', 'sandwich_caller', 'sandwich_callee'])
-    .default('time_ordered')
-    .describe(
-      "The specific flamegraph view to capture: 'time_ordered', 'left_heavy', 'sandwich_caller', or 'sandwich_callee'."
-    ),
+  // viewType is not directly used by renderToPng, but influences options for it often.
+  // We keep width, height, startTimeMs, endTimeMs, startDepth as primary renderOptions.
+  // theme is also an option for renderToPng
   width: z
     .number()
     .int()
@@ -103,18 +107,25 @@ const snapshotSchema = z.object({
   startTimeMs: z.number().optional().describe('Start time in milliseconds for a zoomed view.'),
   endTimeMs: z.number().optional().describe('End time in milliseconds for a zoomed view.'),
   startDepth: z.number().int().optional().describe('Start depth for a zoomed view (stack depth).'),
+  mode: z.enum(['light', 'dark']).optional().default('light').describe('Color mode for the theme.'),
 });
+
+const importerDeps: ImporterDependencies = {
+  inflate: pako.inflate,
+  parseJsonUint8Array: JSON_parse,
+  LongType: Long,
+};
 
 export class GenerateFlamegraphSnapshotTool extends StructuredTool {
   readonly name = 'generate_flamegraph_screenshot';
   readonly description =
-    'Generates a flamegraph screenshot (PNG). Returns JSON string with {status, publicUrl, base64Image, message}.';
+    'Generates a flamegraph screenshot (PNG) locally. Returns JSON string with {status, publicUrl, base64Image, message}.';
   readonly schema = snapshotSchema;
 
   constructor(
     private supabaseAdmin: SupabaseClient,
-    private flamechartServerUrl: string, // This will be the URL of the current flamechart-server itself
-    private profileArrayBuffer: ArrayBuffer,
+    // private flamechartServerUrl: string, // Removed: No longer needed for self-call
+    private profileArrayBuffer: ArrayBuffer, // This is the raw buffer, possibly gzipped
     private userId: string,
     private traceId: string
   ) {
@@ -122,7 +133,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
   }
 
   protected async _call(args: z.infer<typeof snapshotSchema>): Promise<string> {
-    console.log('[Node GenerateFlamegraphSnapshotTool] Called with args:', args);
+    console.log('[Node GenerateFlamegraphSnapshotTool - Local Render] Called with args:', args);
 
     if (!this.profileArrayBuffer || this.profileArrayBuffer.byteLength === 0) {
       const errorMessage =
@@ -137,65 +148,76 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       });
     }
 
-    const queryParams = new URLSearchParams();
-    queryParams.set('viewType', args.viewType);
-    if (args.width) queryParams.set('width', args.width.toString());
-    if (args.height) queryParams.set('height', args.height.toString());
-    if (args.startTimeMs !== undefined) queryParams.set('startTimeMs', args.startTimeMs.toString());
-    if (args.endTimeMs !== undefined) queryParams.set('endTimeMs', args.endTimeMs.toString());
-    if (args.startDepth !== undefined) queryParams.set('startDepth', args.startDepth.toString());
-
-    // The /api/v1/render endpoint was recently moved
-    const renderUrl = `${this.flamechartServerUrl}/api/v1/render?${queryParams.toString()}`;
-    console.log(`[Node GenerateFlamegraphSnapshotTool] Calling flamechart server: ${renderUrl}`);
-
     try {
-      const renderResponse = await fetch(renderUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' }, // flamechart-server expects text/plain for the buffer
-        body: Buffer.from(this.profileArrayBuffer), // Convert ArrayBuffer to Buffer for Node.js fetch body
-      });
+      let profileJsonText: string;
+      const bodyBuffer = new Uint8Array(this.profileArrayBuffer);
 
-      console.log(
-        `[Node GenerateFlamegraphSnapshotTool] Render server responded with status: ${renderResponse.status}`
+      // Check for gzip magic bytes (0x1f, 0x8b)
+      if (bodyBuffer.length > 2 && bodyBuffer[0] === 0x1f && bodyBuffer[1] === 0x8b) {
+        console.log('[Node GenerateFlamegraphSnapshotTool] Detected gzipped input. Inflating...');
+        try {
+          profileJsonText = pako.inflate(bodyBuffer, { to: 'string' });
+        } catch (e: any) {
+          const inflateError = `Invalid gzipped data: ${e.message}`;
+          console.error(
+            '[Node GenerateFlamegraphSnapshotTool] Failed to decompress gzipped input:',
+            e
+          );
+          return JSON.stringify({ status: 'Error', error: inflateError, message: inflateError });
+        }
+      } else {
+        console.log(
+          '[Node GenerateFlamegraphSnapshotTool] Input is not gzipped. Assuming plain text UTF-8.'
+        );
+        profileJsonText = Buffer.from(bodyBuffer).toString('utf-8'); // Use Buffer for robust conversion
+      }
+
+      if (profileJsonText.length === 0) {
+        const emptyError = 'Processed profile data is empty.';
+        console.error('[Node GenerateFlamegraphSnapshotTool]', emptyError);
+        return JSON.stringify({ status: 'Error', error: emptyError, message: emptyError });
+      }
+
+      console.log('[Node GenerateFlamegraphSnapshotTool] Importing profile group from text...');
+      const importResult = await importProfileGroupFromText(
+        `trace-${this.traceId}-snapshot`, // filename placeholder
+        profileJsonText,
+        importerDeps
       );
 
-      if (!renderResponse.ok) {
-        let errorText = 'Failed to get error text from response.';
-        try {
-          errorText = await renderResponse.text();
-        } catch (textError: any) {
-          console.error(
-            '[Node GenerateFlamegraphSnapshotTool] Error getting text from error response:',
-            textError
-          );
-          errorText = `Status ${renderResponse.status}, but failed to parse error body: ${textError.message || String(textError)}`;
-        }
-        const errorMessage = `Error: Failed to render flamechart (status ${renderResponse.status}): ${errorText}`;
-        console.error(`[Node GenerateFlamegraphSnapshotTool] ${errorMessage}`);
-        return JSON.stringify({
-          status: 'Error',
-          error: errorMessage,
-          base64Image: null,
-          publicUrl: null,
-          message: errorMessage,
-        });
-      }
+      const profileGroup = importResult?.profileGroup;
 
-      const pngBuffer = await renderResponse.arrayBuffer();
-      if (!pngBuffer || pngBuffer.byteLength === 0) {
-        const msg = 'Error: Received empty PNG buffer from flamechart server.';
-        console.error('[Node GenerateFlamegraphSnapshotTool]', msg);
-        return JSON.stringify({
-          status: 'Error',
-          error: msg,
-          base64Image: null,
-          publicUrl: null,
-          message: msg,
-        });
+      if (!profileGroup) {
+        const importError = 'Failed to import profile group from processed data.';
+        console.error('[Node GenerateFlamegraphSnapshotTool]', importError);
+        return JSON.stringify({ status: 'Error', error: importError, message: importError });
       }
       console.log(
-        `[Node GenerateFlamegraphSnapshotTool] PNG buffer received, length: ${pngBuffer.byteLength}`
+        `[Node GenerateFlamegraphSnapshotTool] Profile group "${profileGroup.name || 'Unnamed'}" imported.`
+      );
+
+      // Prepare render options from tool arguments
+      const renderOptions: RenderToPngOptions = {};
+      if (args.width) renderOptions.width = args.width;
+      if (args.height) renderOptions.height = args.height;
+      if (args.startTimeMs !== undefined) renderOptions.startTimeMs = args.startTimeMs;
+      if (args.endTimeMs !== undefined) renderOptions.endTimeMs = args.endTimeMs;
+      if (args.startDepth !== undefined) renderOptions.startDepth = args.startDepth;
+      if (args.mode) renderOptions.mode = args.mode;
+
+      console.log(
+        '[Node GenerateFlamegraphSnapshotTool] Rendering PNG locally with options:',
+        renderOptions
+      );
+      const pngBuffer = await renderToPng(profileGroup, renderOptions);
+
+      if (!pngBuffer || pngBuffer.length === 0) {
+        const renderError = 'renderToPng returned empty buffer.';
+        console.error('[Node GenerateFlamegraphSnapshotTool]', renderError);
+        return JSON.stringify({ status: 'Error', error: renderError, message: renderError });
+      }
+      console.log(
+        `[Node GenerateFlamegraphSnapshotTool] PNG buffer generated locally, length: ${pngBuffer.length}`
       );
 
       const timestamp = Date.now();
@@ -204,20 +226,20 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
 
       const { error: uploadError } = await this.supabaseAdmin.storage
         .from('ai-snapshots')
-        .upload(storagePath, Buffer.from(pngBuffer), { contentType: 'image/png', upsert: true }); // Convert ArrayBuffer to Buffer for Supabase upload
+        .upload(storagePath, pngBuffer, { contentType: 'image/png', upsert: true }); // renderToPng returns Buffer directly
 
       if (uploadError) {
-        const errorMessage = `Error: Storage upload failed: ${uploadError.message}`;
+        const storageErrorMessage = `Error: Storage upload failed: ${uploadError.message}`;
         console.error(
           '[Node GenerateFlamegraphSnapshotTool] Failed to upload snapshot:',
           uploadError
         );
         return JSON.stringify({
           status: 'Error',
-          error: errorMessage,
+          error: storageErrorMessage,
           base64Image: null,
           publicUrl: null,
-          message: errorMessage,
+          message: storageErrorMessage,
         });
       }
 
@@ -225,7 +247,6 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         .from('ai-snapshots')
         .getPublicUrl(storagePath);
 
-      // Use Node.js Buffer for Base64 encoding
       const base64Image = Buffer.from(pngBuffer).toString('base64');
 
       if (!publicUrlData?.publicUrl) {
@@ -250,11 +271,11 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         base64Image: base64Image,
         message: successMessage,
       });
-    } catch (fetchError: any) {
-      const errorMessage = `Error: Exception during flamechart server interaction or subsequent processing: ${fetchError.message || String(fetchError)}`;
+    } catch (toolError: any) {
+      const errorMessage = `Error: Exception during local flamechart generation or Supabase interaction: ${toolError.message || String(toolError)}`;
       console.error(
         `[Node GenerateFlamegraphSnapshotTool] Unhandled exception in _call:`,
-        fetchError
+        toolError
       );
       return JSON.stringify({
         status: 'Error',
