@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { type ChatMessage } from './ChatWindow'; // Assuming ChatMessage is exported from ChatWindow.tsx
 
@@ -83,31 +83,31 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
     // isFetchingImage helps prevent re-fetch loops if other dependencies change rapidly.
   }, [message.id, message.imageUrl, message.resultType, imageDataUrl, imageError, isFetchingImage]);
 
-  let borderColor = 'border-gray-300 dark:border-gray-500';
+  let borderColor = 'border-gray-300 dark:border-gray-600';
   let textColor = 'text-gray-700 dark:text-gray-300';
-  let bgColor = 'bg-gray-100 dark:bg-gray-700';
-  let statusPrefix = '';
-  let headerText = message.text; // Default header text
+  let bgColor = 'bg-gray-100 dark:bg-gray-750';
+  let StatusIcon = null;
 
+  // Determine icon and colors based on status
   if (message.toolStatus === 'running') {
-    statusPrefix = '⏳';
-    headerText = message.text || `Running ${message.toolName}...`; // Text shown when running
-    bgColor = 'bg-blue-50 dark:bg-blue-900/50';
-    borderColor = 'border-blue-300 dark:border-blue-700';
+    StatusIcon = <Loader2 size={18} className="animate-spin mr-2 text-blue-500" />;
+    bgColor = 'bg-blue-50 dark:bg-blue-900/30';
+    borderColor = 'border-blue-300 dark:border-blue-700/50';
     textColor = 'text-blue-700 dark:text-blue-300';
   } else if (message.toolStatus === 'success' || message.toolStatus === 'success_with_warning') {
-    statusPrefix = '✅';
-    headerText = `${message.toolName} Result`; // Header for success
-    bgColor = 'bg-green-50 dark:bg-green-900/50';
-    borderColor = 'border-green-300 dark:border-green-700';
-    textColor = 'text-green-700 dark:text-green-300';
+    StatusIcon = <CheckCircle size={18} className="mr-2 text-green-500" />;
   } else if (message.toolStatus === 'error') {
-    statusPrefix = '❌';
-    headerText = `${message.toolName} Error`; // Header for error
-    bgColor = 'bg-red-50 dark:bg-red-900/50';
-    borderColor = 'border-red-300 dark:border-red-700';
+    StatusIcon = <XCircle size={18} className="mr-2 text-red-500" />;
+    bgColor = 'bg-red-50 dark:bg-red-900/30';
+    borderColor = 'border-red-300 dark:border-red-700/50';
     textColor = 'text-red-700 dark:text-red-300';
   }
+
+  // Determine if text content should be displayed
+  const shouldDisplayText = !(
+    message.toolName === 'generate_flamegraph_screenshot' &&
+    (message.toolStatus === 'success' || message.toolStatus === 'success_with_warning')
+  );
 
   return (
     <div className={`flex justify-start`}>
@@ -116,28 +116,32 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
       >
         <button
           onClick={toggleExpand}
-          className="w-full flex justify-between items-center p-3 text-left focus:outline-none"
+          className="w-full flex justify-between items-center p-3 text-left focus:outline-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
         >
-          <span className="font-semibold">
-            {statusPrefix} {message.toolName || 'Tool Execution'}
+          <span className="font-semibold flex items-center">
+            {StatusIcon}
+            {message.toolName?.replace(/_/g, ' ') || 'Tool Execution'}
+          </span>
+          <span className="flex items-center">
             {message.toolStatus !== 'running' && (
-              <span className="font-normal text-xs pl-2">
+              <span className="font-normal text-xs mr-2">
                 ({isExpanded ? 'Hide Details' : 'Show Details'})
               </span>
             )}
+            {message.toolStatus !== 'running' &&
+              (isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
           </span>
-          {message.toolStatus !== 'running' &&
-            (isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
         </button>
 
         {/* Collapsible Content - only show details if not running OR if running and expanded (though running usually won't have details yet) */}
         {(isExpanded || message.toolStatus === 'running') && (
           <div className="p-3 border-t border-[inherit]">
-            {/* If running, show the initial text. If completed/errored, show the final text (result/error message) */}
-            <div className="whitespace-pre-wrap mb-2">{message.text}</div>
+            {shouldDisplayText && message.text && (
+              <div className="whitespace-pre-wrap mb-2">{message.text}</div>
+            )}
 
             {message.resultType === 'image' && message.toolStatus !== 'running' && (
-              <div className="mt-2">
+              <div className="mt-2 flex justify-center">
                 {isFetchingImage && <p className="text-xs italic">Loading image...</p>}
                 {imageError && (
                   <p className="text-xs text-red-500">Error loading image: {imageError}</p>
@@ -146,7 +150,7 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
                   <img
                     src={imageDataUrl}
                     alt={`${message.toolName || 'Tool'} result`}
-                    className="rounded max-w-full h-auto max-h-60 object-contain border dark:border-gray-600"
+                    className="rounded max-w-full h-auto max-h-72 object-contain border dark:border-gray-500 shadow-md"
                   />
                 )}
               </div>
