@@ -63,64 +63,109 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
         .on('broadcast', { event: 'ai_response' }, (message) => {
           const payload = message.payload;
           let newError: string | null = null;
-          let forceScroll = false; // Flag to determine if scroll should be forced
+          let forceScroll = true; // Default to true for new messages/significant updates
 
           setChatMessages((prevMessages) => {
-            const messageId = uuidv4(); // Generate ID within state update if needed
+            const messageId = uuidv4(); // Fallback id if toolCallId is missing
             let updatedMessages = [...prevMessages];
+            let messageExists = false;
 
-            // Handle new tool events
+            // Handle new tool events by finding and updating, or adding if not found
             if (payload.type === 'tool_start') {
-              updatedMessages.push({
-                id: payload.toolCallId || messageId, // Prefer toolCallId if available for potential updates
-                sender: 'tool',
-                text: payload.message || `Running ${payload.toolName}...`,
-                toolCallId: payload.toolCallId,
-                toolName: payload.toolName,
-                toolStatus: 'running',
-              });
-              setIsWaitingForModel(true); // Still waiting while tool runs
-              setIsStreaming(false); // Not streaming LLM tokens now
-              forceScroll = true; // <-- Force scroll on new message start
-            } else if (payload.type === 'tool_result') {
-              // Optionally, find and update the 'running' message for payload.toolCallId
-              // For simplicity now, just add a new message for the result.
-              updatedMessages.push({
-                id: messageId,
-                sender: 'tool',
-                text: payload.textContent || `${payload.toolName} completed.`,
-                toolCallId: payload.toolCallId,
-                toolName: payload.toolName,
-                toolStatus: payload.status as ChatMessage['toolStatus'], // 'success' or 'success_with_warning'
-                resultType: payload.resultType as ChatMessage['resultType'], // 'text' or 'image'
-                imageUrl: payload.imageUrl,
-              });
-              setIsWaitingForModel(true); // Still waiting for LLM to process the tool result
+              messageExists = prevMessages.some((msg) => msg.id === payload.toolCallId);
+              if (messageExists) {
+                updatedMessages = prevMessages.map((msg) =>
+                  msg.id === payload.toolCallId
+                    ? {
+                        ...msg,
+                        sender: 'tool',
+                        text: payload.message || `Running ${payload.toolName}...`,
+                        toolName: payload.toolName,
+                        toolStatus: 'running',
+                        resultType: undefined, // Clear previous results
+                        imageUrl: undefined,
+                      }
+                    : msg
+                );
+              } else {
+                updatedMessages.push({
+                  id: payload.toolCallId || messageId,
+                  sender: 'tool',
+                  text: payload.message || `Running ${payload.toolName}...`,
+                  toolCallId: payload.toolCallId,
+                  toolName: payload.toolName,
+                  toolStatus: 'running',
+                });
+              }
+              setIsWaitingForModel(true);
               setIsStreaming(false);
-              forceScroll = true;
+            } else if (payload.type === 'tool_result') {
+              updatedMessages = prevMessages.map((msg) =>
+                msg.id === payload.toolCallId
+                  ? {
+                      ...msg,
+                      sender: 'tool', // Ensure sender is 'tool'
+                      text: payload.textContent || `${payload.toolName} completed.`,
+                      toolStatus: payload.status as ChatMessage['toolStatus'],
+                      resultType: payload.resultType as ChatMessage['resultType'],
+                      imageUrl: payload.imageUrl,
+                    }
+                  : msg
+              );
+              messageExists = updatedMessages.some(
+                (msg) => msg.id === payload.toolCallId && msg.toolStatus === payload.status
+              );
+              if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
+                // If no running message was found, add new (should be rare)
+                updatedMessages.push({
+                  id: payload.toolCallId || messageId,
+                  sender: 'tool',
+                  text: payload.textContent || `${payload.toolName} completed.`,
+                  toolCallId: payload.toolCallId,
+                  toolName: payload.toolName,
+                  toolStatus: payload.status as ChatMessage['toolStatus'],
+                  resultType: payload.resultType as ChatMessage['resultType'],
+                  imageUrl: payload.imageUrl,
+                });
+              }
+              setIsWaitingForModel(true);
+              setIsStreaming(false);
             } else if (payload.type === 'tool_error') {
-              // Optionally, find and update the 'running' message for payload.toolCallId
-              updatedMessages.push({
-                id: payload.toolCallId || messageId,
-                sender: 'tool',
-                text: payload.message || `Error in ${payload.toolName}.`,
-                toolCallId: payload.toolCallId,
-                toolName: payload.toolName,
-                toolStatus: 'error',
-              });
+              updatedMessages = prevMessages.map((msg) =>
+                msg.id === payload.toolCallId
+                  ? {
+                      ...msg,
+                      sender: 'tool', // Ensure sender is 'tool'
+                      text: payload.message || `Error in ${payload.toolName}.`,
+                      toolStatus: 'error',
+                      resultType: undefined,
+                      imageUrl: undefined,
+                    }
+                  : msg
+              );
+              if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
+                // If no running message was found, add new
+                updatedMessages.push({
+                  id: payload.toolCallId || messageId,
+                  sender: 'tool',
+                  text: payload.message || `Error in ${payload.toolName}.`,
+                  toolCallId: payload.toolCallId,
+                  toolName: payload.toolName,
+                  toolStatus: 'error',
+                });
+              }
               setIsWaitingForModel(false);
               setIsStreaming(false);
-              forceScroll = true;
             } else if (payload.type === 'model_chunk_start') {
               setIsStreaming(true);
               const newMessage: ChatMessage = {
-                id: messageId,
+                id: messageId, // Model messages get a new uuid
                 sender: 'model',
                 text: payload.chunk,
               };
               currentMessageRef.current = newMessage;
               updatedMessages.push(newMessage);
-              forceScroll = true; // <-- Force scroll on new message start
+              // forceScroll is true by default
             } else if (payload.type === 'model_chunk_append' && currentMessageRef.current) {
               setIsStreaming(true);
               updatedMessages = updatedMessages.map((msg) =>
@@ -128,13 +173,14 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
                   ? { ...msg, text: msg.text + payload.chunk }
                   : msg
               );
-              // Do not force scroll for appended chunks
+              forceScroll = false; // Don't force scroll for appended chunks
             } else if (payload.type === 'model_response_end') {
               setIsWaitingForModel(false);
               setIsStreaming(false);
               currentMessageRef.current = null;
-              // Do not force scroll for end event
+              forceScroll = false; // Don't force scroll for end event
             } else if (payload.type === 'error') {
+              // General AI processing error
               newError = payload.message ?? 'An unknown error occurred during AI processing.';
               updatedMessages.push({ id: messageId, sender: 'error', text: `Error: ${newError}` });
               setIsWaitingForModel(false);
