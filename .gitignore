@@ -36,3 +36,5 @@ apps/client/.env.local
 bin/
 
 tmp/
+
+.env
