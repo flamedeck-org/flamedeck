@@ -221,7 +221,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       );
 
       const timestamp = Date.now();
-      const storagePath = `ai-snapshots/${this.userId}/trace-${this.traceId}-${timestamp}.png`;
+      const storagePath = `${this.userId}/trace-${this.traceId}-${timestamp}.png`;
       console.log(`[Node GenerateFlamegraphSnapshotTool] Uploading PNG to storage: ${storagePath}`);
 
       const { error: uploadError } = await this.supabaseAdmin.storage
