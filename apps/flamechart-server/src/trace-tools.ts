@@ -14,7 +14,20 @@ import { JSON_parse } from 'uint8array-json-parser';
 // --- Get Top Functions Tool ---
 const topFunctionsSchema = z.object({
   sortBy: z.enum(['self', 'total']).default('total').describe("Sort by 'self' or 'total' time."),
-  count: z.number().int().positive().default(10).describe('Number of top functions to return.'),
+  offset: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional()
+    .default(0)
+    .describe('0-indexed offset for the starting function in the sorted list.'),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .default(15)
+    .describe('Number of functions to return, starting from the offset.'),
 });
 
 export class TopFunctionsTool extends StructuredTool {
@@ -28,8 +41,10 @@ export class TopFunctionsTool extends StructuredTool {
   }
 
   protected async _call(args: z.infer<typeof topFunctionsSchema>): Promise<string> {
-    const { sortBy, count } = args;
-    console.log(`[Node TopFunctionsTool] Called with sortBy: ${sortBy}, count: ${count}`);
+    const { sortBy, offset, limit } = args;
+    console.log(
+      `[Node TopFunctionsTool] Called with sortBy: ${sortBy}, offset: ${offset}, limit: ${limit}`
+    );
 
     if (!this.profileData || !this.profileData.profiles || this.profileData.profiles.length === 0) {
       return 'Error: Profile data is not loaded or is empty.';
@@ -60,7 +75,7 @@ export class TopFunctionsTool extends StructuredTool {
         return weightB - weightA;
       });
 
-      const topN = allFrames.slice(0, count);
+      const topN = allFrames.slice(offset, offset + limit);
 
       const results = topN.map((frame, index) => {
         const totalWeight = frame.getTotalWeight();
@@ -68,17 +83,17 @@ export class TopFunctionsTool extends StructuredTool {
         const totalPerc = totalNonIdle === 0 ? 0 : (100.0 * totalWeight) / totalNonIdle;
         const selfPerc = totalNonIdle === 0 ? 0 : (100.0 * selfWeight) / totalNonIdle;
         return (
-          `${index + 1}. ${frame.name || '(unknown)'}: ` +
+          `${offset + index + 1}. ${frame.name || '(unknown)'}: ` +
           `Total: ${profile.formatValue(totalWeight)} (${formatPercent(totalPerc)}), ` +
           `Self: ${profile.formatValue(selfWeight)} (${formatPercent(selfPerc)})`
         );
       });
 
       if (results.length === 0) {
-        return 'No function data found in the profile.';
+        return 'No function data found in the profile for the specified range.';
       }
 
-      return `Top ${results.length} functions sorted by ${sortBy} time:\n${results.join('\n')}`;
+      return `Displaying functions ${offset + 1} to ${offset + results.length} (sorted by ${sortBy} time):\n${results.join('\n')}`;
     } catch (toolError) {
       console.error(`[Node TopFunctionsTool] Error:`, toolError);
       const errorMsg = toolError instanceof Error ? toolError.message : String(toolError);
