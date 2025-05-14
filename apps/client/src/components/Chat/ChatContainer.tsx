@@ -418,19 +418,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
         }, 0);
 
         const historyToSend = chatMessages
-          .filter((msg) => msg.sender === 'user' || msg.sender === 'model' || msg.sender === 'tool')
-          .map((msg) => {
-            if (msg.sender === 'tool') {
-              return {
-                sender: msg.sender,
-                text: msg.text,
-                tool_call_id: msg.toolCallId || 'unknown-tool-call-id',
-              };
-            }
-            return { sender: msg.sender, text: msg.text };
-          });
+          .filter((msg) => msg.sender === 'user' || msg.sender === 'model')
+          // For now send the entire history
+          // .slice(-10)
+          .map((msg) => ({ sender: msg.sender, text: msg.text }));
 
-        console.log('[ChatContainer] History to send with tool messages:', historyToSend);
+        console.log(historyToSend);
 
         sendRawSocketMessage({
           type: 'user_prompt',

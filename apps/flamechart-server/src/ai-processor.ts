@@ -41,31 +41,15 @@ const llm = new ChatOpenAI({
   streaming: true,
 });
 
-// Define the structure of history messages coming from the client
-interface ClientHistoryMessage {
-  sender: 'user' | 'model' | 'tool';
-  text: string;
-  tool_call_id?: string; // Optional because user/model messages won't have it
-}
-
 function mapHistoryToLangchainMessages(
-  history: ClientHistoryMessage[] // Use the new interface
+  history: { sender: 'user' | 'model'; text: string }[]
 ): BaseMessage[] {
   return history.map((msg) => {
     if (msg.sender === 'user') {
       return new HumanMessage(msg.text);
-    } else if (msg.sender === 'model') {
+    } else {
       return new AIMessage(msg.text);
-    } else if (msg.sender === 'tool') {
-      // For a ToolMessage from history, the 'text' is the content.
-      // Ensure a tool_call_id is provided; use a placeholder if absolutely necessary but prefer actual IDs.
-      return new ToolMessage({
-        content: msg.text,
-        tool_call_id:
-          msg.tool_call_id || `historic-tool-call-${Math.random().toString(36).substring(2, 9)}`,
-      });
     }
-    throw new Error(`Unknown sender in history: ${msg.text}`);
   });
 }
 
