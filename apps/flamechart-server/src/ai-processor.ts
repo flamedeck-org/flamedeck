@@ -533,6 +533,10 @@ async function toolHandlerNode(
                 parsedOutput.status === 'Success' ||
                 parsedOutput.status === 'SuccessWithWarning'
               ) {
+                console.log(
+                  '[AI Processor] Sending tool_result for screenshot with status:',
+                  parsedOutput.status
+                ); // DEBUG LOG
                 await state.realtimeChannel.send({
                   type: 'broadcast',
                   event: 'ai_response',
