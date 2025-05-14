@@ -14,8 +14,16 @@ import { Send, X } from 'lucide-react';
 // Define message types for clarity
 export interface ChatMessage {
   id: string; // Use unique IDs for keys
-  sender: 'user' | 'model' | 'system' | 'error';
-  text: string;
+  sender: 'user' | 'model' | 'system' | 'error' | 'tool'; // Added 'tool' sender
+  text: string; // Primary textual content, or placeholder like "Running tool..."
+
+  // Optional fields for 'tool' sender messages
+  toolName?: string;
+  toolCallId?: string; // Store the original tool_call_id from the LLM
+  toolStatus?: 'running' | 'success' | 'error' | 'success_with_warning';
+  resultType?: 'text' | 'image'; // If it's a result message
+  imageUrl?: string; // If resultType is 'image'
+  timestamp?: number; // Keep existing optional timestamp
 }
 
 interface ChatWindowProps {
@@ -152,23 +160,74 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
         {/* Message Area */}
         <ScrollArea className="flex-grow p-3" ref={internalScrollAreaRef}>
           <div className="space-y-3">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+            {messages.map((msg) => {
+              if (msg.sender === 'tool') {
+                let borderColor = 'border-gray-300 dark:border-gray-500';
+                let textColor = 'text-gray-700 dark:text-gray-300';
+                let bgColor = 'bg-gray-100 dark:bg-gray-700';
+                let statusPrefix = '';
+
+                if (msg.toolStatus === 'running') {
+                  statusPrefix = '⏳ Running: ';
+                  bgColor = 'bg-blue-50 dark:bg-blue-900';
+                  borderColor = 'border-blue-300 dark:border-blue-700';
+                  textColor = 'text-blue-700 dark:text-blue-300';
+                } else if (
+                  msg.toolStatus === 'success' ||
+                  msg.toolStatus === 'success_with_warning'
+                ) {
+                  statusPrefix = '✅ Success: ';
+                  bgColor = 'bg-green-50 dark:bg-green-900';
+                  borderColor = 'border-green-300 dark:border-green-700';
+                  textColor = 'text-green-700 dark:text-green-300';
+                } else if (msg.toolStatus === 'error') {
+                  statusPrefix = '❌ Error: ';
+                  bgColor = 'bg-red-50 dark:bg-red-900';
+                  borderColor = 'border-red-300 dark:border-red-700';
+                  textColor = 'text-red-700 dark:text-red-300';
+                }
+
+                return (
+                  <div key={msg.id} className={`flex justify-start`}>
+                    <div
+                      className={`max-w-[90%] p-3 rounded-lg text-sm border ${borderColor} ${bgColor} ${textColor}`}
+                    >
+                      <div className="font-semibold mb-1">
+                        {statusPrefix}
+                        {msg.toolName || 'Tool Execution'}
+                      </div>
+                      <div className="whitespace-pre-wrap">{msg.text}</div>
+                      {msg.resultType === 'image' && msg.imageUrl && (
+                        <img
+                          src={msg.imageUrl}
+                          alt={`${msg.toolName || 'Tool'} result`}
+                          className="mt-2 rounded max-w-full h-auto max-h-60 object-contain border dark:border-gray-600"
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              // Existing rendering for user, model, system, error messages
+              return (
                 <div
-                  className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${msg.sender === 'user'
-                    ? 'bg-blue-500 text-white'
-                    : msg.sender === 'error'
-                      ? 'bg-red-100 text-red-700 border border-red-300'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
-                    }`}
+                  key={msg.id}
+                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {msg.text}
+                  <div
+                    className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${
+                      msg.sender === 'user'
+                        ? 'bg-blue-500 text-white'
+                        : msg.sender === 'error'
+                          ? 'bg-red-100 text-red-700 border border-red-300'
+                          : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {isLoading && !isStreaming && (
               <div className="flex justify-start">
                 <div className="p-2 rounded-lg text-sm bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100 animate-pulse">

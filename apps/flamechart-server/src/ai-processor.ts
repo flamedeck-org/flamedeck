@@ -73,7 +73,7 @@ You are a performance analysis assistant.
 - Describe your observations and reasoning for each step.
 - Stop when you have identified a likely bottleneck or after a few investigation steps.
 
-- You can use the 'generate_flamegraph_screenshot' tool to request zoomed-in views. If successful, the image will be provided to you.
+- You can use the 'generate_flamegraph_screenshot' tool to request zoomed-in views.
 - You can use the 'get_top_functions' tool to get a list of the top functions by self or total time.
 
 If you think you have identified a bottleneck, provide a concise summary.
@@ -456,7 +456,6 @@ async function toolHandlerNode(
   const toolInvocations = lastMessage.tool_calls as ToolCall[];
   const toolResults: ToolMessage[] = [];
 
-  // TODO: Ensure tools are correctly ported and instantiated
   const tools = [
     new TopFunctionsTool(state.profileData!),
     new GenerateFlamegraphSnapshotTool(
@@ -469,13 +468,11 @@ async function toolHandlerNode(
 
   for (const call of toolInvocations) {
     const toolInstance = tools.find((t) => t.name === call.name);
-    const toolCallIdFromAI = call.id; // Ensure call.id is always a string if possible, or handle undefined
+    const toolCallIdFromAI = call.id;
 
     if (!toolCallIdFromAI) {
-      // Check specifically for undefined or null
       const errMsg = `Tool call from AI (name: ${call.name}) is missing an ID.`;
       console.error(`[Node AI Processor - ToolHandlerNode] ${errMsg}`, call);
-      // Generate a UUID if crypto is available (standard in modern Node.js)
       const generatedId =
         typeof crypto !== 'undefined' && crypto.randomUUID
           ? crypto.randomUUID()
@@ -488,11 +485,15 @@ async function toolHandlerNode(
         })
       );
       if (state.realtimeChannel) {
-        // Check if realtimeChannel exists
         await state.realtimeChannel.send({
           type: 'broadcast',
           event: 'ai_response',
-          payload: { type: 'tool_error', toolName: call.name, message: errMsg },
+          payload: {
+            type: 'tool_error',
+            toolCallId: generatedId, // Include toolCallId
+            toolName: call.name,
+            message: errMsg,
+          },
         });
       }
       continue;
@@ -501,12 +502,12 @@ async function toolHandlerNode(
     if (toolInstance) {
       try {
         if (state.realtimeChannel) {
-          // Check if realtimeChannel exists
           await state.realtimeChannel.send({
             type: 'broadcast',
             event: 'ai_response',
             payload: {
               type: 'tool_start',
+              toolCallId: toolCallIdFromAI, // Include toolCallId
               toolName: call.name,
               message: `Executing tool: ${call.name}...`,
             },
@@ -522,27 +523,77 @@ async function toolHandlerNode(
             name: call.name,
           })
         );
-        if (typeof output === 'string') {
-          try {
-            const parsedOutput = JSON.parse(output);
-            if (parsedOutput.status === 'Error' && state.realtimeChannel) {
-              // Check if realtimeChannel exists
+
+        // Send tool_result event
+        if (state.realtimeChannel) {
+          if (call.name === 'generate_flamegraph_screenshot') {
+            try {
+              const parsedOutput = JSON.parse(output as string);
+              if (
+                parsedOutput.status === 'Success' ||
+                parsedOutput.status === 'SuccessWithWarning'
+              ) {
+                await state.realtimeChannel.send({
+                  type: 'broadcast',
+                  event: 'ai_response',
+                  payload: {
+                    type: 'tool_result',
+                    toolCallId: toolCallIdFromAI,
+                    toolName: call.name,
+                    status: parsedOutput.status,
+                    resultType: 'image',
+                    textContent: parsedOutput.message,
+                    imageUrl: parsedOutput.publicUrl,
+                  },
+                });
+              } else {
+                // Tool reported an error in its JSON output
+                await state.realtimeChannel.send({
+                  type: 'broadcast',
+                  event: 'ai_response',
+                  payload: {
+                    type: 'tool_error',
+                    toolCallId: toolCallIdFromAI,
+                    toolName: call.name,
+                    message: parsedOutput.error || 'Tool reported an error in its output.',
+                  },
+                });
+              }
+            } catch (e) {
+              // JSON parsing error or other issue with screenshot output
+              console.error(
+                '[Node AI Processor - ToolHandlerNode] Error processing screenshot output:',
+                e
+              );
               await state.realtimeChannel.send({
                 type: 'broadcast',
                 event: 'ai_response',
                 payload: {
                   type: 'tool_error',
+                  toolCallId: toolCallIdFromAI,
                   toolName: call.name,
-                  message: parsedOutput.error || 'Tool reported an error.',
+                  message: 'Failed to process tool output for screenshot.',
                 },
               });
             }
-          } catch (e) {
-            /* not a JSON error */
+          } else {
+            // For other tools like TopFunctionsTool (assume text output)
+            await state.realtimeChannel.send({
+              type: 'broadcast',
+              event: 'ai_response',
+              payload: {
+                type: 'tool_result',
+                toolCallId: toolCallIdFromAI,
+                toolName: call.name,
+                status: 'success',
+                resultType: 'text',
+                textContent: output as string,
+              },
+            });
           }
         }
       } catch (e: any) {
-        // Added type for e
+        // Error during toolInstance.invoke()
         const errorMsg = e instanceof Error ? e.message : String(e);
         toolResults.push(
           new ToolMessage({
@@ -552,12 +603,12 @@ async function toolHandlerNode(
           })
         );
         if (state.realtimeChannel) {
-          // Check if realtimeChannel exists
           await state.realtimeChannel.send({
             type: 'broadcast',
             event: 'ai_response',
             payload: {
               type: 'tool_error',
+              toolCallId: toolCallIdFromAI, // Include toolCallId
               toolName: call.name,
               message: `Execution failed: ${errorMsg}`,
             },
@@ -565,6 +616,7 @@ async function toolHandlerNode(
         }
       }
     } else {
+      // Unknown tool
       const unknownToolErrorMsg = `Unknown tool called: ${call.name}`;
       toolResults.push(
         new ToolMessage({
@@ -574,11 +626,15 @@ async function toolHandlerNode(
         })
       );
       if (state.realtimeChannel) {
-        // Check if realtimeChannel exists
         await state.realtimeChannel.send({
           type: 'broadcast',
           event: 'ai_response',
-          payload: { type: 'tool_error', toolName: call.name, message: unknownToolErrorMsg },
+          payload: {
+            type: 'tool_error',
+            toolCallId: toolCallIdFromAI, // Include toolCallId
+            toolName: call.name,
+            message: unknownToolErrorMsg,
+          },
         });
       }
     }
@@ -587,7 +643,7 @@ async function toolHandlerNode(
   const newMessages = [...state.messages, ...toolResults];
   return {
     messages: newMessages,
-    llmStreamingActiveForCurrentSegment: state.llmStreamingActiveForCurrentSegment, // This should be false after tool use
+    llmStreamingActiveForCurrentSegment: false, // Ensure this is set to false after tools run
   };
 }
 

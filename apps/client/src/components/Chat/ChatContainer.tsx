@@ -71,19 +71,47 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
 
             // Handle new tool events
             if (payload.type === 'tool_start') {
-              const toolMsg = payload.message || `Using tool: ${payload.toolName}...`;
-              updatedMessages.push({ id: messageId, sender: 'system', text: toolMsg });
+              updatedMessages.push({
+                id: payload.toolCallId || messageId, // Prefer toolCallId if available for potential updates
+                sender: 'tool',
+                text: payload.message || `Running ${payload.toolName}...`,
+                toolCallId: payload.toolCallId,
+                toolName: payload.toolName,
+                toolStatus: 'running',
+              });
               setIsWaitingForModel(true); // Still waiting while tool runs
               setIsStreaming(false); // Not streaming LLM tokens now
-            } else if (payload.type === 'tool_end') {
-              // Optionally display tool output, or just indicate completion
-              // For now, just remove the waiting state
-              // updatedMessages.push({ id: messageId, sender: 'system', text: `Tool finished. Output: ${payload.output}` });
-              setIsWaitingForModel(true); // Still waiting for LLM to process result
+              forceScroll = true; // <-- Force scroll on new message start
+            } else if (payload.type === 'tool_result') {
+              // Optionally, find and update the 'running' message for payload.toolCallId
+              // For simplicity now, just add a new message for the result.
+              updatedMessages.push({
+                id: messageId,
+                sender: 'tool',
+                text: payload.textContent || `${payload.toolName} completed.`,
+                toolCallId: payload.toolCallId,
+                toolName: payload.toolName,
+                toolStatus: payload.status as ChatMessage['toolStatus'], // 'success' or 'success_with_warning'
+                resultType: payload.resultType as ChatMessage['resultType'], // 'text' or 'image'
+                imageUrl: payload.imageUrl,
+              });
+              setIsWaitingForModel(true); // Still waiting for LLM to process the tool result
               setIsStreaming(false);
-            }
-            // Handle existing streaming events
-            else if (payload.type === 'model_chunk_start') {
+              forceScroll = true;
+            } else if (payload.type === 'tool_error') {
+              // Optionally, find and update the 'running' message for payload.toolCallId
+              updatedMessages.push({
+                id: payload.toolCallId || messageId,
+                sender: 'tool',
+                text: payload.message || `Error in ${payload.toolName}.`,
+                toolCallId: payload.toolCallId,
+                toolName: payload.toolName,
+                toolStatus: 'error',
+              });
+              setIsWaitingForModel(false);
+              setIsStreaming(false);
+              forceScroll = true;
+            } else if (payload.type === 'model_chunk_start') {
               setIsStreaming(true);
               const newMessage: ChatMessage = {
                 id: messageId,
