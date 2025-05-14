@@ -1,4 +1,5 @@
 import './instrument';
+import 'dotenv/config'; // Ensure environment variables are loaded
 
 import express, { Request, Response } from 'express';
 import { renderToPng, RenderToPngOptions } from '@flamedeck/flamechart-to-png';
@@ -7,6 +8,8 @@ import type { FlamegraphThemeName } from '@flamedeck/speedscope-theme/types';
 import pako from 'pako';
 import Long from 'long';
 import { JSON_parse } from 'uint8array-json-parser';
+
+import { processAiTurnLogic, ProcessAiTurnPayload } from './ai-processor'; // Import the AI processing logic
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,29 +20,27 @@ const importerDeps = {
   LongType: Long,
 };
 
-// Middleware to parse text/plain request bodies
-app.use(express.raw({ type: 'text/plain', limit: '10mb' })); // Use express.raw to get buffer
+// Middleware to parse text/plain request bodies for /api/v1/render
+app.use('/api/v1/render', express.raw({ type: 'text/plain', limit: '10mb' }));
+// Middleware to parse JSON request bodies for /api/v1/ai/process-turn
+app.use('/api/v1/ai/process-turn', express.json({ limit: '1mb' })); // Use express.json for this route
 
-app.post('/render', async (req: Request, res: Response) => {
-  console.log('Received /render request');
+app.post('/api/v1/render', async (req: Request, res: Response) => {
+  console.log('Received /api/v1/render request');
   try {
-    // const profileText = req.body; // Will be a string with express.text
-    const bodyBuffer = req.body as Buffer; // Will be a Buffer with express.raw
+    const bodyBuffer = req.body as Buffer;
 
     if (!(bodyBuffer instanceof Buffer) || bodyBuffer.length === 0) {
       return res.status(400).send('Request body must contain profile data and cannot be empty.');
     }
 
     console.log(`Raw body buffer received, length: ${bodyBuffer.length}`);
-    // console.log(`First 100 chars of profileText: ${profileText.substring(0, 100)}`); // Old log
 
     let profileJsonText: string;
 
-    // Check for gzip magic bytes (0x1f, 0x8b)
     if (bodyBuffer.length > 2 && bodyBuffer[0] === 0x1f && bodyBuffer[1] === 0x8b) {
       console.log('Detected gzipped input. Inflating...');
       try {
-        // pako is already imported and available
         profileJsonText = pako.inflate(bodyBuffer, { to: 'string' });
       } catch (e: any) {
         console.error('Failed to decompress gzipped input:', e);
@@ -58,7 +59,6 @@ app.post('/render', async (req: Request, res: Response) => {
       `First 100 chars of processed profile JSON text: ${profileJsonText.substring(0, 100)}`
     );
 
-    // Extract options from query parameters
     const {
       width,
       height,
@@ -71,7 +71,6 @@ app.post('/render', async (req: Request, res: Response) => {
 
     const renderOptions: RenderToPngOptions = {};
 
-    // Parse options (no height restriction here)
     if (width && !isNaN(parseInt(width as string))) {
       renderOptions.width = parseInt(width as string);
     }
@@ -101,8 +100,8 @@ app.post('/render', async (req: Request, res: Response) => {
 
     console.log('Importing profile...');
     const importResult = await importProfileGroupFromText(
-      'uploaded-profile', // filename placeholder
-      profileJsonText, // Use the processed (decompressed if necessary) JSON string
+      'uploaded-profile',
+      profileJsonText,
       importerDeps
     );
 
@@ -137,9 +136,64 @@ app.post('/render', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/api/v1/ai/process-turn', async (req: Request, res: Response) => {
+  console.log('[Express] Received /api/v1/ai/process-turn request');
+  const internalAuthToken = req.headers['x-internal-auth-token'];
+
+  if (internalAuthToken !== process.env.PROCESS_AI_TURN_SECRET) {
+    console.warn('[Express] Unauthorized attempt to access /api/v1/ai/process-turn');
+    return res.status(401).send('Unauthorized');
+  }
+
+  try {
+    const { userId, prompt, traceId, history = [] } = req.body as ProcessAiTurnPayload;
+
+    if (!userId || !prompt || !traceId) {
+      console.warn('[Express] Missing required fields for /api/v1/ai/process-turn', req.body);
+      return res.status(400).json({ error: 'Missing required fields: userId, prompt, traceId' });
+    }
+
+    const payload: ProcessAiTurnPayload = { userId, prompt, traceId, history };
+    console.log(
+      `[Express] AI turn processing task accepted for userId: ${userId}, traceId: ${traceId}`
+    );
+
+    // Send immediate acknowledgment that the task has been accepted.
+    // The actual AI response will be streamed via Supabase Realtime by processAiTurnLogic.
+    res.status(202).json({ success: true, message: 'AI processing task accepted.' });
+
+    // Execute the long-running AI logic asynchronously.
+    // processAiTurnLogic handles its own Realtime streaming and detailed error reporting.
+    // We catch potential re-thrown errors here primarily to log them server-side
+    // and prevent unhandled promise rejections, as an HTTP response has already been sent.
+    processAiTurnLogic(payload).catch((error) => {
+      console.error(
+        `[Express /api/v1/ai/process-turn] Critical asynchronous error after HTTP response sent for userId ${payload.userId}, traceId ${payload.traceId}:`,
+        error
+      );
+      // At this point, an HTTP response has already been sent.
+      // The error should have also been attempted to be sent via Realtime by processAiTurnLogic.
+    });
+  } catch (error) {
+    // This catch block handles synchronous errors that occur before or during the initial
+    // setup of the call to processAiTurnLogic (e.g., bad request payload, immediate config error).
+    console.error('[Express /api/v1/ai/process-turn] Synchronous error:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'An unknown server error occurred.';
+    // Avoid sending potentially sensitive internal error messages if not already handled by specific checks.
+    if (!res.headersSent) {
+      // Ensure headers haven't been sent (they shouldn't be in this sync block)
+      res.status(500).json({
+        error: 'Internal server error during AI processing initiation.',
+        details: errorMessage,
+      });
+    }
+  }
+});
+
 app.get('/', (req: Request, res: Response) => {
   res.send(
-    'Flamechart Server is running. POST to /render with profile data in text/plain body to generate a PNG.'
+    'Flamechart Server is running. POST to /api/v1/render with profile data in text/plain body to generate a PNG. POST to /api/v1/ai/process-turn for AI trace analysis.'
   );
 });
 
