@@ -100,6 +100,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
               setIsWaitingForModel(true);
               setIsStreaming(false);
             } else if (payload.type === 'tool_result') {
+              console.log('[ChatContainer] Received tool_result payload:', JSON.stringify(payload)); // DEBUG LOG
               updatedMessages = prevMessages.map((msg) =>
                 msg.id === payload.toolCallId
                   ? {
