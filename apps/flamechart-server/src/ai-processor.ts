@@ -530,13 +530,13 @@ async function toolHandlerNode(
             try {
               const parsedOutput = JSON.parse(output as string);
               if (
-                parsedOutput.status === 'Success' ||
-                parsedOutput.status === 'SuccessWithWarning'
+                parsedOutput.status === 'success' ||
+                parsedOutput.status === 'success_with_warning'
               ) {
                 console.log(
                   '[AI Processor] Sending tool_result for screenshot with status:',
                   parsedOutput.status
-                ); // DEBUG LOG
+                );
                 await state.realtimeChannel.send({
                   type: 'broadcast',
                   event: 'ai_response',
@@ -551,7 +551,6 @@ async function toolHandlerNode(
                   },
                 });
               } else {
-                // Tool reported an error in its JSON output
                 await state.realtimeChannel.send({
                   type: 'broadcast',
                   event: 'ai_response',
@@ -564,7 +563,6 @@ async function toolHandlerNode(
                 });
               }
             } catch (e) {
-              // JSON parsing error or other issue with screenshot output
               console.error(
                 '[Node AI Processor - ToolHandlerNode] Error processing screenshot output:',
                 e

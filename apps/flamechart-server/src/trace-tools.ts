@@ -140,7 +140,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         'Error: profileArrayBuffer is missing or empty for GenerateFlamegraphSnapshotTool.';
       console.error(`[Node GenerateFlamegraphSnapshotTool] ${errorMessage}`);
       return JSON.stringify({
-        status: 'Error',
+        status: 'error',
         error: errorMessage,
         base64Image: null,
         publicUrl: null,
@@ -163,7 +163,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
             '[Node GenerateFlamegraphSnapshotTool] Failed to decompress gzipped input:',
             e
           );
-          return JSON.stringify({ status: 'Error', error: inflateError, message: inflateError });
+          return JSON.stringify({ status: 'error', error: inflateError, message: inflateError });
         }
       } else {
         console.log(
@@ -175,7 +175,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       if (profileJsonText.length === 0) {
         const emptyError = 'Processed profile data is empty.';
         console.error('[Node GenerateFlamegraphSnapshotTool]', emptyError);
-        return JSON.stringify({ status: 'Error', error: emptyError, message: emptyError });
+        return JSON.stringify({ status: 'error', error: emptyError, message: emptyError });
       }
 
       console.log('[Node GenerateFlamegraphSnapshotTool] Importing profile group from text...');
@@ -190,7 +190,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       if (!profileGroup) {
         const importError = 'Failed to import profile group from processed data.';
         console.error('[Node GenerateFlamegraphSnapshotTool]', importError);
-        return JSON.stringify({ status: 'Error', error: importError, message: importError });
+        return JSON.stringify({ status: 'error', error: importError, message: importError });
       }
       console.log(
         `[Node GenerateFlamegraphSnapshotTool] Profile group "${profileGroup.name || 'Unnamed'}" imported.`
@@ -214,7 +214,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       if (!pngBuffer || pngBuffer.length === 0) {
         const renderError = 'renderToPng returned empty buffer.';
         console.error('[Node GenerateFlamegraphSnapshotTool]', renderError);
-        return JSON.stringify({ status: 'Error', error: renderError, message: renderError });
+        return JSON.stringify({ status: 'error', error: renderError, message: renderError });
       }
       console.log(
         `[Node GenerateFlamegraphSnapshotTool] PNG buffer generated locally, length: ${pngBuffer.length}`
@@ -235,7 +235,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
           uploadError
         );
         return JSON.stringify({
-          status: 'Error',
+          status: 'error',
           error: storageErrorMessage,
           base64Image: null,
           publicUrl: null,
@@ -254,7 +254,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
           'Warning: Could not get public URL for generated snapshot, but PNG was created and encoded.';
         console.warn(`[Node GenerateFlamegraphSnapshotTool] ${warningMessage}`);
         return JSON.stringify({
-          status: 'SuccessWithWarning',
+          status: 'success_with_warning',
           publicUrl: null,
           base64Image: base64Image,
           message: warningMessage,
@@ -266,7 +266,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       console.log(`[Node GenerateFlamegraphSnapshotTool] ${successMessage}`);
 
       return JSON.stringify({
-        status: 'Success',
+        status: 'success',
         publicUrl: publicUrlData.publicUrl,
         base64Image: base64Image,
         message: successMessage,
@@ -278,7 +278,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         toolError
       );
       return JSON.stringify({
-        status: 'Error',
+        status: 'error',
         error: errorMessage,
         base64Image: null,
         publicUrl: null,
