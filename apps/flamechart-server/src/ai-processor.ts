@@ -70,10 +70,9 @@ const SYSTEM_PROMPT_TEMPLATE_STRING = formatPromptTemplateStrings`
 You are a performance analysis assistant.
 
 - Your goal is to pinpoint areas of high resource consumption or latency.
-- Describe your observations and reasoning for each step.
 - Stop when you have identified a likely bottleneck or after a few investigation steps.
 
-- You can use the 'generate_flamegraph_screenshot' tool to request zoomed-in views.
+- You can use the 'generate_flamegraph_screenshot' tool to get images of the flamegraph - you can zoom in to specific areas of the flamegraph using the startDepth, startTimeMs and endTimeMs parameters to debug specific callstacks.
 - You can use the 'get_top_functions' tool to get a list of the top functions by self or total time.
 
 If you think you have identified a bottleneck, provide a concise summary.
@@ -241,14 +240,11 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
               message: `LLM processing error: ${err.message || String(err)}`,
             },
           })
-          .catch(
-            (
-              rtErr: any // Added type for rtErr
-            ) =>
-              console.error(
-                '[Node AI Processor - Callback] Failed to send error over Realtime:',
-                rtErr
-              )
+          .catch((rtErr: any) =>
+            console.error(
+              '[Node AI Processor - Callback] Failed to send error over Realtime:',
+              rtErr
+            )
           );
       },
       handleToolStart: async (
@@ -268,15 +264,7 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
         console.log(
           `[Node AI Processor - Callback] Tool Start: ${callbackState.currentToolName}, Input: ${input.substring(0, 100)}...`
         );
-        await state.realtimeChannel.send({
-          type: 'broadcast',
-          event: 'ai_response',
-          payload: {
-            type: 'tool_start',
-            toolName: callbackState.currentToolName,
-            message: `Using tool: ${callbackState.currentToolName}...`,
-          },
-        });
+        // tool_start event is now primarily sent from toolHandlerNode for better context
       },
       handleToolEnd: async (
         output: any,
@@ -288,27 +276,8 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
         if (!state.realtimeChannel) return;
         const toolNameForEvent = name || callbackState.currentToolName || 'unknown_tool_ended';
         callbackState.llmStreamingActiveForCurrentSegment = false;
-        console.log(
-          `[Node AI Processor - Callback] Tool End: ${toolNameForEvent}. Output (first 100 chars): ${String(output).substring(0, 100)}`
-        );
-        if (typeof output === 'string') {
-          try {
-            const parsedOutput = JSON.parse(output);
-            if (parsedOutput.status === 'Error') {
-              await state.realtimeChannel.send({
-                type: 'broadcast',
-                event: 'ai_response',
-                payload: {
-                  type: 'tool_error',
-                  toolName: toolNameForEvent,
-                  message: parsedOutput.error || 'Tool reported an error.',
-                },
-              });
-            }
-          } catch (e) {
-            /* not a JSON error object */
-          }
-        }
+        console.log(`[Node AI Processor - Callback] Tool End from LLM: ${toolNameForEvent}.`);
+        // tool_result and tool_error events are now primarily sent from toolHandlerNode
         if (callbackState.currentToolName === toolNameForEvent)
           callbackState.currentToolName = null;
       },
@@ -317,75 +286,37 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
         const toolNameForEvent = callbackState.currentToolName || 'unknown_tool_error';
         const errorMessage = err instanceof Error ? err.message : String(err);
         callbackState.llmStreamingActiveForCurrentSegment = false;
-        console.error(`[Node AI Processor - Callback] Tool Error for ${toolNameForEvent}:`, err);
-        await state.realtimeChannel.send({
-          type: 'broadcast',
-          event: 'ai_response',
-          payload: {
-            type: 'tool_error',
-            toolName: toolNameForEvent,
-            message: `Error during setup/call for tool ${toolNameForEvent}: ${errorMessage}`,
-          },
-        });
+        console.error(
+          `[Node AI Processor - Callback] Tool Error from LLM for ${toolNameForEvent}:`,
+          err
+        );
+        // tool_error event is now primarily sent from toolHandlerNode
         if (callbackState.currentToolName === toolNameForEvent)
           callbackState.currentToolName = null;
       },
     },
   ];
 
+  // Prepare messages for this specific LLM invocation - now directly from state
   let messagesForLLMInvocation = [...state.messages];
+  // const lastMessageFromState = state.messages[state.messages.length - 1]; // No longer needed here
 
-  const lastMessageFromState = state.messages[state.messages.length - 1];
-  if (
-    lastMessageFromState instanceof ToolMessage &&
-    lastMessageFromState.name === 'generate_flamegraph_screenshot'
-  ) {
-    try {
-      const toolOutput = JSON.parse(lastMessageFromState.content as string);
-      if (
-        (toolOutput.status === 'Success' || toolOutput.status === 'SuccessWithWarning') &&
-        toolOutput.base64Image
-      ) {
-        messagesForLLMInvocation.push(
-          new HumanMessage({
-            content: [
-              {
-                type: 'text',
-                text: toolOutput.message || `Screenshot was generated. Please analyze this image.`,
-              },
-              {
-                type: 'image_url',
-                image_url: { url: `data:image/png;base64,${toolOutput.base64Image}` },
-              },
-            ],
-          })
-        );
-      }
-    } catch (e) {
-      console.error('[Node AI Processor - AgentNode] Error parsing screenshot tool output:', e);
-    }
-  }
+  // Removed the block that checked lastMessageFromState and pushed a new HumanMessage with image,
+  // as this is now handled by toolHandlerNode adding it to the persistent state.messages.
 
+  // Ensure System Prompt is correctly placed or updated if needed
   if (
-    messagesForLLMInvocation.length === 0 ||
-    messagesForLLMInvocation[0]._getType() !== 'system'
+    messagesForLLMInvocation.length > 0 &&
+    messagesForLLMInvocation[0]._getType() === 'system' &&
+    (messagesForLLMInvocation[0] as SystemMessage).content !==
+      SYSTEM_PROMPT_TEMPLATE_STRING.replace('{trace_summary}', state.traceSummary)
   ) {
-    const systemPromptContent = SYSTEM_PROMPT_TEMPLATE_STRING.replace(
-      '{trace_summary}',
-      state.traceSummary
-    );
-    messagesForLLMInvocation = [
-      new SystemMessage(systemPromptContent),
-      ...messagesForLLMInvocation.filter((m) => m._getType() !== 'system'),
-    ];
-  } else if (messagesForLLMInvocation[0]._getType() === 'system') {
     (messagesForLLMInvocation[0] as SystemMessage).content = SYSTEM_PROMPT_TEMPLATE_STRING.replace(
       '{trace_summary}',
       state.traceSummary
     );
   }
 
-  // TODO: Ensure TopFunctionsTool and GenerateFlamegraphSnapshotTool are correctly ported and instantiated
   const currentTools = [
     new TopFunctionsTool(state.profileData),
     new GenerateFlamegraphSnapshotTool(
@@ -397,9 +328,10 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
   ];
   const modelWithTools = llm.bindTools(currentTools);
 
-  let response;
+  let llmResponse;
   try {
-    response = await modelWithTools.invoke(messagesForLLMInvocation, {
+    llmResponse = await modelWithTools.invoke(messagesForLLMInvocation, {
+      // messagesForLLMInvocation now comes directly from state
       callbacks: langChainCallbacks,
     });
   } catch (invokeError: any) {
@@ -414,23 +346,21 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
             message: `LLM invocation failed: ${invokeError.message || String(invokeError)}`,
           },
         })
-        .catch(
-          (
-            rtErr: any // Added type for rtErr
-          ) =>
-            console.error(
-              '[Node AI Processor - AgentNode] Failed to send invokeError over Realtime:',
-              rtErr
-            )
+        .catch((rtErr: any) =>
+          console.error(
+            '[Node AI Processor - AgentNode] Failed to send invokeError over Realtime:',
+            rtErr
+          )
         );
     }
+    // Return current state messages and increment iteration
     return { messages: state.messages, iterationCount: state.iterationCount + 1 };
   }
 
-  const newMessages = [...state.messages, response];
+  const newPersistentMessages = [...state.messages, llmResponse];
 
   return {
-    messages: newMessages,
+    messages: newPersistentMessages,
     llmStreamingActiveForCurrentSegment: callbackState.llmStreamingActiveForCurrentSegment,
     currentToolName: callbackState.currentToolName,
     iterationCount: state.iterationCount + 1,
@@ -454,7 +384,8 @@ async function toolHandlerNode(
   }
 
   const toolInvocations = lastMessage.tool_calls as ToolCall[];
-  const toolResults: ToolMessage[] = [];
+  let newMessages = [...state.messages]; // Start with current messages
+  const toolResultsForAIMessage: ToolMessage[] = []; // Collect ToolMessages for the AIMessage response
 
   const tools = [
     new TopFunctionsTool(state.profileData!),
@@ -477,7 +408,8 @@ async function toolHandlerNode(
         typeof crypto !== 'undefined' && crypto.randomUUID
           ? crypto.randomUUID()
           : `missing-id-${Math.random().toString(36).substring(2, 15)}`;
-      toolResults.push(
+      toolResultsForAIMessage.push(
+        // Add to specific list for AIMessage
         new ToolMessage({
           content: `Error: ${errMsg}`,
           tool_call_id: generatedId,
@@ -490,7 +422,7 @@ async function toolHandlerNode(
           event: 'ai_response',
           payload: {
             type: 'tool_error',
-            toolCallId: generatedId, // Include toolCallId
+            toolCallId: generatedId,
             toolName: call.name,
             message: errMsg,
           },
@@ -507,7 +439,7 @@ async function toolHandlerNode(
             event: 'ai_response',
             payload: {
               type: 'tool_start',
-              toolCallId: toolCallIdFromAI, // Include toolCallId
+              toolCallId: toolCallIdFromAI,
               toolName: call.name,
               message: `Executing tool: ${call.name}...`,
             },
@@ -515,16 +447,16 @@ async function toolHandlerNode(
         }
 
         const output = await toolInstance.invoke(call.args);
+        const toolMessage = new ToolMessage({
+          // Create the standard ToolMessage
+          content: output as string,
+          tool_call_id: toolCallIdFromAI,
+          name: call.name,
+        });
+        toolResultsForAIMessage.push(toolMessage); // Add to list for AIMessage
+        // Add the standard ToolMessage to the persistent graph state messages
+        newMessages.push(toolMessage);
 
-        toolResults.push(
-          new ToolMessage({
-            content: output as string,
-            tool_call_id: toolCallIdFromAI,
-            name: call.name,
-          })
-        );
-
-        // Send tool_result event
         if (state.realtimeChannel) {
           if (call.name === 'generate_flamegraph_screenshot') {
             try {
@@ -533,10 +465,6 @@ async function toolHandlerNode(
                 parsedOutput.status === 'success' ||
                 parsedOutput.status === 'success_with_warning'
               ) {
-                console.log(
-                  '[AI Processor] Sending tool_result for screenshot with status:',
-                  parsedOutput.status
-                );
                 await state.realtimeChannel.send({
                   type: 'broadcast',
                   event: 'ai_response',
@@ -550,6 +478,28 @@ async function toolHandlerNode(
                     imageUrl: parsedOutput.publicUrl,
                   },
                 });
+
+                // Create and add HumanMessage with image to persistent state
+                if (parsedOutput.base64Image) {
+                  const imageMessageForHistory = new HumanMessage({
+                    content: [
+                      {
+                        type: 'text',
+                        text:
+                          parsedOutput.message ||
+                          `Snapshot (tool call ID: ${toolCallIdFromAI}) was generated and is now part of the history.`,
+                      },
+                      {
+                        type: 'image_url',
+                        image_url: { url: `data:image/png;base64,${parsedOutput.base64Image}` },
+                      },
+                    ],
+                  });
+                  newMessages.push(imageMessageForHistory); // Add to persistent messages
+                  console.log(
+                    '[Node AI Processor - ToolHandlerNode] Added HumanMessage with image to persistent history.'
+                  );
+                }
               } else {
                 await state.realtimeChannel.send({
                   type: 'broadcast',
@@ -597,20 +547,20 @@ async function toolHandlerNode(
       } catch (e: any) {
         // Error during toolInstance.invoke()
         const errorMsg = e instanceof Error ? e.message : String(e);
-        toolResults.push(
-          new ToolMessage({
-            content: `Error: ${errorMsg}`,
-            tool_call_id: toolCallIdFromAI,
-            name: call.name,
-          })
-        );
+        const errorToolMessage = new ToolMessage({
+          content: `Error: ${errorMsg}`,
+          tool_call_id: toolCallIdFromAI,
+          name: call.name,
+        });
+        toolResultsForAIMessage.push(errorToolMessage);
+        newMessages.push(errorToolMessage); // Add error tool message to persistent state
         if (state.realtimeChannel) {
           await state.realtimeChannel.send({
             type: 'broadcast',
             event: 'ai_response',
             payload: {
               type: 'tool_error',
-              toolCallId: toolCallIdFromAI, // Include toolCallId
+              toolCallId: toolCallIdFromAI,
               toolName: call.name,
               message: `Execution failed: ${errorMsg}`,
             },
@@ -620,20 +570,20 @@ async function toolHandlerNode(
     } else {
       // Unknown tool
       const unknownToolErrorMsg = `Unknown tool called: ${call.name}`;
-      toolResults.push(
-        new ToolMessage({
-          content: `Error: ${unknownToolErrorMsg}`,
-          tool_call_id: toolCallIdFromAI,
-          name: call.name,
-        })
-      );
+      const errorToolMessage = new ToolMessage({
+        content: `Error: ${unknownToolErrorMsg}`,
+        tool_call_id: toolCallIdFromAI,
+        name: call.name,
+      });
+      toolResultsForAIMessage.push(errorToolMessage);
+      newMessages.push(errorToolMessage); // Add error tool message to persistent state
       if (state.realtimeChannel) {
         await state.realtimeChannel.send({
           type: 'broadcast',
           event: 'ai_response',
           payload: {
             type: 'tool_error',
-            toolCallId: toolCallIdFromAI, // Include toolCallId
+            toolCallId: toolCallIdFromAI,
             toolName: call.name,
             message: unknownToolErrorMsg,
           },
@@ -642,10 +592,11 @@ async function toolHandlerNode(
     }
   }
 
-  const newMessages = [...state.messages, ...toolResults];
+  // The AIMessage that invoked the tools is already in state.messages.
+  // We have now added the ToolMessages (and potentially a HumanMessage with an image) to newMessages.
   return {
-    messages: newMessages,
-    llmStreamingActiveForCurrentSegment: false, // Ensure this is set to false after tools run
+    messages: newMessages, // This now includes the original messages, plus ToolMessages, plus HumanMessage (if image)
+    llmStreamingActiveForCurrentSegment: false,
   };
 }
 
