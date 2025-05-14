@@ -83,24 +83,25 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
     // isFetchingImage helps prevent re-fetch loops if other dependencies change rapidly.
   }, [message.id, message.imageUrl, message.resultType, imageDataUrl, imageError, isFetchingImage]);
 
+  // Default styling for tool messages (neutral)
   let borderColor = 'border-gray-300 dark:border-gray-600';
   let textColor = 'text-gray-700 dark:text-gray-300';
-  let bgColor = 'bg-gray-100 dark:bg-gray-750';
+  let bgColor = 'bg-gray-100 dark:bg-gray-750'; // Neutral background for all non-error tool messages
   let StatusIcon = null;
 
-  // Determine icon and colors based on status
+  // Determine icon and specific error styling
   if (message.toolStatus === 'running') {
     StatusIcon = <Loader2 size={18} className="animate-spin mr-2 text-blue-500" />;
-    bgColor = 'bg-blue-50 dark:bg-blue-900/30';
-    borderColor = 'border-blue-300 dark:border-blue-700/50';
-    textColor = 'text-blue-700 dark:text-blue-300';
+    // No specific background/border change for running, uses default neutral
   } else if (message.toolStatus === 'success' || message.toolStatus === 'success_with_warning') {
     StatusIcon = <CheckCircle size={18} className="mr-2 text-green-500" />;
+    // No specific background/border change for success, uses default neutral
   } else if (message.toolStatus === 'error') {
     StatusIcon = <XCircle size={18} className="mr-2 text-red-500" />;
+    // Keep distinct styling for errors
     bgColor = 'bg-red-50 dark:bg-red-900/30';
     borderColor = 'border-red-300 dark:border-red-700/50';
-    textColor = 'text-red-700 dark:text-red-300';
+    textColor = 'text-red-700 dark:text-red-300'; // Text color for error state also distinct
   }
 
   // Determine if text content should be displayed
