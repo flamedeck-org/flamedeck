@@ -85,8 +85,8 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
 
   // Default styling for tool messages (neutral)
   let borderColor = 'border-gray-300 dark:border-gray-600';
-  let textColor = 'text-gray-700 dark:text-gray-300';
-  let bgColor = 'bg-gray-100 dark:bg-gray-750'; // Neutral background for all non-error tool messages
+  let textColor = 'text-gray-900 dark:text-gray-100';
+  let bgColor = 'bg-blue-100 dark:bg-blue-900/30 ';
   let StatusIcon = null;
 
   // Determine icon and specific error styling
