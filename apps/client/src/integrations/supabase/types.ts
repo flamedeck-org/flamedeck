@@ -9,44 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      ai_chat_continuations: {
-        Row: {
-          created_at: string
-          message_history: Json
-          request_id: string
-          tool_call: Json
-          tool_call_id: string | null
-          trace_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          message_history: Json
-          request_id?: string
-          tool_call: Json
-          tool_call_id?: string | null
-          trace_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          message_history?: Json
-          request_id?: string
-          tool_call?: Json
-          tool_call_id?: string | null
-          trace_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_chat_continuations_trace_id_fkey"
-            columns: ["trace_id"]
-            isOneToOne: false
-            referencedRelation: "traces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       api_keys: {
         Row: {
           created_at: string
@@ -79,6 +41,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content_image_url: string | null
+          content_text: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          sender: string
+          session_id: string
+          tool_args_json: Json | null
+          tool_call_id: string | null
+          tool_name: string | null
+          tool_status: string | null
+          trace_id: string
+          turn_number: number
+          user_id: string
+        }
+        Insert: {
+          content_image_url?: string | null
+          content_text?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          sender: string
+          session_id?: string
+          tool_args_json?: Json | null
+          tool_call_id?: string | null
+          tool_name?: string | null
+          tool_status?: string | null
+          trace_id: string
+          turn_number?: number
+          user_id: string
+        }
+        Update: {
+          content_image_url?: string | null
+          content_text?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          sender?: string
+          session_id?: string
+          tool_args_json?: Json | null
+          tool_call_id?: string | null
+          tool_name?: string | null
+          tool_status?: string | null
+          trace_id?: string
+          turn_number?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_trace_id_fkey"
+            columns: ["trace_id"]
+            isOneToOne: false
+            referencedRelation: "traces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       folders: {
         Row: {

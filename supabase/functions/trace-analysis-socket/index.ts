@@ -76,39 +76,27 @@ serve(async (req: Request) => {
     }
 
     try {
-      if (parsedData.type === 'start_analysis' || parsedData.type === 'user_prompt') {
-        const { userId, traceId } = parsedData;
-        const userPrompt =
-          parsedData.type === 'start_analysis'
-            ? 'Analyze this trace and provide an initial summary.'
-            : parsedData.prompt;
-        const history = parsedData.type === 'start_analysis' ? [] : parsedData.history || [];
-
-        if (!userId || !traceId || !userPrompt) {
-          const errorMsg = `Message type '${parsedData.type}' missing required fields (userId, traceId, prompt).`;
+      if (parsedData.type === 'start_analysis') {
+        const { userId, traceId, sessionId } = parsedData;
+        if (!userId || !traceId || !sessionId) {
+          const errorMsg = `Message type 'start_analysis' missing required fields (userId, traceId, sessionId).`;
           console.error(`[trace-analysis-socket] ${errorMsg}`);
           socket.send(JSON.stringify({ type: 'error', message: errorMsg }));
-          if (parsedData.type === 'start_analysis') socket.close(1008, 'Missing userId or traceId');
+          socket.close(1008, 'Missing required fields');
           return;
         }
-
         console.log(
-          `[trace-analysis-socket] Handling ${parsedData.type} for user: ${userId}, trace: ${traceId}`
+          `[trace-analysis-socket] Handling start_analysis for user: ${userId}, trace: ${traceId}, session: ${sessionId}`
         );
-
-        const ackType =
-          parsedData.type === 'start_analysis' ? 'connection_ack' : 'waiting_for_model';
-        const ackMessage =
-          parsedData.type === 'start_analysis'
-            ? 'Requesting initial analysis...'
-            : 'Processing request...';
-        socket.send(JSON.stringify({ type: ackType, message: ackMessage }));
+        socket.send(
+          JSON.stringify({ type: 'connection_ack', message: 'Requesting initial analysis...' })
+        );
 
         const aiServerPayload = {
           userId: userId,
           traceId: traceId,
-          prompt: userPrompt,
-          history: history,
+          sessionId: sessionId,
+          prompt: 'Analyze this trace and provide an initial summary.',
         };
 
         console.log(
@@ -157,7 +145,95 @@ serve(async (req: Request) => {
               })
             );
           } else {
-            console.log('[trace-analysis-socket] Node.js AI server accepted the request.');
+            console.log(
+              '[trace-analysis-socket] Node.js AI server accepted the start_analysis request.'
+            );
+            // Response is now streamed via Realtime from the Node.js server
+          }
+        } catch (fetchErr) {
+          console.error(
+            '[trace-analysis-socket] Network error during fetch to Node.js AI server:',
+            fetchErr
+          );
+          socket.send(
+            JSON.stringify({
+              type: 'error',
+              message: `Network error connecting to AI service: ${fetchErr instanceof Error ? fetchErr.message : String(fetchErr)}`,
+            })
+          );
+        }
+      } else if (parsedData.type === 'user_prompt') {
+        const { userId, traceId, prompt: userPrompt, sessionId } = parsedData;
+
+        if (!userId || !traceId || !userPrompt || !sessionId) {
+          const errorMsg = `Message type 'user_prompt' missing required fields (userId, traceId, prompt, sessionId).`;
+          console.error(`[trace-analysis-socket] ${errorMsg}`);
+          socket.send(JSON.stringify({ type: 'error', message: errorMsg }));
+          return;
+        }
+        console.log(
+          `[trace-analysis-socket] Handling user_prompt for user: ${userId}, trace: ${traceId}, session: ${sessionId}`
+        );
+        socket.send(
+          JSON.stringify({ type: 'waiting_for_model', message: 'Processing request...' })
+        );
+
+        const aiServerPayload = {
+          userId: userId,
+          traceId: traceId,
+          prompt: userPrompt,
+          sessionId: sessionId,
+        };
+
+        console.log(
+          '[trace-analysis-socket] Calling Node.js AI server with payload:',
+          aiServerPayload
+        );
+
+        if (!FLAMECHART_SERVER_BASE_URL || !PROCESS_AI_TURN_SECRET) {
+          const errMsg = 'AI Server configuration missing in edge function.';
+          console.error(`[trace-analysis-socket] ${errMsg}`);
+          socket.send(
+            JSON.stringify({ type: 'error', message: `Internal configuration error: ${errMsg}` })
+          );
+          return;
+        }
+
+        try {
+          const nodeServerResponse = await fetch(
+            `${FLAMECHART_SERVER_BASE_URL}/api/v1/ai/process-turn`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Internal-Auth-Token': PROCESS_AI_TURN_SECRET,
+              },
+              body: JSON.stringify(aiServerPayload),
+            }
+          );
+
+          if (!nodeServerResponse.ok) {
+            let errorDetail = 'Failed to call AI processing server.';
+            try {
+              const errorBody = await nodeServerResponse.json();
+              errorDetail = errorBody.error || errorBody.message || errorDetail;
+            } catch (e) {
+              /* ignore if error body is not json or empty */
+            }
+
+            console.error(
+              `[trace-analysis-socket] Error calling Node.js AI server: ${nodeServerResponse.status} - ${errorDetail}`
+            );
+            socket.send(
+              JSON.stringify({
+                type: 'error',
+                message: `Failed to start AI processing: ${errorDetail} (status ${nodeServerResponse.status})`,
+              })
+            );
+          } else {
+            console.log(
+              '[trace-analysis-socket] Node.js AI server accepted the user_prompt request.'
+            );
             // Response is now streamed via Realtime from the Node.js server
           }
         } catch (fetchErr) {

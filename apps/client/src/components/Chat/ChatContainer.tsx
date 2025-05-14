@@ -9,6 +9,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth to get user ID
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { fetchChatHistory, DEFAULT_HISTORY_PAGE_SIZE } from '@/lib/api/chatHistory'; // Import the new function
 import type { RealtimeChannel } from '@supabase/supabase-js'; // Import type for channel ref
 
 interface ChatContainerProps {
@@ -21,9 +22,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const currentMessageRef = useRef<ChatMessage | null>(null); // Ref to track current streaming message
   const chatWindowRef = useRef<ChatWindowHandle>(null); // <-- Create ref for ChatWindow
-  const [isInitialAnalysisRequested, setIsInitialAnalysisRequested] = useState<boolean>(false);
   const previousTraceIdRef = useRef<string | null>(null); // Ref to track previous traceId
   const analysisSentForCurrentTraceRef = useRef<boolean>(false); // Ref to track if initial analysis was sent for this traceId
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   const {
     connect: connectSocket,
@@ -40,27 +41,61 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
   const [chatError, setChatError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
 
-  // Effect to manage WebSocket and Realtime connections based on chat open state
+  // Effect to manage WebSocket, Realtime connections, and initial history load
   useEffect(() => {
-    let channel: RealtimeChannel | null = null; // Define channel var here
+    let channel: RealtimeChannel | null = null;
 
     if (isChatOpen && userId && traceId) {
-      // Connect WebSocket
-      if (!isSocketConnected) {
-        console.log('[ChatContainer] isChatOpen, calling connectSocket().');
-        connectSocket();
+      // Generate a new session ID if it's null (first open) or if traceId/userId has changed
+      // This simplistic approach means a new session if chat is closed and reopened.
+      // More sophisticated would be to store/retrieve active session ID from localStorage or server.
+      let activeSessionId = currentSessionId;
+      if (!activeSessionId || previousTraceIdRef.current !== traceId) {
+        activeSessionId = uuidv4();
+        setCurrentSessionId(activeSessionId);
+        setChatMessages([]); // Clear messages for a new session context
+        analysisSentForCurrentTraceRef.current = false; // Reset analysis flag for new session/trace
+        console.log(
+          `[ChatContainer] New session started: ${activeSessionId} for trace: ${traceId}`
+        );
       }
+      previousTraceIdRef.current = traceId; // Update after potential reset
 
-      // Subscribe to Realtime Channel
-      const channelName = `private-chat-results-${userId}`;
-      channel = supabase.channel(channelName, {
-        config: {
-          broadcast: { self: false }, // Don't receive our own broadcasts if ever needed
-        },
-      });
+      const loadHistoryAndConnect = async (sessionId: string) => {
+        console.log(`[ChatContainer] Fetching history for session: ${sessionId}`);
+        setIsWaitingForModel(true);
+        setChatError(null);
+        try {
+          // Pass sessionId to fetchChatHistory (fetchChatHistory will need update)
+          const historicalMessages = await fetchChatHistory(
+            userId,
+            traceId,
+            sessionId,
+            DEFAULT_HISTORY_PAGE_SIZE
+          );
+          setChatMessages(historicalMessages);
+          if (historicalMessages.length === 0) {
+            analysisSentForCurrentTraceRef.current = false;
+          } else {
+            analysisSentForCurrentTraceRef.current = true;
+          }
+        } catch (err: any) {
+          console.error('[ChatContainer] Error fetching history via service:', err);
+          setChatError(err.message || 'Failed to load chat history.');
+          setChatMessages([
+            { id: uuidv4(), sender: 'error', text: err.message || 'Failed to load chat history.' },
+          ]);
+        }
+        setIsWaitingForModel(false);
 
-      channel
-        .on('broadcast', { event: 'ai_response' }, (message) => {
+        if (!isSocketConnected) {
+          console.log('[ChatContainer] Calling connectSocket() after history attempt.');
+          connectSocket();
+        }
+
+        const channelName = `private-chat-results-${userId}`;
+        channel = supabase.channel(channelName, { config: { broadcast: { self: false } } });
+        channel.on('broadcast', { event: 'ai_response' }, (message) => {
           const payload = message.payload;
           let newError: string | null = null;
           let forceScroll = true; // Default to true for new messages/significant updates
@@ -206,8 +241,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
           if (payload.type === 'error' || payload.type === 'model_response_end') {
             setChatError(newError);
           }
-        })
-        .subscribe((status, err) => {
+        });
+        channel.subscribe((status, err) => {
           if (status === 'SUBSCRIBED') {
             console.log(
               `[ChatContainer] Realtime SUBSCRIBED.` // Removed socket check here
@@ -220,67 +255,74 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
             ]);
           }
         });
+        channelRef.current = channel;
+      };
 
-      channelRef.current = channel; // Store channel in ref
+      if (activeSessionId) {
+        loadHistoryAndConnect(activeSessionId);
+      }
     } else {
       // Chat closed or user/traceId missing
-      if (isInitialAnalysisRequested) {
-        // Only log/reset if it was true
-        console.log('[ChatContainer] Resetting isInitialAnalysisRequested (Chat Closed/Invalid).');
-        setIsInitialAnalysisRequested(false);
+      if (currentSessionId) {
+        // console.log('[ChatContainer] Chat closed or invalid, clearing session ID.');
+        // setCurrentSessionId(null); // Optionally clear session when chat closes fully
+        // analysisSentForCurrentTraceRef.current = false;
       }
       if (isSocketConnected) {
         disconnectSocket();
       }
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        // const { supabase } = await import('@/integrations/supabase/client'); // If needed for removeChannel
+        // For now, assume direct supabase is okay here or handle removal differently if client not directly available.
+        // It's better if supabase client is consistently available in this scope.
+        // Let's re-import it here for safety for this operation.
+        import('@/integrations/supabase/client').then(({ supabase }) => {
+          if (channelRef.current) {
+            supabase.removeChannel(channelRef.current);
+            channelRef.current = null;
+          }
+        });
       }
     }
-
-    // Cleanup function
     return () => {
       if (isSocketConnected) {
         disconnectSocket();
       }
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      import('@/integrations/supabase/client').then(({ supabase }) => {
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
+      });
     };
-    // Rerun when chat opens/closes, or when userId/traceId become available/change
-  }, [isChatOpen, userId, traceId, isSocketConnected, connectSocket, disconnectSocket]);
+  }, [
+    isChatOpen,
+    userId,
+    traceId,
+    isSocketConnected,
+    connectSocket,
+    disconnectSocket,
+    currentSessionId,
+  ]);
 
-  // --- Effect to reset flag only when traceId changes ---
-  useEffect(() => {
-    // Store initial traceId or check if it changed
-    if (traceId !== previousTraceIdRef.current) {
-      console.log(
-        `[ChatContainer] traceId changed from ${previousTraceIdRef.current} to ${traceId}. Resetting analysis flag.`
-      );
-      analysisSentForCurrentTraceRef.current = false; // Reset flag on trace change
-      previousTraceIdRef.current = traceId; // Update the ref for next comparison
-    }
-  }, [traceId]);
-
-  // Helper function to send start_analysis (Remove model details)
   const sendStartAnalysis = useCallback(() => {
-    // Conditions checked in the effect below
-    console.log(`[ChatContainer] Sending start_analysis for trace ${traceId}`);
-    setChatMessages([]); // Clear previous messages
-    analysisSentForCurrentTraceRef.current = true; // Mark as sent for this trace
-    setChatError(null);
-    setIsWaitingForModel(false);
-    // Update initial system message
+    if (!userId || !traceId || !currentSessionId) return;
+    console.log(
+      `[ChatContainer] Sending start_analysis for trace ${traceId}, session ${currentSessionId}`
+    );
     if (chatMessages.length === 0) {
       setChatMessages([{ id: uuidv4(), sender: 'system', text: 'Connecting to AI analysis...' }]);
     }
+    analysisSentForCurrentTraceRef.current = true;
+    setChatError(null);
+
     sendRawSocketMessage({
       type: 'start_analysis',
       userId: userId,
       traceId: traceId,
+      sessionId: currentSessionId, // Include sessionId
     });
-  }, [userId, traceId, sendRawSocketMessage]);
+  }, [userId, traceId, currentSessionId, sendRawSocketMessage, chatMessages.length]);
 
   // --- Effect to send initial analysis request when socket connects ---
   useEffect(() => {
@@ -289,12 +331,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
       isSocketConnected &&
       userId &&
       traceId &&
+      currentSessionId && // Ensure session ID exists
       !analysisSentForCurrentTraceRef.current // Only send if not already sent for this trace
     ) {
       sendStartAnalysis();
     }
     // Dependency array includes all conditions checked
-  }, [isChatOpen, isSocketConnected, userId, traceId, sendStartAnalysis]);
+  }, [isChatOpen, isSocketConnected, userId, traceId, currentSessionId, sendStartAnalysis]);
 
   // Effect to handle initial connection/ack from WebSocket
   useEffect(() => {
@@ -406,8 +449,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
   // handleSendMessage (Add userId and traceId to user_prompt)
   const handleSendMessage = useCallback(
     (prompt: string) => {
-      if (prompt.trim() && isSocketConnected && userId && traceId) {
-        const newUserMessage: ChatMessage = { id: uuidv4(), sender: 'user', text: prompt };
+      if (prompt.trim() && isSocketConnected && userId && traceId && currentSessionId) {
+        const newUserMessage: ChatMessage = {
+          id: uuidv4(),
+          sender: 'user',
+          text: prompt,
+          timestamp: Date.now(),
+        };
         setChatMessages((prev) => [...prev, newUserMessage]);
         setIsWaitingForModel(true);
         setChatError(null);
@@ -417,20 +465,18 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
           chatWindowRef.current?.scrollToBottom(true);
         }, 0);
 
-        const historyToSend = chatMessages
-          .filter((msg) => msg.sender === 'user' || msg.sender === 'model')
-          // For now send the entire history
-          // .slice(-10)
-          .map((msg) => ({ sender: msg.sender, text: msg.text }));
-
-        console.log(historyToSend);
+        // HISTORY IS NO LONGER SENT FROM CLIENT
+        // const historyToSend = chatMessages
+        //   .filter((msg) => msg.sender === 'user' || msg.sender === 'model')
+        //   .map((msg) => ({ sender: msg.sender, text: msg.text }));
 
         sendRawSocketMessage({
           type: 'user_prompt',
           prompt: prompt,
           userId: userId,
           traceId: traceId,
-          history: historyToSend,
+          sessionId: currentSessionId, // Include sessionId
+          // history: historyToSend, // REMOVED
         });
       } else if (!isSocketConnected) {
         setChatError('Cannot send message: WebSocket not connected.');
@@ -444,9 +490,11 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
           ...prev,
           { id: uuidv4(), sender: 'error', text: 'Cannot send message: User not identified.' },
         ]);
+      } else if (!currentSessionId) {
+        setChatError('Cannot send message: Session not initialized.');
       }
     },
-    [isSocketConnected, sendRawSocketMessage, userId, traceId, chatMessages]
+    [isSocketConnected, sendRawSocketMessage, userId, traceId, currentSessionId]
   );
 
   // Only render button if traceId and userId are available

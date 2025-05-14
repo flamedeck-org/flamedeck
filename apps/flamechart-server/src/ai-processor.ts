@@ -1,6 +1,7 @@
 // Remove Deno-specific runtime import
 // import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'; // Changed to npm import
+import { type Database } from '@/integrations/supabase/types'; // Import generated DB types
 
 // TODO: Port or create cors.ts for Node.js if needed for shared headers, or handle in Express
 // import { corsHeaders } from '../_shared/cors.ts';
@@ -101,6 +102,8 @@ interface AgentState {
   // Iteration control for the graph
   iterationCount: number;
   maxIterations: number;
+
+  sessionId: string; // Added sessionId
 }
 
 // --- LangGraph Nodes ---
@@ -328,14 +331,30 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
   ];
   const modelWithTools = llm.bindTools(currentTools);
 
-  let llmResponse;
+  let llmResponse: AIMessage;
   try {
-    llmResponse = await modelWithTools.invoke(messagesForLLMInvocation, {
-      // messagesForLLMInvocation now comes directly from state
+    llmResponse = (await modelWithTools.invoke(messagesForLLMInvocation, {
       callbacks: langChainCallbacks,
-    });
+    })) as AIMessage;
   } catch (invokeError: any) {
     console.error('[Node AI Processor - AgentNode] modelWithTools.invoke failed:', invokeError);
+    const errorToSave = {
+      user_id: state.userId,
+      trace_id: state.traceId,
+      session_id: state.sessionId,
+      sender: 'system_event' as const,
+      content_text: `LLM invocation failed: ${invokeError.message || String(invokeError)}`,
+    };
+    await state.supabaseAdmin
+      .from('chat_messages')
+      .insert(errorToSave)
+      .then(({ error: dbErr }) => {
+        if (dbErr)
+          console.error(
+            '[Node AI Processor - AgentNode] DB error saving LLM invoke fail event:',
+            dbErr
+          );
+      });
     if (state.realtimeChannel) {
       await state.realtimeChannel
         .send({
@@ -353,8 +372,69 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
           )
         );
     }
-    // Return current state messages and increment iteration
     return { messages: state.messages, iterationCount: state.iterationCount + 1 };
+  }
+
+  // Save the AIMessage (which might contain text or tool_calls) to the database
+  if (llmResponse) {
+    if (llmResponse.tool_calls && llmResponse.tool_calls.length > 0) {
+      // This is an AIMessage requesting tool calls
+      // We save one 'model' message that represents the AI deciding to use tools
+      // And then individual 'tool_request' messages for each tool call for detailed logging.
+      const aiDecisionMessage = {
+        user_id: state.userId,
+        trace_id: state.traceId,
+        session_id: state.sessionId,
+        sender: 'model' as const,
+        content_text: llmResponse.content || '(AI is using tools)',
+      };
+      const { error: modelMsgError } = await state.supabaseAdmin
+        .from('chat_messages')
+        .insert(aiDecisionMessage);
+      if (modelMsgError)
+        console.error(
+          '[Node AI Processor - AgentNode] DB error saving AI model (tool decision) message:',
+          modelMsgError
+        );
+
+      for (const toolCall of llmResponse.tool_calls) {
+        const toolRequestMessage = {
+          user_id: state.userId,
+          trace_id: state.traceId,
+          session_id: state.sessionId,
+          sender: 'tool_request' as const,
+          tool_name: toolCall.name,
+          tool_call_id: toolCall.id,
+          tool_args_json: toolCall.args as any,
+          content_text: `AI requesting tool: ${toolCall.name} with ID ${toolCall.id}`,
+        };
+        const { error: toolReqError } = await state.supabaseAdmin
+          .from('chat_messages')
+          .insert(toolRequestMessage);
+        if (toolReqError)
+          console.error(
+            '[Node AI Processor - AgentNode] DB error saving tool_request message:',
+            toolReqError
+          );
+      }
+    } else {
+      // This is a standard AIMessage with textual content
+      const aiTextMessage = {
+        user_id: state.userId,
+        trace_id: state.traceId,
+        session_id: state.sessionId,
+        sender: 'model' as const,
+        content_text: llmResponse.content as string,
+      };
+      const { error: textMsgError } = await state.supabaseAdmin
+        .from('chat_messages')
+        .insert(aiTextMessage);
+      if (textMsgError)
+        console.error(
+          '[Node AI Processor - AgentNode] DB error saving AI text message:',
+          textMsgError
+        );
+    }
   }
 
   const newPersistentMessages = [...state.messages, llmResponse];
@@ -416,6 +496,27 @@ async function toolHandlerNode(
           name: call.name,
         })
       );
+      // Save this specific error to DB as a 'tool_error' for this pseudo-tool call
+      const dbErrorMsg = {
+        user_id: state.userId,
+        trace_id: state.traceId,
+        session_id: state.sessionId,
+        sender: 'tool_error' as const,
+        tool_name: call.name,
+        tool_call_id: generatedId, // The ID we generated
+        content_text: errMsg,
+        tool_status: 'error' as const,
+      };
+      await state.supabaseAdmin
+        .from('chat_messages')
+        .insert(dbErrorMsg)
+        .then(({ error: dbErr }) => {
+          if (dbErr)
+            console.error(
+              '[Node AI Processor - ToolHandlerNode] DB error saving missing tool ID event:',
+              dbErr
+            );
+        });
       if (state.realtimeChannel) {
         await state.realtimeChannel.send({
           type: 'broadcast',
@@ -445,7 +546,6 @@ async function toolHandlerNode(
             },
           });
         }
-
         const output = await toolInstance.invoke(call.args);
         const toolMessage = new ToolMessage({
           // Create the standard ToolMessage
@@ -457,14 +557,38 @@ async function toolHandlerNode(
         // Add the standard ToolMessage to the persistent graph state messages
         newMessages.push(toolMessage);
 
-        if (state.realtimeChannel) {
-          if (call.name === 'generate_flamegraph_screenshot') {
-            try {
-              const parsedOutput = JSON.parse(output as string);
-              if (
-                parsedOutput.status === 'success' ||
-                parsedOutput.status === 'success_with_warning'
-              ) {
+        // Save successful tool_result to DB and Realtime event
+        if (call.name === 'generate_flamegraph_screenshot') {
+          try {
+            const parsedOutput = JSON.parse(output as string);
+            const dbToolResultMessage = {
+              user_id: state.userId,
+              trace_id: state.traceId,
+              session_id: state.sessionId,
+              sender: 'tool_result' as const,
+              tool_name: call.name,
+              tool_call_id: toolCallIdFromAI,
+              content_text: parsedOutput.message || 'Screenshot generated.',
+              content_image_url: parsedOutput.publicUrl, // Save public URL
+              tool_status: parsedOutput.status as 'success' | 'success_with_warning' | 'error',
+              metadata: { base64ProvidedToLLM: !!parsedOutput.base64Image }, // Note that base64 was handled
+            };
+            await state.supabaseAdmin
+              .from('chat_messages')
+              .insert(dbToolResultMessage)
+              .then(({ error: dbErr }) => {
+                if (dbErr)
+                  console.error(
+                    '[Node AI Processor - ToolHandlerNode] DB error saving screenshot tool_result:',
+                    dbErr
+                  );
+              });
+
+            if (
+              parsedOutput.status === 'success' ||
+              parsedOutput.status === 'success_with_warning'
+            ) {
+              if (state.realtimeChannel) {
                 await state.realtimeChannel.send({
                   type: 'broadcast',
                   event: 'ai_response',
@@ -478,29 +602,57 @@ async function toolHandlerNode(
                     imageUrl: parsedOutput.publicUrl,
                   },
                 });
-
-                // Create and add HumanMessage with image to persistent state
-                if (parsedOutput.base64Image) {
-                  const imageMessageForHistory = new HumanMessage({
-                    content: [
-                      {
-                        type: 'text',
-                        text:
-                          parsedOutput.message ||
-                          `Snapshot (tool call ID: ${toolCallIdFromAI}) was generated and is now part of the history.`,
-                      },
-                      {
-                        type: 'image_url',
-                        image_url: { url: `data:image/png;base64,${parsedOutput.base64Image}` },
-                      },
-                    ],
-                  });
-                  newMessages.push(imageMessageForHistory); // Add to persistent messages
-                  console.log(
-                    '[Node AI Processor - ToolHandlerNode] Added HumanMessage with image to persistent history.'
-                  );
-                }
-              } else {
+              }
+              if (parsedOutput.base64Image) {
+                const imageMessageForHistory = new HumanMessage({
+                  content: [
+                    {
+                      type: 'text',
+                      text:
+                        parsedOutput.message ||
+                        `Snapshot (tool call ID: ${toolCallIdFromAI}) was generated and is now part of the history.`,
+                    },
+                    {
+                      type: 'image_url',
+                      image_url: { url: `data:image/png;base64,${parsedOutput.base64Image}` },
+                    },
+                  ],
+                });
+                newMessages.push(imageMessageForHistory);
+                console.log(
+                  '[Node AI Processor - ToolHandlerNode] Added HumanMessage with image to persistent history.'
+                );
+                // ALSO SAVE THIS HUMAN MESSAGE (with base64) TO DB so client can render it from history
+                // Note: Storing base64 in DB is large. Consider if client should always re-fetch via publicUrl for history display.
+                // For now, to match the logic of adding it to persistent in-memory state, we save a representation.
+                // Let's save it with a special sender or metadata to differentiate if needed.
+                // OR, rely on the client to fetch image for display if content_image_url is present on the 'tool_result' message.
+                // Given current client logic for ToolMessageItem fetches image via URL, storing the HumanMessage might be redundant for DB.
+                // Let's stick to saving the detailed 'tool_result' as primary. The in-memory HumanMessage is for the LLM.
+              }
+            } else {
+              // Tool itself reported an error in its JSON output
+              const dbToolErrorMessage = {
+                user_id: state.userId,
+                trace_id: state.traceId,
+                session_id: state.sessionId,
+                sender: 'tool_error' as const,
+                tool_name: call.name,
+                tool_call_id: toolCallIdFromAI,
+                content_text: parsedOutput.error || 'Tool reported an error in its output.',
+                tool_status: 'error' as const,
+              };
+              await state.supabaseAdmin
+                .from('chat_messages')
+                .insert(dbToolErrorMessage)
+                .then(({ error: dbErr }) => {
+                  if (dbErr)
+                    console.error(
+                      '[Node AI Processor - ToolHandlerNode] DB error saving tool_error from parsed output:',
+                      dbErr
+                    );
+                });
+              if (state.realtimeChannel) {
                 await state.realtimeChannel.send({
                   type: 'broadcast',
                   event: 'ai_response',
@@ -512,11 +664,30 @@ async function toolHandlerNode(
                   },
                 });
               }
-            } catch (e) {
-              console.error(
-                '[Node AI Processor - ToolHandlerNode] Error processing screenshot output:',
-                e
-              );
+            }
+          } catch (e) {
+            const parseErrorMsg = 'Failed to process tool output for screenshot.';
+            const dbParseErrorMessage = {
+              user_id: state.userId,
+              trace_id: state.traceId,
+              session_id: state.sessionId,
+              sender: 'tool_error' as const,
+              tool_name: call.name,
+              tool_call_id: toolCallIdFromAI,
+              content_text: parseErrorMsg,
+              tool_status: 'error' as const,
+            };
+            await state.supabaseAdmin
+              .from('chat_messages')
+              .insert(dbParseErrorMessage)
+              .then(({ error: dbErr }) => {
+                if (dbErr)
+                  console.error(
+                    '[Node AI Processor - ToolHandlerNode] DB error saving screenshot parse error:',
+                    dbErr
+                  );
+              });
+            if (state.realtimeChannel) {
               await state.realtimeChannel.send({
                 type: 'broadcast',
                 event: 'ai_response',
@@ -524,12 +695,34 @@ async function toolHandlerNode(
                   type: 'tool_error',
                   toolCallId: toolCallIdFromAI,
                   toolName: call.name,
-                  message: 'Failed to process tool output for screenshot.',
+                  message: parseErrorMsg,
                 },
               });
             }
-          } else {
-            // For other tools like TopFunctionsTool (assume text output)
+          }
+        } else {
+          // For other tools like TopFunctionsTool (text output)
+          const dbToolResultMessage = {
+            user_id: state.userId,
+            trace_id: state.traceId,
+            session_id: state.sessionId,
+            sender: 'tool_result' as const,
+            tool_name: call.name,
+            tool_call_id: toolCallIdFromAI,
+            content_text: output as string,
+            tool_status: 'success' as const,
+          };
+          await state.supabaseAdmin
+            .from('chat_messages')
+            .insert(dbToolResultMessage)
+            .then(({ error: dbErr }) => {
+              if (dbErr)
+                console.error(
+                  '[Node AI Processor - ToolHandlerNode] DB error saving text tool_result:',
+                  dbErr
+                );
+            });
+          if (state.realtimeChannel) {
             await state.realtimeChannel.send({
               type: 'broadcast',
               event: 'ai_response',
@@ -545,6 +738,7 @@ async function toolHandlerNode(
           }
         }
       } catch (e: any) {
+        // Error during toolInstance.invoke()
         // Error during toolInstance.invoke()
         const errorMsg = e instanceof Error ? e.message : String(e);
         const errorToolMessage = new ToolMessage({
@@ -566,6 +760,27 @@ async function toolHandlerNode(
             },
           });
         }
+        // Save this specific error to DB as a 'tool_error' for this pseudo-tool call
+        const dbInvokeErrorMessage = {
+          user_id: state.userId,
+          trace_id: state.traceId,
+          session_id: state.sessionId,
+          sender: 'tool_error' as const,
+          tool_name: call.name,
+          tool_call_id: toolCallIdFromAI,
+          content_text: `Execution failed: ${errorMsg}`,
+          tool_status: 'error' as const,
+        };
+        await state.supabaseAdmin
+          .from('chat_messages')
+          .insert(dbInvokeErrorMessage)
+          .then(({ error: dbErr }) => {
+            if (dbErr)
+              console.error(
+                '[Node AI Processor - ToolHandlerNode] DB error saving tool invoke error:',
+                dbErr
+              );
+          });
       }
     } else {
       // Unknown tool
@@ -589,6 +804,27 @@ async function toolHandlerNode(
           },
         });
       }
+      // Save this specific error to DB as a 'tool_error' for this pseudo-tool call
+      const dbUnknownToolMessage = {
+        user_id: state.userId,
+        trace_id: state.traceId,
+        session_id: state.sessionId,
+        sender: 'tool_error' as const,
+        tool_name: call.name,
+        tool_call_id: toolCallIdFromAI,
+        content_text: unknownToolErrorMsg,
+        tool_status: 'error' as const,
+      };
+      await state.supabaseAdmin
+        .from('chat_messages')
+        .insert(dbUnknownToolMessage)
+        .then(({ error: dbErr }) => {
+          if (dbErr)
+            console.error(
+              '[Node AI Processor - ToolHandlerNode] DB error saving unknown tool error:',
+              dbErr
+            );
+        });
     }
   }
 
@@ -626,6 +862,7 @@ const AgentStateAnnotations = Annotation.Root({
   currentToolName: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
   iterationCount: Annotation<number>({ reducer: (x, y) => y, default: () => 0 }),
   maxIterations: Annotation<number>({ reducer: (x, y) => y ?? x, default: () => 7 }),
+  sessionId: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => '' }),
 });
 
 const workflow = new StateGraph(AgentStateAnnotations) // Used updated name
@@ -674,11 +911,11 @@ export interface ProcessAiTurnPayload {
   userId: string;
   prompt: string;
   traceId: string;
-  history?: { sender: 'user' | 'model'; text: string }[];
+  sessionId: string;
 }
 
 export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise<void> {
-  const { userId, prompt: userPrompt, traceId, history = [] } = payload;
+  const { userId, prompt: userPrompt, traceId, sessionId } = payload;
 
   const missingEnvVars: string[] = [];
   if (!OPENAI_API_KEY) missingEnvVars.push('OPENAI_API_KEY');
@@ -691,12 +928,37 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
     throw new Error(`Internal configuration error: ${errorMessage}`);
   }
 
-  const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
+  const supabaseAdmin = createClient<Database>(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false },
   });
   const realtimeChannel = supabaseAdmin.channel(`private-chat-results-${userId}`);
 
   try {
+    const { error: insertError } = await supabaseAdmin.from('chat_messages').insert({
+      user_id: userId,
+      trace_id: traceId,
+      session_id: sessionId,
+      sender: 'user',
+      content_text: userPrompt,
+    });
+    if (insertError) {
+      console.error('[Node AI Processor] Error saving user prompt to DB:', insertError);
+      // Decide if to throw or just log. For now, log and attempt to continue.
+      // Throwing might be better to ensure data integrity if saving history is critical.
+      // For now, we'll try to send an error over realtime and then throw to prevent further processing on bad state.
+      const dbErrorMsg = 'Failed to save your message to the database.';
+      if (realtimeChannel) {
+        try {
+          await realtimeChannel.send({
+            type: 'broadcast',
+            event: 'ai_response',
+            payload: { type: 'error', message: dbErrorMsg },
+          });
+        } catch (e) {}
+      }
+      throw new Error(`${dbErrorMsg} Details: ${insertError.message}`);
+    }
+
     await new Promise<void>((resolve, reject) => {
       realtimeChannel.subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
@@ -713,15 +975,98 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
       });
     });
 
-    const initialMessages: BaseMessage[] = mapHistoryToLangchainMessages(history);
-    initialMessages.push(new HumanMessage(userPrompt));
+    const HISTORY_LIMIT = 20;
+    const { data: dbHistory, error: fetchHistoryError } = await supabaseAdmin
+      .from('chat_messages')
+      .select('*')
+      .eq('trace_id', traceId)
+      .eq('user_id', userId)
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true })
+      .limit(HISTORY_LIMIT);
+
+    if (fetchHistoryError) {
+      console.error('[Node AI Processor] Error fetching chat history from DB:', fetchHistoryError);
+      const dbErrorMsg = 'Failed to load conversation history.';
+      if (realtimeChannel) {
+        try {
+          await realtimeChannel.send({
+            type: 'broadcast',
+            event: 'ai_response',
+            payload: { type: 'error', message: dbErrorMsg },
+          });
+        } catch (e) {}
+      }
+      throw new Error(`${dbErrorMsg} Details: ${fetchHistoryError.message}`);
+    }
+
+    const langChainMessages: BaseMessage[] = [];
+    if (dbHistory) {
+      for (const dbMsg of dbHistory) {
+        if (dbMsg.sender === 'user' && dbMsg.content_text) {
+          langChainMessages.push(new HumanMessage({ content: dbMsg.content_text }));
+        } else if (dbMsg.sender === 'model' && dbMsg.content_text) {
+          langChainMessages.push(new AIMessage({ content: dbMsg.content_text }));
+        } else if (
+          dbMsg.sender === 'tool_request' &&
+          dbMsg.tool_name &&
+          dbMsg.tool_call_id &&
+          dbMsg.tool_args_json
+        ) {
+          // The AIMessage that made the tool call should already be in history.
+          // Here we might need to reconstruct the AIMessage with its tool_calls array if it wasn't stored that way.
+          // For simplicity now, we assume the AIMessage that *caused* the tool_request is what's important for LLM context.
+          // If the LLM needs to see its own past tool_calls, the AIMessage should be stored with that data.
+          // For now, we focus on user/model/tool_result messages for direct context.
+        } else if (dbMsg.sender === 'tool_result') {
+          if (dbMsg.tool_name && dbMsg.tool_call_id && dbMsg.content_text) {
+            langChainMessages.push(
+              new ToolMessage({
+                content: dbMsg.content_text,
+                name: dbMsg.tool_name,
+                tool_call_id: dbMsg.tool_call_id,
+              })
+            );
+            // If it was a screenshot and we persisted the HumanMessage with image separately:
+            if (dbMsg.tool_name === 'generate_flamegraph_screenshot' && dbMsg.content_image_url) {
+              // The HumanMessage with base64 image is now added to persistent state by toolHandlerNode.
+              // If that HumanMessage was ALSO saved to DB with a specific sender type or metadata,
+              // we could reconstruct it here. For now, assume toolHandlerNode's in-memory addition to state.messages handles this for the next LLM call.
+              // The persisted record here is for the client UI and long-term log.
+            }
+          }
+        } else if (
+          dbMsg.sender === 'tool_error' &&
+          dbMsg.tool_name &&
+          dbMsg.tool_call_id &&
+          dbMsg.content_text
+        ) {
+          langChainMessages.push(
+            new ToolMessage({
+              content: `Error from tool ${dbMsg.tool_name}: ${dbMsg.content_text}`,
+              name: dbMsg.tool_name,
+              tool_call_id: dbMsg.tool_call_id,
+            })
+          );
+        }
+      }
+    }
+    // Note: The current userPrompt is already saved and will be part of the history fetched above
+    // if it was the last message. Or, it might be considered the *newest* message not yet in langChainMessages.
+    // The original logic was `initialMessages.push(new HumanMessage(userPrompt));` after mapping history.
+    // Since userPrompt is now saved first, the fetched dbHistory should include it if HISTORY_LIMIT is not too small.
+    // If dbHistory *doesn't* include the just-saved userPrompt (e.g. if it's the very first message),
+    // or to be explicit that userPrompt is the current turn:
+    // Ensure userPrompt is the last HumanMessage if not already present as last.
+    // This can be simplified: the `initialSetupNode` will get the system prompt, then agent node will see this history.
 
     const initialState: AgentState = {
-      messages: initialMessages,
+      messages: langChainMessages,
       supabaseAdmin,
       realtimeChannel,
       userId,
       traceId,
+      sessionId,
       profileArrayBuffer: null,
       profileData: null,
       traceSummary: '',
@@ -731,7 +1076,7 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
       maxIterations: 7,
     };
 
-    console.log('[Node AI Processor] Invoking LangGraph app stream...');
+    console.log('[Node AI Processor] Invoking LangGraph app stream with DB history...');
     const stream = await app.stream(initialState, { recursionLimit: 25 });
 
     for await (const event of stream) {
