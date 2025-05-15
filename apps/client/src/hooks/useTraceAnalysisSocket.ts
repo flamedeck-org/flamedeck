@@ -22,8 +22,12 @@ export function useTraceAnalysisSocket() {
   const socketRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected.');
+    if (socketRef.current &&
+      (socketRef.current.readyState === WebSocket.OPEN ||
+        socketRef.current.readyState === WebSocket.CONNECTING)) {
+      console.log(
+        `[useTraceAnalysisSocket] WebSocket already open or connecting. State: ${socketRef.current.readyState}`
+      );
       return;
     }
     console.log(`[useTraceAnalysisSocket] Attempting to connect to WebSocket at: ${WS_URL}`);

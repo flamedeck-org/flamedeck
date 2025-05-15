@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTraceAnalysisSocket } from '@/hooks/useTraceAnalysisSocket';
 import {
   FloatingChatButton,
@@ -21,9 +21,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const currentMessageRef = useRef<ChatMessage | null>(null); // Ref to track current streaming message
   const chatWindowRef = useRef<ChatWindowHandle>(null); // <-- Create ref for ChatWindow
-  const previousTraceIdRef = useRef<string | null>(null); // Ref to track previous traceId
   const analysisSentForCurrentTraceRef = useRef<boolean>(false); // Ref to track if initial analysis was sent for this traceId
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   const {
     connect: connectSocket,
@@ -40,236 +38,211 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
   const [chatError, setChatError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
 
+  // For now just create a session on mount
+  const currentSessionId = useMemo(() => {
+    return uuidv4();
+  }, []);
+
   // Effect to manage WebSocket, Realtime connections, and initial history load
   useEffect(() => {
     let channel: RealtimeChannel | null = null;
 
     if (isChatOpen && userId && traceId) {
-      // Generate a new session ID if it's null (first open) or if traceId/userId has changed
-      // This simplistic approach means a new session if chat is closed and reopened.
-      // More sophisticated would be to store/retrieve active session ID from localStorage or server.
-      let activeSessionId = currentSessionId;
-      if (!activeSessionId || previousTraceIdRef.current !== traceId) {
-        activeSessionId = uuidv4();
-        setCurrentSessionId(activeSessionId);
-        setChatMessages([]); // Clear messages for a new session context
-        analysisSentForCurrentTraceRef.current = false; // Reset analysis flag for new session/trace
-        console.log(
-          `[ChatContainer] New session started: ${activeSessionId} for trace: ${traceId}`
-        );
+      console.log(`[ChatContainer] Fetching history for session: ${currentSessionId}`);
+      setChatError(null);
+
+      if (!isSocketConnected) {
+        console.log('[ChatContainer] Calling connectSocket()');
+        connectSocket();
       }
-      previousTraceIdRef.current = traceId; // Update after potential reset
 
-      const loadHistoryAndConnect = async (sessionId: string) => {
-        console.log(`[ChatContainer] Fetching history for session: ${sessionId}`);
-        setChatError(null);
+      const channelName = `private-chat-results-${userId}`;
+      channel = supabase.channel(channelName, { config: { broadcast: { self: false } } });
 
-        if (!isSocketConnected) {
-          console.log('[ChatContainer] Calling connectSocket() after history attempt.');
-          connectSocket();
-        }
+      channel.on('broadcast', { event: 'ai_response' }, (message) => {
+        const payload = message.payload;
+        let newError: string | null = null;
+        let forceScroll = true; // Default to true for new messages/significant updates
 
-        const channelName = `private-chat-results-${userId}`;
-        channel = supabase.channel(channelName, { config: { broadcast: { self: false } } });
-        channel.on('broadcast', { event: 'ai_response' }, (message) => {
-          const payload = message.payload;
-          let newError: string | null = null;
-          let forceScroll = true; // Default to true for new messages/significant updates
+        setChatMessages((prevMessages) => {
+          const messageId = uuidv4(); // Fallback id if toolCallId is missing
+          let updatedMessages = [...prevMessages];
+          let messageExists = false;
 
-          setChatMessages((prevMessages) => {
-            const messageId = uuidv4(); // Fallback id if toolCallId is missing
-            let updatedMessages = [...prevMessages];
-            let messageExists = false;
-
-            // Handle new tool events by finding and updating, or adding if not found
-            if (payload.type === 'tool_start') {
-              messageExists = prevMessages.some((msg) => msg.id === payload.toolCallId);
-              if (messageExists) {
-                updatedMessages = prevMessages.map((msg) =>
-                  msg.id === payload.toolCallId
-                    ? {
-                      ...msg,
-                      sender: 'tool',
-                      text: payload.message || `Running ${payload.toolName}...`,
-                      toolName: payload.toolName,
-                      toolStatus: 'running',
-                      resultType: undefined, // Clear previous results
-                      imageUrl: undefined,
-                    }
-                    : msg
-                );
-              } else {
-                updatedMessages.push({
-                  id: payload.toolCallId || messageId,
-                  sender: 'tool',
-                  text: payload.message || `Running ${payload.toolName}...`,
-                  toolCallId: payload.toolCallId,
-                  toolName: payload.toolName,
-                  toolStatus: 'running',
-                });
-              }
-              setIsWaitingForModel(true);
-              setIsStreaming(false);
-            } else if (payload.type === 'tool_result') {
-              console.log('[ChatContainer] Received tool_result payload:', JSON.stringify(payload)); // DEBUG LOG
+          // Handle new tool events by finding and updating, or adding if not found
+          if (payload.type === 'tool_start') {
+            messageExists = prevMessages.some((msg) => msg.id === payload.toolCallId);
+            if (messageExists) {
               updatedMessages = prevMessages.map((msg) =>
                 msg.id === payload.toolCallId
                   ? {
                     ...msg,
-                    sender: 'tool', // Ensure sender is 'tool'
-                    text: payload.textContent || `${payload.toolName} completed.`,
-                    toolStatus: payload.status as ChatMessage['toolStatus'],
-                    resultType: payload.resultType as ChatMessage['resultType'],
-                    imageUrl: payload.imageUrl,
-                  }
-                  : msg
-              );
-              messageExists = updatedMessages.some(
-                (msg) => msg.id === payload.toolCallId && msg.toolStatus === payload.status
-              );
-              if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
-                // If no running message was found, add new (should be rare)
-                updatedMessages.push({
-                  id: payload.toolCallId || messageId,
-                  sender: 'tool',
-                  text: payload.textContent || `${payload.toolName} completed.`,
-                  toolCallId: payload.toolCallId,
-                  toolName: payload.toolName,
-                  toolStatus: payload.status as ChatMessage['toolStatus'],
-                  resultType: payload.resultType as ChatMessage['resultType'],
-                  imageUrl: payload.imageUrl,
-                });
-              }
-              setIsWaitingForModel(true);
-              setIsStreaming(false);
-            } else if (payload.type === 'tool_error') {
-              updatedMessages = prevMessages.map((msg) =>
-                msg.id === payload.toolCallId
-                  ? {
-                    ...msg,
-                    sender: 'tool', // Ensure sender is 'tool'
-                    text: payload.message || `Error in ${payload.toolName}.`,
-                    toolStatus: 'error',
-                    resultType: undefined,
+                    sender: 'tool',
+                    text: payload.message || `Running ${payload.toolName}...`,
+                    toolName: payload.toolName,
+                    toolStatus: 'running',
+                    resultType: undefined, // Clear previous results
                     imageUrl: undefined,
                   }
                   : msg
               );
-              if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
-                // If no running message was found, add new
-                updatedMessages.push({
-                  id: payload.toolCallId || messageId,
-                  sender: 'tool',
-                  text: payload.message || `Error in ${payload.toolName}.`,
-                  toolCallId: payload.toolCallId,
-                  toolName: payload.toolName,
-                  toolStatus: 'error',
-                });
-              }
-              setIsWaitingForModel(false);
-              setIsStreaming(false);
-            } else if (payload.type === 'model_chunk_start') {
-              setIsStreaming(true);
-              const newMessage: ChatMessage = {
-                id: messageId, // Model messages get a new uuid
-                sender: 'model',
-                text: payload.chunk,
-              };
-              currentMessageRef.current = newMessage;
-              updatedMessages.push(newMessage);
-              // forceScroll is true by default
-            } else if (payload.type === 'model_chunk_append' && currentMessageRef.current) {
-              setIsStreaming(true);
-              updatedMessages = updatedMessages.map((msg) =>
-                msg.id === currentMessageRef.current!.id
-                  ? { ...msg, text: msg.text + payload.chunk }
-                  : msg
-              );
-              forceScroll = false; // Don't force scroll for appended chunks
-            } else if (payload.type === 'model_response_end') {
-              setIsWaitingForModel(false);
-              setIsStreaming(false);
-              currentMessageRef.current = null;
-              forceScroll = false; // Don't force scroll for end event
-            } else if (payload.type === 'error') {
-              // General AI processing error
-              newError = payload.message ?? 'An unknown error occurred during AI processing.';
-              updatedMessages.push({ id: messageId, sender: 'error', text: `Error: ${newError}` });
-              setIsWaitingForModel(false);
-              setIsStreaming(false);
-              currentMessageRef.current = null;
-              forceScroll = true; // <-- Force scroll for errors
             } else {
-              // Only log unknown types if they are not 'request_snapshot'
-              if (payload.type !== 'request_snapshot') {
-                console.warn('Received unknown payload type via Realtime:', payload.type);
-              }
+              updatedMessages.push({
+                id: payload.toolCallId || messageId,
+                sender: 'tool',
+                text: payload.message || `Running ${payload.toolName}...`,
+                toolCallId: payload.toolCallId,
+                toolName: payload.toolName,
+                toolStatus: 'running',
+              });
             }
-            return updatedMessages;
-          });
-
-          // Explicitly scroll after state update, using the force flag
-          setTimeout(() => {
-            chatWindowRef.current?.scrollToBottom(forceScroll);
-          }, 0);
-
-          // Update error state outside the message update if needed
-          if (payload.type === 'error' || payload.type === 'model_response_end') {
-            setChatError(newError);
+            setIsWaitingForModel(true);
+            setIsStreaming(false);
+          } else if (payload.type === 'tool_result') {
+            console.log('[ChatContainer] Received tool_result payload:', JSON.stringify(payload)); // DEBUG LOG
+            updatedMessages = prevMessages.map((msg) =>
+              msg.id === payload.toolCallId
+                ? {
+                  ...msg,
+                  sender: 'tool', // Ensure sender is 'tool'
+                  text: payload.textContent || `${payload.toolName} completed.`,
+                  toolStatus: payload.status as ChatMessage['toolStatus'],
+                  resultType: payload.resultType as ChatMessage['resultType'],
+                  imageUrl: payload.imageUrl,
+                }
+                : msg
+            );
+            messageExists = updatedMessages.some(
+              (msg) => msg.id === payload.toolCallId && msg.toolStatus === payload.status
+            );
+            if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
+              // If no running message was found, add new (should be rare)
+              updatedMessages.push({
+                id: payload.toolCallId || messageId,
+                sender: 'tool',
+                text: payload.textContent || `${payload.toolName} completed.`,
+                toolCallId: payload.toolCallId,
+                toolName: payload.toolName,
+                toolStatus: payload.status as ChatMessage['toolStatus'],
+                resultType: payload.resultType as ChatMessage['resultType'],
+                imageUrl: payload.imageUrl,
+              });
+            }
+            setIsWaitingForModel(true);
+            setIsStreaming(false);
+          } else if (payload.type === 'tool_error') {
+            updatedMessages = prevMessages.map((msg) =>
+              msg.id === payload.toolCallId
+                ? {
+                  ...msg,
+                  sender: 'tool', // Ensure sender is 'tool'
+                  text: payload.message || `Error in ${payload.toolName}.`,
+                  toolStatus: 'error',
+                  resultType: undefined,
+                  imageUrl: undefined,
+                }
+                : msg
+            );
+            if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
+              // If no running message was found, add new
+              updatedMessages.push({
+                id: payload.toolCallId || messageId,
+                sender: 'tool',
+                text: payload.message || `Error in ${payload.toolName}.`,
+                toolCallId: payload.toolCallId,
+                toolName: payload.toolName,
+                toolStatus: 'error',
+              });
+            }
+            setIsWaitingForModel(false);
+            setIsStreaming(false);
+          } else if (payload.type === 'model_chunk_start') {
+            setIsStreaming(true);
+            const newMessage: ChatMessage = {
+              id: messageId, // Model messages get a new uuid
+              sender: 'model',
+              text: payload.chunk,
+            };
+            currentMessageRef.current = newMessage;
+            updatedMessages.push(newMessage);
+            // forceScroll is true by default
+          } else if (payload.type === 'model_chunk_append' && currentMessageRef.current) {
+            setIsStreaming(true);
+            updatedMessages = updatedMessages.map((msg) =>
+              msg.id === currentMessageRef.current!.id
+                ? { ...msg, text: msg.text + payload.chunk }
+                : msg
+            );
+            forceScroll = false; // Don't force scroll for appended chunks
+          } else if (payload.type === 'model_response_end') {
+            setIsWaitingForModel(false);
+            setIsStreaming(false);
+            currentMessageRef.current = null;
+            forceScroll = false; // Don't force scroll for end event
+          } else if (payload.type === 'error') {
+            // General AI processing error
+            newError = payload.message ?? 'An unknown error occurred during AI processing.';
+            updatedMessages.push({ id: messageId, sender: 'error', text: `Error: ${newError}` });
+            setIsWaitingForModel(false);
+            setIsStreaming(false);
+            currentMessageRef.current = null;
+            forceScroll = true; // <-- Force scroll for errors
+          } else {
+            // Only log unknown types if they are not 'request_snapshot'
+            if (payload.type !== 'request_snapshot') {
+              console.warn('Received unknown payload type via Realtime:', payload.type);
+            }
           }
+          return updatedMessages;
         });
-        channel.subscribe((status, err) => {
-          if (status === 'SUBSCRIBED') {
-            console.log(
-              `[ChatContainer] Realtime SUBSCRIBED.` // Removed socket check here
-            ); // Log connection status
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            setChatError(`Realtime connection failed: ${status}`);
-            setChatMessages((prev) => [
-              ...prev,
-              { id: uuidv4(), sender: 'error', text: `Realtime connection failed: ${status}` },
-            ]);
-          }
-        });
-        channelRef.current = channel;
-      };
 
-      if (activeSessionId) {
-        loadHistoryAndConnect(activeSessionId);
-      }
+        // Explicitly scroll after state update, using the force flag
+        setTimeout(() => {
+          chatWindowRef.current?.scrollToBottom(forceScroll);
+        }, 0);
+
+        // Update error state outside the message update if needed
+        if (payload.type === 'error' || payload.type === 'model_response_end') {
+          setChatError(newError);
+        }
+      });
+
+      channel.subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(
+            `[ChatContainer] Realtime SUBSCRIBED.` // Removed socket check here
+          ); // Log connection status
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setChatError(`Realtime connection failed: ${status}`);
+          setChatMessages((prev) => [
+            ...prev,
+            { id: uuidv4(), sender: 'error', text: `Realtime connection failed: ${status}` },
+          ]);
+        }
+      });
+
+      channelRef.current = channel;
+
     } else {
-      // Chat closed or user/traceId missing
-      if (currentSessionId) {
-        // console.log('[ChatContainer] Chat closed or invalid, clearing session ID.');
-        // setCurrentSessionId(null); // Optionally clear session when chat closes fully
-        // analysisSentForCurrentTraceRef.current = false;
-      }
       if (isSocketConnected) {
         disconnectSocket();
       }
+
       if (channelRef.current) {
-        // const { supabase } = await import('@/integrations/supabase/client'); // If needed for removeChannel
-        // For now, assume direct supabase is okay here or handle removal differently if client not directly available.
-        // It's better if supabase client is consistently available in this scope.
-        // Let's re-import it here for safety for this operation.
-        import('@/integrations/supabase/client').then(({ supabase }) => {
-          if (channelRef.current) {
-            supabase.removeChannel(channelRef.current);
-            channelRef.current = null;
-          }
-        });
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     }
+
     return () => {
       if (isSocketConnected) {
         disconnectSocket();
       }
-      import('@/integrations/supabase/client').then(({ supabase }) => {
-        if (channelRef.current) {
-          supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
-        }
-      });
+
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [
     isChatOpen,
