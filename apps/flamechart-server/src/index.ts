@@ -138,56 +138,47 @@ app.post('/api/v1/render', async (req: Request, res: Response) => {
 
 app.post('/api/v1/ai/process-turn', async (req: Request, res: Response) => {
   console.log('[Express] Received /api/v1/ai/process-turn request');
-
+  const internalAuthToken = req.headers['x-internal-auth-token'] as string | undefined;
   const expectedSecret = process.env.PROCESS_AI_TURN_SECRET;
-  const receivedToken = req.headers['x-internal-auth-token'] as string | undefined; // Explicitly type
 
-  // Original comparison that is failing
-  if (receivedToken !== expectedSecret) {
+  if (internalAuthToken !== expectedSecret) {
     console.warn(
-      '[Express] Unauthorized attempt to access /api/v1/ai/process-turn. Secrets do not match (original comparison).'
+      '[Express] Unauthorized attempt to access /api/v1/ai/process-turn. Secrets do not match.'
     );
     return res.status(401).send('Unauthorized');
   }
 
   try {
-    const { userId, prompt, traceId, history = [] } = req.body as ProcessAiTurnPayload;
+    const { userId, prompt, traceId, sessionId } = req.body as ProcessAiTurnPayload;
 
-    if (!userId || !prompt || !traceId) {
-      console.warn('[Express] Missing required fields for /api/v1/ai/process-turn', req.body);
-      return res.status(400).json({ error: 'Missing required fields: userId, prompt, traceId' });
+    if (!userId || !prompt || !traceId || !sessionId) {
+      console.warn(
+        '[Express] Missing required fields for /api/v1/ai/process-turn. Expected userId, prompt, traceId, sessionId. Body:',
+        req.body
+      );
+      return res
+        .status(400)
+        .json({ error: 'Missing required fields: userId, prompt, traceId, sessionId' });
     }
 
-    const payload: ProcessAiTurnPayload = { userId, prompt, traceId, history };
+    const payload: ProcessAiTurnPayload = { userId, prompt, traceId, sessionId };
     console.log(
-      `[Express] AI turn processing task accepted for userId: ${userId}, traceId: ${traceId}`
+      `[Express] AI turn processing task accepted for userId: ${userId}, traceId: ${traceId}, sessionId: ${sessionId}`
     );
 
-    // Send immediate acknowledgment that the task has been accepted.
-    // The actual AI response will be streamed via Supabase Realtime by processAiTurnLogic.
     res.status(202).json({ success: true, message: 'AI processing task accepted.' });
 
-    // Execute the long-running AI logic asynchronously.
-    // processAiTurnLogic handles its own Realtime streaming and detailed error reporting.
-    // We catch potential re-thrown errors here primarily to log them server-side
-    // and prevent unhandled promise rejections, as an HTTP response has already been sent.
     processAiTurnLogic(payload).catch((error) => {
       console.error(
-        `[Express /api/v1/ai/process-turn] Critical asynchronous error after HTTP response sent for userId ${payload.userId}, traceId ${payload.traceId}:`,
+        `[Express /api/v1/ai/process-turn] Critical asynchronous error after HTTP response sent for userId ${payload.userId}, traceId ${payload.traceId}, sessionId: ${payload.sessionId}:`,
         error
       );
-      // At this point, an HTTP response has already been sent.
-      // The error should have also been attempted to be sent via Realtime by processAiTurnLogic.
     });
   } catch (error) {
-    // This catch block handles synchronous errors that occur before or during the initial
-    // setup of the call to processAiTurnLogic (e.g., bad request payload, immediate config error).
     console.error('[Express /api/v1/ai/process-turn] Synchronous error:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'An unknown server error occurred.';
-    // Avoid sending potentially sensitive internal error messages if not already handled by specific checks.
     if (!res.headersSent) {
-      // Ensure headers haven't been sent (they shouldn't be in this sync block)
       res.status(500).json({
         error: 'Internal server error during AI processing initiation.',
         details: errorMessage,

@@ -131,6 +131,13 @@ const importerDeps: ImporterDependencies = {
   LongType: Long,
 };
 
+export type FlamegraphSnapshotToolResponse = {
+  status: 'success' | 'error' | 'success_with_warning';
+  publicUrl: string | null;
+  base64Image: string | null;
+  message: string;
+};
+
 export class GenerateFlamegraphSnapshotTool extends StructuredTool {
   readonly name = 'generate_flamegraph_screenshot';
   readonly description =
@@ -139,7 +146,6 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
 
   constructor(
     private supabaseAdmin: SupabaseClient,
-    // private flamechartServerUrl: string, // Removed: No longer needed for self-call
     private profileArrayBuffer: ArrayBuffer, // This is the raw buffer, possibly gzipped
     private userId: string,
     private traceId: string
@@ -147,20 +153,21 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
     super();
   }
 
-  protected async _call(args: z.infer<typeof snapshotSchema>): Promise<string> {
+  protected async _call(
+    args: z.infer<typeof snapshotSchema>
+  ): Promise<FlamegraphSnapshotToolResponse> {
     console.log('[Node GenerateFlamegraphSnapshotTool - Local Render] Called with args:', args);
 
     if (!this.profileArrayBuffer || this.profileArrayBuffer.byteLength === 0) {
       const errorMessage =
         'Error: profileArrayBuffer is missing or empty for GenerateFlamegraphSnapshotTool.';
       console.error(`[Node GenerateFlamegraphSnapshotTool] ${errorMessage}`);
-      return JSON.stringify({
+      return {
         status: 'error',
-        error: errorMessage,
         base64Image: null,
         publicUrl: null,
         message: errorMessage,
-      });
+      };
     }
 
     try {
@@ -178,7 +185,12 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
             '[Node GenerateFlamegraphSnapshotTool] Failed to decompress gzipped input:',
             e
           );
-          return JSON.stringify({ status: 'error', error: inflateError, message: inflateError });
+          return {
+            status: 'error',
+            base64Image: null,
+            publicUrl: null,
+            message: inflateError,
+          };
         }
       } else {
         console.log(
@@ -190,7 +202,12 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       if (profileJsonText.length === 0) {
         const emptyError = 'Processed profile data is empty.';
         console.error('[Node GenerateFlamegraphSnapshotTool]', emptyError);
-        return JSON.stringify({ status: 'error', error: emptyError, message: emptyError });
+        return {
+          status: 'error',
+          base64Image: null,
+          publicUrl: null,
+          message: emptyError,
+        };
       }
 
       console.log('[Node GenerateFlamegraphSnapshotTool] Importing profile group from text...');
@@ -205,7 +222,12 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       if (!profileGroup) {
         const importError = 'Failed to import profile group from processed data.';
         console.error('[Node GenerateFlamegraphSnapshotTool]', importError);
-        return JSON.stringify({ status: 'error', error: importError, message: importError });
+        return {
+          status: 'error',
+          base64Image: null,
+          publicUrl: null,
+          message: importError,
+        };
       }
       console.log(
         `[Node GenerateFlamegraphSnapshotTool] Profile group "${profileGroup.name || 'Unnamed'}" imported.`
@@ -229,7 +251,12 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       if (!pngBuffer || pngBuffer.length === 0) {
         const renderError = 'renderToPng returned empty buffer.';
         console.error('[Node GenerateFlamegraphSnapshotTool]', renderError);
-        return JSON.stringify({ status: 'error', error: renderError, message: renderError });
+        return {
+          status: 'error',
+          base64Image: null,
+          publicUrl: null,
+          message: renderError,
+        };
       }
       console.log(
         `[Node GenerateFlamegraphSnapshotTool] PNG buffer generated locally, length: ${pngBuffer.length}`
@@ -249,13 +276,12 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
           '[Node GenerateFlamegraphSnapshotTool] Failed to upload snapshot:',
           uploadError
         );
-        return JSON.stringify({
+        return {
           status: 'error',
-          error: storageErrorMessage,
           base64Image: null,
           publicUrl: null,
           message: storageErrorMessage,
-        });
+        };
       }
 
       const { data: publicUrlData } = this.supabaseAdmin.storage
@@ -268,37 +294,35 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         const warningMessage =
           'Warning: Could not get public URL for generated snapshot, but PNG was created and encoded.';
         console.warn(`[Node GenerateFlamegraphSnapshotTool] ${warningMessage}`);
-        return JSON.stringify({
+        return {
           status: 'success_with_warning',
           publicUrl: null,
           base64Image: base64Image,
           message: warningMessage,
-          error: 'Failed to get public URL after successful upload.',
-        });
+        };
       }
 
       const successMessage = `Snapshot generated. Public URL: ${publicUrlData.publicUrl}. Image data included.`;
       console.log(`[Node GenerateFlamegraphSnapshotTool] ${successMessage}`);
 
-      return JSON.stringify({
+      return {
         status: 'success',
         publicUrl: publicUrlData.publicUrl,
         base64Image: base64Image,
         message: successMessage,
-      });
+      };
     } catch (toolError: any) {
       const errorMessage = `Error: Exception during local flamechart generation or Supabase interaction: ${toolError.message || String(toolError)}`;
       console.error(
         `[Node GenerateFlamegraphSnapshotTool] Unhandled exception in _call:`,
         toolError
       );
-      return JSON.stringify({
+      return {
         status: 'error',
-        error: errorMessage,
         base64Image: null,
         publicUrl: null,
         message: errorMessage,
-      });
+      };
     }
   }
 }
