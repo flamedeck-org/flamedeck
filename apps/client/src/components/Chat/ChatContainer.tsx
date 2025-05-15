@@ -9,7 +9,6 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth to get user ID
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
-import { fetchChatHistory, DEFAULT_HISTORY_PAGE_SIZE } from '@/lib/api/chatHistory'; // Import the new function
 import type { RealtimeChannel } from '@supabase/supabase-js'; // Import type for channel ref
 
 interface ChatContainerProps {
@@ -63,30 +62,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
 
       const loadHistoryAndConnect = async (sessionId: string) => {
         console.log(`[ChatContainer] Fetching history for session: ${sessionId}`);
-        setIsWaitingForModel(true);
         setChatError(null);
-        try {
-          // Pass sessionId to fetchChatHistory (fetchChatHistory will need update)
-          const historicalMessages = await fetchChatHistory(
-            userId,
-            traceId,
-            sessionId,
-            DEFAULT_HISTORY_PAGE_SIZE
-          );
-          setChatMessages(historicalMessages);
-          if (historicalMessages.length === 0) {
-            analysisSentForCurrentTraceRef.current = false;
-          } else {
-            analysisSentForCurrentTraceRef.current = true;
-          }
-        } catch (err: any) {
-          console.error('[ChatContainer] Error fetching history via service:', err);
-          setChatError(err.message || 'Failed to load chat history.');
-          setChatMessages([
-            { id: uuidv4(), sender: 'error', text: err.message || 'Failed to load chat history.' },
-          ]);
-        }
-        setIsWaitingForModel(false);
 
         if (!isSocketConnected) {
           console.log('[ChatContainer] Calling connectSocket() after history attempt.');
@@ -112,14 +88,14 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
                 updatedMessages = prevMessages.map((msg) =>
                   msg.id === payload.toolCallId
                     ? {
-                        ...msg,
-                        sender: 'tool',
-                        text: payload.message || `Running ${payload.toolName}...`,
-                        toolName: payload.toolName,
-                        toolStatus: 'running',
-                        resultType: undefined, // Clear previous results
-                        imageUrl: undefined,
-                      }
+                      ...msg,
+                      sender: 'tool',
+                      text: payload.message || `Running ${payload.toolName}...`,
+                      toolName: payload.toolName,
+                      toolStatus: 'running',
+                      resultType: undefined, // Clear previous results
+                      imageUrl: undefined,
+                    }
                     : msg
                 );
               } else {
@@ -139,13 +115,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
               updatedMessages = prevMessages.map((msg) =>
                 msg.id === payload.toolCallId
                   ? {
-                      ...msg,
-                      sender: 'tool', // Ensure sender is 'tool'
-                      text: payload.textContent || `${payload.toolName} completed.`,
-                      toolStatus: payload.status as ChatMessage['toolStatus'],
-                      resultType: payload.resultType as ChatMessage['resultType'],
-                      imageUrl: payload.imageUrl,
-                    }
+                    ...msg,
+                    sender: 'tool', // Ensure sender is 'tool'
+                    text: payload.textContent || `${payload.toolName} completed.`,
+                    toolStatus: payload.status as ChatMessage['toolStatus'],
+                    resultType: payload.resultType as ChatMessage['resultType'],
+                    imageUrl: payload.imageUrl,
+                  }
                   : msg
               );
               messageExists = updatedMessages.some(
@@ -170,13 +146,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
               updatedMessages = prevMessages.map((msg) =>
                 msg.id === payload.toolCallId
                   ? {
-                      ...msg,
-                      sender: 'tool', // Ensure sender is 'tool'
-                      text: payload.message || `Error in ${payload.toolName}.`,
-                      toolStatus: 'error',
-                      resultType: undefined,
-                      imageUrl: undefined,
-                    }
+                    ...msg,
+                    sender: 'tool', // Ensure sender is 'tool'
+                    text: payload.message || `Error in ${payload.toolName}.`,
+                    toolStatus: 'error',
+                    resultType: undefined,
+                    imageUrl: undefined,
+                  }
                   : msg
               );
               if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
