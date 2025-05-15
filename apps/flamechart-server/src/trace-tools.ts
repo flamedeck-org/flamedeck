@@ -33,7 +33,7 @@ const topFunctionsSchema = z.object({
 export class TopFunctionsTool extends StructuredTool {
   readonly name = 'get_top_functions';
   readonly description =
-    'Get a list of the top N functions by self or total time from the performance profile.';
+    'Get a list of the top N functions by self or total time from the performance profile - you can offset the start with `offset` and limit the number with `limit`';
   readonly schema = topFunctionsSchema;
 
   constructor(private profileData: ProfileGroup | null) {

@@ -66,7 +66,8 @@ const SYSTEM_PROMPT_TEMPLATE_STRING = formatPromptTemplateStrings`
 You are a performance analysis assistant.
 
 - Your goal is to pinpoint areas of high resource consumption or latency.
-- Stop when you have identified a likely bottleneck or after a few investigation steps.
+- You should try to act with as little user involvement as possible, investigating likely bottlenecks and providing a summary.
+- If you cannot find any bottlenecks, you should say so - do not make up performance issues.
 
 - You can use the 'generate_flamegraph_screenshot' tool to get images of the flamegraph - you can zoom in to specific areas of the flamegraph using the startDepth, startTimeMs and endTimeMs parameters to debug specific callstacks.
 - You can use the 'get_top_functions' tool to get a list of the top functions by self or total time.
@@ -390,7 +391,7 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
   // --- End save messages to file ---
 
   const currentTools = [
-    // new TopFunctionsTool(state.profileData), // Temporarily disabled
+    new TopFunctionsTool(state.profileData),
     new GenerateFlamegraphSnapshotTool(
       state.supabaseAdmin,
       state.profileArrayBuffer!,
