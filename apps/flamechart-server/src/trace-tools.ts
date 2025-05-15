@@ -5,8 +5,16 @@ import { StructuredTool } from '@langchain/core/tools';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Imports needed for direct rendering logic
-import { renderToPng, RenderToPngOptions } from '@flamedeck/flamechart-to-png';
-import { importProfileGroupFromText, ImporterDependencies } from '@flamedeck/speedscope-import';
+import {
+  renderLeftHeavyFlamechart,
+  type RenderLeftHeavyFlamechartOptions,
+  renderSandwichFlamechart,
+  type RenderSandwichFlamechartOptions,
+} from '@flamedeck/flamechart-to-png';
+import {
+  importProfileGroupFromText,
+  type ImporterDependencies,
+} from '@flamedeck/speedscope-import';
 import pako from 'pako';
 import Long from 'long';
 import { JSON_parse } from 'uint8array-json-parser';
@@ -234,7 +242,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
       );
 
       // Prepare render options from tool arguments
-      const renderOptions: RenderToPngOptions = {};
+      const renderOptions: RenderLeftHeavyFlamechartOptions = {};
       if (args.width) renderOptions.width = args.width;
       if (args.height) renderOptions.height = args.height;
       if (args.startTimeMs !== undefined) renderOptions.startTimeMs = args.startTimeMs;
@@ -246,7 +254,7 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         '[Node GenerateFlamegraphSnapshotTool] Rendering PNG locally with options:',
         renderOptions
       );
-      const pngBuffer = await renderToPng(profileGroup, renderOptions);
+      const pngBuffer = await renderLeftHeavyFlamechart(profileGroup, renderOptions);
 
       if (!pngBuffer || pngBuffer.length === 0) {
         const renderError = 'renderToPng returned empty buffer.';
@@ -323,6 +331,180 @@ export class GenerateFlamegraphSnapshotTool extends StructuredTool {
         publicUrl: null,
         message: errorMessage,
       };
+    }
+  }
+}
+
+// --- Generate Sandwich Flamegraph Snapshot Tool ---
+const sandwichSnapshotSchema = z.object({
+  frameName: z
+    .string()
+    .describe('The exact name of the function/frame to focus the sandwich view on.'),
+  // All other options (width, height, startTimeMs, etc.) are removed for now
+  // and will rely on defaults in the rendering function or be omitted.
+});
+
+export class GenerateSandwichSnapshotTool extends StructuredTool {
+  readonly name = 'generate_sandwich_flamegraph_screenshot';
+  readonly description =
+    'Generates a sandwich flamegraph screenshot (PNG) for a specific function name, showing a flamegraph of both the aggregated callers and callees of that function.';
+  readonly schema = sandwichSnapshotSchema;
+
+  constructor(
+    private supabaseAdmin: SupabaseClient,
+    private profileArrayBuffer: ArrayBuffer,
+    private userId: string,
+    private traceId: string
+  ) {
+    super();
+  }
+
+  protected async _call(
+    args: z.infer<typeof sandwichSnapshotSchema>
+  ): Promise<FlamegraphSnapshotToolResponse> {
+    console.log('[Node GenerateSandwichSnapshotTool - Local Render] Called with args:', args);
+
+    if (!this.profileArrayBuffer || this.profileArrayBuffer.byteLength === 0) {
+      const errorMessage = 'Error: profileArrayBuffer is missing or empty.';
+      console.error(`[Node GenerateSandwichSnapshotTool] ${errorMessage}`);
+      return { status: 'error', base64Image: null, publicUrl: null, message: errorMessage };
+    }
+
+    try {
+      let profileJsonText: string;
+      const bodyBuffer = new Uint8Array(this.profileArrayBuffer);
+      if (bodyBuffer.length > 2 && bodyBuffer[0] === 0x1f && bodyBuffer[1] === 0x8b) {
+        try {
+          profileJsonText = pako.inflate(bodyBuffer, { to: 'string' });
+        } catch (e: any) {
+          return {
+            status: 'error',
+            base64Image: null,
+            publicUrl: null,
+            message: `Invalid gzipped data: ${e.message}`,
+          };
+        }
+      } else {
+        profileJsonText = Buffer.from(bodyBuffer).toString('utf-8');
+      }
+
+      if (profileJsonText.length === 0) {
+        return {
+          status: 'error',
+          base64Image: null,
+          publicUrl: null,
+          message: 'Processed profile data is empty.',
+        };
+      }
+
+      const importResult = await importProfileGroupFromText(
+        `trace-${this.traceId}-sandwich-snapshot`,
+        profileJsonText,
+        importerDeps
+      );
+      const profileGroup = importResult?.profileGroup;
+      if (!profileGroup) {
+        return {
+          status: 'error',
+          base64Image: null,
+          publicUrl: null,
+          message: 'Failed to import profile group.',
+        };
+      }
+
+      const activeProfile = profileGroup.profiles[profileGroup.indexToView];
+      if (!activeProfile) {
+        return {
+          status: 'error',
+          base64Image: null,
+          publicUrl: null,
+          message: 'Could not get active profile from group.',
+        };
+      }
+
+      // Find the target frame
+      let targetFrame: Frame | null = null;
+      let maxWeight = -1;
+      activeProfile.forEachFrame((frame) => {
+        if (frame.name === args.frameName) {
+          const totalWeight = frame.getTotalWeight();
+          if (totalWeight > maxWeight) {
+            maxWeight = totalWeight;
+            targetFrame = frame;
+          }
+        }
+      });
+
+      if (!targetFrame) {
+        return {
+          status: 'error',
+          base64Image: null,
+          publicUrl: null,
+          message: `Frame with name "${args.frameName}" not found.`,
+        };
+      }
+      console.log(`[Node GenerateSandwichSnapshotTool] Found target frame "${targetFrame.name}"`);
+
+      // All optional rendering parameters are removed.
+      // renderSandwichFlamechart will use its defaults.
+      const renderOptions: RenderSandwichFlamechartOptions = {};
+
+      console.log(
+        '[Node GenerateSandwichSnapshotTool] Rendering PNG locally with default options for frame:',
+        args.frameName
+      );
+      const pngBuffer = await renderSandwichFlamechart(activeProfile, targetFrame, renderOptions);
+
+      if (!pngBuffer || pngBuffer.length === 0) {
+        return {
+          status: 'error',
+          base64Image: null,
+          publicUrl: null,
+          message: 'renderSandwichFlamechart returned empty buffer.',
+        };
+      }
+      console.log(
+        `[Node GenerateSandwichSnapshotTool] PNG buffer generated, length: ${pngBuffer.length}`
+      );
+
+      const timestamp = Date.now();
+      const storagePath = `${this.userId}/trace-${this.traceId}-sandwich-${args.frameName.replace(/[^a-z0-9]/gi, '_')}-${timestamp}.png`;
+      const { error: uploadError } = await this.supabaseAdmin.storage
+        .from('ai-snapshots')
+        .upload(storagePath, pngBuffer, { contentType: 'image/png', upsert: true });
+
+      if (uploadError) {
+        return {
+          status: 'error',
+          base64Image: null,
+          publicUrl: null,
+          message: `Storage upload failed: ${uploadError.message}`,
+        };
+      }
+
+      const { data: publicUrlData } = this.supabaseAdmin.storage
+        .from('ai-snapshots')
+        .getPublicUrl(storagePath);
+      const base64Image = Buffer.from(pngBuffer).toString('base64');
+
+      if (!publicUrlData?.publicUrl) {
+        const warnMsg = 'Warning: Could not get public URL, but PNG was created.';
+        console.warn(`[Node GenerateSandwichSnapshotTool] ${warnMsg}`);
+        return { status: 'success_with_warning', publicUrl: null, base64Image, message: warnMsg };
+      }
+
+      const successMsg = `Sandwich snapshot generated. Public URL: ${publicUrlData.publicUrl}.`;
+      console.log(`[Node GenerateSandwichSnapshotTool] ${successMsg}`);
+      return {
+        status: 'success',
+        publicUrl: publicUrlData.publicUrl,
+        base64Image,
+        message: successMsg,
+      };
+    } catch (toolError: any) {
+      const errorMsg = `Exception: ${toolError.message || String(toolError)}`;
+      console.error('[Node GenerateSandwichSnapshotTool] Unhandled exception:', toolError);
+      return { status: 'error', base64Image: null, publicUrl: null, message: errorMsg };
     }
   }
 }

@@ -94,30 +94,31 @@ export function drawFrame({
 
 export interface DrawDepthAxisParams {
   ctx: CanvasRenderingContext2D;
-  canvasHeight: number;
+  canvasHeight: number; // Full height of the depth axis column itself
   depthAxisWidth: number;
-  timeAxisHeight: number;
   frameHeight: number;
   maxDepth: number;
   startDepth: number;
   theme: Theme;
+  orientation: 'top-down' | 'bottom-up';
+  // yOffset is removed; caller should translate context if needed
 }
 
 export function drawDepthAxis({
   ctx,
-  canvasHeight,
+  canvasHeight, // This is the height of the depth axis drawing area
   depthAxisWidth,
-  timeAxisHeight,
   frameHeight,
   maxDepth,
   startDepth,
   theme,
+  orientation,
 }: DrawDepthAxisParams): void {
   ctx.fillStyle = theme.bgPrimaryColor;
-  ctx.fillRect(0, 0, depthAxisWidth, canvasHeight);
+  ctx.fillRect(0, 0, depthAxisWidth, canvasHeight); // Covers its own area
 
   ctx.fillStyle = theme.fgSecondaryColor;
-  ctx.fillRect(depthAxisWidth - 1, 0, 1, canvasHeight);
+  ctx.fillRect(depthAxisWidth - 1, 0, 1, canvasHeight); // Separator line
 
   const fontSize = 10;
   ctx.font = `${fontSize}px Arial`;
@@ -127,14 +128,29 @@ export function drawDepthAxis({
 
   const labelInterval = 5;
   for (let depth = startDepth; depth <= maxDepth; depth++) {
-    const yPos = timeAxisHeight + (depth - startDepth) * frameHeight + frameHeight / 2;
+    const currentDepthLayerIndex = depth - startDepth;
+    let yPosOnContext: number;
+
+    if (orientation === 'top-down') {
+      // Labels are positioned at the middle of each frame height slot, starting from top (0)
+      yPosOnContext = currentDepthLayerIndex * frameHeight + frameHeight / 2;
+    } else {
+      // bottom-up
+      // Labels are positioned from the bottom up.
+      // (maxDepth - startDepth) is the index of the last layer from top (0-indexed).
+      // Total number of layers to display ticks for is (maxDepth - startDepth + 1)
+      // The last frame (visually at the top for bottom-up) corresponds to maxDepth.
+      // The first frame (visually at the bottom for bottom-up) corresponds to startDepth.
+      // yPos is calculated from the bottom of the canvasHeight for the depth axis.
+      yPosOnContext = canvasHeight - (currentDepthLayerIndex * frameHeight + frameHeight / 2);
+    }
 
     if (
-      yPos >= timeAxisHeight &&
-      yPos <= canvasHeight &&
+      yPosOnContext >= 0 &&
+      yPosOnContext <= canvasHeight &&
       (depth % labelInterval === 0 || depth === startDepth)
     ) {
-      ctx.fillText(String(depth), depthAxisWidth - TEXT_PADDING - 2, yPos);
+      ctx.fillText(String(depth), depthAxisWidth - TEXT_PADDING - 2, yPosOnContext);
     }
   }
 }
