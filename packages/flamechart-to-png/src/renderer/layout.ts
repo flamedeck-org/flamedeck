@@ -1,5 +1,5 @@
 import type { Profile } from '@flamedeck/speedscope-core/profile';
-import type { RenderToPngOptions } from '../index';
+import type { RenderLeftHeavyFlamechartOptions } from '../index';
 
 // --- Constants ---
 export const DEFAULT_FRAME_HEIGHT = 18;
@@ -23,7 +23,7 @@ export function calculateRenderRange(
   profile: Profile,
   totalWeight: number,
   canvasWidth: number,
-  options: RenderToPngOptions // Assuming RenderToPngOptions is sufficient for now
+  options: RenderLeftHeavyFlamechartOptions // Assuming RenderToPngOptions is sufficient for now
 ): RenderRangeResult {
   let startWeight = 0;
   let endWeight = totalWeight;

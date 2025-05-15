@@ -3,16 +3,14 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'; // Changed to npm import
 import { type Database } from '@/integrations/supabase/types'; // Import generated DB types
 
-// TODO: Port or create cors.ts for Node.js if needed for shared headers, or handle in Express
-// import { corsHeaders } from '../_shared/cors.ts';
-
 import { getDurationMsFromProfileGroup } from '@flamedeck/speedscope-import'; // Assuming this workspace import resolves
 
 import { parseProfileBuffer, type ProfileLoadResult } from './profile-loader'; // Using the new Node.js version
 import {
   TopFunctionsTool,
   GenerateFlamegraphSnapshotTool,
-  FlamegraphSnapshotToolResponse,
+  GenerateSandwichSnapshotTool,
+  type FlamegraphSnapshotToolResponse,
 } from './trace-tools'; // Using the new Node.js version
 
 // Langchain imports: Now using bare specifiers, relying on deno.json (should work in Node if installed)
@@ -70,6 +68,7 @@ You are a performance analysis assistant.
 - If you cannot find any bottlenecks, you should say so - do not make up performance issues.
 
 - You can use the 'generate_flamegraph_screenshot' tool to get images of the flamegraph - you can zoom in to specific areas of the flamegraph using the startDepth, startTimeMs and endTimeMs parameters to debug specific callstacks.
+- You can use the 'generate_sandwich_flamegraph_screenshot' tool to get a caller/callee sandwich view for a specific function by providing its name via the 'frameName' parameter.
 - You can use the 'get_top_functions' tool to get a list of the top functions by self or total time.
 
 If you think you have identified a bottleneck, provide a concise summary.
@@ -301,13 +300,18 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
   ];
 
   let messagesForLLMInvocation = [...state.messages].map((msg) => {
-    if (msg instanceof ToolMessage && msg.name === 'generate_flamegraph_screenshot') {
+    if (
+      msg instanceof ToolMessage &&
+      (msg.name === 'generate_flamegraph_screenshot' ||
+        msg.name === 'generate_sandwich_flamegraph_screenshot')
+    ) {
+      // Updated condition
       const toolOutput = msg.content as unknown as FlamegraphSnapshotToolResponse;
 
       const content =
         toolOutput.status === 'success' || toolOutput.status === 'success_with_warning'
-          ? `Successfully generated flamegraph screenshot: ${toolOutput.publicUrl}`
-          : `Failed to generate flamegraph screenshot: ${toolOutput.message}`;
+          ? `Successfully generated ${msg.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot: ${toolOutput.publicUrl}` // Dynamic message
+          : `Failed to generate ${msg.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot: ${toolOutput.message}`;
 
       // Strip the base64Image from the content since it is huge and we only want the AI to
       // interpret it if its the last image
@@ -321,7 +325,8 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
   // Check if the last message is a successful screenshot tool call to add image for LLM
   if (
     lastMessageFromState instanceof ToolMessage &&
-    lastMessageFromState.name === 'generate_flamegraph_screenshot' &&
+    (lastMessageFromState.name === 'generate_flamegraph_screenshot' ||
+      lastMessageFromState.name === 'generate_sandwich_flamegraph_screenshot') && // Updated condition
     lastMessageFromState.tool_call_id // Ensure there is a tool_call_id
   ) {
     try {
@@ -338,7 +343,7 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
             {
               type: 'text',
               // Explicit instruction for the AI
-              text: `The flamegraph screenshot you requested (tool call ID: ${lastMessageFromState.tool_call_id}) is provided. Please analyze this image and describe your key observations or findings from it before deciding on the next step.`,
+              text: `The ${lastMessageFromState.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot you requested (tool call ID: ${lastMessageFromState.tool_call_id}) is provided. Please analyze this image and describe your key observations or findings from it before deciding on the next step.`,
             },
             {
               type: 'image_url',
@@ -393,6 +398,12 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
   const currentTools = [
     new TopFunctionsTool(state.profileData),
     new GenerateFlamegraphSnapshotTool(
+      state.supabaseAdmin,
+      state.profileArrayBuffer!,
+      state.userId,
+      state.traceId
+    ),
+    new GenerateSandwichSnapshotTool(
       state.supabaseAdmin,
       state.profileArrayBuffer!,
       state.userId,
@@ -527,6 +538,12 @@ async function toolHandlerNode(
       state.userId,
       state.traceId
     ),
+    new GenerateSandwichSnapshotTool(
+      state.supabaseAdmin,
+      state.profileArrayBuffer!,
+      state.userId,
+      state.traceId
+    ),
   ];
 
   for (const call of toolInvocations) {
@@ -610,7 +627,11 @@ async function toolHandlerNode(
         newMessages.push(toolMessage);
 
         // Save successful tool_result to DB and Realtime event
-        if (call.name === 'generate_flamegraph_screenshot') {
+        if (
+          call.name === 'generate_flamegraph_screenshot' ||
+          call.name === 'generate_sandwich_flamegraph_screenshot'
+        ) {
+          // Updated condition
           try {
             const parsedOutput = output as unknown as FlamegraphSnapshotToolResponse;
             const dbToolResultMessage = {
@@ -620,7 +641,7 @@ async function toolHandlerNode(
               sender: 'tool_result' as const,
               tool_name: call.name,
               tool_call_id: toolCallIdFromAI,
-              content_text: parsedOutput.message || 'Screenshot generated.',
+              content_text: parsedOutput.message || `Screenshot generated (${call.name}).`,
               content_image_url: parsedOutput.publicUrl, // Save public URL
               tool_status: parsedOutput.status as 'success' | 'success_with_warning' | 'error',
               metadata: { base64ProvidedToLLM: !!parsedOutput.base64Image }, // Note that base64 was handled
@@ -691,7 +712,7 @@ async function toolHandlerNode(
               }
             }
           } catch (e) {
-            const parseErrorMsg = 'Failed to process tool output for screenshot.';
+            const parseErrorMsg = `Failed to process tool output for ${call.name}.`;
             const dbParseErrorMessage = {
               user_id: state.userId,
               trace_id: state.traceId,
@@ -1078,7 +1099,12 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
               })
             );
             // If it was a screenshot and we persisted the HumanMessage with image separately:
-            if (dbMsg.tool_name === 'generate_flamegraph_screenshot' && dbMsg.content_image_url) {
+            // TODO: Fix image persistence across chat history.
+            if (
+              (dbMsg.tool_name === 'generate_flamegraph_screenshot' ||
+                dbMsg.tool_name === 'generate_sandwich_flamegraph_screenshot') &&
+              dbMsg.content_image_url
+            ) {
               // The HumanMessage with base64 image is now added to persistent state by toolHandlerNode.
               // If that HumanMessage was ALSO saved to DB with a specific sender type or metadata,
               // we could reconstruct it here. For now, assume toolHandlerNode's in-memory addition to state.messages handles this for the next LLM call.
@@ -1101,15 +1127,6 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
         }
       }
     }
-
-    // Note: The current userPrompt is already saved and will be part of the history fetched above
-    // if it was the last message. Or, it might be considered the *newest* message not yet in langChainMessages.
-    // The original logic was `initialMessages.push(new HumanMessage(userPrompt));` after mapping history.
-    // Since userPrompt is now saved first, the fetched dbHistory should include it if HISTORY_LIMIT is not too small.
-    // If dbHistory *doesn't* include the just-saved userPrompt (e.g. if it's the very first message),
-    // or to be explicit that userPrompt is the current turn:
-    // Ensure userPrompt is the last HumanMessage if not already present as last.
-    // This can be simplified: the `initialSetupNode` will get the system prompt, then agent node will see this history.
 
     const initialState: AgentState = {
       messages: langChainMessages,

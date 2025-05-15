@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { renderLeftHeavyFlamechart } from '../dist/index.js';
+import { renderSandwichFlamechart } from '../dist/index.js'; // Changed import
 import { JSON_parse } from 'uint8array-json-parser';
 import Long from 'long';
 import * as pako from 'pako';
-
-// Removed dynamic import for theme validation
 
 const importerDeps = {
   inflate: pako.inflate,
@@ -15,53 +13,60 @@ const importerDeps = {
 };
 
 async function main() {
-  console.log('!!!!!!!!!!!! FULL TEST-RENDER.TS SCRIPT STARTED !!!!!!!!!!!!');
+  console.log('!!!!!!!!!!!! SANDWICH TEST-RENDER SCRIPT STARTED !!!!!!!!!!!!');
   const args = process.argv.slice(2);
 
-  // Simple argument parsing
   let profileFilePath = null;
   let outputFilePath = null;
+  let frameName = null; // New argument for the frame name to search for
   let startTimeMs = undefined;
   let endTimeMs = undefined;
-  let mode = 'light'; // Default to light mode
-  let flamegraphThemeName = undefined; // Default (system)
+  let mode = 'light';
+  let flamegraphThemeName = undefined;
+  let width = undefined;
+  let height = undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    const value = args[i + 1]; // Potential value for the argument
+    const value = args[i + 1];
 
-    if (arg === '--start-time-ms' && value !== undefined) {
+    if (arg === '--frame-name' && value !== undefined) {
+      frameName = value;
+      i++;
+    } else if (arg === '--start-time-ms' && value !== undefined) {
       startTimeMs = parseFloat(value);
-      i++; // Skip the value
+      i++;
     } else if (arg === '--end-time-ms' && value !== undefined) {
       endTimeMs = parseFloat(value);
-      i++; // Skip the value
+      i++;
     } else if (arg === '--mode' && value !== undefined) {
-      // No validation, just pass through
       mode = value;
-      i++; // Skip the value
+      i++;
     } else if (arg === '--flamegraph-theme' && value !== undefined) {
-      // No validation, just pass through
       flamegraphThemeName = value;
-      i++; // Skip the value
+      i++;
+    } else if (arg === '--width' && value !== undefined) {
+      width = parseInt(value, 10);
+      i++;
+    } else if (arg === '--height' && value !== undefined) {
+      height = parseInt(value, 10);
+      i++;
     } else if (!profileFilePath) {
       profileFilePath = path.resolve(arg);
     } else if (!outputFilePath) {
       outputFilePath = arg;
     }
-    // If none of the above, it might be a flag without a value or unrecognized
-    // We just ignore it in this simple parser
   }
 
-  if (!profileFilePath) {
+  if (!profileFilePath || !frameName) {
     console.error(
-      'Usage: node packages/flamechart-to-png/dist/test-render.js <path-to-profile-file> [output-path.png] [--start-time-ms <ms>] [--end-time-ms <ms>] [--mode <mode>] [--flamegraph-theme <theme>]'
+      'Usage: node packages/flamechart-to-png/dist/test-sandwich-render.js <path-to-profile-file> --frame-name <name> [output-path.png] [--start-time-ms <ms>] [--end-time-ms <ms>] [--mode <mode>] [--flamegraph-theme <theme>] [--width <px>] [--height <px>]'
     );
     process.exit(1);
   }
 
   if (!outputFilePath) {
-    outputFilePath = `${path.basename(profileFilePath, path.extname(profileFilePath))}-flamechart.png`;
+    outputFilePath = `${path.basename(profileFilePath, path.extname(profileFilePath))}-sandwich-${frameName.replace(/[^a-z0-9]/gi, '_')}.png`;
   }
   const resolvedOutputFilePath = path.resolve(outputFilePath);
 
@@ -83,26 +88,51 @@ async function main() {
       console.error(`Failed to import profile from ${profileFilePath}.`);
       process.exit(1);
     }
-
     console.log(
       `Profile group "${profileGroup.name || 'Unnamed Profile Group'}" imported successfully.`
     );
 
-    const defaultWidth = 1200;
-    const defaultHeight = 800;
+    const activeProfile = profileGroup.profiles[profileGroup.indexToView];
+    if (!activeProfile) {
+      console.error('Could not get active profile from group.');
+      process.exit(1);
+    }
 
-    // Plain JavaScript object for options
+    // Find the frame with the most total time matching the name
+    let targetFrame = null;
+    let maxWeight = -1;
+
+    activeProfile.forEachFrame((frame) => {
+      if (frame.name === frameName) {
+        const totalWeight = frame.getTotalWeight();
+        if (totalWeight > maxWeight) {
+          maxWeight = totalWeight;
+          targetFrame = frame;
+        }
+      }
+    });
+
+    if (!targetFrame) {
+      console.error(`Frame with name "${frameName}" not found in the profile.`);
+      process.exit(1);
+    }
+
+    console.log(
+      `Found target frame "${targetFrame.name}" with key ${targetFrame.key} and total weight ${maxWeight}`
+    );
+
     const renderOptions = {
-      width: defaultWidth,
-      height: defaultHeight,
       mode: mode,
+      // selectedFrame will be passed directly to renderSandwichFlamechart
     };
+
+    if (width !== undefined) renderOptions.width = width;
+    if (height !== undefined) renderOptions.height = height;
 
     if (flamegraphThemeName) {
       renderOptions.flamegraphThemeName = flamegraphThemeName;
       console.log(`Using flamegraph theme: ${flamegraphThemeName}`);
     }
-
     if (startTimeMs !== undefined && !isNaN(startTimeMs)) {
       renderOptions.startTimeMs = startTimeMs;
       console.log(`Using start time: ${startTimeMs}ms`);
@@ -111,23 +141,21 @@ async function main() {
       renderOptions.endTimeMs = endTimeMs;
       console.log(`Using end time: ${endTimeMs}ms`);
     }
-
     console.log(`Using mode: ${mode}`);
 
-    // Call renderLeftHeavyFlamechart without type assertion
-    const pngBuffer = await renderLeftHeavyFlamechart(profileGroup, renderOptions);
+    const pngBuffer = await renderSandwichFlamechart(activeProfile, targetFrame, renderOptions);
 
     if (pngBuffer && pngBuffer.length > 0) {
       await fs.writeFile(resolvedOutputFilePath, pngBuffer);
-      console.log(`Flamegraph PNG saved to: ${resolvedOutputFilePath}`);
+      console.log(`Sandwich flamegraph PNG saved to: ${resolvedOutputFilePath}`);
     } else {
       console.log(
-        'renderLeftHeavyFlamechart did not return a PNG buffer (or returned an empty one). Check console for logs.'
+        'renderSandwichFlamechart did not return a PNG buffer (or returned an empty one). Check console for logs.'
       );
     }
     console.log('Test script finished.');
   } catch (error) {
-    console.error('Error during test rendering (inside main try/catch):');
+    console.error('Error during sandwich test rendering (inside main try/catch):');
     console.error(error);
     if (error instanceof Error && error.stack) {
       console.error('Stack trace:\n', error.stack);
