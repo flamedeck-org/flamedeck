@@ -8,7 +8,7 @@ interface ToolMessageItemProps {
 }
 
 export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(message.toolName === 'generate_flamegraph_screenshot');
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isFetchingImage, setIsFetchingImage] = useState<boolean>(false);
