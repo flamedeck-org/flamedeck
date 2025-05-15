@@ -304,7 +304,7 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
       const toolOutput = msg.content as unknown as FlamegraphSnapshotToolResponse;
 
       const content =
-        toolOutput.status === 'success'
+        toolOutput.status === 'success' || toolOutput.status === 'success_with_warning'
           ? `Successfully generated flamegraph screenshot: ${toolOutput.publicUrl}`
           : `Failed to generate flamegraph screenshot: ${toolOutput.message}`;
 
@@ -373,20 +373,20 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
   }
 
   // --- Save messages to file before LLM call ---
-  // try {
-  //   await fs.mkdir(LOGS_DIR, { recursive: true }); // Ensure log directory exists
-  //   const timestamp = new Date().toISOString().replace(/:/g, '-');
-  //   const filename = `llm_input_session_${state.sessionId}_trace_${state.traceId}_iter_${state.iterationCount}_${timestamp}.json`;
-  //   const filePath = path.join(LOGS_DIR, filename);
-  //   // Serialize messages: Handle potential circular structures or complex objects if any
-  //   // A simple JSON.stringify might work for Langchain messages, but be cautious.
-  //   const serializableMessages = messagesForLLMInvocation.map((msg) => msg.toJSON());
-  //   await fs.writeFile(filePath, JSON.stringify(serializableMessages, null, 2));
-  //   console.log(`[Node AI Processor - AgentNode] Saved LLM input to ${filePath}`);
-  // } catch (fileError) {
-  //   console.error('[Node AI Processor - AgentNode] Error saving LLM input to file:', fileError);
-  //   // Do not crash the main process, just log the error
-  // }
+  try {
+    await fs.mkdir(LOGS_DIR, { recursive: true }); // Ensure log directory exists
+    const timestamp = new Date().toISOString().replace(/:/g, '-');
+    const filename = `llm_input_session_${state.sessionId}_trace_${state.traceId}_iter_${state.iterationCount}_${timestamp}.json`;
+    const filePath = path.join(LOGS_DIR, filename);
+    // Serialize messages: Handle potential circular structures or complex objects if any
+    // A simple JSON.stringify might work for Langchain messages, but be cautious.
+    const serializableMessages = messagesForLLMInvocation.map((msg) => msg.toJSON());
+    await fs.writeFile(filePath, JSON.stringify(serializableMessages, null, 2));
+    console.log(`[Node AI Processor - AgentNode] Saved LLM input to ${filePath}`);
+  } catch (fileError) {
+    console.error('[Node AI Processor - AgentNode] Error saving LLM input to file:', fileError);
+    // Do not crash the main process, just log the error
+  }
   // --- End save messages to file ---
 
   const currentTools = [
@@ -447,45 +447,24 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
   // Save the AIMessage (which might contain text or tool_calls) to the database
   if (llmResponse) {
     if (llmResponse.tool_calls && llmResponse.tool_calls.length > 0) {
-      // This is an AIMessage requesting tool calls
-      // We save one 'model' message that represents the AI deciding to use tools
-      // And then individual 'tool_request' messages for each tool call for detailed logging.
-      const aiDecisionMessage = {
+      // This is an AIMessage requesting tool calls.
+      // Save it as one 'model' message with the tool_calls details in tool_calls_json.
+      const aiMessageToSave = {
         user_id: state.userId,
         trace_id: state.traceId,
         session_id: state.sessionId,
         sender: 'model' as const,
-        content_text: llmResponse.content || '(AI is using tools)',
+        content_text: llmResponse.content || '', // Ensure content is not undefined/null
+        tool_calls_json: llmResponse.tool_calls as any, // Store the array of tool calls
       };
       const { error: modelMsgError } = await state.supabaseAdmin
         .from('chat_messages')
-        .insert(aiDecisionMessage);
+        .insert(aiMessageToSave);
       if (modelMsgError)
         console.error(
-          '[Node AI Processor - AgentNode] DB error saving AI model (tool decision) message:',
+          '[Node AI Processor - AgentNode] DB error saving AI model message with tool_calls:',
           modelMsgError
         );
-
-      for (const toolCall of llmResponse.tool_calls) {
-        const toolRequestMessage = {
-          user_id: state.userId,
-          trace_id: state.traceId,
-          session_id: state.sessionId,
-          sender: 'tool_request' as const,
-          tool_name: toolCall.name,
-          tool_call_id: toolCall.id,
-          tool_args_json: toolCall.args as any,
-          content_text: `AI requesting tool: ${toolCall.name} with ID ${toolCall.id}`,
-        };
-        const { error: toolReqError } = await state.supabaseAdmin
-          .from('chat_messages')
-          .insert(toolRequestMessage);
-        if (toolReqError)
-          console.error(
-            '[Node AI Processor - AgentNode] DB error saving tool_request message:',
-            toolReqError
-          );
-      }
     } else {
       // This is a standard AIMessage with textual content
       const aiTextMessage = {
@@ -494,6 +473,7 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
         session_id: state.sessionId,
         sender: 'model' as const,
         content_text: llmResponse.content as string,
+        // tool_calls_json will be null or undefined here by default
       };
       const { error: textMsgError } = await state.supabaseAdmin
         .from('chat_messages')
@@ -1050,23 +1030,43 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
 
     const langChainMessages: BaseMessage[] = [];
 
+    console.log(`[Node AI Processor] Received ${dbHistory.length} messages from DB`);
+
+    try {
+      await fs.writeFile(
+        `${LOGS_DIR}/dbHistory_${traceId}_${sessionId}.json`,
+        JSON.stringify(dbHistory, null, 2)
+      );
+    } catch (e) {
+      console.error('[Node AI Processor] Error saving DB history to file:', e);
+    }
+
     if (dbHistory) {
       for (const dbMsg of dbHistory) {
         if (dbMsg.sender === 'user' && dbMsg.content_text) {
           langChainMessages.push(new HumanMessage({ content: dbMsg.content_text }));
-        } else if (dbMsg.sender === 'model' && dbMsg.content_text) {
-          langChainMessages.push(new AIMessage({ content: dbMsg.content_text }));
-        } else if (
-          dbMsg.sender === 'tool_request' &&
-          dbMsg.tool_name &&
-          dbMsg.tool_call_id &&
-          dbMsg.tool_args_json
-        ) {
-          // The AIMessage that made the tool call should already be in history.
-          // Here we might need to reconstruct the AIMessage with its tool_calls array if it wasn't stored that way.
-          // For simplicity now, we assume the AIMessage that *caused* the tool_request is what's important for LLM context.
-          // If the LLM needs to see its own past tool_calls, the AIMessage should be stored with that data.
-          // For now, we focus on user/model/tool_result messages for direct context.
+        } else if (dbMsg.sender === 'model') {
+          if (
+            dbMsg.tool_calls_json &&
+            Array.isArray(dbMsg.tool_calls_json) &&
+            (dbMsg.tool_calls_json as any[]).length > 0
+          ) {
+            // Type assertion for tool_calls, assuming dbMsg.tool_calls_json is already in the correct format [{name, args, id}, ...]
+            const toolCalls = (dbMsg.tool_calls_json as any[]).map((tc) => ({
+              name: tc.name,
+              args: tc.args,
+              id: tc.id,
+              type: tc.type, // Preserve type if present (e.g. 'tool_call' or 'function')
+            }));
+            langChainMessages.push(
+              new AIMessage({
+                content: dbMsg.content_text || '',
+                tool_calls: toolCalls,
+              })
+            );
+          } else {
+            langChainMessages.push(new AIMessage({ content: dbMsg.content_text || '' }));
+          }
         } else if (dbMsg.sender === 'tool_result') {
           if (dbMsg.tool_name && dbMsg.tool_call_id && dbMsg.content_text) {
             langChainMessages.push(
@@ -1100,6 +1100,7 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
         }
       }
     }
+
     // Note: The current userPrompt is already saved and will be part of the history fetched above
     // if it was the last message. Or, it might be considered the *newest* message not yet in langChainMessages.
     // The original logic was `initialMessages.push(new HumanMessage(userPrompt));` after mapping history.

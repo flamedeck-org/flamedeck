@@ -399,7 +399,10 @@ export async function renderToPng(
     return Buffer.from('');
   }
 
-  const activeProfile: Profile = profileGroup.profiles[profileGroup.indexToView];
+  // Always flatten recursion for now
+  const activeProfile: Profile =
+    profileGroup.profiles[profileGroup.indexToView].getProfileWithRecursionFlattened();
+
   if (!activeProfile) {
     console.error('[flamechart-to-png] Active profile not found.');
     return Buffer.from('');
