@@ -1,4 +1,5 @@
-import React, {
+import * as React from 'react';
+import {
   useState,
   useRef,
   useEffect,
@@ -172,13 +173,12 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${
-                      msg.sender === 'user'
+                    className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${msg.sender === 'user'
                         ? 'bg-blue-500 text-white'
                         : msg.sender === 'error'
                           ? 'bg-red-100 text-red-700 border border-red-300'
                           : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
-                    }`}
+                      }`}
                   >
                     {msg.text}
                   </div>
