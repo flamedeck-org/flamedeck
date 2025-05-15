@@ -51,8 +51,8 @@ export type Database = {
           metadata: Json | null
           sender: string
           session_id: string
-          tool_args_json: Json | null
           tool_call_id: string | null
+          tool_calls_json: Json | null
           tool_name: string | null
           tool_status: string | null
           trace_id: string
@@ -67,8 +67,8 @@ export type Database = {
           metadata?: Json | null
           sender: string
           session_id?: string
-          tool_args_json?: Json | null
           tool_call_id?: string | null
+          tool_calls_json?: Json | null
           tool_name?: string | null
           tool_status?: string | null
           trace_id: string
@@ -83,8 +83,8 @@ export type Database = {
           metadata?: Json | null
           sender?: string
           session_id?: string
-          tool_args_json?: Json | null
           tool_call_id?: string | null
+          tool_calls_json?: Json | null
           tool_name?: string | null
           tool_status?: string | null
           trace_id?: string
