@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { useTraceAnalysisSocket } from '@/hooks/useTraceAnalysisSocket';
 import {
   FloatingChatButton,
@@ -15,7 +15,7 @@ interface ChatContainerProps {
   traceId: string | null;
 }
 
-export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
+export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) => {
   const { user } = useAuth(); // Get user from Auth context
   const userId = user?.id;
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -42,6 +42,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
   const currentSessionId = useMemo(() => {
     return uuidv4();
   }, []);
+
+  console.log('[ChatContainer] currentSessionId:', currentSessionId);
 
   // Effect to manage WebSocket, Realtime connections, and initial history load
   useEffect(() => {
@@ -469,4 +471,4 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ traceId }) => {
       )}
     </>
   );
-};
+});
