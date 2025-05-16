@@ -7,8 +7,12 @@ interface ToolMessageItemProps {
   message: ChatMessage;
 }
 
+const screenshotToolNames = ['generate_flamegraph_screenshot', 'generate_sandwich_flamegraph_screenshot'];
+
 export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => {
-  const [isExpanded, setIsExpanded] = useState(message.toolName === 'generate_flamegraph_screenshot');
+  const [isExpanded, setIsExpanded] = useState(
+    screenshotToolNames.includes(message.toolName)
+  );
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isFetchingImage, setIsFetchingImage] = useState<boolean>(false);
@@ -106,7 +110,7 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
 
   // Determine if text content should be displayed
   const shouldDisplayText = !(
-    message.toolName === 'generate_flamegraph_screenshot' &&
+    screenshotToolNames.includes(message.toolName) &&
     (message.toolStatus === 'success' || message.toolStatus === 'success_with_warning')
   );
 
