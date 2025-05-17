@@ -522,6 +522,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_chat_sessions_for_trace: {
+        Args:
+          | { in_trace_id: string }
+          | { in_user_id: string; in_trace_id: string }
+        Returns: {
+          sessionId: string
+          startedAt: string
+          messageCount: number
+        }[]
+      }
       get_folder_view_data: {
         Args: {
           p_user_id: string
