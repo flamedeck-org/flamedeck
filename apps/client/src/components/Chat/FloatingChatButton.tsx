@@ -4,7 +4,6 @@ import { MessageSquare } from 'lucide-react'; // Using lucide-react for icons
 
 interface FloatingChatButtonProps {
   onClick: () => void;
-  // Add other props like position, style if needed later
 }
 
 export const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({ onClick }) => {

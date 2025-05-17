@@ -21,7 +21,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
   const channelRef = useRef<RealtimeChannel | null>(null);
   const currentMessageRef = useRef<ChatMessage | null>(null); // Ref to track current streaming message
   const chatWindowRef = useRef<ChatWindowHandle>(null); // <-- Create ref for ChatWindow
-  const analysisSentForCurrentTraceRef = useRef<boolean>(false); // Ref to track if initial analysis was sent for this traceId
 
   const {
     connect: connectSocket,
@@ -256,40 +255,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
     currentSessionId,
   ]);
 
-  const sendStartAnalysis = useCallback(() => {
-    if (!userId || !traceId || !currentSessionId) return;
-    console.log(
-      `[ChatContainer] Sending start_analysis for trace ${traceId}, session ${currentSessionId}`
-    );
-    if (chatMessages.length === 0) {
-      setChatMessages([{ id: uuidv4(), sender: 'system', text: 'Connecting to AI analysis...' }]);
-    }
-    analysisSentForCurrentTraceRef.current = true;
-    setChatError(null);
-
-    sendRawSocketMessage({
-      type: 'start_analysis',
-      userId: userId,
-      traceId: traceId,
-      sessionId: currentSessionId, // Include sessionId
-    });
-  }, [userId, traceId, currentSessionId, sendRawSocketMessage, chatMessages.length]);
-
-  // --- Effect to send initial analysis request when socket connects ---
-  useEffect(() => {
-    if (
-      isChatOpen &&
-      isSocketConnected &&
-      userId &&
-      traceId &&
-      currentSessionId && // Ensure session ID exists
-      !analysisSentForCurrentTraceRef.current // Only send if not already sent for this trace
-    ) {
-      sendStartAnalysis();
-    }
-    // Dependency array includes all conditions checked
-  }, [isChatOpen, isSocketConnected, userId, traceId, currentSessionId, sendStartAnalysis]);
-
   // Effect to handle initial connection/ack from WebSocket
   useEffect(() => {
     // Handle the ack message "Requesting initial analysis..."
@@ -454,6 +419,11 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
     return null;
   }
 
+  const suggestionPrompts = [
+    "Analyze this trace",
+    "Show me the top 10 slowest functions",
+  ];
+
   return (
     <>
       <FloatingChatButton onClick={() => setIsChatOpen((prev) => !prev)} />
@@ -467,6 +437,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
           isLoading={isWaitingForModel}
           isStreaming={isStreaming}
           error={chatError}
+          suggestionPrompts={suggestionPrompts}
         />
       )}
     </>

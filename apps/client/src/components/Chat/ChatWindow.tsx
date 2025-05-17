@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, X } from 'lucide-react';
 import { ToolMessageItem } from './ToolMessageItem';
+import { MessageSquareText } from 'lucide-react';
 
 // Define message types for clarity
 export interface ChatMessage {
@@ -36,6 +37,7 @@ interface ChatWindowProps {
   isLoading: boolean; // To indicate if the model is processing
   isStreaming: boolean; // Indicates if chunks are actively arriving
   error: string | null; // To display any connection/processing errors
+  suggestionPrompts?: string[]; // <-- Add new prop for suggestion prompts
 }
 
 // Define handle type for the ref
@@ -45,7 +47,7 @@ export interface ChatWindowHandle {
 
 // Use forwardRef to accept a ref from the parent
 export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
-  ({ isOpen, onClose, messages, sendMessage, isLoading, isStreaming, error }, ref) => {
+  ({ isOpen, onClose, messages, sendMessage, isLoading, isStreaming, error, suggestionPrompts }, ref) => {
     const [input, setInput] = useState('');
     const internalScrollAreaRef = useRef<HTMLDivElement>(null);
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
@@ -149,6 +151,11 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
       return null;
     }
 
+    const handleSuggestionClick = (prompt: string) => {
+      sendMessage(prompt);
+      setInput(''); // Clear input after sending suggestion
+    };
+
     return (
       <div className="fixed bottom-24 right-6 w-[32rem] h-[calc(100vh-15rem)] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-xl flex flex-col z-40 overflow-hidden">
         {/* Header */}
@@ -162,6 +169,17 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
         {/* Message Area */}
         <ScrollArea className="flex-grow p-3" ref={internalScrollAreaRef}>
           <div className="space-y-3">
+            {messages.length === 0 && !isLoading && !error && (
+              <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                <MessageSquareText className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-4" />
+                <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                  Ready to analyze your trace!
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Ask a question or use one of the suggestions below to get started.
+                </p>
+              </div>
+            )}
             {messages.map((msg) => {
               if (msg.sender === 'tool') {
                 return <ToolMessageItem key={msg.id} message={msg} />;
@@ -201,6 +219,23 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
             )}
           </div>
         </ScrollArea>
+
+        {/* Suggestion Bubbles Area */}
+        {suggestionPrompts && suggestionPrompts.length > 0 && messages.length === 0 && (
+          <div className="p-2 border-t dark:border-gray-700 flex flex-wrap gap-2 justify-center bg-background">
+            {suggestionPrompts.map((prompt) => (
+              <Button
+                key={prompt}
+                variant="outline"
+                size="sm"
+                onClick={() => handleSuggestionClick(prompt)}
+                className="dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+              >
+                {prompt}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {/* Input Area */}
         <div className="p-3 border-t dark:border-gray-700 flex items-center space-x-2 bg-background chat-input-area">

@@ -11,10 +11,6 @@ export async function fetchChatHistory(
   sessionId: string,
   limit: number = DEFAULT_HISTORY_PAGE_SIZE
 ): Promise<ChatMessage[]> {
-  console.log(
-    `[chatHistory] Fetching history for user: ${userId}, trace: ${traceId}, session: ${sessionId}, limit: ${limit}`
-  );
-
   const { data: dbMessages, error: dbError } = await supabase
     .from('chat_messages')
     .select('*')
@@ -25,8 +21,6 @@ export async function fetchChatHistory(
     .limit(limit);
 
   if (dbError) {
-    console.error('[chatHistory] Error fetching history:', dbError);
-    // Throw an error that can be caught by the calling component
     throw new Error(`Failed to load chat history: ${dbError.message}`);
   }
 
@@ -71,4 +65,32 @@ export async function fetchChatHistory(
   );
 
   return mappedMessages;
+}
+
+export interface ChatSession {
+  sessionId: string;
+  startedAt: string; // ISO string format from created_at
+  messageCount?: number; // Optional: could be useful later. Provided by the new SQL fn.
+}
+
+export async function fetchChatSessions(
+  traceId: string
+): Promise<ChatSession[]> {
+  const { data, error } = await supabase.rpc('get_chat_sessions_for_trace', {
+    in_trace_id: traceId,
+  });
+
+  if (error) {
+    throw new Error(`Failed to load chat sessions: ${error.message}`);
+  }
+
+  if (!data) {
+    return [];
+  }
+
+  return data.map(session => ({
+    sessionId: session.sessionId,
+    startedAt: session.startedAt,
+    messageCount: session.messageCount,
+  }));
 }
