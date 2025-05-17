@@ -1,5 +1,3 @@
-// Remove Deno-specific runtime import
-// import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'; // Changed to npm import
 import { type Database } from '@/integrations/supabase/types'; // Import generated DB types
 
@@ -30,6 +28,7 @@ import { StateGraph, END, Annotation } from '@langchain/langgraph';
 
 import * as fs from 'fs/promises'; // For file system operations
 import * as path from 'path'; // For path manipulation
+import { createImageHumanMessageFromToolResult } from './ai-message-utils'; // Updated import name
 
 console.log('[Node AI Processor] Module initialized.'); // Changed log message
 
@@ -39,13 +38,13 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // We need a reasoning model for this complex task
-const MODEL_NAME = process.env.AI_ANALYSIS_MODEL || 'o4-mini';
+// const MODEL_NAME = process.env.AI_ANALYSIS_MODEL || 'o4-mini'; // REMOVED: Model name will be passed in payload
 
-const llm = new ChatOpenAI({
-  apiKey: OPENAI_API_KEY,
-  modelName: MODEL_NAME,
-  streaming: true,
-});
+// const llm = new ChatOpenAI({ // REMOVED: LLM will be initialized per request
+//   apiKey: OPENAI_API_KEY,
+//   modelName: MODEL_NAME,
+//   streaming: true,
+// });
 
 function formatPromptTemplateStrings(strings: TemplateStringsArray, ...values: any[]) {
   const result = strings.reduce(
@@ -71,6 +70,8 @@ You are a performance analysis assistant.
 - You can use the 'generate_sandwich_flamegraph_screenshot' tool to get a caller/callee sandwich view for a specific function by providing its name via the 'frameName' parameter.
 - You can use the 'get_top_functions' tool to get a list of the top functions by self or total time.
 
+IMPORTANT: After every tool call, you should provide a summary of your findings.
+
 If you think you have identified a bottleneck, provide a concise summary.
 
 Start by generating a flamegraph screenshot of the entire trace.
@@ -89,6 +90,7 @@ interface AgentState {
   profileArrayBuffer: ArrayBuffer | null;
   profileData: any | null; // ProfileGroup type from speedscope-core
   traceSummary: string;
+  llm: ChatOpenAI; // ADDED: LLM instance for this agent run
 
   // For managing LangChain streaming callbacks
   llmStreamingActiveForCurrentSegment: boolean;
@@ -97,8 +99,8 @@ interface AgentState {
   // Iteration control for the graph
   iterationCount: number;
   maxIterations: number;
-
   sessionId: string; // Added sessionId
+  modelName?: string; // ADDED: Optional model name from client
 }
 
 // --- LangGraph Nodes ---
@@ -199,6 +201,15 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
   console.log(
     `[Node AI Processor - AgentNode] Iteration ${state.iterationCount}. Calling LLM. Current messages count: ${state.messages.length}`
   );
+  const { llm } = state; // Get LLM from state
+  if (!llm) {
+    console.error(
+      '[Node AI Processor - AgentNode] CRITICAL: state.llm is null. Aborting agent node.'
+    );
+    // Potentially throw an error or return a state that leads to END
+    return { messages: state.messages, iterationCount: state.iterationCount + 1 };
+  }
+
   let callbackState = {
     llmStreamingActiveForCurrentSegment: state.llmStreamingActiveForCurrentSegment,
     currentToolName: state.currentToolName,
@@ -299,69 +310,56 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
     },
   ];
 
-  let messagesForLLMInvocation = [...state.messages].map((msg) => {
+  // Construct messages for LLM invocation, inserting HumanMessage with image after its generating ToolMessage
+  const messagesForLLMInvocation: BaseMessage[] = [];
+  for (const originalMessage of state.messages) {
     if (
-      msg instanceof ToolMessage &&
-      (msg.name === 'generate_flamegraph_screenshot' ||
-        msg.name === 'generate_sandwich_flamegraph_screenshot')
+      originalMessage instanceof ToolMessage &&
+      (originalMessage.name === 'generate_flamegraph_screenshot' ||
+        originalMessage.name === 'generate_sandwich_flamegraph_screenshot') &&
+      originalMessage.tool_call_id // Ensure there is a tool_call_id for safety
     ) {
-      // Updated condition
-      const toolOutput = msg.content as unknown as FlamegraphSnapshotToolResponse;
+      // This is the original ToolMessage from state.messages, potentially containing the full content (incl. base64)
+      const toolOutput = originalMessage.content as unknown as FlamegraphSnapshotToolResponse;
 
-      const content =
+      // Create the version of the ToolMessage for the LLM (text summary, no base64 in content string)
+      const displayContent =
         toolOutput.status === 'success' || toolOutput.status === 'success_with_warning'
-          ? `Successfully generated ${msg.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot: ${toolOutput.publicUrl}` // Dynamic message
-          : `Failed to generate ${msg.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot: ${toolOutput.message}`;
+          ? `Successfully generated ${originalMessage.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot: ${toolOutput.publicUrl}`
+          : `Failed to generate ${originalMessage.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot: ${toolOutput.message}`;
 
-      // Strip the base64Image from the content since it is huge and we only want the AI to
-      // interpret it if its the last image
-      return new ToolMessage({ tool_call_id: msg.tool_call_id, content });
-    }
-    return msg;
-  });
+      messagesForLLMInvocation.push(
+        new ToolMessage({
+          tool_call_id: originalMessage.tool_call_id,
+          content: displayContent,
+          name: originalMessage.name,
+        })
+      );
 
-  const lastMessageFromState = state.messages[state.messages.length - 1];
+      console.log('OPRIGINAL MESSAGE--------------------------------');
+      console.log(originalMessage);
+      console.log('--------------------------------');
 
-  // Check if the last message is a successful screenshot tool call to add image for LLM
-  if (
-    lastMessageFromState instanceof ToolMessage &&
-    (lastMessageFromState.name === 'generate_flamegraph_screenshot' ||
-      lastMessageFromState.name === 'generate_sandwich_flamegraph_screenshot') && // Updated condition
-    lastMessageFromState.tool_call_id // Ensure there is a tool_call_id
-  ) {
-    try {
-      const toolOutput = lastMessageFromState.content as unknown as FlamegraphSnapshotToolResponse;
-      if (
-        (toolOutput.status === 'success' || toolOutput.status === 'success_with_warning') &&
-        toolOutput.base64Image
-      ) {
+      // Try to create and add the HumanMessage with the base64 image
+      // The originalMessage (which is a ToolMessage) is passed here as it contains the full output including base64
+      const imageHumanMessage = createImageHumanMessageFromToolResult(originalMessage);
+
+      console.log('IMAGE HUMAN MESSAGE--------------------------------');
+      console.log({ imageHumanMessage });
+      console.log('--------------------------------');
+
+      if (imageHumanMessage) {
+        messagesForLLMInvocation.push(imageHumanMessage);
         console.log(
-          '[Node AI Processor - AgentNode] Preparing temporary HumanMessage with image and analysis instruction for LLM.'
-        );
-        const imageMessageForLLM = new HumanMessage({
-          content: [
-            {
-              type: 'text',
-              // Explicit instruction for the AI
-              text: `The ${lastMessageFromState.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot you requested (tool call ID: ${lastMessageFromState.tool_call_id}) is provided. Please analyze this image and describe your key observations or findings from it before deciding on the next step.`,
-            },
-            {
-              type: 'image_url',
-              image_url: { url: `data:image/png;base64,${toolOutput.base64Image}` },
-            },
-          ],
-        });
-        messagesForLLMInvocation.push(imageMessageForLLM); // Add to TEMPORARY list for this LLM call only
-      } else {
-        console.log(
-          '[Node AI Processor - AgentNode] Screenshot tool_result was not success or base64Image missing; not adding image to LLM input.'
+          '[Node AI Processor - AgentNode] Added HumanMessage with image for tool_call_id:',
+          originalMessage.tool_call_id
         );
       }
-    } catch (e) {
-      console.error(
-        '[Node AI Processor - AgentNode] Error parsing screenshot tool_result for image handling in agentNode:',
-        e
-      );
+    } else {
+      // For all other messages, add them as they are.
+      // If specific transformations are needed for other message types in the future,
+      // they can be added here.
+      messagesForLLMInvocation.push(originalMessage);
     }
   }
 
@@ -634,33 +632,37 @@ async function toolHandlerNode(
           // Updated condition
           try {
             const parsedOutput = output as unknown as FlamegraphSnapshotToolResponse;
-            const dbToolResultMessage = {
-              user_id: state.userId,
-              trace_id: state.traceId,
-              session_id: state.sessionId,
-              sender: 'tool_result' as const,
-              tool_name: call.name,
-              tool_call_id: toolCallIdFromAI,
-              content_text: parsedOutput.message || `Screenshot generated (${call.name}).`,
-              content_image_url: parsedOutput.publicUrl, // Save public URL
-              tool_status: parsedOutput.status as 'success' | 'success_with_warning' | 'error',
-              metadata: { base64ProvidedToLLM: !!parsedOutput.base64Image }, // Note that base64 was handled
-            };
-            await state.supabaseAdmin
-              .from('chat_messages')
-              .insert(dbToolResultMessage)
-              .then(({ error: dbErr }) => {
-                if (dbErr)
-                  console.error(
-                    '[Node AI Processor - ToolHandlerNode] DB error saving screenshot tool_result:',
-                    dbErr
-                  );
-              });
 
             if (
               parsedOutput.status === 'success' ||
               parsedOutput.status === 'success_with_warning'
             ) {
+              const dbToolResultMessage = {
+                user_id: state.userId,
+                trace_id: state.traceId,
+                session_id: state.sessionId,
+                sender: 'tool_result' as const,
+                tool_name: call.name,
+                tool_call_id: toolCallIdFromAI,
+                content_text: parsedOutput.message || `Screenshot generated (${call.name}).`,
+                content_image_url: parsedOutput.publicUrl, // Save public URL
+                tool_status: parsedOutput.status as 'success' | 'success_with_warning' | 'error',
+                metadata: { base64ProvidedToLLM: !!parsedOutput.base64Image }, // Note that base64 was handled
+              };
+
+              // Save the tool_result to the DB
+              await state.supabaseAdmin
+                .from('chat_messages')
+                .insert(dbToolResultMessage)
+                .then(({ error: dbErr }) => {
+                  if (dbErr)
+                    console.error(
+                      '[Node AI Processor - ToolHandlerNode] DB error saving screenshot tool_result:',
+                      dbErr
+                    );
+                });
+
+              // Send the tool_result to the Realtime channel
               if (state.realtimeChannel) {
                 await state.realtimeChannel.send({
                   type: 'broadcast',
@@ -688,6 +690,7 @@ async function toolHandlerNode(
                 content_text: parsedOutput.message || 'Tool reported an error in its output.',
                 tool_status: 'error' as const,
               };
+              // Save the tool_error to the DB
               await state.supabaseAdmin
                 .from('chat_messages')
                 .insert(dbToolErrorMessage)
@@ -698,6 +701,7 @@ async function toolHandlerNode(
                       dbErr
                     );
                 });
+              // Send the tool_error to the Realtime channel
               if (state.realtimeChannel) {
                 await state.realtimeChannel.send({
                   type: 'broadcast',
@@ -747,6 +751,21 @@ async function toolHandlerNode(
             }
           }
         } else {
+          if (state.realtimeChannel) {
+            await state.realtimeChannel.send({
+              type: 'broadcast',
+              event: 'ai_response',
+              payload: {
+                type: 'tool_result',
+                toolCallId: toolCallIdFromAI,
+                toolName: call.name,
+                status: 'success',
+                resultType: 'text',
+                textContent: output as string,
+              },
+            });
+          }
+
           // For other tools like TopFunctionsTool (text output)
           const dbToolResultMessage = {
             user_id: state.userId,
@@ -768,24 +787,8 @@ async function toolHandlerNode(
                   dbErr
                 );
             });
-          if (state.realtimeChannel) {
-            await state.realtimeChannel.send({
-              type: 'broadcast',
-              event: 'ai_response',
-              payload: {
-                type: 'tool_result',
-                toolCallId: toolCallIdFromAI,
-                toolName: call.name,
-                status: 'success',
-                resultType: 'text',
-                textContent: output as string,
-              },
-            });
-          }
         }
       } catch (e: any) {
-        // Error during toolInstance.invoke()
-        // Error during toolInstance.invoke()
         const errorMsg = e instanceof Error ? e.message : String(e);
         const errorToolMessage = new ToolMessage({
           content: `Error: ${errorMsg}`,
@@ -909,6 +912,7 @@ const AgentStateAnnotations = Annotation.Root({
   iterationCount: Annotation<number>({ reducer: (x, y) => y, default: () => 0 }),
   maxIterations: Annotation<number>({ reducer: (x, y) => y ?? x, default: () => 7 }),
   sessionId: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => '' }),
+  llm: Annotation<ChatOpenAI | null>({ reducer: (x, y) => y ?? x, default: () => null }), // ADDED Annotation for LLM
 });
 
 const workflow = new StateGraph(AgentStateAnnotations) // Used updated name
@@ -958,10 +962,11 @@ export interface ProcessAiTurnPayload {
   prompt: string;
   traceId: string;
   sessionId: string;
+  modelName?: string; // ADDED: Optional model name from client
 }
 
 export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise<void> {
-  const { userId, prompt: userPrompt, traceId, sessionId } = payload;
+  const { userId, prompt: userPrompt, traceId, sessionId, modelName: requestedModelName } = payload; // Destructure modelName
 
   const missingEnvVars: string[] = [];
   if (!OPENAI_API_KEY) missingEnvVars.push('OPENAI_API_KEY');
@@ -973,6 +978,17 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
     console.error(`[Node AI Processor] ${errorMessage}`);
     throw new Error(`Internal configuration error: ${errorMessage}`);
   }
+
+  // Determine model to use
+  const modelToUse = requestedModelName || 'o4-mini'; // Fallback if not provided
+  console.log(`[Node AI Processor] Using AI model: ${modelToUse}`);
+
+  // Initialize LLM for this request
+  const llm = new ChatOpenAI({
+    apiKey: OPENAI_API_KEY,
+    modelName: modelToUse,
+    streaming: true,
+  });
 
   const supabaseAdmin = createClient<Database>(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false },
@@ -1091,24 +1107,32 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
           }
         } else if (dbMsg.sender === 'tool_result') {
           if (dbMsg.tool_name && dbMsg.tool_call_id && dbMsg.content_text) {
-            langChainMessages.push(
-              new ToolMessage({
-                content: dbMsg.content_text,
-                name: dbMsg.tool_name,
-                tool_call_id: dbMsg.tool_call_id,
-              })
-            );
-            // If it was a screenshot and we persisted the HumanMessage with image separately:
-            // TODO: Fix image persistence across chat history.
             if (
               (dbMsg.tool_name === 'generate_flamegraph_screenshot' ||
                 dbMsg.tool_name === 'generate_sandwich_flamegraph_screenshot') &&
               dbMsg.content_image_url
             ) {
-              // The HumanMessage with base64 image is now added to persistent state by toolHandlerNode.
-              // If that HumanMessage was ALSO saved to DB with a specific sender type or metadata,
-              // we could reconstruct it here. For now, assume toolHandlerNode's in-memory addition to state.messages handles this for the next LLM call.
-              // The persisted record here is for the client UI and long-term log.
+              langChainMessages.push(
+                new ToolMessage({
+                  // @ts-ignore TODO really there is probably a metadata field that we should use here
+                  content: {
+                    status: dbMsg.tool_status,
+                    publicUrl: dbMsg.content_image_url,
+                    base64Image: null,
+                    message: dbMsg.content_text,
+                  } as FlamegraphSnapshotToolResponse,
+                  name: dbMsg.tool_name,
+                  tool_call_id: dbMsg.tool_call_id,
+                })
+              );
+            } else {
+              langChainMessages.push(
+                new ToolMessage({
+                  content: dbMsg.content_text,
+                  name: dbMsg.tool_name,
+                  tool_call_id: dbMsg.tool_call_id,
+                })
+              );
             }
           }
         } else if (
@@ -1129,6 +1153,7 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
     }
 
     const initialState: AgentState = {
+      llm,
       messages: langChainMessages,
       supabaseAdmin,
       realtimeChannel,
@@ -1141,7 +1166,7 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
       llmStreamingActiveForCurrentSegment: false,
       currentToolName: null,
       iterationCount: 0,
-      maxIterations: 7,
+      maxIterations: 10,
     };
 
     console.log('[Node AI Processor] Invoking LangGraph app stream with DB history...');
