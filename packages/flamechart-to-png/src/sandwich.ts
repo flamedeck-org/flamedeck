@@ -62,8 +62,15 @@ export async function renderSandwichFlamechart(
 
   console.log(`[flamechart-to-png] Rendering sandwich view for frame: "${selectedFrame.name}"`);
 
-  const callerProfile = mainProfile.getInvertedProfileForCallersOf(selectedFrame);
-  const calleeProfile = mainProfile.getProfileForCalleesOf(selectedFrame);
+  const callerProfileInput = mainProfile.getInvertedProfileForCallersOf(selectedFrame);
+  const calleeProfileInput = mainProfile.getProfileForCalleesOf(selectedFrame);
+
+  const callerProfile = callerProfileInput
+    ? callerProfileInput.getProfileWithRecursionFlattened()
+    : null;
+  const calleeProfile = calleeProfileInput
+    ? calleeProfileInput.getProfileWithRecursionFlattened()
+    : null;
 
   if (!callerProfile || callerProfile.getTotalWeight() === 0) {
     console.warn('[flamechart-to-png] No significant caller data for selected frame.');

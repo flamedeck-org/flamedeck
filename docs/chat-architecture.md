@@ -66,7 +66,8 @@ A `chat_messages` table in Supabase stores the conversation:
 
     - Manages WebSocket connections.
     - Receives `start_analysis` (with `userId`, `traceId`, `sessionId`) and `user_prompt` (with `userId`, `traceId`, `prompt`, `sessionId`) messages.
-    - **Forwards these requests as HTTP POST to `/api/v1/ai/process-turn` on `apps/flamechart-server`**, including `sessionId` in the payload. No longer forwards client-side `history`.
+    - Reads `AI_ANALYSIS_MODEL` environment variable to determine the AI model to be used.
+    - **Forwards these requests as HTTP POST to `/api/v1/ai/process-turn` on `apps/flamechart-server`**, including `sessionId` and the desired `modelName` in the payload. No longer forwards client-side `history`.
     - Secured with an `X-Internal-Auth-Token`.
     - Sends WebSocket acks (`connection_ack`, `waiting_for_model`) to the client.
 
@@ -75,15 +76,18 @@ A `chat_messages` table in Supabase stores the conversation:
     - Express.js route handler (`POST /api/v1/ai/process-turn`) on `flamechart-server`.
     - Authenticates request from `trace-analysis-socket`.
     - **`processAiTurnLogic` function:**
+      - Receives `modelName` in the payload from `trace-analysis-socket`.
+      - Initializes `ChatOpenAI` (LLM client) using the provided `modelName` (with a fallback like 'o4-mini' if not specified).
       - Saves the incoming user prompt to `chat_messages` table with `userId`, `traceId`, `sessionId`.
       - Fetches existing chat history for the current `userId`, `traceId`, and `sessionId` from `chat_messages`.
       - Maps DB history to Langchain `BaseMessage` objects.
-      - Initializes `AgentState` for LangGraph (including `sessionId`, DB-fetched messages).
+      - Initializes `AgentState` for LangGraph (including `sessionId`, DB-fetched messages, and the initialized `llm` instance).
       - Establishes Supabase Realtime channel for this `userId`.
       - Invokes the LangGraph (`app.stream()`).
     - **LangGraph Nodes (running in Node.js):**
       - `initialSetupNode`: Fetches trace file from Supabase Storage, parses (using local `profile-loader.ts`), generates summary, prepares `SystemMessage`.
       - `agentNode`:
+        - Retrieves the `llm` instance from `AgentState`.
         - Interacts with LLM.
         - If the previous step was a successful `generate_flamegraph_screenshot` `ToolMessage`, temporarily constructs a `HumanMessage` with the base64 image and an explicit instruction for the AI to analyze it. This temporary message is _only_ for the immediate LLM call.
         - Saves the LLM's `AIMessage` (textual response or tool requests) to `chat_messages` table with `sessionId`. If tool requests are made, saves `tool_request` entries to DB.
@@ -95,6 +99,7 @@ A `chat_messages` table in Supabase stores the conversation:
         - Sends `tool_start`, `tool_result`, `tool_error` events to client via Realtime.
     - After graph completion, sends `model_response_end` via Realtime and cleans up channel.
     - Environment variables needed: `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PROCESS_AI_TURN_SECRET`.
+    - Note: `AI_ANALYSIS_MODEL` is now read by `trace-analysis-socket`, not directly by `ai-processor`.
 
 5.  **Profile Loader (`apps/flamechart-server/src/profile-loader.ts`)**
 
@@ -116,16 +121,17 @@ A `chat_messages` table in Supabase stores the conversation:
 
 1.  User opens chat for a trace. Client (`ChatContainer.tsx`) generates a `sessionId`. Fetches history for this `(userId, traceId, sessionId)` from DB (initially empty or contains past messages for this session).
 2.  User types a prompt (e.g., "Show me a snapshot of the busiest part"). Client sends `user_prompt` message via WebSocket to `trace-analysis-socket`, including `userId`, `traceId`, current `prompt`, and `sessionId`.
-3.  `trace-analysis-socket` (Edge Function) validates and forwards this as an HTTP POST to `apps/flamechart-server` (`/api/v1/ai/process-turn`) with the same payload and `X-Internal-Auth-Token`. Sends `waiting_for_model` ack to client.
+3.  `trace-analysis-socket` (Edge Function) validates, reads its `AI_ANALYSIS_MODEL` env var, and forwards this as an HTTP POST to `apps/flamechart-server` (`/api/v1/ai/process-turn`) including the `modelName` in the payload, along with other details and `X-Internal-Auth-Token`. Sends `waiting_for_model` ack to client.
 4.  `apps/flamechart-server` (`/api/v1/ai/process-turn` endpoint):
     a. Authenticates request.
     b. **Saves the user's prompt** to `chat_messages` table with the `sessionId`.
     c. **Fetches chat history** (including the just-saved prompt) for the current `userId`, `traceId`, `sessionId` from `chat_messages`.
-    d. Initializes `AgentState` with this history and other context (like `sessionId`). Establishes Realtime channel.
-    e. Invokes LangGraph application.
+    d. **Initializes the LLM** using the `modelName` from the payload (or a default).
+    e. Initializes `AgentState` with this history, the initialized `llm`, and other context (like `sessionId`). Establishes Realtime channel.
+    f. Invokes LangGraph application.
 5.  **Graph Execution (on `apps/flamechart-server`):**
     a. `initialSetupNode`: (May re-verify trace summary or just pass through if profile already loaded for session).
-    b. `agentNode`: Receives history (including user's prompt). LLM processes it and decides to call `GenerateFlamegraphSnapshotTool`.
+    b. `agentNode`: Retrieves `llm` from `state`. Receives history (including user's prompt). LLM processes it and decides to call `GenerateFlamegraphSnapshotTool`.
     i. **Saves AI's decision** (AIMessage with `tool_calls`) and the `tool_request` details to `chat_messages` table.
     c. `toolHandlerNode` (due to `tool_calls`):
     i. Sends `tool_start` event to client via Realtime.

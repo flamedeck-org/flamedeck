@@ -19,6 +19,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 // New environment variables for calling the Node.js server
 const FLAMECHART_SERVER_BASE_URL = Deno.env.get('FLAMECHART_SERVER_URL');
 const PROCESS_AI_TURN_SECRET = Deno.env.get('PROCESS_AI_TURN_SECRET');
+const AI_ANALYSIS_MODEL = Deno.env.get('AI_ANALYSIS_MODEL');
 
 serve(async (req: Request) => {
   // Basic check for Supabase client config
@@ -97,6 +98,7 @@ serve(async (req: Request) => {
           traceId: traceId,
           sessionId: sessionId,
           prompt: 'Analyze this trace and provide an initial summary.',
+          modelName: AI_ANALYSIS_MODEL,
         };
 
         console.log(
@@ -183,6 +185,7 @@ serve(async (req: Request) => {
           traceId: traceId,
           prompt: userPrompt,
           sessionId: sessionId,
+          modelName: AI_ANALYSIS_MODEL,
         };
 
         console.log(
