@@ -10,6 +10,7 @@
   "dependencies": {
     "@flamedeck/flamechart-to-png": "workspace:*",
     "@flamedeck/speedscope-import": "workspace:*",
+    "@flamedeck/supabase-integration": "workspace:*",
     "@langchain/core": "^0.3.55",
     "@langchain/langgraph": "^0.2.72",
     "@langchain/openai": "^0.5.10",

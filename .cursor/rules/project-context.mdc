@@ -22,7 +22,7 @@ This project is an nx monorepo for a web-based tool designed to view and collabo
 
 *   Requires Node.js and yarn
 *   Standard setup: `git clone`, `cd <project>`, `yarn` & `yarn dev`.
-*   **Crucial:** Remind the user to update Supabase types after schema changes using the command in the README (`SUPABASE_ACCESS_TOKEN=<my-token> yarn supabase gen types typescript --project-id jczffinsulwdzhgzggcj --schema public > apps/client/src/integrations/supabase/types.ts`). Replace `<your-project-id>` with the actual project ID.
+*   **Crucial:** Remind the user to update Supabase types after schema changes using the command in the README (`yarn supabase gen types typescript --project-id jczffinsulwdzhgzggcj --schema public > packages/supabase-integration/src/index.ts`)
 
 ## Packages
 
@@ -31,12 +31,16 @@ This project is an nx monorepo for a web-based tool designed to view and collabo
 * `packages/speedscope-gl`: Flamechart rendering code from speedscope
 * `packages/speedscope-theme`: Theme definitions for flamegraphs
 * `packages/flamechart-to-png`: Code for rendering a flamegraph to a png file, using speedscope utils
+* `packages/supabase-integration`: Where the database schema types are stored
 
 ### `supabase`
 
 The root supabase folder contains database migrations as well as edge functions. Right now the following edge functions exist:
 
 * `/subabase/functions/api-upload-trace`: Allows users with an API key to upload a trace, which is converted to a speescope format, compressed, and stored in the backend. It runs on Deno and uses shared logic from `packages/speedscope-import`.
+* `/supabase/functions/trace-analysis-socket`: Socket that the client connects to when a chat session is initiated (see chat-architecture.md for details)
+* `/supabase/functions/delete-user`: Function to delete the user and their associated data
+* `/supabase/functions/cleanup-old-traces`: Function called from a cron job that deletes old traces and their associated storage objects
 
 ### `apps/client`
 
@@ -58,7 +62,6 @@ This is the frontend client for the trace viewer, which allows for uploading, or
     *   `types/`: TypeScript definitions.
     *   `hooks/`: Custom React hooks.
     *   `integrations/`: Third-party service integrations (e.g., Supabase).
-        * `supabase/types.ts`: The generated database schema from Supabase
     *   `contexts/`: React Contexts.
     *   `App.tsx`: Main application component.
     *   `main.tsx`: Application entry point.
@@ -69,11 +72,11 @@ Standard Vite/React/TS/Tailwind/Supabase config files (`vite.config.ts`, `tailwi
 
 #### Database schema
 
-The database schema is defined in [types.ts](mdc:apps/client/src/integrations/supabase/types.ts)
+The database schema is defined in `packages/supabase-integration/src/index.ts`
 
 ### `apps/flamechart-server`
 
-A server deployed to fly.io which provides an API for rendering flamecharts (via `packages/flamechart-to-png`)
+A server deployed to fly.io which provides an API for rendering flamecharts (via `packages/flamechart-to-png`) and handles the core logic for the chat agent.
 
 ## Deployment
 
@@ -81,7 +84,7 @@ Deployment is handled with vercel by running `vercel --prod`
 
 ## Key Takeaways for New Engineers
 
-1. We use NX for managing the client monorepo
+1. We use NX for managing the client monorepo (e.g. `yarn nx run client:dev`)
 1. The client web app is a TypeScript/React/Vite/Tailwind project using shadcn-ui and integrating with Supabase.
 1. Its core purpose is collaborative viewing of performance traces, leveraging adapted Speedscope code.
 1. Remember to update Supabase types after schema changes using the specified command.

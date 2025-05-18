@@ -1,5 +1,4 @@
 import type { ProfileType } from 'packages/speedscope-import/src';
-import { User } from '@supabase/supabase-js';
 
 export interface UserProfile {
   id: string; // uuid

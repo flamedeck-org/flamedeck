@@ -146,6 +146,9 @@ export type Database = {
       subscription_plans: {
         Row: {
           allow_public_sharing: boolean
+          chat_messages_per_session: number | null
+          chat_sessions_limit: number | null
+          chat_sessions_period: string | null
           created_at: string
           display_name: string
           id: string
@@ -158,6 +161,9 @@ export type Database = {
         }
         Insert: {
           allow_public_sharing?: boolean
+          chat_messages_per_session?: number | null
+          chat_sessions_limit?: number | null
+          chat_sessions_period?: string | null
           created_at?: string
           display_name: string
           id?: string
@@ -170,6 +176,9 @@ export type Database = {
         }
         Update: {
           allow_public_sharing?: boolean
+          chat_messages_per_session?: number | null
+          chat_sessions_limit?: number | null
+          chat_sessions_period?: string | null
           created_at?: string
           display_name?: string
           id?: string
@@ -372,6 +381,7 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          lifetime_chat_analyses_count: number
           updated_at: string | null
           username: string | null
         }
@@ -380,6 +390,7 @@ export type Database = {
           first_name?: string | null
           id: string
           last_name?: string | null
+          lifetime_chat_analyses_count?: number
           updated_at?: string | null
           username?: string | null
         }
@@ -388,6 +399,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          lifetime_chat_analyses_count?: number
           updated_at?: string | null
           username?: string | null
         }
@@ -401,6 +413,7 @@ export type Database = {
           current_period_end: string
           current_period_start: string
           id: string
+          monthly_chat_sessions_count: number
           monthly_uploads_used: number
           payment_provider: string | null
           payment_provider_subscription_id: string | null
@@ -416,6 +429,7 @@ export type Database = {
           current_period_end: string
           current_period_start: string
           id?: string
+          monthly_chat_sessions_count?: number
           monthly_uploads_used?: number
           payment_provider?: string | null
           payment_provider_subscription_id?: string | null
@@ -431,6 +445,7 @@ export type Database = {
           current_period_end?: string
           current_period_start?: string
           id?: string
+          monthly_chat_sessions_count?: number
           monthly_uploads_used?: number
           payment_provider?: string | null
           payment_provider_subscription_id?: string | null
@@ -616,6 +631,14 @@ export type Database = {
       gtrgm_out: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      increment_lifetime_chat_analyses: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      increment_monthly_chat_sessions: {
+        Args: { p_user_subscription_id: string }
+        Returns: undefined
       }
       reset_expired_monthly_limits: {
         Args: Record<PropertyKey, never>

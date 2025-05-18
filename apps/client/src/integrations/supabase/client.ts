@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+import type { Database } from '@flamedeck/supabase-integration';
 
 // Read values from environment variables provided by Vite
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
