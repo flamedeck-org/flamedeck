@@ -381,18 +381,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
           chatWindowRef.current?.scrollToBottom(true);
         }, 0);
 
-        // HISTORY IS NO LONGER SENT FROM CLIENT
-        // const historyToSend = chatMessages
-        //   .filter((msg) => msg.sender === 'user' || msg.sender === 'model')
-        //   .map((msg) => ({ sender: msg.sender, text: msg.text }));
-
         sendRawSocketMessage({
           type: 'user_prompt',
           prompt: prompt,
           userId: userId,
           traceId: traceId,
-          sessionId: currentSessionId, // Include sessionId
-          // history: historyToSend, // REMOVED
+          sessionId: currentSessionId,
         });
       } else if (!isSocketConnected) {
         setChatError('Cannot send message: WebSocket not connected.');

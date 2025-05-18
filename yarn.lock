@@ -2092,6 +2092,7 @@ __metadata:
     "@flamedeck/speedscope-core": "workspace:*"
     "@flamedeck/speedscope-import": "workspace:*"
     "@flamedeck/speedscope-theme": "workspace:*"
+    "@flamedeck/supabase-integration": "workspace:*"
     "@hookform/resolvers": "npm:^3.9.0"
     "@mdx-js/react": "npm:^3.1.0"
     "@mdx-js/rollup": "npm:^3.1.0"
@@ -2182,6 +2183,7 @@ __metadata:
   dependencies:
     "@flamedeck/flamechart-to-png": "workspace:*"
     "@flamedeck/speedscope-import": "workspace:*"
+    "@flamedeck/supabase-integration": "workspace:*"
     "@langchain/core": "npm:^0.3.55"
     "@langchain/langgraph": "npm:^0.2.72"
     "@langchain/openai": "npm:^0.5.10"
@@ -2258,6 +2260,12 @@ __metadata:
   resolution: "@flamedeck/speedscope-theme@workspace:packages/speedscope-theme"
   dependencies:
     "@flamedeck/speedscope-core": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@flamedeck/supabase-integration@workspace:*, @flamedeck/supabase-integration@workspace:packages/supabase-integration":
+  version: 0.0.0-use.local
+  resolution: "@flamedeck/supabase-integration@workspace:packages/supabase-integration"
   languageName: unknown
   linkType: soft
 

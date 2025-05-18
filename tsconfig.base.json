@@ -10,20 +10,45 @@
     "importHelpers": true,
     "target": "ES2020", // Target modern JS
     "module": "ESNext",
-    "lib": ["ES2020", "dom"],
+    "lib": [
+      "ES2020",
+      "dom"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["apps/client/src/*"],
-      "@flamedeck/speedscope-import": ["packages/speedscope-import/src/index.ts"],
-      "@flamedeck/speedscope-core/*": ["packages/speedscope-core/src/*"],
-      "@flamedeck/speedscope-gl": ["packages/speedscope-gl/src/index.ts"],
-      "@flamedeck/speedscope-gl/*": ["packages/speedscope-gl/src/*"],
-      "@flamedeck/speedscope-theme": ["packages/speedscope-theme/src/index.ts"],
-      "@flamedeck/speedscope-theme/*": ["packages/speedscope-theme/src/*"],
-      "@flamedeck/flamechart-to-png": ["packages/flamechart-to-png/src/index.ts"]
+      "@/*": [
+        "apps/client/src/*"
+      ],
+      "@flamedeck/speedscope-import": [
+        "packages/speedscope-import/src/index.ts"
+      ],
+      "@flamedeck/speedscope-core/*": [
+        "packages/speedscope-core/src/*"
+      ],
+      "@flamedeck/speedscope-gl": [
+        "packages/speedscope-gl/src/index.ts"
+      ],
+      "@flamedeck/speedscope-gl/*": [
+        "packages/speedscope-gl/src/*"
+      ],
+      "@flamedeck/speedscope-theme": [
+        "packages/speedscope-theme/src/index.ts"
+      ],
+      "@flamedeck/speedscope-theme/*": [
+        "packages/speedscope-theme/src/*"
+      ],
+      "@flamedeck/flamechart-to-png": [
+        "packages/flamechart-to-png/src/index.ts"
+      ],
+      "@flamedeck/supabase-integration": [
+        "packages/supabase-integration/src/index.ts"
+      ]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
 }

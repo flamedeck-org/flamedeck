@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'; // Changed to npm import
-import { type Database } from '@/integrations/supabase/types'; // Import generated DB types
+import { type Database } from '@flamedeck/supabase-integration'; // Import generated DB types
 
 import { getDurationMsFromProfileGroup } from '@flamedeck/speedscope-import'; // Assuming this workspace import resolves
 
@@ -29,6 +29,7 @@ import { StateGraph, END, Annotation } from '@langchain/langgraph';
 import * as fs from 'fs/promises'; // For file system operations
 import * as path from 'path'; // For path manipulation
 import { createImageHumanMessageFromToolResult } from './ai-message-utils'; // Updated import name
+import { checkChatLimits, incrementChatCounter, sendChatLimitError, getUserChatLimitContext } from './chat-limits'; // Added getUserChatLimitContext
 
 console.log('[Node AI Processor] Module initialized.'); // Changed log message
 
@@ -37,14 +38,70 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// We need a reasoning model for this complex task
-// const MODEL_NAME = process.env.AI_ANALYSIS_MODEL || 'o4-mini'; // REMOVED: Model name will be passed in payload
+const MAX_HISTORY_LIMIT = 50; // Keep if used for fetching, or adjust based on plan
 
-// const llm = new ChatOpenAI({ // REMOVED: LLM will be initialized per request
-//   apiKey: OPENAI_API_KEY,
-//   modelName: MODEL_NAME,
-//   streaming: true,
-// });
+// --- LangGraph State Definition ---
+interface AgentState {
+  messages: BaseMessage[];
+  supabaseAdmin: SupabaseClient;
+  realtimeChannel: any; // SupabaseRealtimeChannel
+  userId: string;
+  traceId: string;
+  sessionId: string;
+  profileArrayBuffer: ArrayBuffer | null;
+  profileData: any | null; // ProfileGroup type from speedscope-core
+  traceSummary: string;
+  llm: ChatOpenAI;
+  modelName?: string;
+
+  // For managing LangChain streaming callbacks
+  llmStreamingActiveForCurrentSegment: boolean;
+  currentToolName: string | null;
+
+  // Iteration control for the graph
+  iterationCount: number;
+  maxIterations: number;
+
+  // For optimized session message limit checking
+  chatMessagesPerSessionLimit: number | null;
+  planName: string | null;
+  sessionMessageLimitHitInGraph: boolean;
+}
+
+// --- LangGraph State Annotations (Add new fields) ---
+const AgentStateAnnotations = Annotation.Root({
+  messages: Annotation<BaseMessage[]>({
+    reducer: (x, y) => y,
+    default: () => [],
+  }),
+  supabaseAdmin: Annotation<null | SupabaseClient>({
+    reducer: (x, y) => y ?? x,
+    default: () => null,
+  }),
+  realtimeChannel: Annotation<null | any>({ reducer: (x, y) => y ?? x, default: () => null }),
+  userId: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
+  traceId: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
+  profileArrayBuffer: Annotation<ArrayBuffer | null>({
+    reducer: (x, y) => y ?? x,
+    default: () => null,
+  }),
+  profileData: Annotation<null | any>({ reducer: (x, y) => y ?? x, default: () => null }),
+  traceSummary: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => '' }),
+  llmStreamingActiveForCurrentSegment: Annotation<boolean>({
+    reducer: (x, y) => y,
+    default: () => false,
+  }),
+  currentToolName: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
+  iterationCount: Annotation<number>({ reducer: (x, y) => y, default: () => 0 }),
+  maxIterations: Annotation<number>({ reducer: (x, y) => y ?? x, default: () => 7 }), // Default to 7, can be overridden
+  sessionId: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => '' }),
+  llm: Annotation<ChatOpenAI | null>({ reducer: (x, y) => y ?? x, default: () => null }),
+  // New annotations for chat limits
+  chatMessagesPerSessionLimit: Annotation<number | null>({ reducer: (x, y) => y ?? x, default: () => null }),
+  planName: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
+  sessionMessageLimitHitInGraph: Annotation<boolean>({ reducer: (x, y) => y, default: () => false }),
+});
+
 
 function formatPromptTemplateStrings(strings: TemplateStringsArray, ...values: any[]) {
   const result = strings.reduce(
@@ -79,29 +136,6 @@ Start by generating a flamegraph screenshot of the entire trace.
 Trace Summary:
 {trace_summary}
 `;
-
-// --- LangGraph State Definition ---
-interface AgentState {
-  messages: BaseMessage[];
-  supabaseAdmin: SupabaseClient;
-  realtimeChannel: any; // SupabaseRealtimeChannel
-  userId: string;
-  traceId: string;
-  profileArrayBuffer: ArrayBuffer | null;
-  profileData: any | null; // ProfileGroup type from speedscope-core
-  traceSummary: string;
-  llm: ChatOpenAI; // ADDED: LLM instance for this agent run
-
-  // For managing LangChain streaming callbacks
-  llmStreamingActiveForCurrentSegment: boolean;
-  currentToolName: string | null; // For callbacks
-
-  // Iteration control for the graph
-  iterationCount: number;
-  maxIterations: number;
-  sessionId: string; // Added sessionId
-  modelName?: string; // ADDED: Optional model name from client
-}
 
 // --- LangGraph Nodes ---
 
@@ -198,15 +232,35 @@ async function initialSetupNode(state: AgentState): Promise<Partial<AgentState>>
 const LOGS_DIR = '/Users/zacharymarion/src/flamedeck/apps/flamechart-server/logs'; // Define a logs directory
 
 async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Partial<AgentState>> {
+  // *** SESSION MESSAGE LIMIT CHECK (IN-GRAPH) ***
+  if (state.chatMessagesPerSessionLimit !== null) {
+    const humanAndAIMessagesCount = state.messages.filter(
+      (msg) => msg._getType() === 'human' || msg._getType() === 'ai'
+    ).length;
+
+    console.log(`[Node AI Processor - AgentNode] In-graph message check: Count=${humanAndAIMessagesCount}, Limit=${state.chatMessagesPerSessionLimit}`);
+
+    if (humanAndAIMessagesCount > state.chatMessagesPerSessionLimit) {
+      console.warn(`[Node AI Processor - AgentNode] Session message limit (${state.chatMessagesPerSessionLimit}) hit in-graph for session ${state.sessionId}. Current H/AI messages: ${humanAndAIMessagesCount}.`);
+      sendChatLimitError(state.realtimeChannel, {
+        error_code: 'limit_exceeded',
+        limit_type: 'session_messages',
+        message: `You have reached the message limit of ${state.chatMessagesPerSessionLimit} for this chat session on the ${state.planName || 'current'} plan.`
+      });
+      // Signal to END the graph by setting maxIterations effectively reached and a flag
+      return { ...state, sessionMessageLimitHitInGraph: true, iterationCount: state.maxIterations + 1 };
+    }
+  }
+  // *** END SESSION MESSAGE LIMIT CHECK (IN-GRAPH) ***
+
   console.log(
-    `[Node AI Processor - AgentNode] Iteration ${state.iterationCount}. Calling LLM. Current messages count: ${state.messages.length}`
+    `[Node AI Processor - AgentNode] Iteration ${state.iterationCount}. Calling LLM. Current messages count (all types): ${state.messages.length}`
   );
   const { llm } = state; // Get LLM from state
   if (!llm) {
     console.error(
       '[Node AI Processor - AgentNode] CRITICAL: state.llm is null. Aborting agent node.'
     );
-    // Potentially throw an error or return a state that leads to END
     return { messages: state.messages, iterationCount: state.iterationCount + 1 };
   }
 
@@ -336,17 +390,9 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
         })
       );
 
-      console.log('OPRIGINAL MESSAGE--------------------------------');
-      console.log(originalMessage);
-      console.log('--------------------------------');
-
       // Try to create and add the HumanMessage with the base64 image
       // The originalMessage (which is a ToolMessage) is passed here as it contains the full output including base64
       const imageHumanMessage = createImageHumanMessageFromToolResult(originalMessage);
-
-      console.log('IMAGE HUMAN MESSAGE--------------------------------');
-      console.log({ imageHumanMessage });
-      console.log('--------------------------------');
 
       if (imageHumanMessage) {
         messagesForLLMInvocation.push(imageHumanMessage);
@@ -368,7 +414,7 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
     messagesForLLMInvocation.length > 0 &&
     messagesForLLMInvocation[0]._getType() === 'system' &&
     (messagesForLLMInvocation[0] as SystemMessage).content !==
-      SYSTEM_PROMPT_TEMPLATE_STRING.replace('{trace_summary}', state.traceSummary)
+    SYSTEM_PROMPT_TEMPLATE_STRING.replace('{trace_summary}', state.traceSummary)
   ) {
     (messagesForLLMInvocation[0] as SystemMessage).content = SYSTEM_PROMPT_TEMPLATE_STRING.replace(
       '{trace_summary}',
@@ -885,35 +931,6 @@ async function toolHandlerNode(
   };
 }
 
-const AgentStateAnnotations = Annotation.Root({
-  // Changed name for clarity
-  messages: Annotation<BaseMessage[]>({
-    reducer: (x, y) => y,
-    default: () => [],
-  }),
-  supabaseAdmin: Annotation<null | SupabaseClient>({
-    reducer: (x, y) => y ?? x,
-    default: () => null,
-  }),
-  realtimeChannel: Annotation<null | any>({ reducer: (x, y) => y ?? x, default: () => null }),
-  userId: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
-  traceId: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
-  profileArrayBuffer: Annotation<ArrayBuffer | null>({
-    reducer: (x, y) => y ?? x,
-    default: () => null,
-  }),
-  profileData: Annotation<null | any>({ reducer: (x, y) => y ?? x, default: () => null }),
-  traceSummary: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => '' }),
-  llmStreamingActiveForCurrentSegment: Annotation<boolean>({
-    reducer: (x, y) => y,
-    default: () => false,
-  }),
-  currentToolName: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
-  iterationCount: Annotation<number>({ reducer: (x, y) => y, default: () => 0 }),
-  maxIterations: Annotation<number>({ reducer: (x, y) => y ?? x, default: () => 7 }),
-  sessionId: Annotation<string>({ reducer: (x, y) => y ?? x, default: () => '' }),
-  llm: Annotation<ChatOpenAI | null>({ reducer: (x, y) => y ?? x, default: () => null }), // ADDED Annotation for LLM
-});
 
 const workflow = new StateGraph(AgentStateAnnotations) // Used updated name
   .addNode('initialSetup', initialSetupNode)
@@ -927,6 +944,12 @@ workflow.addEdge('toolHandler', 'agent');
 workflow.addConditionalEdges(
   'agent',
   (state: AgentState) => {
+    // Check if in-graph limit was hit
+    if (state.sessionMessageLimitHitInGraph) {
+      console.log('[Node AI Processor - Graph] Conditional edge: sessionMessageLimitHitInGraph is true, transitioning to END.');
+      return END;
+    }
+
     const lastMessage = state.messages[state.messages.length - 1];
     if (
       lastMessage?._getType() === 'ai' &&
@@ -936,17 +959,18 @@ workflow.addConditionalEdges(
       return 'toolHandler';
     }
     if (state.iterationCount >= state.maxIterations) {
+      console.log('[Node AI Processor - Graph] Conditional edge: Max iterations reached, transitioning to END.');
       return END;
     }
     if (
       lastMessage?.content &&
       typeof lastMessage.content === 'string' &&
-      (lastMessage.content.toLowerCase().includes('bottleneck identified') ||
+      (lastMessage.content.toLowerCase().includes('bottleneck identified') || //This is probably too simple
         lastMessage.content.toLowerCase().includes('analysis complete'))
     ) {
       return END;
     }
-    return END;
+    return END; // Default to END if no other path taken after checks
   },
   {
     toolHandler: 'toolHandler',
@@ -966,7 +990,7 @@ export interface ProcessAiTurnPayload {
 }
 
 export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise<void> {
-  const { userId, prompt: userPrompt, traceId, sessionId, modelName: requestedModelName } = payload; // Destructure modelName
+  const { userId, prompt: userPrompt, traceId, sessionId, modelName: requestedModelName } = payload;
 
   const missingEnvVars: string[] = [];
   if (!OPENAI_API_KEY) missingEnvVars.push('OPENAI_API_KEY');
@@ -979,11 +1003,9 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
     throw new Error(`Internal configuration error: ${errorMessage}`);
   }
 
-  // Determine model to use
-  const modelToUse = requestedModelName || 'o4-mini'; // Fallback if not provided
+  const modelToUse = requestedModelName || 'o4-mini';
   console.log(`[Node AI Processor] Using AI model: ${modelToUse}`);
 
-  // Initialize LLM for this request
   const llm = new ChatOpenAI({
     apiKey: OPENAI_API_KEY,
     modelName: modelToUse,
@@ -996,34 +1018,6 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
   const realtimeChannel = supabaseAdmin.channel(`private-chat-results-${userId}`);
 
   try {
-    // 1. Insert the user prompt into the chat_messages table
-    const { error: insertError } = await supabaseAdmin.from('chat_messages').insert({
-      user_id: userId,
-      trace_id: traceId,
-      session_id: sessionId,
-      sender: 'user',
-      content_text: userPrompt,
-    });
-
-    if (insertError) {
-      console.error('[Node AI Processor] Error saving user prompt to DB:', insertError);
-      // Decide if to throw or just log. For now, log and attempt to continue.
-      // Throwing might be better to ensure data integrity if saving history is critical.
-      // For now, we'll try to send an error over realtime and then throw to prevent further processing on bad state.
-      const dbErrorMsg = 'Failed to save your message to the database.';
-      if (realtimeChannel) {
-        try {
-          await realtimeChannel.send({
-            type: 'broadcast',
-            event: 'ai_response',
-            payload: { type: 'error', message: dbErrorMsg },
-          });
-        } catch (e) {}
-      }
-      throw new Error(`${dbErrorMsg} Details: ${insertError.message}`);
-    }
-
-    // 2. Subscribe to the realtime channel
     await new Promise<void>((resolve, reject) => {
       realtimeChannel.subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
@@ -1040,8 +1034,51 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
       });
     });
 
-    // 3. Fetch the chat history from the database
-    const HISTORY_LIMIT = 20;
+    // *** 1. INITIAL CHAT LIMIT CHECK (for new sessions, lifetime/monthly limits) ***
+    console.log(`[Node AI Processor] Performing initial chat limit check for user ${userId}, session ${sessionId}`);
+    const initialLimitError = await checkChatLimits(userId, traceId, sessionId, supabaseAdmin);
+    if (initialLimitError) {
+      console.log(`[Node AI Processor] User ${userId} hit initial chat limit: ${initialLimitError.limit_type || 'unknown'}`);
+      sendChatLimitError(realtimeChannel, initialLimitError);
+      if (realtimeChannel) await supabaseAdmin.removeChannel(realtimeChannel);
+      return;
+    }
+
+    // *** 2. GET FULL LIMIT CONTEXT (ONCE PER TURN) ***
+    const limitContext = await getUserChatLimitContext(userId, supabaseAdmin);
+    if (!limitContext || !limitContext.plan || !limitContext.userProfile) {
+      console.error(`[Node AI Processor] Failed to get limit context for user ${userId}. Aborting.`);
+      sendChatLimitError(realtimeChannel, { error_code: 'config_error', message: 'Could not retrieve your plan details.' });
+      if (realtimeChannel) await supabaseAdmin.removeChannel(realtimeChannel);
+      return;
+    }
+
+    // *** 3. Insert the user prompt into the DB ***
+    const { error: insertError } = await supabaseAdmin.from('chat_messages').insert({
+      user_id: userId,
+      trace_id: traceId,
+      session_id: sessionId,
+      sender: 'user',
+      content_text: userPrompt,
+    });
+
+    if (insertError) {
+      console.error('[Node AI Processor] Error saving user prompt to DB:', insertError);
+      const dbErrorMsg = 'Failed to save your message to the database.';
+      if (realtimeChannel) {
+        try {
+          await realtimeChannel.send({
+            type: 'broadcast',
+            event: 'ai_response',
+            payload: { type: 'error', message: dbErrorMsg },
+          });
+        } catch (e) { }
+      }
+      if (realtimeChannel) await supabaseAdmin.removeChannel(realtimeChannel);
+      throw new Error(`${dbErrorMsg} Details: ${insertError.message}`);
+    }
+
+    // *** 4. Fetch chat history (includes the new user prompt) ***
     const { data: dbHistory, error: fetchHistoryError } = await supabaseAdmin
       .from('chat_messages')
       .select('*')
@@ -1049,7 +1086,7 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
       .eq('user_id', userId)
       .eq('session_id', sessionId)
       .order('created_at', { ascending: true })
-      .limit(HISTORY_LIMIT);
+      .limit(MAX_HISTORY_LIMIT);
 
     if (fetchHistoryError) {
       console.error('[Node AI Processor] Error fetching chat history from DB:', fetchHistoryError);
@@ -1061,24 +1098,22 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
             event: 'ai_response',
             payload: { type: 'error', message: dbErrorMsg },
           });
-        } catch (e) {}
+        } catch (e) { }
       }
+      if (realtimeChannel) await supabaseAdmin.removeChannel(realtimeChannel);
       throw new Error(`${dbErrorMsg} Details: ${fetchHistoryError.message}`);
     }
 
+    console.log("DB HISTORY LENGTH", dbHistory.length);
+    console.log("DB HISTORY FIRST SENDER", dbHistory[0].sender);
+    console.log("DB HISTORY FIRST CONTENT TEXT", dbHistory[0].content_text);
+
+    // Determine if this is the first message of this session based on the fetched history
+    const isFirstMessageOfSession = dbHistory.length === 1 &&
+      dbHistory[0].sender === 'user' &&
+      dbHistory[0].content_text === userPrompt;
+
     const langChainMessages: BaseMessage[] = [];
-
-    console.log(`[Node AI Processor] Received ${dbHistory.length} messages from DB`);
-
-    try {
-      await fs.writeFile(
-        `${LOGS_DIR}/dbHistory_${traceId}_${sessionId}.json`,
-        JSON.stringify(dbHistory, null, 2)
-      );
-    } catch (e) {
-      console.error('[Node AI Processor] Error saving DB history to file:', e);
-    }
-
     if (dbHistory) {
       for (const dbMsg of dbHistory) {
         if (dbMsg.sender === 'user' && dbMsg.content_text) {
@@ -1089,12 +1124,11 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
             Array.isArray(dbMsg.tool_calls_json) &&
             (dbMsg.tool_calls_json as any[]).length > 0
           ) {
-            // Type assertion for tool_calls, assuming dbMsg.tool_calls_json is already in the correct format [{name, args, id}, ...]
             const toolCalls = (dbMsg.tool_calls_json as any[]).map((tc) => ({
               name: tc.name,
               args: tc.args,
               id: tc.id,
-              type: tc.type, // Preserve type if present (e.g. 'tool_call' or 'function')
+              type: tc.type,
             }));
             langChainMessages.push(
               new AIMessage({
@@ -1112,15 +1146,16 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
                 dbMsg.tool_name === 'generate_sandwich_flamegraph_screenshot') &&
               dbMsg.content_image_url
             ) {
+              // Serialize the core snapshot info into a JSON string for the ToolMessage content
+              const toolContent = JSON.stringify({
+                status: dbMsg.tool_status,
+                publicUrl: dbMsg.content_image_url,
+                // base64Image is intentionally omitted here as it's not part of the persistent ToolMessage content for the LLM
+                message: dbMsg.content_text,
+              });
               langChainMessages.push(
                 new ToolMessage({
-                  // @ts-ignore TODO really there is probably a metadata field that we should use here
-                  content: {
-                    status: dbMsg.tool_status,
-                    publicUrl: dbMsg.content_image_url,
-                    base64Image: null,
-                    message: dbMsg.content_text,
-                  } as FlamegraphSnapshotToolResponse,
+                  content: toolContent, // Now a string
                   name: dbMsg.tool_name,
                   tool_call_id: dbMsg.tool_call_id,
                 })
@@ -1167,9 +1202,13 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
       currentToolName: null,
       iterationCount: 0,
       maxIterations: 10,
+      chatMessagesPerSessionLimit: limitContext.plan.chat_messages_per_session,
+      planName: limitContext.plan.name,
+      sessionMessageLimitHitInGraph: false,
+      modelName: requestedModelName,
     };
 
-    console.log('[Node AI Processor] Invoking LangGraph app stream with DB history...');
+    console.log(`[Node AI Processor] Initializing graph with chatMessagesPerSessionLimit: ${initialState.chatMessagesPerSessionLimit}`);
     const stream = await app.stream(initialState, { recursionLimit: 25 });
 
     for await (const event of stream) {
@@ -1178,6 +1217,12 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
           '[Node AI Processor - Graph Stream] Reached END state in graph execution stream.'
         );
       }
+    }
+
+    // *** 5. CHAT COUNTER INCREMENT (after successful first message processing) ***
+    if (isFirstMessageOfSession) {
+      console.log(`[Node AI Processor] Attempting to increment session/analysis counter for user ${userId}, session ${sessionId}`);
+      await incrementChatCounter(userId, traceId, sessionId, true, supabaseAdmin);
     }
 
     console.log('[Node AI Processor] LangGraph app stream finished.');
@@ -1194,7 +1239,6 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
     );
     try {
       if (realtimeChannel && realtimeChannel.state === 'joined') {
-        // Check if channel is joined
         await realtimeChannel.send({
           type: 'broadcast',
           event: 'ai_response',
@@ -1205,17 +1249,15 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
         });
       }
     } catch (rtError: any) {
-      // Added type for rtError
       console.warn(
         `[Node AI Processor] Failed to send critical error over Realtime channel:`,
         rtError
       );
     }
-    // Re-throw the error so the calling Express handler can send an HTTP error response
     throw error;
   } finally {
     if (realtimeChannel) {
-      console.log(`[Node AI Processor] Removing Realtime channel for user ${userId}`);
+      console.log(`[Node AI Processor] Ensuring Realtime channel removal for user ${userId}`);
       await supabaseAdmin.removeChannel(realtimeChannel);
     }
   }

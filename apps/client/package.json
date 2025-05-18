@@ -14,6 +14,7 @@
     "@flamedeck/speedscope-core": "workspace:*",
     "@flamedeck/speedscope-import": "workspace:*",
     "@flamedeck/speedscope-theme": "workspace:*",
+    "@flamedeck/supabase-integration": "workspace:*",
     "@hookform/resolvers": "^3.9.0",
     "@mdx-js/react": "^3.1.0",
     "@mdx-js/rollup": "^3.1.0",
