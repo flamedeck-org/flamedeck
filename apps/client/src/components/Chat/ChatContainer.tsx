@@ -208,6 +208,41 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
         }
       });
 
+      // Listen for specific chat limit errors or other critical chat_errors
+      channel.on('broadcast', { event: 'chat_error' }, (message) => {
+        console.log('[ChatContainer] Received chat_error event:', message.payload);
+        const payload = message.payload as { message: string; error_code?: string; limit_type?: string; should_disable_input?: boolean };
+        const errorMessage = payload.message || 'A chat limit has been reached or a chat-related error occurred.';
+
+        setChatMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            id: uuidv4(),
+            sender: 'error',
+            text: errorMessage,
+            errorType: payload.limit_type || payload.error_code,
+          },
+        ]);
+        setIsWaitingForModel(false); // Stop showing "thinking..."
+        setIsStreaming(false);
+
+        // Optionally, disable input if the error indicates it
+        // This part would require ChatWindow to accept a new prop like `isInputDisabled`
+        // and for handleSendMessage to check it.
+        // For now, we primarily rely on the error message display.
+        if (payload.should_disable_input) {
+          // Placeholder: logic to disable input would go here if ChatWindow supports it directly
+          console.log('[ChatContainer] Server indicated input should be disabled.');
+          // If we want to disable input, we might need a new state like `isInputDisabled`
+          // and pass it to ChatWindow, which would then disable its input field.
+          // For example: setIsInputDisabled(true);
+        }
+
+        setTimeout(() => {
+          chatWindowRef.current?.scrollToBottom(true);
+        }, 0);
+      });
+
       channel.subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
           console.log(

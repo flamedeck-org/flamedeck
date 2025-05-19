@@ -8,13 +8,13 @@ import { Badge } from '@/components/ui/badge';
 const PricingTable = () => {
   const tiers = [
     {
-      name: 'Hobby',
+      name: 'Free',
       price: '0',
       features: [
         '30-day trace retention',
         '10 uploads per month',
-        'Share public traces',
-        'Basic viewing & collaboration',
+        '25 messages per chat session',
+        '5 chat sessions (lifetime)',
       ],
     },
     {
@@ -24,7 +24,8 @@ const PricingTable = () => {
         'Unlimited trace retention',
         '1,000 total traces',
         'Advanced collaboration features',
-        'Priority support',
+        '50 messages per chat session',
+        '25 chat sessions per month',
         'More features coming soon...',
       ],
     },
