@@ -27,6 +27,7 @@ export interface ChatMessage {
   resultType?: 'text' | 'image'; // If it's a result message
   imageUrl?: string; // If resultType is 'image'
   timestamp?: number; // Keep existing optional timestamp
+  errorType?: string; // To categorize errors, e.g., 'limit_exceeded', 'internal_error'
 }
 
 interface ChatWindowProps {
