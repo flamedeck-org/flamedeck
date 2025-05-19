@@ -41,13 +41,11 @@ import {
   CommandList,
   CommandInput,
 } from '@/components/ui/command';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@flamedeck/supabase-integration';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTraceDetails } from '@/hooks/useTraceDetails';
 import { useDebounce } from '@/hooks/useDebounce';
-
-// Type for user profile needed for search
-type UserProfileSearchResult = Database['public']['Tables']['user_profiles']['Row'];
+import type { UserProfile as UserProfileSearchResult } from '@/types';
 
 function SharingModalImpl() {
   const { isOpen, closeModal, traceId } = useSharingModal();

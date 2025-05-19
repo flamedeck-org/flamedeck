@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, X } from 'lucide-react';
 import { ToolMessageItem } from './ToolMessageItem';
 import { MessageSquareText } from 'lucide-react';
+import { useUpgradeModal } from '@/hooks/useUpgradeModal';
 
 // Define message types for clarity
 export interface ChatMessage {
@@ -28,6 +29,7 @@ export interface ChatMessage {
   imageUrl?: string; // If resultType is 'image'
   timestamp?: number; // Keep existing optional timestamp
   errorType?: string; // To categorize errors, e.g., 'limit_exceeded', 'internal_error'
+  onClickAction?: 'openUpgradeModal'; // For specific actions on click
 }
 
 interface ChatWindowProps {
@@ -53,6 +55,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     const internalScrollAreaRef = useRef<HTMLDivElement>(null);
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
     const userHasScrolledUpRef = useRef(userHasScrolledUp); // <-- Ref to track the value
+    const { openModal: openUpgradeModal } = useUpgradeModal();
 
     const SCROLL_THRESHOLD = 50; // Pixels from bottom to consider "at bottom"
 
@@ -190,12 +193,18 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
                 <div
                   key={msg.id}
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  onClick={() => {
+                    if (msg.sender === 'error' && msg.onClickAction === 'openUpgradeModal') {
+                      openUpgradeModal();
+                    }
+                  }}
                 >
                   <div
                     className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${msg.sender === 'user'
                       ? 'bg-blue-500 text-white'
                       : msg.sender === 'error'
-                        ? 'bg-red-100 text-red-700 border border-red-300'
+                        ? `bg-red-100 text-red-700 border border-red-300 ${msg.onClickAction === 'openUpgradeModal' ? 'cursor-pointer hover:bg-red-200' : ''
+                        }`
                         : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
                       }`}
                   >
