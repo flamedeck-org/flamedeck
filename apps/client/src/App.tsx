@@ -34,6 +34,8 @@ import { Loader2 } from 'lucide-react';
 import UsernameStep from './pages/Onboarding/UsernameStep';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import { HelmetProvider } from 'react-helmet-async';
+import { UpgradeModal } from '@/components/modals/UpgradeModal';
+import { UpgradeModalProvider } from '@/hooks/useUpgradeModal';
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -124,23 +126,26 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SharingModalProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <ScrollToTop />
-                <div className="h-full w-full flex flex-col speedscope-app-container relative">
-                  <Navbar />
-                  <GLCanvas
-                    theme={theme}
-                    setGLCanvas={glCanvasAtom.set}
-                    canvasContext={canvasContext}
-                  />
-                  <AppRoutes />
-                </div>
-              </BrowserRouter>
-              <SharingModal />
-            </TooltipProvider>
+            <UpgradeModalProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <ScrollToTop />
+                  <div className="h-full w-full flex flex-col speedscope-app-container relative">
+                    <Navbar />
+                    <GLCanvas
+                      theme={theme}
+                      setGLCanvas={glCanvasAtom.set}
+                      canvasContext={canvasContext}
+                    />
+                    <AppRoutes />
+                  </div>
+                  <SharingModal />
+                  <UpgradeModal />
+                </BrowserRouter>
+              </TooltipProvider>
+            </UpgradeModalProvider>
           </SharingModalProvider>
         </AuthProvider>
       </QueryClientProvider>
