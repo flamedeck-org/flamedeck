@@ -29,7 +29,6 @@ export interface ChatMessage {
   imageUrl?: string; // If resultType is 'image'
   timestamp?: number; // Keep existing optional timestamp
   errorType?: string; // To categorize errors, e.g., 'limit_exceeded', 'internal_error'
-  onClickAction?: 'openUpgradeModal'; // For specific actions on click
 }
 
 interface ChatWindowProps {
@@ -185,6 +184,8 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
               </div>
             )}
             {messages.map((msg) => {
+              const isLimitError = msg.sender === 'error' && ['limit_exceeded', 'lifetime_analyses'].includes(msg.errorType);
+
               if (msg.sender === 'tool') {
                 return <ToolMessageItem key={msg.id} message={msg} />;
               }
@@ -193,22 +194,31 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
                 <div
                   key={msg.id}
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                  onClick={() => {
-                    if (msg.sender === 'error' && msg.onClickAction === 'openUpgradeModal') {
-                      openUpgradeModal();
-                    }
-                  }}
                 >
                   <div
                     className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${msg.sender === 'user'
                       ? 'bg-blue-500 text-white'
                       : msg.sender === 'error'
-                        ? `bg-red-100 text-red-700 border border-red-300 ${msg.onClickAction === 'openUpgradeModal' ? 'cursor-pointer hover:bg-red-200' : ''
-                        }`
+                        ? isLimitError
+                          ? 'bg-background border border-red-300'
+                          : 'bg-red-100 text-red-700 border border-red-300'
                         : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
                       }`}
                   >
                     {msg.text}
+                    {msg.sender === 'error' && isLimitError && (
+                      <Button
+                        variant="gradient"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent click from bubbling to the parent div
+                          openUpgradeModal();
+                        }}
+                        className="mt-2 ml-auto block" // Added ml-auto and block for positioning
+                      >
+                        Upgrade to Pro
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
