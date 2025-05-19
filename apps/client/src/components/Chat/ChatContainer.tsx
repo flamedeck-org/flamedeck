@@ -10,7 +10,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth to get user ID
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
 import type { RealtimeChannel } from '@supabase/supabase-js'; // Import type for channel ref
-import { useUpgradeModal } from '@/hooks/useUpgradeModal'; // Import useUpgradeModal
 
 interface ChatContainerProps {
   traceId: string | null;
@@ -213,8 +212,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
       channel.on('broadcast', { event: 'chat_error' }, (message) => {
         console.log('[ChatContainer] Received chat_error event:', message.payload);
         const payload = message.payload as { message: string; error_code?: string; limit_type?: string; should_disable_input?: boolean };
-        let errorMessage = payload.message || 'A chat limit has been reached or a chat-related error occurred.';
+        let errorMessageText = payload.message || 'A chat limit has been reached or a chat-related error occurred.';
         let isLimitError = false;
+        let errType: string | undefined = payload.error_code;
 
         if (payload.limit_type && [
           'lifetime_analyses',
@@ -222,8 +222,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
           'session_messages'
         ].includes(payload.limit_type)) {
           isLimitError = true;
-          // Append upgrade prompt to the original message from the server
-          errorMessage = `${errorMessage} Click here to upgrade.`;
+          errType = payload.limit_type;
         }
 
         setChatMessages((prevMessages) => [
@@ -231,10 +230,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
           {
             id: uuidv4(),
             sender: 'error',
-            text: errorMessage,
-            errorType: payload.limit_type || payload.error_code,
-            // Add a flag or action for ChatWindow to know this message can open the modal
-            onClickAction: isLimitError ? 'openUpgradeModal' : undefined
+            text: errorMessageText,
+            errorType: errType,
           },
         ]);
         setIsWaitingForModel(false); // Stop showing "thinking..."

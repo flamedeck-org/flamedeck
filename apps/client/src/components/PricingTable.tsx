@@ -5,35 +5,35 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
-const PricingTable = () => {
-  const tiers = [
-    {
-      name: 'Free',
-      price: '0',
-      features: [
-        '30-day trace retention',
-        '10 uploads per month',
-        '25 messages per chat session',
-        '5 chat sessions (lifetime)',
-      ],
-    },
-    {
-      name: 'Pro',
-      price: '10',
-      features: [
-        'Unlimited trace retention',
-        '1,000 total traces',
-        'Advanced collaboration features',
-        '50 messages per chat session',
-        '25 chat sessions per month',
-        'More features coming soon...',
-      ],
-    },
-  ];
+export const subscriptionTiers = [
+  {
+    name: 'Free',
+    price: '0',
+    features: [
+      '30-day trace retention',
+      '10 uploads per month',
+      '25 messages per chat session',
+      '5 chat sessions (lifetime)',
+    ],
+  },
+  {
+    name: 'Pro',
+    price: '10',
+    features: [
+      'Unlimited trace retention',
+      '1,000 total traces',
+      'Advanced collaboration features',
+      '50 messages per chat session',
+      '25 chat sessions per month',
+      'More features coming soon...',
+    ],
+  },
+];
 
+const PricingTable = () => {
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-      {tiers.map((tier) => (
+      {subscriptionTiers.map((tier) => (
         <Card
           key={tier.name}
           className={cn(

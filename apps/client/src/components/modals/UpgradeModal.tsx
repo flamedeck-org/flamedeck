@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Check, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { subscriptionTiers } from '../PricingTable';
 
 function UpgradeModalImpl() {
     const { isOpen, closeModal } = useUpgradeModal();
@@ -14,15 +15,7 @@ function UpgradeModalImpl() {
     const proTier = {
         name: 'Pro',
         price: '10',
-        features: [
-            'Unlimited trace retention',
-            '1,000 total traces',
-            'Advanced collaboration features',
-            '50 messages per chat session',
-            '25 chat sessions per month',
-            'Priority support',
-            'More features coming soon...',
-        ],
+        features: subscriptionTiers.find((tier) => tier.name === 'Pro')?.features,
         cta: 'Upgrade to Pro',
         link: '/settings/billing', // Placeholder for actual upgrade link/action
         isComingSoon: true,
