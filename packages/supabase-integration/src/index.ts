@@ -156,6 +156,7 @@ export type Database = {
           name: string
           price_monthly: number
           retention_days: number | null
+          stripe_price_id: string | null
           total_trace_limit: number | null
           updated_at: string
         }
@@ -171,6 +172,7 @@ export type Database = {
           name: string
           price_monthly?: number
           retention_days?: number | null
+          stripe_price_id?: string | null
           total_trace_limit?: number | null
           updated_at?: string
         }
@@ -186,6 +188,7 @@ export type Database = {
           name?: string
           price_monthly?: number
           retention_days?: number | null
+          stripe_price_id?: string | null
           total_trace_limit?: number | null
           updated_at?: string
         }
@@ -416,9 +419,10 @@ export type Database = {
           monthly_chat_sessions_count: number
           monthly_uploads_used: number
           payment_provider: string | null
-          payment_provider_subscription_id: string | null
           plan_id: string
           status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string
           user_id: string
         }
@@ -432,9 +436,10 @@ export type Database = {
           monthly_chat_sessions_count?: number
           monthly_uploads_used?: number
           payment_provider?: string | null
-          payment_provider_subscription_id?: string | null
           plan_id: string
           status: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -448,9 +453,10 @@ export type Database = {
           monthly_chat_sessions_count?: number
           monthly_uploads_used?: number
           payment_provider?: string | null
-          payment_provider_subscription_id?: string | null
           plan_id?: string
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -494,17 +500,17 @@ export type Database = {
       create_trace: {
         Args: {
           p_user_id: string
+          p_commit_sha: string
+          p_branch: string
+          p_scenario: string
+          p_duration_ms: number
           p_blob_path: string
+          p_file_size_bytes: number
+          p_profile_type: string
+          p_notes: string
+          p_folder_id: string
           p_upload_source: string
           p_make_public: boolean
-          p_commit_sha?: string
-          p_branch?: string
-          p_scenario?: string
-          p_duration_ms?: number
-          p_file_size_bytes?: number
-          p_profile_type?: string
-          p_notes?: string
-          p_folder_id?: string
         }
         Returns: {
           blob_path: string

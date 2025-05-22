@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -36,6 +36,7 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import { HelmetProvider } from 'react-helmet-async';
 import { UpgradeModal } from '@/components/modals/UpgradeModal';
 import { UpgradeModalProvider } from '@/hooks/useUpgradeModal';
+import { supabase } from './integrations/supabase/client.ts';
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -120,6 +121,13 @@ const App = () => {
     () => (glCanvas ? getCanvasContext({ theme, canvas: glCanvas }) : null),
     [theme, glCanvas]
   );
+
+  // For testing: you can grab the JWT from here
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     supabase.auth.getSession().then(({ data }) => console.log(data.session.access_token))
+  //   }, 5000)
+  // }, [])
 
   return (
     <HelmetProvider>

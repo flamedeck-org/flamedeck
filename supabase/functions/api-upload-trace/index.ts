@@ -5,24 +5,24 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'; // Use a recent std version
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
-import { authenticateRequest } from '../_shared/auth.ts'; // Import the helper
-import * as pako from 'npm:pako'; // Import pako for Deno
-import { JSON_parse } from 'npm:uint8array-json-parser'; // Import parser for Deno
-import Long from 'npm:long'; // Import Long for Deno
-// Import type from the package index file
+import { serve } from 'std/http/server.ts'; // Use alias
+import { createClient, SupabaseClient } from 'supabase-js'; // Use alias
+import { corsHeaders } from 'shared/cors.ts'; // Use alias
+import { authenticateRequest } from 'shared/auth.ts'; // Use alias
+import * as pako from 'pako'; // Use alias
+import { JSON_parse } from 'uint8array-json-parser'; // Use alias
+import Long from 'long'; // Use alias
+// Import type from the package index file - Keep relative path if not aliased or part of monorepo solution
 import { type ImporterDependencies } from '../../../packages/speedscope-import/src/index.ts';
-import { z } from 'https://esm.sh/zod@3.23.8'; // Import Zod
+import { z } from 'zod'; // Use alias
 // Adjust import to get the ProfileGroup type if needed, and exportProfileGroup
 import {
   exportProfileGroup,
   getDurationMsFromProfileGroup, // Import the new utility
   importProfilesFromArrayBuffer,
   ProfileType, // Assuming ProfileType is exported
-} from '../../../packages/speedscope-import/src/index.ts';
-import { ProfileGroup } from '@flamedeck/speedscope-core/profile.ts';
+} from '../../../packages/speedscope-import/src/index.ts'; // Keep relative path
+import { ProfileGroup } from '@flamedeck/speedscope-core/profile.ts'; // Use alias
 
 // --- Shared Importer ---
 // NOTE: Ensure this relative path is correct from the perspective of the compiled function
