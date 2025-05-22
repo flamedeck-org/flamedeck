@@ -2,7 +2,7 @@ import type { Database } from '@/integrations/supabase/types';
 import type { TraceComment, TraceMetadata } from '@/types';
 
 // Define the profile type using the generated table type
-type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
+export type UserProfileType = Database['public']['Tables']['user_profiles']['Row'];
 
 // Define types for comment data
 export interface TraceCommentWithAuthor extends TraceComment {

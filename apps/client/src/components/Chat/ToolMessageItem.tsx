@@ -7,12 +7,13 @@ interface ToolMessageItemProps {
   message: ChatMessage;
 }
 
-const screenshotToolNames = ['generate_flamegraph_screenshot', 'generate_sandwich_flamegraph_screenshot'];
+const screenshotToolNames = [
+  'generate_flamegraph_screenshot',
+  'generate_sandwich_flamegraph_screenshot',
+];
 
 export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => {
-  const [isExpanded, setIsExpanded] = useState(
-    screenshotToolNames.includes(message.toolName)
-  );
+  const [isExpanded, setIsExpanded] = useState(screenshotToolNames.includes(message.toolName));
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isFetchingImage, setIsFetchingImage] = useState<boolean>(false);

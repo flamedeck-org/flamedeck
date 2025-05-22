@@ -73,9 +73,7 @@ export interface ChatSession {
   messageCount?: number; // Optional: could be useful later. Provided by the new SQL fn.
 }
 
-export async function fetchChatSessions(
-  traceId: string
-): Promise<ChatSession[]> {
+export async function fetchChatSessions(traceId: string): Promise<ChatSession[]> {
   const { data, error } = await supabase.rpc('get_chat_sessions_for_trace', {
     in_trace_id: traceId,
   });
@@ -88,7 +86,7 @@ export async function fetchChatSessions(
     return [];
   }
 
-  return data.map(session => ({
+  return data.map((session) => ({
     sessionId: session.sessionId,
     startedAt: session.startedAt,
     messageCount: session.messageCount,

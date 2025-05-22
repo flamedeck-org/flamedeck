@@ -70,7 +70,10 @@ export async function revokeApiKey(keyId: string): Promise<ApiResponse<null>> {
     // but good for unexpected issues.
     console.error(`Error calling revoke_api_key RPC for key ${keyId}:`, error);
     const apiError: ApiError = {
-      message: error instanceof Error ? error.message : 'An unexpected error occurred while revoking the API key',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'An unexpected error occurred while revoking the API key',
     };
     return { data: null, error: apiError };
   }

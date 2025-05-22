@@ -77,14 +77,14 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
               updatedMessages = prevMessages.map((msg) =>
                 msg.id === payload.toolCallId
                   ? {
-                    ...msg,
-                    sender: 'tool',
-                    text: payload.message || `Running ${payload.toolName}...`,
-                    toolName: payload.toolName,
-                    toolStatus: 'running',
-                    resultType: undefined, // Clear previous results
-                    imageUrl: undefined,
-                  }
+                      ...msg,
+                      sender: 'tool',
+                      text: payload.message || `Running ${payload.toolName}...`,
+                      toolName: payload.toolName,
+                      toolStatus: 'running',
+                      resultType: undefined, // Clear previous results
+                      imageUrl: undefined,
+                    }
                   : msg
               );
             } else {
@@ -104,13 +104,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
             updatedMessages = prevMessages.map((msg) =>
               msg.id === payload.toolCallId
                 ? {
-                  ...msg,
-                  sender: 'tool', // Ensure sender is 'tool'
-                  text: payload.textContent || `${payload.toolName} completed.`,
-                  toolStatus: payload.status as ChatMessage['toolStatus'],
-                  resultType: payload.resultType as ChatMessage['resultType'],
-                  imageUrl: payload.imageUrl,
-                }
+                    ...msg,
+                    sender: 'tool', // Ensure sender is 'tool'
+                    text: payload.textContent || `${payload.toolName} completed.`,
+                    toolStatus: payload.status as ChatMessage['toolStatus'],
+                    resultType: payload.resultType as ChatMessage['resultType'],
+                    imageUrl: payload.imageUrl,
+                  }
                 : msg
             );
             messageExists = updatedMessages.some(
@@ -135,13 +135,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
             updatedMessages = prevMessages.map((msg) =>
               msg.id === payload.toolCallId
                 ? {
-                  ...msg,
-                  sender: 'tool', // Ensure sender is 'tool'
-                  text: payload.message || `Error in ${payload.toolName}.`,
-                  toolStatus: 'error',
-                  resultType: undefined,
-                  imageUrl: undefined,
-                }
+                    ...msg,
+                    sender: 'tool', // Ensure sender is 'tool'
+                    text: payload.message || `Error in ${payload.toolName}.`,
+                    toolStatus: 'error',
+                    resultType: undefined,
+                    imageUrl: undefined,
+                  }
                 : msg
             );
             if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
@@ -211,16 +211,21 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
       // Listen for specific chat limit errors or other critical chat_errors
       channel.on('broadcast', { event: 'chat_error' }, (message) => {
         console.log('[ChatContainer] Received chat_error event:', message.payload);
-        const payload = message.payload as { message: string; error_code?: string; limit_type?: string; should_disable_input?: boolean };
-        let errorMessageText = payload.message || 'A chat limit has been reached or a chat-related error occurred.';
+        const payload = message.payload as {
+          message: string;
+          error_code?: string;
+          limit_type?: string;
+          should_disable_input?: boolean;
+        };
+        let errorMessageText =
+          payload.message || 'A chat limit has been reached or a chat-related error occurred.';
         let isLimitError = false;
         let errType: string | undefined = payload.error_code;
 
-        if (payload.limit_type && [
-          'lifetime_analyses',
-          'monthly_sessions',
-          'session_messages'
-        ].includes(payload.limit_type)) {
+        if (
+          payload.limit_type &&
+          ['lifetime_analyses', 'monthly_sessions', 'session_messages'].includes(payload.limit_type)
+        ) {
           isLimitError = true;
           errType = payload.limit_type;
         }
@@ -269,7 +274,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
       });
 
       channelRef.current = channel;
-
     } else {
       if (isSocketConnected) {
         disconnectSocket();
@@ -459,10 +463,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
     return null;
   }
 
-  const suggestionPrompts = [
-    "Analyze this trace",
-    "Show me the top 10 slowest functions",
-  ];
+  const suggestionPrompts = ['Analyze this trace', 'Show me the top 10 slowest functions'];
 
   return (
     <>

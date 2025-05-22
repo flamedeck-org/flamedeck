@@ -27,7 +27,7 @@ import CommentSidebar from './CommentSidebar';
 import type { TraceCommentWithAuthor } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatContainer } from '@/components/Chat';
-import { CallTreeNode } from '@flamedeck/speedscope-core/profile';
+import type { CallTreeNode } from '@flamedeck/speedscope-core/profile';
 
 export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
 
