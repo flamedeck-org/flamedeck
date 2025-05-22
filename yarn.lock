@@ -2195,6 +2195,7 @@ __metadata:
     "@types/pako": "npm:^2.0.3"
     dotenv: "npm:^16.5.0"
     express: "npm:^4.19.2"
+    langfuse: "npm:^3.37.2"
     langfuse-langchain: "npm:^3.37.2"
     long: "npm:^5.3.2"
     pako: "npm:^2.1.0"

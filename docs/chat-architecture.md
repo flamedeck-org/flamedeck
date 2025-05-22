@@ -47,6 +47,12 @@ To provide an interactive chat interface where users can ask questions about a l
 - **Debugging:**
   - `agentNode` (on `flamechart-server`) has the capability to save the exact messages being sent to the LLM to local JSON files for debugging purposes.
 
+## System Prompt Sourcing
+
+- The system prompt provided to the LLM is dynamically fetched from Langfuse using `langfuse.getPrompt("analysis-system-prompt")`.
+- This is handled by a dedicated module: `apps/flamechart-server/src/system-prompt-loader.ts`.
+- Fetching the system prompt from Langfuse is a critical step. If it fails (e.g., due to configuration issues, network problems, or the prompt not existing in Langfuse), the AI analysis process for that turn will halt, and an error will be reported to the client. There is no hardcoded fallback for the system prompt.
+
 ## Database Schema for Chat & Limits
 
 - **`chat_messages` Table:**
@@ -134,6 +140,12 @@ To provide an interactive chat interface where users can ask questions about a l
     - After graph completion (or early exit due to limits), sends appropriate messages (`model_response_end` or `chat_error`) via Realtime and cleans up the channel.
     - Environment variables needed: `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PROCESS_AI_TURN_SECRET`.
     - Note: `AI_ANALYSIS_MODEL` is now read by `trace-analysis-socket`, not directly by `ai-processor`.
+    - Langfuse Integration (Mandatory for system prompt fetching and optional for full observability tracing):
+      - `LANGFUSE_PUBLIC_KEY`: Public key for Langfuse.
+      - `LANGFUSE_PRIVATE_KEY`: Secret key for Langfuse.
+      - `LANGFUSE_HOST`: The base URL for your Langfuse instance (e.g., "https://us.cloud.langfuse.com").
+      - These keys and host are **required** for fetching the system prompt from Langfuse.
+      - If provided, these will also be used by the `CallbackHandler` to trace Langchain operations for observability.
 
 5.  **Chat Limits Module (`apps/flamechart-server/src/chat-limits/`)**
     - `chatLimitTypes.ts`: Defines types like `UserChatLimitContext`, `ChatErrorPayload`.
@@ -171,7 +183,11 @@ To provide an interactive chat interface where users can ask questions about a l
     f. Initializes `AgentState` including `chatMessagesPerSessionLimit`.
     g. Invokes LangGraph.
 3.  **Graph Execution (on `apps/flamechart-server`):**
-    a. `initialSetupNode`: Loads trace profile.
+    a. `initialSetupNode`:
+        i. Loads trace profile (using local `profile-loader.ts`).
+        ii. **Crucially, fetches the system prompt from Langfuse via `system-prompt-loader.ts`. If this fails, the process stops and an error is sent to the client.**
+        iii. Generates a summary of the trace.
+        iv. Prepares the initial `SystemMessage` using the fetched prompt and trace summary.
     b. `agentNode`:
         i. **In-Graph Message Limit Check:** Checks current human/AI message count in `state.messages` against `state.chatMessagesPerSessionLimit`. If over limit, send `chat_error` to client, set `sessionMessageLimitHitInGraph = true`, and graph proceeds to `END`. Client UI displays error, disables input.
         ii. If not over limit, LLM processes prompt + history.
