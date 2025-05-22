@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/use-toast';
 import { traceApi } from '@/lib/api';
+import { getTraceDetailsQueryKey } from '@/hooks/useTraceDetails';
 
 interface TraceTitleProps {
     trace: TraceMetadata | undefined | null;
@@ -51,7 +52,7 @@ export function TraceTitle({ trace, currentUser }: TraceTitleProps) {
         },
         onMutate: async (newScenario: string) => {
             if (!trace?.id) return { previousTrace: undefined };
-            const queryKey = ['trace', trace.id];
+            const queryKey = getTraceDetailsQueryKey(trace.id);
             await queryClient.cancelQueries({ queryKey });
             const previousTrace = queryClient.getQueryData<TraceMetadata>(queryKey);
 
@@ -77,12 +78,12 @@ export function TraceTitle({ trace, currentUser }: TraceTitleProps) {
                     description: response.error.message || 'Update failed despite success status.',
                     variant: 'destructive',
                 });
-                if (trace?.id) queryClient.invalidateQueries({ queryKey: ['trace', trace.id] });
+                if (trace?.id) queryClient.invalidateQueries({ queryKey: getTraceDetailsQueryKey(trace.id) });
             }
         },
         onError: (err, newScenarioVariable, context) => {
             if (context?.previousTrace && trace?.id) {
-                queryClient.setQueryData<TraceMetadata>(['trace', trace.id], context.previousTrace);
+                queryClient.setQueryData<TraceMetadata>(getTraceDetailsQueryKey(trace.id), context.previousTrace);
                 setEditedScenario(context.previousTrace.scenario);
             }
             setOptimisticDisplayScenario(null);
@@ -90,7 +91,7 @@ export function TraceTitle({ trace, currentUser }: TraceTitleProps) {
         },
         onSettled: () => {
             if (trace?.id) {
-                queryClient.invalidateQueries({ queryKey: ['trace', trace.id] });
+                queryClient.invalidateQueries({ queryKey: getTraceDetailsQueryKey(trace.id) });
             }
             queryClient.invalidateQueries({ queryKey: ['traces'] });
             setOptimisticDisplayScenario(null);
@@ -146,7 +147,7 @@ export function TraceTitle({ trace, currentUser }: TraceTitleProps) {
                 <Input
                     value={editedScenario}
                     onChange={handleInputChange}
-                    className="h-9 text-2xl font-bold"
+                    className="h-9 md:text-2xl text-2xl font-bold"
                     autoFocus
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') handleSave();
@@ -159,6 +160,7 @@ export function TraceTitle({ trace, currentUser }: TraceTitleProps) {
                     onClick={handleSave}
                     disabled={updateScenarioMutation.isPending}
                     aria-label="Save scenario"
+                    className="h-8 w-10"
                 >
                     {updateScenarioMutation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -172,6 +174,7 @@ export function TraceTitle({ trace, currentUser }: TraceTitleProps) {
                     onClick={handleCancel}
                     disabled={updateScenarioMutation.isPending}
                     aria-label="Cancel editing scenario"
+                    className="h-8 w-10"
                 >
                     <X className="h-4 w-4" />
                 </Button>
