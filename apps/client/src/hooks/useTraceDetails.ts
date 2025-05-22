@@ -2,6 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { traceApi } from '@/lib/api';
 import type { TraceMetadata, ApiError } from '@/types';
 
+export function getTraceDetailsQueryKey(traceId: string | null | undefined) {
+  return ['traceDetails', traceId];
+}
+
 /**
  * Custom hook to fetch trace metadata.
  * Handles specific error cases like not found/permission errors.
@@ -13,7 +17,7 @@ export function useTraceDetails(traceId: string | null | undefined) {
     TraceMetadata | null, // Type for successful data
     ApiError // Type for error - use our structured error type
   >({
-    queryKey: ['traceDetails', traceId], // Unique query key including the traceId
+    queryKey: getTraceDetailsQueryKey(traceId), // Use the custom query key function
     queryFn: async () => {
       if (!traceId) {
         // Return null if traceId is not provided, consistent with enabled flag

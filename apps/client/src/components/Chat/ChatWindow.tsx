@@ -1,12 +1,5 @@
 import * as React from 'react';
-import {
-  useState,
-  useRef,
-  useEffect,
-  forwardRef,
-  useImperativeHandle,
-  useCallback,
-} from 'react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -49,7 +42,10 @@ export interface ChatWindowHandle {
 
 // Use forwardRef to accept a ref from the parent
 export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
-  ({ isOpen, onClose, messages, sendMessage, isLoading, isStreaming, error, suggestionPrompts }, ref) => {
+  (
+    { isOpen, onClose, messages, sendMessage, isLoading, isStreaming, error, suggestionPrompts },
+    ref
+  ) => {
     const [input, setInput] = useState('');
     const internalScrollAreaRef = useRef<HTMLDivElement>(null);
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
@@ -184,7 +180,9 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
               </div>
             )}
             {messages.map((msg) => {
-              const isLimitError = msg.sender === 'error' && ['limit_exceeded', 'lifetime_analyses'].includes(msg.errorType);
+              const isLimitError =
+                msg.sender === 'error' &&
+                ['limit_exceeded', 'lifetime_analyses'].includes(msg.errorType);
 
               if (msg.sender === 'tool') {
                 return <ToolMessageItem key={msg.id} message={msg} />;
@@ -196,14 +194,15 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${msg.sender === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : msg.sender === 'error'
-                        ? isLimitError
-                          ? 'bg-background border border-red-300'
-                          : 'bg-red-100 text-red-700 border border-red-300'
-                        : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
-                      }`}
+                    className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${
+                      msg.sender === 'user'
+                        ? 'bg-blue-500 text-white'
+                        : msg.sender === 'error'
+                          ? isLimitError
+                            ? 'bg-background border border-red-300'
+                            : 'bg-red-100 text-red-700 border border-red-300'
+                          : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
+                    }`}
                   >
                     {msg.text}
                     {msg.sender === 'error' && isLimitError && (

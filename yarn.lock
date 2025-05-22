@@ -2195,6 +2195,7 @@ __metadata:
     "@types/pako": "npm:^2.0.3"
     dotenv: "npm:^16.5.0"
     express: "npm:^4.19.2"
+    langfuse-langchain: "npm:^3.37.2"
     long: "npm:^5.3.2"
     pako: "npm:^2.1.0"
     tsx: "npm:^4.19.4"
@@ -11640,6 +11641,36 @@ __metadata:
   bin:
     kill-port: cli.js
   checksum: 10c0/f9d51a43f8349f162f4f004bd6e68e54d615f9a8f994c780b09771962becb4458cd7ba3a043948ecb18405a7e0d9c31d7264924d0b7f6e24a6f2a01cc474de21
+  languageName: node
+  linkType: hard
+
+"langfuse-core@npm:^3.37.2":
+  version: 3.37.2
+  resolution: "langfuse-core@npm:3.37.2"
+  dependencies:
+    mustache: "npm:^4.2.0"
+  checksum: 10c0/fa49da03415a6a0a3ecd6595d5bd5c0556eeaf5e05d2b5245f2ed6b08ac81c488a4943821e73df4d5972377c5ed4a9b92ec2130058d7f26af520a548b229e749
+  languageName: node
+  linkType: hard
+
+"langfuse-langchain@npm:^3.37.2":
+  version: 3.37.2
+  resolution: "langfuse-langchain@npm:3.37.2"
+  dependencies:
+    langfuse: "npm:^3.37.2"
+    langfuse-core: "npm:^3.37.2"
+  peerDependencies:
+    langchain: ">=0.0.157 <0.4.0"
+  checksum: 10c0/2f537a8066d2cc56840e094c9ab644643af067f6d126a64553c6374f23be26519ec7482c6f12091b1a8cfb6200aa8fee141ece60ff0463b429866e859196ce1e
+  languageName: node
+  linkType: hard
+
+"langfuse@npm:^3.37.2":
+  version: 3.37.2
+  resolution: "langfuse@npm:3.37.2"
+  dependencies:
+    langfuse-core: "npm:^3.37.2"
+  checksum: 10c0/55a16e933257d33e1cdc3edef09b0d4ae0b89ef6ecd4007b4df472efe31cf87f9802d228dce417bb7b953ffd85df762a4ab6ad83e9e83735425d71d1eef47927
   languageName: node
   linkType: hard
 

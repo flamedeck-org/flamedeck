@@ -46,7 +46,12 @@ const AVAILABLE_SCOPES = [
 ];
 
 function ApiKeysPage() {
-  const { data: apiKeys, isLoading: isLoadingKeys, error: keysError, refetch: refetchKeys } = useUserApiKeys();
+  const {
+    data: apiKeys,
+    isLoading: isLoadingKeys,
+    error: keysError,
+    refetch: refetchKeys,
+  } = useUserApiKeys();
   const createApiKeyMutation = useCreateApiKey();
   const revokeApiKeyMutation = useRevokeApiKey();
 
@@ -99,28 +104,28 @@ function ApiKeysPage() {
   const handleRevokeKey = useCallback(async () => {
     if (!keyToRevoke) return;
 
-    revokeApiKeyMutation.mutate(keyToRevoke.id,
-      {
-        onSuccess: () => {
-          toast.success(`API Key "${keyToRevoke.description || keyToRevoke.id.substring(0, 8)}" revoked successfully!`);
-          setShowRevokeDialog(false);
-          setKeyToRevoke(null);
-          // onSuccess in the hook already invalidates the query
-        },
-        onError: (error) => {
-          toast.error(`Failed to revoke API key: ${error.message}`);
-          setShowRevokeDialog(false); // Also close dialog on error
-        },
-      }
-    );
+    revokeApiKeyMutation.mutate(keyToRevoke.id, {
+      onSuccess: () => {
+        toast.success(
+          `API Key "${keyToRevoke.description || keyToRevoke.id.substring(0, 8)}" revoked successfully!`
+        );
+        setShowRevokeDialog(false);
+        setKeyToRevoke(null);
+        // onSuccess in the hook already invalidates the query
+      },
+      onError: (error) => {
+        toast.error(`Failed to revoke API key: ${error.message}`);
+        setShowRevokeDialog(false); // Also close dialog on error
+      },
+    });
   }, [keyToRevoke, revokeApiKeyMutation]);
 
   const activeKeys = useMemo(() => {
-    return apiKeys?.filter(key => key.is_active) ?? [];
+    return apiKeys?.filter((key) => key.is_active) ?? [];
   }, [apiKeys]);
 
   const revokedKeys = useMemo(() => {
-    return apiKeys?.filter(key => !key.is_active) ?? [];
+    return apiKeys?.filter((key) => !key.is_active) ?? [];
   }, [apiKeys]);
 
   return (
@@ -228,7 +233,9 @@ function ApiKeysPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => openRevokeDialog(key)}
-                              disabled={revokeApiKeyMutation.isPending && keyToRevoke?.id === key.id}
+                              disabled={
+                                revokeApiKeyMutation.isPending && keyToRevoke?.id === key.id
+                              }
                               className="text-red-600 hover:text-red-700"
                             >
                               {revokeApiKeyMutation.isPending && keyToRevoke?.id === key.id ? (
@@ -290,19 +297,24 @@ function ApiKeysPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to revoke this API key?</AlertDialogTitle>
               <AlertDialogDescription>
-                Key: <span className="font-medium">{keyToRevoke?.description || keyToRevoke?.id}</span>
+                Key:{' '}
+                <span className="font-medium">{keyToRevoke?.description || keyToRevoke?.id}</span>
                 <br />
                 This action cannot be undone. The key will immediately become inactive.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={revokeApiKeyMutation.isPending}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel disabled={revokeApiKeyMutation.isPending}>
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleRevokeKey}
                 disabled={revokeApiKeyMutation.isPending}
-                className={buttonVariants({ variant: "destructive" })}
+                className={buttonVariants({ variant: 'destructive' })}
               >
-                {revokeApiKeyMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {revokeApiKeyMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Revoke Key
               </AlertDialogAction>
             </AlertDialogFooter>

@@ -22,9 +22,11 @@ export function useTraceAnalysisSocket() {
   const socketRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
-    if (socketRef.current &&
+    if (
+      socketRef.current &&
       (socketRef.current.readyState === WebSocket.OPEN ||
-        socketRef.current.readyState === WebSocket.CONNECTING)) {
+        socketRef.current.readyState === WebSocket.CONNECTING)
+    ) {
       console.log(
         `[useTraceAnalysisSocket] WebSocket already open or connecting. State: ${socketRef.current.readyState}`
       );
@@ -59,7 +61,9 @@ export function useTraceAnalysisSocket() {
     };
 
     socketRef.current.onclose = (event) => {
-      console.log(`[useTraceAnalysisSocket] WebSocket .onclose event. Code: ${event.code}, Reason: '${event.reason}', WasClean: ${event.wasClean}`);
+      console.log(
+        `[useTraceAnalysisSocket] WebSocket .onclose event. Code: ${event.code}, Reason: '${event.reason}', WasClean: ${event.wasClean}`
+      );
       setIsConnected(false);
       socketRef.current = null;
       // Optionally implement automatic reconnection logic here

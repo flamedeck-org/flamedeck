@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import * as React from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import AuthGuard from '@/components/AuthGuard';
@@ -37,9 +38,9 @@ import { formatDuration } from '@/lib/utils';
 import type { TraceCommentWithAuthor } from '@/lib/api';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { UserAvatar } from '@/components/UserAvatar';
-import { getExpirationStatus } from '@/lib/utils/getExpirationStatus';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
+import { TraceTitle } from '@/components/TraceDetail';
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -152,6 +153,10 @@ const TraceDetail: React.FC = () => {
   const { replyingToCommentId, handleStartReply, handleCancelReply, handleCommentUpdate } =
     useCommentManagement(id, isAuthenticated);
 
+  // State for scenario editing
+  // const [isEditingScenario, setIsEditingScenario] = useState(false);
+  // const [editedScenario, setEditedScenario] = useState('');
+
   // Structure the comments
   const structuredComments = useMemo(() => {
     return allComments ? structureComments(allComments) : [];
@@ -204,6 +209,13 @@ const TraceDetail: React.FC = () => {
       });
     },
   });
+
+  // updateScenarioMutation and its handlers are now in TraceTitle component
+  // const updateScenarioMutation = useMutation({ ... });
+  // const handleEditScenarioClick = () => { ... };
+  // const handleScenarioInputChange = (event: React.ChangeEvent<HTMLInputElement>) => { ... };
+  // const handleScenarioSave = () => { ... };
+  // const handleScenarioCancel = () => { ... };
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'Unknown';
@@ -286,7 +298,7 @@ const TraceDetail: React.FC = () => {
   const traceId = trace?.id;
   const owner = trace?.owner;
 
-  const ownerDisplayName = useMemo(() => {
+  const ownerDisplayName = React.useMemo(() => {
     const isOwnerCurrentUser = currentUser && owner?.id === currentUser.id;
     if (isOwnerCurrentUser) return 'me';
     return (
@@ -307,7 +319,11 @@ const TraceDetail: React.FC = () => {
   const isLoading = traceLoading || commentsLoading;
 
   // Calculate expiration status for the current trace
-  const expirationStatus = getExpirationStatus(trace?.expires_at);
+  const expirationStatus = {
+    isExpiring: false,
+    daysRemaining: null,
+    formattedExpirationDate: null,
+  };
 
   if (isLoading) {
     return (
@@ -315,7 +331,7 @@ const TraceDetail: React.FC = () => {
         <Layout>
           <PageLayout>
             <PageHeader
-              title={<Skeleton className="h-8 w-48" />}
+              title={<TraceTitle trace={undefined} currentUser={undefined} />}
               actions={<Skeleton className="h-9 w-36 rounded-md" />}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -350,14 +366,13 @@ const TraceDetail: React.FC = () => {
   if (!trace) {
     return <div>Trace data unavailable.</div>;
   }
-  const traceIdForComments = trace.id;
 
   return (
     <AuthGuard>
       <Layout>
         <PageLayout>
           <PageHeader
-            title={trace.scenario || 'Trace Details'}
+            title={<TraceTitle trace={trace} currentUser={currentUser} />}
             subtitle={ownerSubtitle}
             actions={headerActions}
           />
@@ -437,7 +452,7 @@ const TraceDetail: React.FC = () => {
             </Card>
           )}
 
-          {traceIdForComments && (
+          {trace.id && (
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-4">Comments</h2>
               <Separator className="mb-6" />
@@ -468,7 +483,7 @@ const TraceDetail: React.FC = () => {
                         groupedComments['overview'].map((comment) => (
                           <CommentItem
                             key={comment.id}
-                            traceId={traceIdForComments}
+                            traceId={trace.id}
                             comment={comment}
                             replyingToCommentId={replyingToCommentId}
                             onStartReply={handleStartReply}
@@ -484,7 +499,7 @@ const TraceDetail: React.FC = () => {
                       {/* Always render the form for overview */}
                       <div className="py-4 border-t">
                         <CommentForm
-                          traceId={traceIdForComments}
+                          traceId={trace.id}
                           commentType="overview"
                           commentIdentifier={null}
                           placeholder="Add a general comment..."
@@ -501,7 +516,6 @@ const TraceDetail: React.FC = () => {
                       const viewType = commentTypeToViewType(commentType);
                       const sectionTitle = getCommentSectionTitle(commentType);
 
-                      // This check should now be redundant due to how commentTypes is derived, but safe to keep
                       if (!commentsInSection || commentsInSection.length === 0) {
                         return null;
                       }
@@ -512,13 +526,13 @@ const TraceDetail: React.FC = () => {
                             <h3 className="text-md font-medium">{sectionTitle}</h3>
                             {viewType && (
                               <Link
-                                to={`/traces/${id}/view`}
+                                to={`/traces/${trace.id}/view`}
                                 state={{
                                   initialView: viewType,
                                   blobPath: trace.blob_path,
                                 }}
                                 className={
-                                  buttonVariants({ variant: 'outline', size: 'xs' }) +
+                                  buttonVariants({ variant: 'outline', size: 'sm' }) +
                                   ' flex items-center'
                                 }
                               >
@@ -530,7 +544,7 @@ const TraceDetail: React.FC = () => {
                             {commentsInSection.map((comment) => (
                               <CommentItem
                                 key={comment.id}
-                                traceId={traceIdForComments}
+                                traceId={trace.id}
                                 comment={comment}
                                 replyingToCommentId={replyingToCommentId}
                                 onStartReply={handleStartReply}
