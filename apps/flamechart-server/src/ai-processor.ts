@@ -26,10 +26,15 @@ import { type CallbackHandlerMethods } from '@langchain/core/callbacks/base';
 // LangGraph imports - using bare specifiers
 import { StateGraph, END, Annotation } from '@langchain/langgraph';
 
+// Langfuse import
+import { CallbackHandler } from "langfuse-langchain";
+import { Langfuse } from "langfuse"; // Added for fetching prompts
+
 import * as fs from 'fs/promises'; // For file system operations
 import * as path from 'path'; // For path manipulation
 import { createImageHumanMessageFromToolResult } from './ai-message-utils'; // Updated import name
 import { checkChatLimits, incrementChatCounter, sendChatLimitError, getUserChatLimitContext } from './chat-limits'; // Added getUserChatLimitContext
+import { loadSystemPromptContent } from './system-prompt-loader'; // Import the new loader
 
 console.log('[Node AI Processor] Module initialized.'); // Changed log message
 
@@ -37,6 +42,9 @@ console.log('[Node AI Processor] Module initialized.'); // Changed log message
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const LANGFUSE_PUBLIC_KEY = process.env.LANGFUSE_PUBLIC_KEY;
+const LANGFUSE_PRIVATE_KEY = process.env.LANGFUSE_PRIVATE_KEY;
+const LANGFUSE_HOST = process.env.LANGFUSE_HOST;
 
 const MAX_HISTORY_LIMIT = 50; // Keep if used for fetching, or adjust based on plan
 
@@ -53,6 +61,8 @@ interface AgentState {
   traceSummary: string;
   llm: ChatOpenAI;
   modelName?: string;
+  langfuseHandler?: CallbackHandler; // Added for Langfuse
+  langfuseClient?: Langfuse; // Added for Langfuse prompt fetching
 
   // For managing LangChain streaming callbacks
   llmStreamingActiveForCurrentSegment: boolean;
@@ -100,48 +110,17 @@ const AgentStateAnnotations = Annotation.Root({
   chatMessagesPerSessionLimit: Annotation<number | null>({ reducer: (x, y) => y ?? x, default: () => null }),
   planName: Annotation<string | null>({ reducer: (x, y) => y ?? x, default: () => null }),
   sessionMessageLimitHitInGraph: Annotation<boolean>({ reducer: (x, y) => y, default: () => false }),
+  langfuseHandler: Annotation<CallbackHandler | null>({ reducer: (x, y) => y ?? x, default: () => null }), // Added for Langfuse
+  langfuseClient: Annotation<Langfuse | undefined>({ reducer: (x, y) => y ?? x, default: () => undefined }), // Added for Langfuse prompt fetching
 });
-
-
-function formatPromptTemplateStrings(strings: TemplateStringsArray, ...values: any[]) {
-  const result = strings.reduce(
-    (acc, str, i) => acc + str + (values[i] !== undefined ? values[i] : ''),
-    ''
-  );
-  const lines = result.split('\n');
-  const leadingWhitespace = Math.min(
-    ...lines.filter((line) => line.trim()).map((line) => line.match(/^\s*/)?.[0]?.length ?? 0)
-  );
-  const trimmedResult = lines.map((line) => line.slice(leadingWhitespace)).join('\n');
-  return trimmedResult.replace(/^\n+|\n+$/g, '');
-}
-
-const SYSTEM_PROMPT_TEMPLATE_STRING = formatPromptTemplateStrings`
-You are a performance analysis assistant.
-
-- Your goal is to pinpoint areas of high resource consumption or latency.
-- You should try to act with as little user involvement as possible, investigating likely bottlenecks and providing a summary.
-- If you cannot find any bottlenecks, you should say so - do not make up performance issues.
-
-- You can use the 'generate_flamegraph_screenshot' tool to get images of the flamegraph - you can zoom in to specific areas of the flamegraph using the startDepth, startTimeMs and endTimeMs parameters to debug specific callstacks.
-- You can use the 'generate_sandwich_flamegraph_screenshot' tool to get a caller/callee sandwich view for a specific function by providing its name via the 'frameName' parameter.
-- You can use the 'get_top_functions' tool to get a list of the top functions by self or total time.
-
-IMPORTANT: After every tool call, you should provide a summary of your findings.
-
-If you think you have identified a bottleneck, provide a concise summary.
-
-Start by generating a flamegraph screenshot of the entire trace.
-
-Trace Summary:
-{trace_summary}
-`;
 
 // --- LangGraph Nodes ---
 
 async function initialSetupNode(state: AgentState): Promise<Partial<AgentState>> {
   console.log('[Node AI Processor - SetupNode] Starting initial setup...');
-  const { supabaseAdmin, traceId, realtimeChannel } = state;
+  const { supabaseAdmin, traceId, realtimeChannel, langfuseClient } = state;
+  let systemPromptContent: string;
+  let traceSummaryForPrompt = ''; // Initialize with a default or empty string
 
   try {
     // 1. Get the trace record from the database
@@ -194,7 +173,7 @@ async function initialSetupNode(state: AgentState): Promise<Partial<AgentState>>
       throw new Error(`Failed to load profile data for trace ${traceId}`);
     }
     const profileData = loadedData.profileGroup;
-    const traceSummary = JSON.stringify(
+    traceSummaryForPrompt = JSON.stringify(
       {
         name: profileData.name ?? 'N/A',
         profileType: loadedData.profileType ?? 'N/A',
@@ -206,17 +185,20 @@ async function initialSetupNode(state: AgentState): Promise<Partial<AgentState>>
 
     console.log('[Node AI Processor - SetupNode] Profile loaded and parsed. Summary generated.');
 
-    const systemPromptContent = SYSTEM_PROMPT_TEMPLATE_STRING.replace(
-      '{trace_summary}',
-      traceSummary
-    );
+    // Attempt to fetch prompt from Langfuse if client is available
+    systemPromptContent = await loadSystemPromptContent({
+      langfuseClient,
+      traceSummary: traceSummaryForPrompt,
+      realtimeChannel,
+    });
+
     let updatedMessages = [...state.messages];
 
     if (updatedMessages.length === 0 || updatedMessages[0]._getType() !== 'system') {
       updatedMessages.unshift(new SystemMessage(systemPromptContent));
     }
 
-    return { profileArrayBuffer, profileData, traceSummary, messages: updatedMessages };
+    return { profileArrayBuffer, profileData, traceSummary: traceSummaryForPrompt, messages: updatedMessages };
   } catch (error) {
     console.error('[Node AI Processor - SetupNode] Critical error during setup:', error);
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -364,6 +346,13 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
     },
   ];
 
+  if (state.langfuseHandler) {
+    // Type assertion might be needed if CallbackHandler doesn't directly match CallbackHandlerMethods fully,
+    // but typically langfuse-langchain's handler is compatible.
+    langChainCallbacks.push(state.langfuseHandler as unknown as CallbackHandlerMethods);
+    console.log('[Node AI Processor - AgentNode] Langfuse handler added to callbacks.');
+  }
+
   // Construct messages for LLM invocation, inserting HumanMessage with image after its generating ToolMessage
   const messagesForLLMInvocation: BaseMessage[] = [];
   for (const originalMessage of state.messages) {
@@ -409,19 +398,6 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
     }
   }
 
-  // Ensure System Prompt is correctly placed or updated if needed
-  if (
-    messagesForLLMInvocation.length > 0 &&
-    messagesForLLMInvocation[0]._getType() === 'system' &&
-    (messagesForLLMInvocation[0] as SystemMessage).content !==
-    SYSTEM_PROMPT_TEMPLATE_STRING.replace('{trace_summary}', state.traceSummary)
-  ) {
-    (messagesForLLMInvocation[0] as SystemMessage).content = SYSTEM_PROMPT_TEMPLATE_STRING.replace(
-      '{trace_summary}',
-      state.traceSummary
-    );
-  }
-
   // --- Save messages to file before LLM call ---
   try {
     await fs.mkdir(LOGS_DIR, { recursive: true }); // Ensure log directory exists
@@ -435,7 +411,6 @@ async function agentNode(state: AgentState, config?: RunnableConfig): Promise<Pa
     console.log(`[Node AI Processor - AgentNode] Saved LLM input to ${filePath}`);
   } catch (fileError) {
     console.error('[Node AI Processor - AgentNode] Error saving LLM input to file:', fileError);
-    // Do not crash the main process, just log the error
   }
   // --- End save messages to file ---
 
@@ -996,11 +971,22 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
   if (!OPENAI_API_KEY) missingEnvVars.push('OPENAI_API_KEY');
   if (!SUPABASE_URL) missingEnvVars.push('SUPABASE_URL');
   if (!SUPABASE_SERVICE_ROLE_KEY) missingEnvVars.push('SUPABASE_SERVICE_ROLE_KEY');
+  if (!LANGFUSE_PUBLIC_KEY) missingEnvVars.push('LANGFUSE_PUBLIC_KEY');
+  if (!LANGFUSE_PRIVATE_KEY) missingEnvVars.push('LANGFUSE_PRIVATE_KEY');
 
   if (missingEnvVars.length > 0) {
-    const errorMessage = `Missing critical environment variables: ${missingEnvVars.join(', ')}`;
-    console.error(`[Node AI Processor] ${errorMessage}`);
-    throw new Error(`Internal configuration error: ${errorMessage}`);
+    const filteredMissingVars = missingEnvVars.filter(v => !(v === 'LANGFUSE_PUBLIC_KEY' || v === 'LANGFUSE_PRIVATE_KEY'));
+    if (filteredMissingVars.length > 0) {
+      const errorMessage = `Missing critical environment variables: ${filteredMissingVars.join(', ')}. Langfuse keys are optional.`;
+      console.error(`[Node AI Processor] ${errorMessage}`);
+      // Only throw error if critical (non-Langfuse) keys are missing
+      if (filteredMissingVars.some(key => key !== 'LANGFUSE_PUBLIC_KEY' && key !== 'LANGFUSE_PRIVATE_KEY')) {
+        throw new Error(`Internal configuration error: ${errorMessage}`);
+      }
+    }
+    if (!LANGFUSE_PUBLIC_KEY || !LANGFUSE_PRIVATE_KEY) {
+      console.warn('[Node AI Processor] Langfuse Public or Private Key not found. Langfuse tracing will be disabled.');
+    }
   }
 
   const modelToUse = requestedModelName || 'o4-mini';
@@ -1016,6 +1002,35 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
     auth: { persistSession: false },
   });
   const realtimeChannel = supabaseAdmin.channel(`private-chat-results-${userId}`);
+
+  let langfuseHandler: CallbackHandler | undefined = undefined;
+  let langfuseClient: Langfuse | undefined = undefined;
+
+  if (LANGFUSE_PUBLIC_KEY && LANGFUSE_PRIVATE_KEY) {
+    try {
+      const sharedOptions = {
+        publicKey: LANGFUSE_PUBLIC_KEY,
+        secretKey: LANGFUSE_PRIVATE_KEY,
+        baseUrl: LANGFUSE_HOST,
+      }
+      langfuseHandler = new CallbackHandler({
+        ...sharedOptions,
+        sessionId: sessionId, // flamedeck's session id
+        userId: userId,       // flamedeck's user id
+      });
+      console.log('[Node AI Processor] Langfuse callback handler initialized successfully.');
+
+      // Initialize Langfuse client for fetching prompts if keys are available
+      langfuseClient = new Langfuse({ ...sharedOptions });
+      console.log('[Node AI Processor] Langfuse client for prompts initialized.');
+
+    } catch (e: any) {
+      console.error('[Node AI Processor] Failed to initialize Langfuse callback handler or client:', e.message);
+      // langfuseHandler and langfuseClient remain undefined
+    }
+  } else {
+    console.warn('[Node AI Processor] Langfuse Public Key or Secret Key not provided in environment variables. Langfuse tracing and prompt fetching will be disabled.');
+  }
 
   try {
     await new Promise<void>((resolve, reject) => {
@@ -1206,6 +1221,8 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
       planName: limitContext.plan.name,
       sessionMessageLimitHitInGraph: false,
       modelName: requestedModelName,
+      langfuseHandler: langfuseHandler, // Pass initialized handler
+      langfuseClient: langfuseClient, // Pass initialized client
     };
 
     console.log(`[Node AI Processor] Initializing graph with chatMessagesPerSessionLimit: ${initialState.chatMessagesPerSessionLimit}`);

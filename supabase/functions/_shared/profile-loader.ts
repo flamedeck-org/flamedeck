@@ -1,10 +1,6 @@
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import * as pako from 'https://esm.sh/pako@2.1.0';
 import { JSON_parse } from 'npm:uint8array-json-parser';
-// Import Long from CDN for Deno
 import Long from 'https://esm.sh/long@5.2.3';
-// Import from speedscope-import (adjust path based on _shared location)
-// Assuming _shared is one level up from where packages are relative to functions/process-ai-turn
 import {
   type ImporterDependencies,
   importProfilesFromArrayBuffer,
