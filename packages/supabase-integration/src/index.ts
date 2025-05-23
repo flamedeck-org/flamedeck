@@ -607,6 +607,20 @@ export type Database = {
           | { p_user_id: string; p_search_query: string; p_folder_id?: string }
         Returns: number
       }
+      get_user_active_subscription: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          plan_id: string
+          stripe_subscription_id: string
+          status: string
+          current_period_start: string
+          current_period_end: string
+          cancel_at_period_end: boolean
+          plan_name: string
+          price_monthly: number
+        }[]
+      }
       get_user_subscription_usage: {
         Args: { p_user_id: string }
         Returns: {

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -227,7 +227,7 @@ function SettingsPage() {
         </Card>
 
         {/* Danger Zone Card */}
-        <Card className="border-destructive/20">
+        <Card className="border-destructive">
           <CardHeader>
             {isLoading ? (
               <>

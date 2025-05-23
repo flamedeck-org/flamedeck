@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 
 export const subscriptionTiers = [
   {
+    id: '44b49ed5-76a3-4f2c-b2c6-5c101e57b9e8',
     name: 'Free',
     price: '0',
     features: [
@@ -17,8 +18,9 @@ export const subscriptionTiers = [
     ],
   },
   {
+    id: 'b963b9ea-a9e7-4452-976b-24bd435bf25b',
     name: 'Pro',
-    price: '10',
+    price: '15',
     features: [
       'Unlimited trace retention',
       '1,000 total traces',

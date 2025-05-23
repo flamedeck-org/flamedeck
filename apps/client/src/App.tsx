@@ -36,7 +36,8 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import { HelmetProvider } from 'react-helmet-async';
 import { UpgradeModal } from '@/components/modals/UpgradeModal';
 import { UpgradeModalProvider } from '@/hooks/useUpgradeModal';
-import { supabase } from './integrations/supabase/client.ts';
+import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
+import { PaymentCancelPage } from './pages/PaymentCancelPage';
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -78,6 +79,8 @@ const AppRoutes = () => {
       {/* Other Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/payment-success" element={<PaymentSuccessPage />} />
+      <Route path="/payment-cancel" element={<PaymentCancelPage />} />
 
       {/* Documentation Routes - accessible to all */}
       <Route path="/docs" element={<DocsLayout />}>

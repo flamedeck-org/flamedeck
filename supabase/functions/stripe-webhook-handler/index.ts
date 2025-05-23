@@ -204,7 +204,7 @@ serve(async (req: Request) => {
               stripe_customer_id: stripeCustomerId,
               ...updateData
             }, {
-              onConflict: 'stripe_subscription_id' // More robust: ensure this subscription is uniquely represented
+              onConflict: 'user_id' // Align with customer.subscription.created if user_id is the unique key
             });
           if (error) {
             console.error('Supabase upsert error for invoice.payment_succeeded (subscription_create):', error);

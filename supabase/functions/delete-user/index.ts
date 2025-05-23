@@ -82,8 +82,70 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get the authenticated user's ID
     const userId = user.id;
+
+    // #### START SUBSCRIPTION CHECK ####
+    console.log(`Checking active subscriptions for user ${userId} before deletion.`);
+    const {
+      data: activeSubscription,
+      error: subscriptionError,
+    } = await supabaseAdmin
+      .from('user_subscriptions')
+      .select(`
+        status,
+        subscription_plans (name)
+      `)
+      .eq('user_id', userId)
+      // We are interested in any subscription that is 'active' or 'trialing' and not a known free plan.
+      // If your free plan has a specific name like 'free' or 'Free Tier' in subscription_plans table, use that.
+      // This example assumes the free plan is identified by its name not being one of the paid ones, 
+      // or more directly, checking if plan_id corresponds to a non-zero price plan.
+      // For simplicity, let's assume a paid plan has a name NOT LIKE 'Free%'. 
+      // A more robust check would be on subscription_plans.price_monthly > 0 or a specific is_free_plan boolean.
+      .in('status', ['active', 'trialing']) // Check for active or trialing states
+      .maybeSingle(); // A user might have one or zero relevant subscriptions
+
+    if (subscriptionError) {
+      console.error("Error checking user subscription:", subscriptionError);
+      return new Response(
+        JSON.stringify({
+          error: "Failed to check user subscription status",
+          details: subscriptionError.message,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    if (activeSubscription) {
+      // Access the plan name via the joined table data
+      const planName = activeSubscription.subscription_plans?.name;
+      // Define what constitutes a "non-free" plan. This might be checking if planName is not 'Free',
+      // or if you had a price on subscription_plans, checking if price > 0.
+      // For this example, we'll assume any plan that is not explicitly named 'Free' (case-insensitive) is paid.
+      const isPaidPlan = planName && planName.toLowerCase() !== 'free';
+
+      if (isPaidPlan) {
+        console.log(
+          `User ${userId} has an active non-free subscription (${planName}). Deletion aborted.`,
+        );
+        return new Response(
+          JSON.stringify({
+            error:
+              "It looks like you have an active subscription. Please cancel the subscription before deleting the account.",
+          }),
+          {
+            status: 403, // Forbidden
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+    console.log(`No active non-free subscriptions found for user ${userId}. Proceeding with deletion.`);
+    // #### END SUBSCRIPTION CHECK ####
+
     console.log(`Deleting user ${userId} and their storage objects`);
 
     // Step 1: Delete all user's storage objects
@@ -126,8 +188,7 @@ Deno.serve(async (req) => {
         const deleteResults = await Promise.all(
           batches.map(async (batch, index) => {
             console.log(
-              `Deleting batch ${
-                index + 1
+              `Deleting batch ${index + 1
               }/${batches.length} (${batch.length} files)`,
             );
 

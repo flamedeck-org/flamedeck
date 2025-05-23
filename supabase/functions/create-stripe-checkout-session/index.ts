@@ -11,7 +11,8 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import Stripe from 'stripe'; // Ensure this matches your import_map.json or Deno setup
 
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-const FLAMEDECK_URL = 'https://www.flamedeck.com';
+// const FLAMEDECK_URL = 'https://www.flamedeck.com';
+const FLAMEDECK_URL = 'http://localhost:8080';
 
 if (!STRIPE_SECRET_KEY) {
   console.error('Stripe secret key not set in environment variables.');
@@ -71,7 +72,7 @@ serve(async (req: Request) => {
       });
     }
 
-    const { planId } // You'll need to send this from the client, e.g. 'pro-plan'
+    const { planId, returnPath } // Expect returnPath from the client
       = await req.json();
 
     if (!planId) {
@@ -135,6 +136,10 @@ serve(async (req: Request) => {
       // if (updateError) console.error('Error updating user with stripe_customer_id:', updateError);
     }
 
+    // Determine the cancel_url
+    const defaultCancelUrl = FLAMEDECK_URL; // Or your app's dashboard like /traces
+    const cancelUrl = returnPath ? `${FLAMEDECK_URL}${returnPath.startsWith('/') ? returnPath : '/' + returnPath}` : defaultCancelUrl;
+
     // 3. Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
@@ -147,7 +152,7 @@ serve(async (req: Request) => {
       ],
       mode: 'subscription',
       success_url: `${FLAMEDECK_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${FLAMEDECK_URL}/pricing`, // Or your current page
+      cancel_url: cancelUrl, // Use the dynamic cancelUrl
       subscription_data: {
         metadata: {
           user_id: user.id,

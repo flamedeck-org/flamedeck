@@ -7,16 +7,19 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-
     /* Linting - Keep app-specific overrides */
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitAny": false,
     "noFallthroughCasesInSwitch": false
-
     /* Keep app-specific paths relative to its baseUrl (now inherited) */
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"] // Good practice to exclude dist
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ] // Good practice to exclude dist
 }
