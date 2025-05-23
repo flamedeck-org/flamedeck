@@ -38,3 +38,5 @@ bin/
 tmp/
 
 .env
+
+prod_schema.sql
