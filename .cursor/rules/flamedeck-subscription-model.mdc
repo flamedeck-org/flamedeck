@@ -1,0 +1,86 @@
+---
+description: Describes how user subscriptions are managed in the application
+globs: 
+alwaysApply: false
+---
+# Rule: FlameDeck Subscription Management
+
+This rule describes the subscription lifecycle and data model for FlameDeck, primarily managed through Stripe and Supabase.
+
+## Core Tables
+
+1.  **`public.subscription_plans`** ([Schema in packages/supabase-integration/src/index.ts](mdc:packages/supabase-integration/src/index.ts))
+    *   Stores details about available subscription plans (e.g., "Free", "Pro").
+    *   Key columns:
+        *   `id` (uuid): Internal plan identifier.
+        *   `name` (text): User-facing plan name.
+        *   `stripe_price_id` (text): The ID of the corresponding Price object in Stripe. Crucial for creating Stripe Checkout Sessions. This will be `NULL` for the "Free" plan.
+        *   Plan-specific feature limits (e.g., `retention_days`, `monthly_upload_limit`, `total_trace_limit`).
+    *   **Important Note:** A "Free" plan record **must exist** in this table for the system to correctly revert users to a free tier upon cancellation of paid plans. Its `name` should be exactly 'Free'.
+
+2.  **`public.user_subscriptions`** ([Schema in packages/supabase-integration/src/index.ts](mdc:packages/supabase-integration/src/index.ts))
+    *   Stores the state of each user's current subscription plan.
+    *   Each user should ideally have one active record in this table representing their current plan (`status` of `active`, `trialing`, or `free`).
+    *   Key columns:
+        *   `user_id` (uuid): Foreign key to `auth.users.id`. Has a UNIQUE constraint.
+        *   `plan_id` (uuid): Foreign key to `subscription_plans.id`.
+        *   `stripe_customer_id` (text): The Stripe Customer ID.
+        *   `stripe_subscription_id` (text): The Stripe Subscription ID (NULL for users on the free plan not via a canceled Stripe sub).
+        *   `status` (text): Mirrors the Stripe subscription status (e.g., `active`, `trialing`) or indicates a system-managed status (`free`, `canceled`).
+        *   `current_period_start` (timestamptz): Start of the current billing period. For the "Free" plan (after a revert), this is set to when the user reverted.
+        *   `current_period_end` (timestamptz): End of the current billing period. For the "Free" plan (after a revert), this is set to 30 days after `current_period_start` to satisfy `NOT NULL` constraints, though it may not have direct billing implications.
+        *   `cancel_at_period_end` (boolean): True if a Stripe subscription is set to cancel at the end of the current period.
+        *   `canceled_at` (timestamptz): When a Stripe subscription was actually canceled.
+        *   `monthly_uploads_used` (integer): Tracks usage for metered features.
+
+## Subscription Lifecycle & Edge Functions
+
+Details on the overall architecture can be found in [docs/stripe-architecture.md](mdc:docs/stripe-architecture.md).
+
+1.  **Creating a Paid Subscription:**
+    *   User initiates an upgrade/subscribe action on the frontend.
+    *   The [create-stripe-checkout-session Edge Function](mdc:supabase/functions/create-stripe-checkout-session/index.ts) is called.
+        *   It retrieves the `stripe_price_id` from `subscription_plans`.
+        *   Creates/retrieves a Stripe Customer.
+        *   Creates a Stripe Checkout Session.
+        *   Returns the session URL to the client for redirect.
+        *   Crucially, it embeds `user_id` and your internal `plan_id` in the Stripe Checkout Session metadata.
+
+2.  **Webhook Synchronization (`stripe-webhook-handler`):**
+    *   The [stripe-webhook-handler Edge Function](mdc:supabase/functions/stripe-webhook-handler/index.ts) listens for events from Stripe to keep `user_subscriptions` in sync.
+    *   **`checkout.session.completed` / `customer.subscription.created` / `invoice.payment_succeeded` (for creation):**
+        *   These events trigger the creation/update of a record in `user_subscriptions` for the user, linking their `user_id` (from metadata) to the `plan_id` (from metadata), and storing relevant Stripe IDs and status (`active` or `trialing`).
+    *   **`customer.subscription.updated`:**
+        *   Handles changes like plan upgrades/downgrades (if implemented), or if `cancel_at_period_end` is set.
+        *   Updates the corresponding fields in `user_subscriptions`.
+    *   **`customer.subscription.deleted` (Revert to Free Logic):**
+        *   This is a critical event for when a paid Stripe subscription is definitively canceled.
+        *   The handler attempts to retrieve the `user_id` from the subscription's metadata.
+        *   It dynamically queries the `subscription_plans` table for the plan named 'Free' to get its `id`.
+        *   It then **`upserts`** the record in `user_subscriptions` (matching on `user_id`):
+            *   `plan_id` is set to the Free plan's ID.
+            *   `status` is set to `'free'`.
+            *   `stripe_subscription_id` is set to `NULL`.
+            *   `monthly_uploads_used` is reset to `0`.
+            *   `current_period_start` is set to the current timestamp.
+            *   `current_period_end` is set to 30 days after `current_period_start`.
+            *   Other relevant fields like `cancel_at_period_end` are reset.
+        *   If `user_id` is missing from metadata or the 'Free' plan is not found in the database, an error is logged, and a fallback might occur (e.g., simply marking the old record as `canceled` without a full revert to a structured Free plan state).
+
+3.  **Managing Subscription (Stripe Customer Portal):**
+    *   Users can manage their payment methods, cancel subscriptions, etc., via the Stripe Customer Portal.
+    *   The [manage-stripe-subscription Edge Function](mdc:supabase/functions/manage-stripe-subscription/index.ts) generates a secure link to this portal.
+    *   Changes made in the portal trigger webhooks (e.g., `customer.subscription.updated`, `customer.subscription.deleted`) that are processed by `stripe-webhook-handler`.
+
+## Frontend Consumption
+
+*   The [useUserSubscription hook](mdc:apps/client/src/hooks/useUserSubscription.ts) is the primary way the frontend accesses the user's current subscription state.
+    *   It fetches data based on an RPC call (e.g., `get_user_active_subscription`) which queries `user_subscriptions`.
+    *   It derives `isProUser` and `isActiveSubscription` flags based on the plan name and status (`active` or `trialing`).
+*   Usage data (limits) is fetched via another RPC (e.g., `get_user_subscription_usage`) which joins `user_subscriptions` with `subscription_plans` using `WHERE us.status IN ('active', 'trialing', 'free')`.
+
+## Key Considerations
+
+*   **Metadata:** Consistently setting `user_id` and internal `plan_id` in Stripe object metadata (Checkout Sessions, Subscriptions) is vital for linking Stripe events back to your internal user and plan records.
+*   **"Free" Plan Record:** A plan named 'Free' must be defined in `subscription_plans` for the revert-to-free logic to work.
+*   **`NOT NULL` Constraints:** Database constraints on `user_subscriptions` (e.g., for `current_period_start`, `current_period_end`) must be handled when reverting to the free tier, typically by setting appropriate default values.

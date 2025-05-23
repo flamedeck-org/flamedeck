@@ -11,7 +11,6 @@ import Login from './pages/Login.tsx';
 import Traces from './pages/Traces.tsx';
 import TraceDetail from './pages/TraceDetail';
 import ApiKeysPage from './pages/settings/ApiKeysPage';
-import Upload from './pages/Upload';
 import NotFound from './pages/NotFound';
 import TraceViewerPage from './pages/TraceViewerPage';
 import DocsApiKeysPage from './pages/DocsApiKeysPage';
@@ -39,6 +38,8 @@ import { UpgradeModalProvider } from '@/hooks/useUpgradeModal';
 import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
 import { PaymentCancelPage } from './pages/PaymentCancelPage';
 import BillingPage from './pages/settings/BillingPage';
+import { TraceUploadModalProvider } from '@/hooks/useTraceUploadModal';
+import { TraceUploadModal } from '@/components/TraceUploadModal';
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -104,7 +105,6 @@ const AppRoutes = () => {
         <Route path="/traces" element={<Traces />} />
         <Route path="/traces/folder/:folderId" element={<Traces />} />
         <Route path="/traces/:id" element={<TraceDetail />} />
-        <Route path="/upload" element={<Upload />} />
         <Route path="/settings" element={<SettingsLayout />}>
           <Route index element={<Navigate to="/settings/general" replace />} />
           <Route path="general" element={<SettingsPage />} />
@@ -139,26 +139,29 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SharingModalProvider>
-            <UpgradeModalProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <ScrollToTop />
-                  <div className="h-full w-full flex flex-col speedscope-app-container relative">
-                    <Navbar />
-                    <GLCanvas
-                      theme={theme}
-                      setGLCanvas={glCanvasAtom.set}
-                      canvasContext={canvasContext}
-                    />
-                    <AppRoutes />
-                  </div>
-                  <SharingModal />
-                  <UpgradeModal />
-                </BrowserRouter>
-              </TooltipProvider>
-            </UpgradeModalProvider>
+            <TraceUploadModalProvider>
+              <UpgradeModalProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <ScrollToTop />
+                    <div className="h-full w-full flex flex-col speedscope-app-container relative">
+                      <Navbar />
+                      <GLCanvas
+                        theme={theme}
+                        setGLCanvas={glCanvasAtom.set}
+                        canvasContext={canvasContext}
+                      />
+                      <AppRoutes />
+                    </div>
+                    <SharingModal />
+                    <TraceUploadModal />
+                    <UpgradeModal />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </UpgradeModalProvider>
+            </TraceUploadModalProvider>
           </SharingModalProvider>
         </AuthProvider>
       </QueryClientProvider>
