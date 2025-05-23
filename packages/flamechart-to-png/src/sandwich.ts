@@ -1,6 +1,6 @@
-import type { Profile, ProfileGroup, Frame } from '@flamedeck/speedscope-core/profile';
-import { Flamechart, type FlamechartDataSource } from '@flamedeck/speedscope-core/flamechart';
-import { createCanvas, type CanvasRenderingContext2D } from 'canvas';
+import type { Profile, Frame } from '@flamedeck/speedscope-core/profile';
+import { Flamechart, } from '@flamedeck/speedscope-core/flamechart';
+import { createCanvas } from 'canvas';
 import type { RenderLeftHeavyFlamechartOptions } from './leftHeavy'; // Assuming this is the base
 import { getFrameToColorBucket, createGetColorBucketForFrame } from './renderer/color';
 import { composeTheme } from './renderer/theme';
@@ -16,7 +16,6 @@ import {
 } from './renderer/layout';
 import {
   renderFlamechart,
-  type InternalRenderOptions,
   type InternalRenderMetrics,
 } from './renderer/renderer';
 import { drawTimeAxis } from './renderer/drawing';
@@ -176,6 +175,15 @@ export async function renderSandwichFlamechart(
   // This is a simplification; Speedscope's calculation is more nuanced based on profile units.
   // For now, let sub-charts determine their own range unless options provide specific ms.
 
+  // Calculate the render range for the central axis first, as it will dictate the grid for caller/callee.
+  const centralRenderRange = calculateRenderRange(
+    mainProfile, // For unit conversion (ms -> weight) and value formatting.
+    selectedFrame.getTotalWeight(), // Scope the axis to this duration.
+    flamechartRenderWidth - DEPTH_AXIS_WIDTH_PX, // Width available for the ticks/labels part of axis.
+    options // Pass all options, including potential startTimeMs/endTimeMs
+    // which will be interpreted relative to selectedFrameTotalWeight by calculateRenderRange.
+  );
+
   // --- Render Caller Flamegraph (Top, Inverted) ---
   if (callerProfile && callerProfile.getTotalWeight() > 0) {
     ctx.save();
@@ -212,6 +220,7 @@ export async function renderSandwichFlamechart(
       renderRange: callerRenderRange,
       metrics: callerMetrics,
       orientation: 'bottom-up',
+      gridRenderRange: centralRenderRange,
     });
     ctx.restore();
   }
@@ -252,6 +261,7 @@ export async function renderSandwichFlamechart(
       renderRange: calleeRenderRange,
       metrics: calleeMetrics,
       orientation: 'top-down',
+      gridRenderRange: centralRenderRange,
     });
     ctx.restore();
   }
@@ -261,25 +271,30 @@ export async function renderSandwichFlamechart(
   // We use the mainProfile for formatting and overall timeline context.
   // The xFactor needs to be calculated for flamechartRenderWidth.
   // Let's use the render range of the selected frame in the main profile for the central axis.
-  const centralRenderRange = calculateRenderRange(
-    mainProfile,
-    mainProfile.getTotalWeight(), // Use main profile's total weight
-    flamechartRenderWidth - DEPTH_AXIS_WIDTH_PX, // Width available for the ticks/labels part of axis
-    { ...options, startTimeMs: commonStartTimeMs, endTimeMs: commonEndTimeMs }
-  );
+  // The total duration this axis should represent is the total weight of the selected frame.
+  // const selectedFrameTotalWeight = selectedFrame.getTotalWeight();
+
+  // const centralRenderRange = calculateRenderRange(
+  //   mainProfile, // For unit conversion (ms -> weight) and value formatting.
+  //   selectedFrameTotalWeight, // Scope the axis to this duration.
+  //   flamechartRenderWidth - DEPTH_AXIS_WIDTH_PX, // Width available for the ticks/labels part of axis.
+  //   options // Pass all options, including potential startTimeMs/endTimeMs
+  //   // which will be interpreted relative to selectedFrameTotalWeight by calculateRenderRange.
+  // );
 
   ctx.save();
   ctx.translate(sidebarWidth, callerSectionHeight); // Position at the start of central axis slot
   drawTimeAxis({
     ctx,
-    canvasWidth: flamechartRenderWidth, // Full width for axis line + labels
+    canvasWidth: flamechartRenderWidth - DEPTH_AXIS_WIDTH_PX, // Width for the actual labels/ticks area
     axisHeight: centralAxisHeight,
-    xAxisOffset: 0, // Starts at the beginning of this translated context
+    xAxisOffset: DEPTH_AXIS_WIDTH_PX, // Offset to align with content area of caller/callee
     startWeight: centralRenderRange.startWeight,
     endWeight: centralRenderRange.endWeight,
     xFactor: centralRenderRange.xFactor,
     theme: finalTheme,
     formatValue: mainProfile.formatValue.bind(mainProfile),
+    flamechartVisibleHeight: 0, // For the central axis, lines are contained within its own height
   });
   ctx.restore();
 

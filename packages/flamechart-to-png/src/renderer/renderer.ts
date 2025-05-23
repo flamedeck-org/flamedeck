@@ -1,9 +1,15 @@
 import type { Canvas, CanvasRenderingContext2D } from 'canvas';
 import type { Profile } from '@flamedeck/speedscope-core/profile';
-import type { Flamechart } from '@flamedeck/speedscope-core/flamechart';
+import type { Flamechart, FlamechartFrame } from '@flamedeck/speedscope-core/flamechart';
 import type { Theme } from '@flamedeck/speedscope-theme/types';
 import type { RenderRangeResult } from './layout';
-import { drawFrame, drawDepthAxis, drawTimeAxis } from './drawing';
+import {
+  drawFrameRectangle,
+  drawFrameText,
+  drawDepthAxis,
+  drawTimeAxis,
+  drawVerticalTimeGridLines,
+} from './drawing';
 import { AXIS_HEIGHT_PX, DEPTH_AXIS_WIDTH_PX, TEXT_PADDING } from './layout';
 
 export interface InternalRenderMetrics {
@@ -27,6 +33,7 @@ export interface InternalRenderOptions {
   renderRange: RenderRangeResult;
   metrics: InternalRenderMetrics;
   orientation: 'top-down' | 'bottom-up';
+  gridRenderRange?: RenderRangeResult; // Optional: for drawing grid/axis, defaults to renderRange
 }
 
 export function renderFlamechart(opts: InternalRenderOptions): void {
@@ -58,6 +65,9 @@ export function renderFlamechart(opts: InternalRenderOptions): void {
   // It assumes ctx is already translated to the top-left of this section.
   ctx.fillStyle = theme.bgPrimaryColor;
   ctx.fillRect(0, 0, sectionCanvasWidth, sectionHeight);
+
+  // Determine the effective range for grid and axis drawing
+  const effectiveGridRange = opts.gridRenderRange || renderRange;
 
   const totalWeight = flamechart.getTotalWeight();
   if (totalWeight <= 0) {
@@ -110,34 +120,16 @@ export function renderFlamechart(opts: InternalRenderOptions): void {
   });
   ctx.restore();
 
-  // --- Draw Time Axis (if included in this section and orientation is top-down) ---
-  if (includeTimeAxisInThisSection && orientation === 'top-down') {
-    ctx.save();
-    // Time axis is drawn at the top of this section, to the right of depth axis.
-    // No vertical translation needed as it starts at y=0 of this section's context.
-    // Horizontal translation is to skip depth axis area.
-    // ctx.translate(DEPTH_AXIS_WIDTH_PX, 0);
-    drawTimeAxis({
-      ctx, // This context is for the time axis area
-      canvasWidth: flamechartAreaWidth,
-      axisHeight: AXIS_HEIGHT_PX,
-      xAxisOffset: DEPTH_AXIS_WIDTH_PX, // Offset from left edge of section
-      startWeight,
-      endWeight,
-      xFactor,
-      theme,
-      formatValue: profile.formatValue.bind(profile),
-    });
-    ctx.restore();
-  }
-  // Note: For 'bottom-up' orientation, if a time axis were part of this section,
-  // it would be at the bottom. renderSandwichFlamechart will handle the central time axis.
+  // --- Draw Flame Frame Rectangles ---
+  // The context is already translated to the top-left of the flame frame drawing area by the end of depth axis drawing.
+  // So, no need for additional translation here if we consider drawing frames immediately after depth axis.
+  // However, for clarity and safety, let's explicitly manage the transform for the flame-related drawing parts.
 
-  // --- Draw Flame Frames ---
   ctx.save();
-  // Translate context to where flame frames start: right of depth axis, and below time axis (if any).
-  ctx.translate(DEPTH_AXIS_WIDTH_PX, stackFramesStartY);
+  ctx.translate(DEPTH_AXIS_WIDTH_PX, stackFramesStartY); // Translate to where flame frames start
+
   const layersToRender = flamechart.getLayers().slice(startDepth);
+  const frameRenderData: Array<{ params: Parameters<typeof drawFrameText>[0], frame: FlamechartFrame, y: number, rectData: { x: number, rectWidth: number } }> = [];
 
   layersToRender.forEach((layer, visibleLayerIndex) => {
     let y;
@@ -145,14 +137,12 @@ export function renderFlamechart(opts: InternalRenderOptions): void {
       y = visibleLayerIndex * frameHeightPx;
     } else {
       // bottom-up
-      // `stackFramesHeight` is the height of the area for drawing frames.
-      // Layers are drawn from bottom of this area upwards.
       y = stackFramesHeight - (visibleLayerIndex + 1) * frameHeightPx;
     }
 
     layer.forEach((frame) => {
-      drawFrame({
-        ctx, // Context is now translated to the top-left of the flame frame drawing area
+      const rectData = drawFrameRectangle({
+        ctx,
         frame,
         y,
         frameHeightPx,
@@ -162,9 +152,67 @@ export function renderFlamechart(opts: InternalRenderOptions): void {
         xAxisOffset: 0, // Frames are drawn starting at x=0 of this translated context
         theme,
         frameToColorBucket,
+        // These are not used by drawFrameRectangle, but satisfy DrawFrameParams for now
         font,
         textPadding: TEXT_PADDING,
       });
+      if (rectData) {
+        frameRenderData.push({ frame, y, rectData, params: {} as any }); // Placeholder for params
+      }
+    });
+  });
+  // Rectangles are drawn. Now restore the context from flame area translation.
+  ctx.restore();
+
+  // --- Draw Time Axis OR Vertical Time Grid Lines ---
+  // These will be drawn on top of frame rectangles.
+  // The context for these functions should be the section's context (0,0 being top-left of section)
+  if (includeTimeAxisInThisSection && orientation === 'top-down') {
+    ctx.save();
+    drawTimeAxis({
+      ctx,
+      canvasWidth: flamechartAreaWidth,
+      axisHeight: AXIS_HEIGHT_PX,
+      xAxisOffset: DEPTH_AXIS_WIDTH_PX,
+      startWeight: effectiveGridRange.startWeight,
+      endWeight: effectiveGridRange.endWeight,
+      xFactor: effectiveGridRange.xFactor,
+      theme,
+      formatValue: profile.formatValue.bind(profile),
+      flamechartVisibleHeight: stackFramesHeight,
+    });
+    ctx.restore();
+  } else if (!includeTimeAxisInThisSection) {
+    ctx.save();
+    drawVerticalTimeGridLines({
+      ctx,
+      canvasWidth: flamechartAreaWidth,
+      totalSectionHeight: sectionHeight,
+      xAxisOffset: DEPTH_AXIS_WIDTH_PX,
+      startWeight: effectiveGridRange.startWeight,
+      endWeight: effectiveGridRange.endWeight,
+      xFactor: effectiveGridRange.xFactor,
+      theme,
+    });
+    ctx.restore();
+  }
+
+  // --- Draw Flame Frame Text ---
+  // Text is drawn last, on top of rectangles and grid lines.
+  ctx.save();
+  ctx.translate(DEPTH_AXIS_WIDTH_PX, stackFramesStartY); // Translate again to the flame frame area
+
+  frameRenderData.forEach(data => {
+    drawFrameText({
+      ctx,
+      frame: data.frame,
+      y: data.y,
+      frameHeightPx,
+      font,
+      textPadding: TEXT_PADDING,
+      theme,
+      rectX: data.rectData.x,
+      rectWidth: data.rectData.rectWidth,
     });
   });
   ctx.restore();
