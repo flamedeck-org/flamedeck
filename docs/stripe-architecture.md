@@ -81,7 +81,12 @@ The following tables in the Supabase database are central to managing subscripti
 ## 4. Frontend Interaction
 
 *   **Pricing Page (`PricingTable.tsx`) & Upgrade Modal (`UpgradeModal.tsx`):**
-    *   "Upgrade to Pro" / "Get Started" buttons call the `create-stripe-checkout-session` Edge Function, passing the current path as `returnPath` for the cancel URL.
+    *   "Upgrade to Pro" / "Get Started" buttons on the `PricingTable.tsx`:
+        *   The "Pro" tier's "Get Started" button is now active.
+        *   When clicked, it stores `flamedeck_selected_plan: 'pro'` in `sessionStorage` to indicate the user's intent.
+        *   It then redirects the user to the login page (or sign-up flow).
+    *   The `UpgradeModal.tsx` is used for in-app upgrades when the user is already logged in and browsing the application.
+    *   Both initiate a call to the `create-stripe-checkout-session` Edge Function, passing the Pro plan's ID and the current path as `returnPath` (for the modal) or a default path (for the new onboarding flow) for the cancel/success URL construction.
     *   On receiving the session ID/URL, redirects the user to Stripe Checkout using `@stripe/stripe-js`.
 *   **Payment Outcome Pages (`PaymentSuccessPage.tsx`, `PaymentCancelPage.tsx`):**
     *   Routed in `App.tsx` and wrapped in `Layout` and `AuthGuard`.
@@ -93,6 +98,24 @@ The following tables in the Supabase database are central to managing subscripti
     *   Button in user settings (e.g., "Manage Billing").
     *   Calls a (TODO) `manage-stripe-subscription` Edge Function.
     *   Redirects user to the Stripe Customer Portal.
+
+### 4.3. Onboarding Upgrade Step (`OnboardingUpgradeStep.tsx`)
+
+*   **Purpose:** Provides a dedicated page during the onboarding flow for users who selected the "Pro" plan before signing up/logging in.
+*   **Trigger:** After a user signs up and completes the username selection step, `ProtectedRoute.tsx` checks for `sessionStorage.getItem('flamedeck_selected_plan') === 'pro'`.
+    *   If the flag is set and the user is not currently a Pro member (checked via `useUserSubscription`), they are redirected to `/onboarding/upgrade`.
+    *   If the flag is set but the user *is* already a Pro member (e.g., they paid, then logged back in, or upgraded through another means), `ProtectedRoute.tsx` clears the `sessionStorage` flag to prevent repeated redirects.
+*   **Logic Flow:**
+    1.  The `OnboardingUpgradeStep.tsx` page mounts and re-verifies the `sessionStorage` flag and the user's current subscription status. If the flag is not 'pro', or if the user is already a Pro member, it clears the flag and navigates the user to the main application (e.g., `/traces`).
+    2.  If the conditions to show the upgrade prompt are met, it renders a UI similar to `UpgradeModal.tsx`, presenting the Pro plan features and price.
+    3.  **"Upgrade to Pro" action:**
+        *   Clears the `flamedeck_selected_plan` from `sessionStorage`.
+        *   Calls the `create-stripe-checkout-session` Edge Function (similar to `UpgradeModal.tsx`).
+        *   Redirects the user to Stripe Checkout. The success URL will typically lead them into the main application.
+    4.  **"Maybe Later" action:**
+        *   Clears the `flamedeck_selected_plan` from `sessionStorage`.
+        *   Navigates the user to the main application (e.g., `/traces`).
+*   **State Management:** The `flamedeck_selected_plan` item in `sessionStorage` is the key to this flow, ensuring the user's initial intent is captured and acted upon post-authentication and initial profile setup. It is cleared once the upgrade is initiated, skipped, or if the user is already subscribed.
 
 ## 5. Local Testing Guide
 
@@ -125,6 +148,10 @@ Testing Stripe integration locally requires the Stripe CLI and a way to forward 
 *   [X] **Frontend:** Implement UI for "Manage Billing" button to redirect to Stripe Customer Portal. (Implemented in `apps/client/src/pages/settings/BillingPage.tsx`)
 *   [X] **Backend:** Create `manage-stripe-subscription` Edge Function to generate Stripe Customer Portal sessions. (Implemented in `supabase/functions/manage-stripe-subscription/index.ts`)
 *   [X] **Webhooks:** Test and refine handlers for `customer.subscription.updated` (cancellations, upgrades/downgrades) and `customer.subscription.deleted`. (Initial refinement for `customer.subscription.deleted` to revert to Free plan implemented in `stripe-webhook-handler`)
+*   [X] **Onboarding:** Implemented an onboarding upgrade flow:
+    *   Pricing table allows selecting "Pro" before login, storing intent in `sessionStorage`.
+    *   New `/onboarding/upgrade` page (`OnboardingUpgradeStep.tsx`) prompts for upgrade post-username setup if intent was stored and user is not Pro.
+    *   `ProtectedRoute.tsx` handles redirection to this new onboarding step.
 *   [ ] **Webhooks:** Add handlers for more events if needed (e.g., `customer.subscription.trial_will_end`, disputes, refunds).
 *   [ ] **Plans:** UI for users to select different plans if multiple paid tiers are offered (if applicable beyond Pro).
 *   [ ] **Error Handling:** More robust error handling and user feedback across all Stripe-related interactions.
