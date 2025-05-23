@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { type ChatMessage } from './ChatWindow'; // Assuming ChatMessage is exported from ChatWindow.tsx
@@ -143,7 +144,7 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
         {(isExpanded || message.toolStatus === 'running') && (
           <div className="p-3 border-t border-[inherit]">
             {shouldDisplayText && message.text && (
-              <div className="whitespace-pre-wrap mb-2">{message.text}</div>
+              <div className="whitespace-pre-wrap break-words mb-2">{message.text}</div>
             )}
 
             {message.resultType === 'image' && message.toolStatus !== 'running' && (

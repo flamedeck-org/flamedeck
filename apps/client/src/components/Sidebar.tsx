@@ -9,13 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  ListTree,
-  LogOut,
-  User as UserIcon,
-  Settings as SettingsIcon,
-  Star,
-} from 'lucide-react';
+import { ListTree, LogOut, User as UserIcon, Settings as SettingsIcon, Star } from 'lucide-react';
 import type { Database } from '@flamedeck/supabase-integration';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useSubscriptionUsage } from '@/hooks/useSubscriptionUsage';
@@ -80,9 +74,10 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
           <NavLink
             to="/traces"
             className={({ isActive }) =>
-              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${isActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`
             }
             aria-label="Traces"
@@ -92,7 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                 <TooltipTrigger asChild>
                   <ListTree className={LIST_ICON_SIZE} />
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={4}>
+                <TooltipContent side="right" sideOffset={16}>
                   <p>Traces</p>
                 </TooltipContent>
               </Tooltip>
@@ -104,9 +99,10 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${isActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`
             }
             aria-label="Settings"
@@ -116,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                 <TooltipTrigger asChild>
                   <SettingsIcon className={LIST_ICON_SIZE} />
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={4}>
+                <TooltipContent side="right" sideOffset={16}>
                   <p>Settings</p>
                 </TooltipContent>
               </Tooltip>

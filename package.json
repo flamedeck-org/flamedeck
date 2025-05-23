@@ -36,6 +36,8 @@
   "nx": {},
   "dependencies": {
     "@types/uuid": "^10.0.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "uuid": "^11.1.0"
   }
 }

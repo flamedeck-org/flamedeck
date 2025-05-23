@@ -38,6 +38,7 @@ import { UpgradeModal } from '@/components/modals/UpgradeModal';
 import { UpgradeModalProvider } from '@/hooks/useUpgradeModal';
 import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
 import { PaymentCancelPage } from './pages/PaymentCancelPage';
+import BillingPage from './pages/settings/BillingPage';
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -108,6 +109,7 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="/settings/general" replace />} />
           <Route path="general" element={<SettingsPage />} />
           <Route path="api-keys" element={<ApiKeysPage />} />
+          <Route path="billing" element={<BillingPage />} />
         </Route>
       </Route>
 

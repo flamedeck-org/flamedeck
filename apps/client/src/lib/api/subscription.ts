@@ -48,7 +48,10 @@ export async function getUserSubscriptionUsage(
 
 // Define a type for the expected RPC response structure based on your SQL function
 // This should align with what get_user_active_subscription() returns.
-export type UserActiveSubscription = Database['public']['Functions']['get_user_active_subscription']['Returns'] extends (infer T)[] ? T : never;
+export type UserActiveSubscription =
+  Database['public']['Functions']['get_user_active_subscription']['Returns'] extends (infer T)[]
+    ? T
+    : never;
 
 /**
  * Fetches the current authenticated user's active subscription details.
@@ -65,4 +68,53 @@ export async function getUserActiveSubscription(): Promise<UserActiveSubscriptio
   // The RPC function is designed to return a single row (or no row) as it queries by auth.uid()
   // If data is an array and has an element, return it, otherwise null.
   return data && data.length > 0 ? data[0] : null;
+}
+
+/**
+ * Calls the backend to create a Stripe Customer Portal session.
+ * @returns {Promise<{ portalUrl: string } | null>} The session URL or null if an error occurs.
+ */
+export async function createStripePortalSession(): Promise<{ portalUrl: string } | null> {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    console.error('Error getting user session or no active session:', sessionError);
+    // Optionally, you could throw an error or return a more specific error object
+    // For simplicity, returning null, but consider how you want to handle this in your UI.
+    throw new Error('User not authenticated. Please log in.');
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('manage-stripe-subscription', {
+      // No specific body needed for this function call as it operates on the authenticated user
+      // The Edge Function retrieves the user via the Authorization header (JWT)
+    });
+
+    if (error) {
+      console.error('Error calling manage-stripe-subscription function:', error);
+      // Extract a more user-friendly message if possible from the error object
+      const message =
+        error.context?.message || error.message || 'Failed to create billing portal session.';
+      throw new Error(message);
+    }
+
+    if (!data || !data.portalUrl) {
+      console.error('No portalUrl received from manage-stripe-subscription function:', data);
+      throw new Error('Failed to retrieve billing portal URL.');
+    }
+
+    return data as { portalUrl: string };
+  } catch (e) {
+    console.error('Exception when trying to create Stripe Portal session:', e);
+    // Re-throw the error so it can be caught by the calling UI component
+    // This allows the UI to display a specific error message
+    if (e instanceof Error) {
+      throw e;
+    } else {
+      throw new Error('An unexpected error occurred while creating the billing portal session.');
+    }
+  }
 }

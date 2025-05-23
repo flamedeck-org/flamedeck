@@ -340,14 +340,12 @@ const sandwichSnapshotSchema = z.object({
   frameName: z
     .string()
     .describe('The exact name of the function/frame to focus the sandwich view on.'),
-  // All other options (width, height, startTimeMs, etc.) are removed for now
-  // and will rely on defaults in the rendering function or be omitted.
 });
 
 export class GenerateSandwichSnapshotTool extends StructuredTool {
   readonly name = 'generate_sandwich_flamegraph_screenshot';
   readonly description =
-    'Generates a sandwich flamegraph screenshot (PNG) for a specific function name, showing a flamegraph of both the aggregated callers and callees of that function.';
+    'Generates a sandwich flamegraph screenshot (PNG) for a specific function name, showing a flamegraph of both the aggregated callers and callees of that function. The x-axis shows the total aggregated time spent in just this function and its callees, not the total time spent in the entire trace.';
   readonly schema = sandwichSnapshotSchema;
 
   constructor(

@@ -67,13 +67,17 @@ function ApiKeysPage() {
   }, []);
 
   const handleCreateKey = useCallback(async () => {
+    if (!newKeyDescription.trim()) {
+      toast.error('Please provide a description for the API key.');
+      return;
+    }
     if (selectedScopes.length === 0) {
       toast.error('Please select at least one scope for the API key.');
       return;
     }
 
     createApiKeyMutation.mutate(
-      { description: newKeyDescription || null, scopes: selectedScopes },
+      { description: newKeyDescription, scopes: selectedScopes },
       {
         onSuccess: (data) => {
           setGeneratedKey({ id: data.apiKeyId, key: data.plainTextKey });
@@ -141,7 +145,7 @@ function ApiKeysPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="key-description">Description (Optional)</Label>
+              <Label htmlFor="key-description">Description</Label>
               <Input
                 id="key-description"
                 placeholder="e.g., CI/CD Pipeline Key"
@@ -172,7 +176,11 @@ function ApiKeysPage() {
           <CardFooter>
             <Button
               onClick={handleCreateKey}
-              disabled={createApiKeyMutation.isPending || selectedScopes.length === 0}
+              disabled={
+                createApiKeyMutation.isPending ||
+                selectedScopes.length === 0 ||
+                !newKeyDescription.trim()
+              }
             >
               {createApiKeyMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create API Key
