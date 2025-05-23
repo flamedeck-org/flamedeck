@@ -4,8 +4,10 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* Light mode background */
-    --foreground: 222.2 84% 4.9%; /* Light mode foreground */
+    --background: 0 0% 100%;
+    /* Light mode background */
+    --foreground: 222.2 84% 4.9%;
+    /* Light mode foreground */
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -13,14 +15,18 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 24 95% 53%; /* Orange */
-    --primary-foreground: 20 14% 98%; /* Almost white for contrast */
+    --primary: 24 95% 53%;
+    /* Orange */
+    --primary-foreground: 20 14% 98%;
+    /* Almost white for contrast */
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 0 0% 98%; /* Slightly darker than white (background 100%) */
-    --muted-foreground: 215.4 16.3% 46.9%; /* Keep foreground as is or adjust if needed */
+    --muted: 0 0% 98%;
+    /* Slightly darker than white (background 100%) */
+    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Keep foreground as is or adjust if needed */
 
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
@@ -32,18 +38,22 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --trace: 222.2 47.4% 11.2%; /* Adjust trace colors if needed for light mode */
+    --trace: 222.2 47.4% 11.2%;
+    /* Adjust trace colors if needed for light mode */
     --trace-foreground: 210 40% 98%;
 
     --radius: 0.5rem;
-    
+
     /* Define Navbar Height */
-    --navbar-height: 4rem; /* Corresponds to h-16 */
+    --navbar-height: 4rem;
+    /* Corresponds to h-16 */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%; /* Dark mode background */
-    --foreground: 210 40% 98%; /* Dark mode foreground */
+    --background: 222.2 84% 4.9%;
+    /* Dark mode background */
+    --foreground: 210 40% 98%;
+    /* Dark mode foreground */
 
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
@@ -51,14 +61,18 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 24 85% 45%; /* Orange */
-    --primary-foreground: 20 14% 98%; /* Almost white for contrast */
+    --primary: 24 85% 45%;
+    /* Orange */
+    --primary-foreground: 20 14% 98%;
+    /* Almost white for contrast */
 
     --secondary: 223 36% 10%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 222 37% 10%; /* User specified subtle dark color */
-    --muted-foreground: 215 20.2% 65.1%; /* Keep foreground as is or adjust if needed */
+    --muted: 222 37% 10%;
+    /* User specified subtle dark color */
+    --muted-foreground: 215 20.2% 65.1%;
+    /* Keep foreground as is or adjust if needed */
 
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
@@ -70,7 +84,8 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
 
-    --trace: 210 40% 98%; /* Adjust trace colors if needed for dark mode */
+    --trace: 210 40% 98%;
+    /* Adjust trace colors if needed for dark mode */
     --trace-foreground: 222.2 47.4% 11.2%;
   }
 
@@ -86,6 +101,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -97,7 +113,8 @@
     @apply w-full h-[80vh] border border-border rounded-md overflow-hidden;
   }
 
-  .prose pre, .prose-invert pre {
+  .prose pre,
+  .prose-invert pre {
     @apply p-0 m-0;
   }
 
@@ -115,6 +132,7 @@
     /* This rule increases specificity. The actual styles */
     /* are provided by the imported github-dark.css file. */
     /* We just need this selector to ensure they win in dark mode. */
-    color: inherit; /* Placeholder rule to ensure the selector exists */
+    color: inherit;
+    /* Placeholder rule to ensure the selector exists */
   }
 }

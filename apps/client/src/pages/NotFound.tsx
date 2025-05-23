@@ -20,7 +20,7 @@ const NotFound: React.FC = () => {
               been moved.
             </p>
             <Link to="/traces" className="inline-block pt-2">
-              <Button>Back to Traces</Button>
+              <Button variant="outline">Back to Traces</Button>
             </Link>
           </div>
         </div>

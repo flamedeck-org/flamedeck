@@ -41,7 +41,7 @@ function SidebarActionButtonsImpl({ minimized = false }: SidebarActionButtonsPro
                             <Button
                                 size="icon"
                                 variant="primary-outline" // Or another appropriate variant
-                                className={`${MINIMIZED_BUTTON_SIZE} w-full flex items-center justify-center`}
+                                className={`${MINIMIZED_BUTTON_SIZE} flex items-center justify-center`}
                                 onClick={openUpgradeModal}
                                 aria-label="Upgrade to Pro"
                             >

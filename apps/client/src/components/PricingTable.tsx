@@ -11,10 +11,10 @@ export const subscriptionTiers = [
     name: 'Free',
     price: '0',
     features: [
+      '5 AI chat conversations (lifetime)',
       '30-day trace retention',
       '10 uploads per month',
-      '25 messages per chat session',
-      '5 chat sessions (lifetime)',
+      'Basic collaboration and sharing features',
     ],
   },
   {
@@ -22,11 +22,10 @@ export const subscriptionTiers = [
     name: 'Pro',
     price: '15',
     features: [
-      'Unlimited trace retention',
       '1,000 total traces',
+      'Unlimited trace retention',
+      '25 AI chat conversations per month',
       'Advanced collaboration features',
-      '50 messages per chat session',
-      '25 chat sessions per month',
       'More features coming soon...',
     ],
   },

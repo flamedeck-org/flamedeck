@@ -330,15 +330,16 @@ function TraceListComponent() {
             baseClassName="p-1" // Ensure consistent padding
             className="pt-12 pb-12 text-center flex flex-col justify-center items-center"
           >
-            <CardContent className="p-0">
-              {' '}
+            <CardContent className="p-0 flex flex-col items-center justify-center">
               {/* Remove padding from CardContent itself */}
               {isSearchingAndEmpty ? (
-                <Search className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              ) : currentFolderId ? (
-                <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                <img
+                  src="empty-search.png"
+                  alt="No results found"
+                  className="w-60 h-auto md:w-60 mb-8"
+                />
               ) : (
-                <FileJson className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               )}
               <h3 className="text-xl font-medium mb-2">
                 {isSearchingAndEmpty
