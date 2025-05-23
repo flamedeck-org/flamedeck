@@ -10,6 +10,7 @@ interface LayoutProps {
   noPadding?: boolean;
   isProfileView?: boolean;
   footer?: React.ReactNode;
+  className?: string;
 }
 
 const Layout: React.FC<LayoutProps> = ({
@@ -18,6 +19,7 @@ const Layout: React.FC<LayoutProps> = ({
   noPadding = false,
   isProfileView = false,
   footer,
+  className = '',
 }) => {
   const { user } = useAuth();
   const isLoggedIn = !!user;
@@ -38,7 +40,7 @@ const Layout: React.FC<LayoutProps> = ({
       >
         {isLoggedIn && <Sidebar minimized={shouldMinimizeSidebar} />}
         <main
-          className={`flex-1 h-full overflow-y-auto bg-secondary dark:bg-background ${mainPaddingClasses} ${conditionalElevation}`}
+          className={`flex-1 h-full overflow-y-auto bg-secondary dark:bg-background ${mainPaddingClasses} ${conditionalElevation} ${className}`}
         >
           {children}
           {footer && <div className="mt-auto m-[-30px]">{footer}</div>}

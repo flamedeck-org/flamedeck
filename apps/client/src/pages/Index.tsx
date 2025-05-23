@@ -17,7 +17,6 @@ import {
   SiReact,
 } from '@icons-pack/react-simple-icons';
 import FadeInOnScroll from '@/components/animations/FadeInOnScroll';
-import { Icon as LucideIcon } from 'lucide-react'; // Import base Icon type if needed for casting
 
 function matchMediaDarkColorScheme(): MediaQueryList {
   return matchMedia('(prefers-color-scheme: dark)');
@@ -57,7 +56,7 @@ function Index() {
     : '/screenshots/chat_light.png';
 
   const pageFooter = (
-    <footer className="bg-muted/50 dark:bg-background py-8 px-4 sm:px-6 lg:px-8 border-t border-border">
+    <footer className="bg-background py-8 px-4 sm:px-6 lg:px-8 border-t border-border">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
         <p className="text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} FlameDeck. All rights reserved.
@@ -86,7 +85,7 @@ function Index() {
       <Layout footer={pageFooter}>
         <FadeInOnScroll>
           {/* Hero Section - entire content now wrapped */}
-          <div className="min-h-[80vh] flex flex-col items-center justify-center py-24 px-4 text-center bg-gradient-to-b from-background to-background/90 rounded-3xl">
+          <div className="min-h-[80vh] flex flex-col items-center justify-center py-24 px-4 text-center rounded-3xl">
             <div className="max-w-4xl space-y-10">
               <div className="space-y-4">
                 <div className="inline-block bg-primary p-3 rounded-lg mb-4">
@@ -163,7 +162,7 @@ function Index() {
 
         <FadeInOnScroll delay={0.2}>
           {/* Features Section - entire content now wrapped */}
-          <div className="py-24 px-4 bg-secondary/50 rounded-3xl">
+          <div className="py-24 px-4 bg-background dark:bg-secondary/50 rounded-3xl border border-border">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-16">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">

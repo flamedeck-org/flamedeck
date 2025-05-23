@@ -2094,6 +2094,7 @@ __metadata:
     "@flamedeck/speedscope-theme": "workspace:*"
     "@flamedeck/supabase-integration": "workspace:*"
     "@hookform/resolvers": "npm:^3.9.0"
+    "@icons-pack/react-simple-icons": "npm:^12.8.0"
     "@mdx-js/react": "npm:^3.1.0"
     "@mdx-js/rollup": "npm:^3.1.0"
     "@originjs/vite-plugin-commonjs": "npm:^1.0.3"
@@ -2144,6 +2145,7 @@ __metadata:
     embla-carousel-react: "npm:^8.3.0"
     eslint-plugin-react-hooks: "npm:^5.1.0-rc.0"
     eslint-plugin-react-refresh: "npm:^0.4.9"
+    framer-motion: "npm:^12.12.2"
     highlight.js: "npm:^11.11.1"
     input-otp: "npm:^1.2.4"
     lodash-es: "npm:^4.17.21"
@@ -2365,6 +2367,15 @@ __metadata:
   version: 0.4.2
   resolution: "@humanwhocodes/retry@npm:0.4.2"
   checksum: 10c0/0235525d38f243bee3bf8b25ed395fbf957fb51c08adae52787e1325673071abe856c7e18e530922ed2dd3ce12ed82ba01b8cee0279ac52a3315fcdc3a69ef0c
+  languageName: node
+  linkType: hard
+
+"@icons-pack/react-simple-icons@npm:^12.8.0":
+  version: 12.8.0
+  resolution: "@icons-pack/react-simple-icons@npm:12.8.0"
+  peerDependencies:
+    react: ^16.13 || ^17 || ^18 || ^19
+  checksum: 10c0/527fbd58701e70dd5f441aa0e766e468803a28e6d0d06b8d35f0144e6de976a0e88cbc2812f7a717f93159f0d656dc174680903ed3079f15c7f8a42e7be5feb5
   languageName: node
   linkType: hard
 
@@ -9945,6 +9956,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"framer-motion@npm:^12.12.2":
+  version: 12.12.2
+  resolution: "framer-motion@npm:12.12.2"
+  dependencies:
+    motion-dom: "npm:^12.12.1"
+    motion-utils: "npm:^12.12.1"
+    tslib: "npm:^2.4.0"
+  peerDependencies:
+    "@emotion/is-prop-valid": "*"
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@emotion/is-prop-valid":
+      optional: true
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 10c0/6bee365effe3b8242c020fbd95130943c45a6750525e49250fbc11af9571f7038f89729a62153cc8cb47059e4f44f90ab55299c7846a8fd2675cc1c954cd9df3
+  languageName: node
+  linkType: hard
+
 "fresh@npm:0.5.2":
   version: 0.5.2
   resolution: "fresh@npm:0.5.2"
@@ -12916,6 +12949,22 @@ __metadata:
   version: 1.0.4
   resolution: "module-details-from-path@npm:1.0.4"
   checksum: 10c0/10863413e96dab07dee917eae07afe46f7bf853065cc75a7d2a718adf67574857fb64f8a2c0c9af12ac733a9a8cf652db7ed39b95f7a355d08106cb9cc50c83b
+  languageName: node
+  linkType: hard
+
+"motion-dom@npm:^12.12.1":
+  version: 12.12.1
+  resolution: "motion-dom@npm:12.12.1"
+  dependencies:
+    motion-utils: "npm:^12.12.1"
+  checksum: 10c0/d80cdde894d07042e792ae69f47d7b58aa20691d4e4da7ce803af246295855fd59fdbd7a9e0def8554e22fd105c407cc672bd85e0a79a660d523adee7989d61d
+  languageName: node
+  linkType: hard
+
+"motion-utils@npm:^12.12.1":
+  version: 12.12.1
+  resolution: "motion-utils@npm:12.12.1"
+  checksum: 10c0/880a174769d1be42b46cfb34af81b4a629c068d30d5cf7e07d249fbf2f5121d577482d3ea5bdc1db549c0288733e1e987efecb195fae350995270651559c6697
   languageName: node
   linkType: hard
 

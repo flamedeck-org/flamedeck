@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
       .from('user_subscriptions')
       .select(`
         status,
+        cancel_at_period_end,
         subscription_plans (name)
       `)
       .eq('user_id', userId)
@@ -127,9 +128,10 @@ Deno.serve(async (req) => {
       // For this example, we'll assume any plan that is not explicitly named 'Free' (case-insensitive) is paid.
       const isPaidPlan = planName && planName.toLowerCase() !== 'free';
 
-      if (isPaidPlan) {
+      // If it's a paid plan AND it's not set to cancel at period end, then block deletion.
+      if (isPaidPlan && !activeSubscription.cancel_at_period_end) {
         console.log(
-          `User ${userId} has an active non-free subscription (${planName}). Deletion aborted.`,
+          `User ${userId} has an active non-free subscription (${planName}) that is not ending. Deletion aborted.`,
         );
         return new Response(
           JSON.stringify({
