@@ -11,7 +11,8 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import Stripe from 'stripe';
 
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-const FLAMEDECK_URL = Deno.env.get('FLAMEDECK_URL') || 'http://localhost:8080'; // Use env var or fallback to localhost for dev
+// const FLAMEDECK_URL = Deno.env.get('FLAMEDECK_URL') || 'http://localhost:8080'; // Use env var or fallback to localhost for dev
+const FLAMEDECK_URL = 'http://localhost:8080';
 
 if (!STRIPE_SECRET_KEY) {
   console.error('Stripe secret key not set in environment variables.');

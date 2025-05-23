@@ -43,6 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
 
   const showMonthlyUsage =
     usageData && usageData.monthly_upload_limit !== null && usageData.monthly_uploads_used !== null;
+
   const monthlyUsagePercent = showMonthlyUsage
     ? (usageData.monthly_uploads_used! / usageData.monthly_upload_limit!) * 100
     : 0;
@@ -74,10 +75,9 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
           <NavLink
             to="/traces"
             className={({ isActive }) =>
-              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${isActive
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`
             }
             aria-label="Traces"
@@ -99,10 +99,9 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${isActive
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`
             }
             aria-label="Settings"
