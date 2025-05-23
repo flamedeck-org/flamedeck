@@ -110,6 +110,15 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
     textColor = 'text-red-700 dark:text-red-300'; // Text color for error state also distinct
   }
 
+  const getToolName = useCallback((toolName: string) => {
+    if (toolName === 'generate_flamegraph_screenshot') {
+      return 'Flamegraph Snapshot';
+    } else if (toolName === 'generate_sandwich_flamegraph_screenshot') {
+      return 'Sandwich Flamegraph Snapshot';
+    }
+    return toolName?.replace(/_/g, ' ') || 'Tool Execution';
+  }, []);
+
   // Determine if text content should be displayed
   const shouldDisplayText = !(
     screenshotToolNames.includes(message.toolName) &&
@@ -127,7 +136,7 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
         >
           <span className="font-semibold flex items-center">
             {StatusIcon}
-            {message.toolName?.replace(/_/g, ' ') || 'Tool Execution'}
+            {getToolName(message.toolName)}
           </span>
           <span className="flex items-center">
             {message.toolStatus !== 'running' && (
