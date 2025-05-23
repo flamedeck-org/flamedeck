@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { UploadCloud, Zap, Loader2 } from 'lucide-react';
 import { useUserSubscription } from '@/hooks/useUserSubscription';
 import { useUpgradeModal } from '@/hooks/useUpgradeModal';
+import { useTraceUploadModal } from '@/hooks/useTraceUploadModal';
 
 interface SidebarActionButtonsProps {
   minimized?: boolean;
@@ -17,6 +18,7 @@ const MINIMIZED_BUTTON_SIZE = 'h-10 w-10';
 function SidebarActionButtonsImpl({ minimized = false }: SidebarActionButtonsProps) {
   const { isLoading: isSubscriptionLoading, isProUser } = useUserSubscription();
   const { openModal: openUpgradeModal } = useUpgradeModal();
+  const { openModal: openTraceUploadModal } = useTraceUploadModal();
 
   if (isSubscriptionLoading) {
     return (
@@ -75,16 +77,15 @@ function SidebarActionButtonsImpl({ minimized = false }: SidebarActionButtonsPro
       <TooltipProvider delayDuration={0}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link to="/upload" className="w-full flex justify-center">
-              <Button
-                size="icon"
-                variant="primary-outline"
-                className={`${MINIMIZED_BUTTON_SIZE} w-full flex items-center justify-center`}
-                aria-label="Upload Trace"
-              >
-                <UploadCloud className={ICON_SIZE} />
-              </Button>
-            </Link>
+            <Button
+              size="icon"
+              variant="primary-outline"
+              className={`${MINIMIZED_BUTTON_SIZE} w-full flex items-center justify-center`}
+              aria-label="Upload Trace"
+              onClick={() => openTraceUploadModal(null, null)}
+            >
+              <UploadCloud className={ICON_SIZE} />
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={4}>
             <p>Upload Trace</p>
@@ -94,16 +95,15 @@ function SidebarActionButtonsImpl({ minimized = false }: SidebarActionButtonsPro
     );
   }
   return (
-    <Link to="/upload" className="w-full">
-      <Button
-        variant="primary-outline"
-        className="w-full space-x-2 flex items-center justify-center"
-        aria-label="Upload Trace"
-      >
-        <UploadCloud className={ICON_SIZE} />
-        <span>Upload Trace</span>
-      </Button>
-    </Link>
+    <Button
+      variant="primary-outline"
+      className="w-full space-x-2 flex items-center justify-center"
+      aria-label="Upload Trace"
+      onClick={() => openTraceUploadModal(null, null)}
+    >
+      <UploadCloud className={ICON_SIZE} />
+      <span>Upload Trace</span>
+    </Button>
   );
 }
 

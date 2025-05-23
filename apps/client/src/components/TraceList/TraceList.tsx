@@ -30,6 +30,7 @@ import { FolderItem } from './FolderItem';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Breadcrumbs } from './Breadcrumbs';
 import { CreateFolderDialog } from './CreateFolderDialog';
+import { useTraceUploadModal } from '@/hooks/useTraceUploadModal';
 import { useInView } from 'react-intersection-observer';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -47,8 +48,7 @@ function TraceListComponent() {
   const [isCreateFolderDialogOpen, setIsCreateFolderDialogOpen] = useState(false);
 
   // State for drag-and-drop upload modal
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [droppedFile, setDroppedFile] = useState<File | null>(null);
+  const { openModal: openUploadModal } = useTraceUploadModal();
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
@@ -74,6 +74,8 @@ function TraceListComponent() {
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0,
   });
+
+  const { openModal: openTraceUploadModal, closeModal: closeTraceUploadModal } = useTraceUploadModal();
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -178,18 +180,11 @@ function TraceListComponent() {
           });
           return;
         }
-
-        setDroppedFile(file);
-        setIsUploadModalOpen(true);
+        openUploadModal(file, currentFolderId);
       }
     },
-    [toast]
+    [toast, openUploadModal, currentFolderId]
   );
-
-  const handleCloseUploadModal = useCallback(() => {
-    setIsUploadModalOpen(false);
-    setDroppedFile(null);
-  }, []);
 
   // --- UI Elements ---
 
@@ -216,11 +211,9 @@ function TraceListComponent() {
         isPending={isCreatingFolder}
         triggerElement={createFolderButton}
       />
-      <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-        <Button size="sm" disabled={isCurrentlyLoading} variant="primary-outline">
-          <UploadCloud className="mr-2 h-4 w-4" /> Upload New Trace
-        </Button>
-      </Link>
+      <Button size="sm" disabled={isCurrentlyLoading} variant="primary-outline" onClick={() => openTraceUploadModal(null, currentFolderId)}>
+        <UploadCloud className="mr-2 h-4 w-4" /> Upload New Trace
+      </Button>
     </div>
   );
 
@@ -375,11 +368,9 @@ function TraceListComponent() {
                     isPending={isCreatingFolder}
                     triggerElement={createFolderButton}
                   />
-                  <Link to="/upload" state={{ targetFolderId: currentFolderId }}>
-                    <Button variant="primary-outline" size="sm" disabled={isCurrentlyLoading}>
-                      <UploadCloud className="mr-2 h-4 w-4" /> Upload Trace
-                    </Button>
-                  </Link>
+                  <Button variant="primary-outline" size="sm" disabled={isCurrentlyLoading} onClick={() => openTraceUploadModal(null, currentFolderId)}>
+                    <UploadCloud className="mr-2 h-4 w-4" /> Upload Trace
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -444,31 +435,6 @@ function TraceListComponent() {
     );
   };
 
-  // --- Upload Dialog ---
-  const uploadDialog = (
-    <Dialog
-      open={isUploadModalOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          handleCloseUploadModal();
-        }
-      }}
-    >
-      <DialogContent className="sm:max-w-[625px]">
-        <DialogHeader>
-          <DialogTitle>Upload Dropped Trace</DialogTitle>
-        </DialogHeader>
-        {droppedFile && (
-          <UploadDialog
-            initialFolderId={currentFolderId}
-            initialFile={droppedFile}
-            onClose={handleCloseUploadModal}
-          />
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-
   // Main component structure: Layout, Header, Search are always rendered.
   // renderContent() handles the conditional display of skeletons, errors, empty states, or the list.
   return (
@@ -502,9 +468,6 @@ function TraceListComponent() {
 
       {/* Render the content based on state */}
       {renderContent()}
-
-      {/* Render extracted upload dialog */}
-      {uploadDialog}
     </PageLayout>
   );
 }

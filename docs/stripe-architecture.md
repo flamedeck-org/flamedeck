@@ -132,4 +132,4 @@ Testing Stripe integration locally requires the Stripe CLI and a way to forward 
 *   [ ] **RLS:** Update Supabase Row Level Security policies to gate application features based on data in `user_subscriptions`.
 *   [ ] **Testing:** Write automated tests for Edge Functions and critical frontend flows.
 *   [ ] **Production Setup:** Ensure live Stripe keys and webhook secret (from Stripe Dashboard) are used for production deployment.
-*   [ ] **Refine `delete-user` function:** Ensure the logic for identifying a "non-free" plan in the subscription check is robust and matches your plan setup precisely. 
+*   [ ] **Refine `delete-user` function:** Ensure the logic for identifying a "non-free" plan in the subscription check is robust and matches your plan setup precisely.
