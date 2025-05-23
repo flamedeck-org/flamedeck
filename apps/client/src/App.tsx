@@ -40,6 +40,7 @@ import { PaymentCancelPage } from './pages/PaymentCancelPage';
 import BillingPage from './pages/settings/BillingPage';
 import { TraceUploadModalProvider } from '@/hooks/useTraceUploadModal';
 import { TraceUploadModal } from '@/components/TraceUploadModal';
+import { OnboardingUpgradeStep } from './pages/Onboarding/OnboardingUpgradeStep';
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -98,6 +99,7 @@ const AppRoutes = () => {
 
       {/* Onboarding Route - Must be outside ProtectedRoute */}
       <Route path="/onboarding/username" element={<UsernameStep />} />
+      <Route path="/onboarding/upgrade" element={<OnboardingUpgradeStep />} />
 
       {/* Protected Routes - NO LONGER includes the root path "/" */}
       <Route element={<ProtectedRoute />}>

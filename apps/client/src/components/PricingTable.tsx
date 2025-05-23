@@ -42,7 +42,6 @@ const PricingTable = () => {
             tier.name === 'Pro' && 'border-2 border-primary'
           )}
         >
-          {tier.name === 'Pro' && <Badge className="absolute top-4 right-4">Coming Soon</Badge>}
           <CardHeader>
             <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
             <div className="mt-2">
@@ -63,16 +62,21 @@ const PricingTable = () => {
               <Link
                 to="/login"
                 className={cn(
-                  'block w-full',
-                  tier.name === 'Pro' && 'pointer-events-none opacity-50'
+                  'block w-full'
                 )}
-                aria-disabled={tier.name === 'Pro'}
-                tabIndex={tier.name === 'Pro' ? -1 : undefined}
+                onClick={() => {
+                  if (tier.name === 'Pro') {
+                    try {
+                      sessionStorage.setItem('flamedeck_selected_plan', 'pro');
+                    } catch (e) {
+                      console.error('Failed to set sessionStorage:', e);
+                    }
+                  }
+                }}
               >
                 <Button
                   className="w-full"
                   variant={tier.name === 'Pro' ? 'gradient' : 'outline'}
-                  disabled={tier.name === 'Pro'}
                 >
                   Get Started
                 </Button>

@@ -5,6 +5,7 @@ import { Loader2, AlertCircle } from 'lucide-react'; // Keep if you want a loadi
 import { Button } from './ui/button'; // Ensure correct path
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from './ui/card'; // Import Card components
 import { LoggedInViewErrorBoundary } from './feedback/LoggedInViewErrorBoundary'; // Import the new error boundary
+import { useUserSubscription } from '@/hooks/useUserSubscription'; // Added
 
 // Define the shape of the profile object you expect from useAuth
 // Adjust this based on your actual user_profiles table structure
@@ -28,16 +29,20 @@ const ProtectedRoute = () => {
   console.log('[ProtectedRoute] Component Rendered. Attempting to log state...');
 
   const { user, profile, loading, profileLoading } = useAuth() as AuthContextValue;
+  const { isProUser, isLoading: isSubscriptionLoading, subscription } = useUserSubscription(); // Added
   const location = useLocation();
 
-  const isLoading = loading || profileLoading;
+  const isLoading = loading || profileLoading || isSubscriptionLoading; // Added isSubscriptionLoading
 
   console.log('[ProtectedRoute] State Values:', {
     loading,
     profileLoading,
+    isSubscriptionLoading, // Added
     user: !!user,
     profile: !!profile,
     profileUsername: profile?.username,
+    isProUser, // Added
+    subscriptionStatus: subscription?.status, // Added for debugging
   });
 
   if (isLoading) {
@@ -74,6 +79,27 @@ const ProtectedRoute = () => {
     );
     return <Navigate to="/onboarding/username" state={{ from: location }} replace />;
   }
+
+  // New Onboarding Upgrade Step Check
+  if (user && profile && profile.username) {
+    const selectedPlan = sessionStorage.getItem('flamedeck_selected_plan');
+    console.log('[ProtectedRoute] Checking for upgrade step. Selected Plan:', selectedPlan, 'IsProUser:', isProUser);
+
+    if (selectedPlan === 'pro' && !isProUser) {
+      console.log('[ProtectedRoute] User selected Pro, is not Pro. Redirecting to /onboarding/upgrade.');
+      return <Navigate to="/onboarding/upgrade" state={{ from: location }} replace />;
+    } else if (selectedPlan === 'pro' && isProUser) {
+      // User selected Pro and is already Pro (e.g., completed payment, came back)
+      // Clear the flag so they don't get redirected again if they land here.
+      console.log('[ProtectedRoute] User selected Pro and is already Pro. Clearing flag.');
+      try {
+        sessionStorage.removeItem('flamedeck_selected_plan');
+      } catch (e) {
+        console.error('Failed to remove sessionStorage item in ProtectedRoute:', e);
+      }
+    }
+  }
+  // End New Onboarding Upgrade Step Check
 
   if (profile && profile.username) {
     console.log('[ProtectedRoute] User exists, profile exists, username EXISTS. Rendering Outlet.');

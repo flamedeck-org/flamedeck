@@ -346,8 +346,7 @@ function TraceListComponent() {
                   `Your search for "${searchQuery}" did not match any items.`
                 ) : (
                   <>
-                    Create a folder or upload your first trace. <br />
-                    You can also upload traces programatically via our{' '}
+                    Drag and drop a trace file or upload a trace programatically via our{' '}
                     <Link to="/docs/api-keys" className="underline hover:text-primary">
                       API
                     </Link>

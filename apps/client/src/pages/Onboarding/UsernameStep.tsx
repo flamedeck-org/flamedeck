@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import * as React from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext'; // Adjust path
 import { useToast } from '@/components/ui/use-toast'; // Adjust path
@@ -247,8 +248,8 @@ function UsernameStep() {
                   {(availabilityStatus === 'taken' ||
                     availabilityStatus === 'error' ||
                     (!!errors.username && availabilityStatus === 'invalid')) && (
-                    <XCircle className="h-5 w-5 text-red-500" />
-                  )}
+                      <XCircle className="h-5 w-5 text-red-500" />
+                    )}
                 </div>
               </div>
               {/* Conditionally show required error for username */}
