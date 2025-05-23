@@ -9832,7 +9832,7 @@ __metadata:
     prettier: "npm:^3.5.3"
     react-markdown: "npm:^10.1.0"
     remark-gfm: "npm:^4.0.1"
-    supabase: "npm:2.22.6"
+    supabase: "npm:2.23.4"
     ts-node: "npm:^10.9.2"
     tsconfig-paths: "npm:^4.2.0"
     typescript: "npm:^5.5.3"
@@ -15800,9 +15800,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"supabase@npm:2.22.6":
-  version: 2.22.6
-  resolution: "supabase@npm:2.22.6"
+"supabase@npm:2.23.4":
+  version: 2.23.4
+  resolution: "supabase@npm:2.23.4"
   dependencies:
     bin-links: "npm:^5.0.0"
     https-proxy-agent: "npm:^7.0.2"
@@ -15810,7 +15810,7 @@ __metadata:
     tar: "npm:7.4.3"
   bin:
     supabase: bin/supabase
-  checksum: 10c0/904dcc0e249dbebd1f3672fe48e975871cde0276d7ee9ba431414b1835f429f77811be9bd90b006cd5efa4bb4e9daaa44b2f23668667743453ef212e4bb67dc0
+  checksum: 10c0/5ef85f765b5b6cfccf969896dd3d238bcab3440fdcbacad5e64ad4dc26f518da35f5370e3fd9261773c38fc981e18485e8d2957e0019eb0c518b944dcc4f587d
   languageName: node
   linkType: hard
 

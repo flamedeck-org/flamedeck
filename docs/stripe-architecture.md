@@ -78,6 +78,24 @@ The following tables in the Supabase database are central to managing subscripti
         *   If `user_id` is missing from metadata or the "Free" plan cannot be found, it logs an error and attempts a fallback to simply mark the subscription as `'canceled'`.
     *   Returns a `200 OK` to Stripe.
 
+### 3.3. `manage-stripe-subscription`
+
+*   **Purpose:** Generates a secure link to the Stripe Customer Portal, allowing users to manage their payment methods, view invoices, or cancel their subscriptions.
+*   **Trigger:** Called by the frontend, typically when a user clicks a "Manage Billing" or "Manage Subscription" button in their account settings.
+*   **Input:** User's JWT (for authentication).
+*   **Logic Flow:**
+    1.  Authenticates the user using their JWT.
+    2.  Retrieves the `user_id` from the authenticated user.
+    3.  Fetches the `stripe_customer_id` from the `user_subscriptions` table for the given `user_id`.
+    4.  If a `stripe_customer_id` is found, it calls the Stripe API (`stripe.billingPortal.sessions.create`) to create a new Billing Portal session for that customer.
+        *   Specifies a `return_url` which is a page within the FlameDeck application (e.g., `/settings/billing`) where the user will be redirected after they are done with the Stripe portal.
+    5.  Returns the `url` from the created Stripe Billing Portal session to the client.
+    6.  The client then redirects the user to this Stripe-hosted URL.
+*   **Error Handling:**
+    *   Returns a 401 error if the user is not authenticated.
+    *   Returns a 404 error if no `stripe_customer_id` is found for the user (e.g., they don't have an active or past paid subscription).
+    *   Returns a 500 error for other server-side issues or problems creating the Stripe session.
+
 ## 4. Frontend Interaction
 
 *   **Pricing Page (`PricingTable.tsx`) & Upgrade Modal (`UpgradeModal.tsx`):**

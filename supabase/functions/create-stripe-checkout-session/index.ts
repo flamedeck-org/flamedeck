@@ -22,8 +22,6 @@ const stripe = new Stripe(STRIPE_SECRET_KEY!, {
   httpClient: Stripe.createFetchHttpClient(), // Recommended for Deno
 });
 
-console.log("Hello from Functions!")
-
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
