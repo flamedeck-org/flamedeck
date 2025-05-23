@@ -1,4 +1,4 @@
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@flamedeck/supabase-integration';
 import type { TraceComment, TraceMetadata } from '@/types';
 
 // Define the profile type using the generated table type

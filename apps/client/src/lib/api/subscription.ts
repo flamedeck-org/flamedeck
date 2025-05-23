@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { ApiError, ApiResponse } from '@/types';
 import type { PostgrestError } from '@supabase/supabase-js';
+import { type Database } from '@flamedeck/supabase-integration';
 
 export interface SubscriptionUsage {
   monthly_uploads_used: number | null;
@@ -43,4 +44,25 @@ export async function getUserSubscriptionUsage(
     };
     return { data: null, error: apiError };
   }
+}
+
+// Define a type for the expected RPC response structure based on your SQL function
+// This should align with what get_user_active_subscription() returns.
+export type UserActiveSubscription = Database['public']['Functions']['get_user_active_subscription']['Returns'] extends (infer T)[] ? T : never;
+
+/**
+ * Fetches the current authenticated user's active subscription details.
+ */
+export async function getUserActiveSubscription(): Promise<UserActiveSubscription | null> {
+  const { data, error } = await supabase.rpc('get_user_active_subscription');
+
+  if (error) {
+    console.error('Error fetching user active subscription:', error);
+    // Depending on how you want to handle errors, you might throw it or return null/specific error object
+    throw error;
+  }
+
+  // The RPC function is designed to return a single row (or no row) as it queries by auth.uid()
+  // If data is an array and has an element, return it, otherwise null.
+  return data && data.length > 0 ? data[0] : null;
 }

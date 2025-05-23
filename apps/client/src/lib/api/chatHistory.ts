@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { type Database } from '@/integrations/supabase/types';
+import { type Database } from '@flamedeck/supabase-integration';
 import { type ChatMessage } from '@/components/Chat/ChatWindow'; // Assuming ChatMessage is exported
 import { v4 as uuidv4 } from 'uuid'; // For fallback IDs if needed, though DB ID should be used
 
