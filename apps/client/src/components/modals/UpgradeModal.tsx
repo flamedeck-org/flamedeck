@@ -78,10 +78,9 @@ function UpgradeModalImpl() {
     try {
       const returnPath = location.pathname + location.search;
 
-      const { data, error } = await supabase.functions.invoke(
-        'create-stripe-checkout-session',
-        { body: { planId: proPlanId, returnPath: returnPath } }
-      );
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout-session', {
+        body: { planId: proPlanId, returnPath: returnPath },
+      });
 
       if (error) throw error;
 
@@ -90,7 +89,9 @@ function UpgradeModalImpl() {
       } else if (data && data.sessionId) {
         const stripe = await stripePromise;
         if (stripe) {
-          const { error: stripeError } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+          const { error: stripeError } = await stripe.redirectToCheckout({
+            sessionId: data.sessionId,
+          });
           if (stripeError) {
             console.error('Stripe redirectToCheckout error:', stripeError);
             toast({
@@ -130,13 +131,12 @@ function UpgradeModalImpl() {
             Unlock More with Pro!
           </DialogTitle>
           <DialogDescription className="pt-2">
-            Supercharge your trace analysis workflow by upgrading to the Pro plan. Get access to
-            advanced features, higher limits, and more.
+            Supercharge your trace analysis workflow by upgrading to the Pro plan.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <h3 className="text-lg font-semibold mb-1">Pro Plan Includes:</h3>
+        <div className="py-4 pt-0">
+          <h3 className="text-lg font-semibold mb-4">Pro Plan Includes:</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             {proTierDetails.features.map((feature) => (
               <li key={feature} className="flex items-center">
@@ -162,9 +162,7 @@ function UpgradeModalImpl() {
             onClick={handleUpgrade}
             disabled={isLoading || !proPlanId}
           >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Upgrade to Pro
           </Button>
         </DialogFooter>

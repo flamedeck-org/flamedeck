@@ -31,7 +31,7 @@ export function createImageHumanMessageFromToolResult(
         content: [
           {
             type: 'text',
-            text: `The ${toolMessage.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot from tool call ID ${toolMessage.tool_call_id} is provided. Please analyze this image and describe your key observations or findings from it before deciding on the next step.`,
+            text: `The ${toolMessage.name === 'generate_sandwich_flamegraph_screenshot' ? 'sandwich ' : ''}flamegraph screenshot from tool call ID ${toolMessage.tool_call_id} is provided.`,
           },
           {
             type: 'image_url',

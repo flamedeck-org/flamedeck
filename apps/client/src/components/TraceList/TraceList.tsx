@@ -349,11 +349,18 @@ function TraceListComponent() {
                     : 'No Items Yet'}
               </h3>
               <p className="text-muted-foreground mb-6">
-                {isSearchingAndEmpty
-                  ? `Your search for "${searchQuery}" did not match any items.`
-                  : currentFolderId
-                    ? "This folder doesn\'t contain any traces or subfolders."
-                    : 'Create a folder or upload your first trace.'}
+                {isSearchingAndEmpty ? (
+                  `Your search for "${searchQuery}" did not match any items.`
+                ) : (
+                  <>
+                    Create a folder or upload your first trace. <br />
+                    You can also upload traces programatically via our{' '}
+                    <Link to="/docs/api-keys" className="underline hover:text-primary">
+                      API
+                    </Link>
+                    .
+                  </>
+                )}
               </p>
               {isSearchingAndEmpty ? (
                 <Button onClick={handleClearSearch} variant="outline" size="sm">

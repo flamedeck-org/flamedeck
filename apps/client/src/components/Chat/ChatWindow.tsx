@@ -7,6 +7,8 @@ import { Send, X } from 'lucide-react';
 import { ToolMessageItem } from './ToolMessageItem';
 import { MessageSquareText } from 'lucide-react';
 import { useUpgradeModal } from '@/hooks/useUpgradeModal';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Define message types for clarity
 export interface ChatMessage {
@@ -194,17 +196,23 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap ${
+                    className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap break-words ${
                       msg.sender === 'user'
                         ? 'bg-blue-500 text-white'
-                        : msg.sender === 'error'
-                          ? isLimitError
-                            ? 'bg-background border border-red-300'
-                            : 'bg-red-100 text-red-700 border border-red-300'
-                          : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
+                        : msg.sender === 'model'
+                          ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100' // Specific for model
+                          : msg.sender === 'error'
+                            ? isLimitError
+                              ? 'bg-background border border-red-300'
+                              : 'bg-red-100 text-red-700 border border-red-300'
+                            : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100' // Default for system/other
                     }`}
                   >
-                    {msg.text}
+                    {msg.sender === 'model' ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                    ) : (
+                      msg.text
+                    )}
                     {msg.sender === 'error' && isLimitError && (
                       <Button
                         variant="gradient"
