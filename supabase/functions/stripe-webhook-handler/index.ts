@@ -285,21 +285,76 @@ serve(async (req: Request) => {
 
     case 'customer.subscription.deleted': {
       const subscription = event.data.object as Stripe.Subscription;
-      console.log('Handling customer.subscription.deleted for subscription ID:', subscription.id);
-      const { error } = await supabaseAdmin
-        .from('user_subscriptions')
-        .update({
-          status: subscription.status, // Should be 'canceled'
-          updated_at: new Date().toISOString(),
-          canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : new Date().toISOString(), // Fallback to now if canceled_at is null
-        })
-        .eq('stripe_subscription_id', subscription.id);
+      const userId = subscription.metadata?.user_id; // Get user_id from metadata
+      const stripeCustomerId = subscription.customer as string;
 
-      if (error) {
-        console.error('Supabase update error for customer.subscription.deleted:', error);
-        return new Response(`Webhook Database Error: ${error.message}`, { status: 500 });
+      console.log(`Handling customer.subscription.deleted for subscription ID: ${subscription.id}, User ID: ${userId}`);
+
+      if (!userId) {
+        console.error('Missing user_id in customer.subscription.deleted metadata. Cannot revert to free plan.', subscription.metadata);
+        // Fallback: Mark as canceled without reverting, or handle as an error needing investigation
+        const { error: updateError } = await supabaseAdmin
+          .from('user_subscriptions')
+          .update({
+            status: 'canceled', // Explicitly set to canceled
+            updated_at: new Date().toISOString(),
+            canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : new Date().toISOString(),
+          })
+          .eq('stripe_subscription_id', subscription.id);
+        if (updateError) {
+          console.error('Supabase update error (fallback) for customer.subscription.deleted:', updateError);
+          return new Response(`Webhook Database Error: ${updateError.message}`, { status: 500 });
+        }
+        console.warn(`Subscription ${subscription.id} marked as canceled but could not revert to free plan due to missing user_id.`);
+        return new Response(JSON.stringify({ received: true, warning: "Could not revert to free plan due to missing user_id" }), { status: 200 });
       }
-      console.log(`Subscription ${subscription.id} marked as deleted.`);
+
+      // 1. Fetch the Free Plan ID from subscription_plans table
+      const { data: freePlanData, error: freePlanError } = await supabaseAdmin
+        .from('subscription_plans')
+        .select('id')
+        .eq('name', 'free')
+        .single();
+
+      if (freePlanError || !freePlanData) {
+        console.error('Error fetching Free plan details or Free plan not found:', freePlanError?.message);
+        // Critical error: Free plan isn't defined in the database.
+        // You might want to return 500 here to Stripe so it retries, or handle as per your alerting policies.
+        return new Response('Webhook Configuration Error: Free plan not found in database.', { status: 500 });
+      }
+
+      const freePlanId = freePlanData.id;
+
+      // 2. Upsert the user's subscription to the Free plan
+      // This will update the existing row (matched by user_id) or insert if somehow no row exists for the user.
+      const newPeriodStart = new Date();
+      const newPeriodEnd = new Date(newPeriodStart);
+      newPeriodEnd.setDate(newPeriodStart.getDate() + 30);
+
+      const { error: upsertError } = await supabaseAdmin
+        .from('user_subscriptions')
+        .upsert({
+          user_id: userId,
+          plan_id: freePlanId,
+          stripe_customer_id: stripeCustomerId, // Keep customer ID for potential re-subscription
+          stripe_subscription_id: null, // This Stripe subscription is deleted
+          status: 'free', // Set status to 'free'
+          current_period_start: newPeriodStart.toISOString(), // Set to current time
+          current_period_end: newPeriodEnd.toISOString(), // Set to 30 days after start
+          cancel_at_period_end: false,
+          canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : new Date().toISOString(),
+          monthly_uploads_used: 0, // Reset usage for the new (free) period
+          // Note: total_trace_limit is on the plan, monthly_upload_limit also on the plan. No need to set here if your usage RPC gets them from plan.
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id', // This is key: it finds the row by user_id and updates it
+        });
+
+      if (upsertError) {
+        console.error('Supabase upsert error (reverting to free) for customer.subscription.deleted:', upsertError);
+        return new Response(`Webhook Database Error: ${upsertError.message}`, { status: 500 });
+      }
+      console.log(`User ${userId} reverted to Free plan (ID: ${freePlanId}) after subscription ${subscription.id} was deleted.`);
       break;
     }
 

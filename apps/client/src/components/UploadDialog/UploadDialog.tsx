@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ToastAction } from '@/components/ui/toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Folder } from '@/lib/api';
 import { traceApi } from '@/lib/api';
@@ -389,9 +388,8 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
 
       <form onSubmit={handleRHFSubmit(onSubmit)} className="space-y-6">
         <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            file ? 'border-primary/50' : 'border-border hover:border-primary/30'
-          } ${isProcessing ? 'cursor-wait' : ''}`}
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${file ? 'border-primary/50' : 'border-border hover:border-primary/30'
+            } ${isProcessing ? 'cursor-wait' : ''}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         >
@@ -481,8 +479,8 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
             {...register('scenario', { required: 'Scenario is required' })}
             className={cn(
               errors.scenario &&
-                dirtyFields.scenario &&
-                'border-destructive focus-visible:ring-destructive'
+              dirtyFields.scenario &&
+              'border-destructive focus-visible:ring-destructive'
             )}
           />
           {errors.scenario && dirtyFields.scenario && (
@@ -533,7 +531,6 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
         initialFolderId={selectedFolderId}
         title="Select Upload Folder"
         description="Choose the folder where you want to upload the trace."
-        // The trigger is the 'Change' button handled by onClick={setIsMoveDialogOpen(true)}
       />
     </>
   );

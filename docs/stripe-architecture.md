@@ -71,7 +71,11 @@ The following tables in the Supabase database are central to managing subscripti
         *   Updates `status`, `current_period_start`, `current_period_end`.
     *   **`invoice.payment_failed`**: Updates `status` in `user_subscriptions`.
     *   **`customer.subscription.updated`**: Handles plan changes, cancellations, etc. Updates relevant fields in `user_subscriptions`.
-    *   **`customer.subscription.deleted`**: Updates `status` to `canceled` and sets `canceled_at`.
+    *   **`customer.subscription.deleted`**: 
+        *   When a paid subscription is deleted, this handler now attempts to revert the user to a "Free" plan.
+        *   It dynamically fetches the "Free" plan ID from the `subscription_plans` table.
+        *   It then `upserts` the user's record in `user_subscriptions` (based on `user_id`) to this "Free" plan, setting the status to `'free'`, nullifying Stripe-specific IDs, resetting usage, and setting `current_period_start` to the current time and `current_period_end` to 30 days after the start to satisfy database constraints.
+        *   If `user_id` is missing from metadata or the "Free" plan cannot be found, it logs an error and attempts a fallback to simply mark the subscription as `'canceled'`.
     *   Returns a `200 OK` to Stripe.
 
 ## 4. Frontend Interaction
@@ -118,10 +122,9 @@ Testing Stripe integration locally requires the Stripe CLI and a way to forward 
 *   [X] **Frontend:** Basic `PaymentSuccessPage.tsx` and `PaymentCancelPage.tsx` created and routed.
 *   [X] **Frontend:** Implement `useUserSubscription` hook for fetching current subscription status.
 *   [X] **Frontend:** Implement `SidebarActionButtons.tsx` for conditional UI in `Sidebar.tsx` based on subscription.
-*   [ ] **Frontend:** Full UI to display current subscription status and plan details across the app.
-*   [ ] **Frontend:** Implement UI for "Manage Billing" button to redirect to Stripe Customer Portal.
-*   [ ] **Backend:** Create `manage-stripe-subscription` Edge Function to generate Stripe Customer Portal sessions.
-*   [ ] **Webhooks:** Test and refine handlers for `customer.subscription.updated` (cancellations, upgrades/downgrades) and `customer.subscription.deleted`.
+*   [X] **Frontend:** Implement UI for "Manage Billing" button to redirect to Stripe Customer Portal. (Implemented in `apps/client/src/pages/settings/BillingPage.tsx`)
+*   [X] **Backend:** Create `manage-stripe-subscription` Edge Function to generate Stripe Customer Portal sessions. (Implemented in `supabase/functions/manage-stripe-subscription/index.ts`)
+*   [X] **Webhooks:** Test and refine handlers for `customer.subscription.updated` (cancellations, upgrades/downgrades) and `customer.subscription.deleted`. (Initial refinement for `customer.subscription.deleted` to revert to Free plan implemented in `stripe-webhook-handler`)
 *   [ ] **Webhooks:** Add handlers for more events if needed (e.g., `customer.subscription.trial_will_end`, disputes, refunds).
 *   [ ] **Plans:** UI for users to select different plans if multiple paid tiers are offered (if applicable beyond Pro).
 *   [ ] **Error Handling:** More robust error handling and user feedback across all Stripe-related interactions.
