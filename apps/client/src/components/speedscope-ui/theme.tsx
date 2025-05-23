@@ -139,4 +139,4 @@ export function ThemeProvider(props: { children: React.ReactNode }) {
   return <ThemeContext.Provider value={finalTheme} children={props.children} />;
 }
 
-export { colorSchemeAtom };
+export { colorSchemeAtom, ColorScheme };

@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ interface LayoutProps {
   hideNav?: boolean;
   noPadding?: boolean;
   isProfileView?: boolean;
+  footer?: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({
@@ -16,6 +17,7 @@ const Layout: React.FC<LayoutProps> = ({
   hideNav = false,
   noPadding = false,
   isProfileView = false,
+  footer,
 }) => {
   const { user } = useAuth();
   const isLoggedIn = !!user;
@@ -39,6 +41,7 @@ const Layout: React.FC<LayoutProps> = ({
           className={`flex-1 h-full overflow-y-auto bg-secondary dark:bg-background ${mainPaddingClasses} ${conditionalElevation}`}
         >
           {children}
+          {footer && <div className="mt-auto m-[-30px]">{footer}</div>}
         </main>
       </div>
     </div>
