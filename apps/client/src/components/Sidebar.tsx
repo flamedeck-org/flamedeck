@@ -74,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
   return (
     <TooltipProvider delayDuration={0}>
       <aside
-        className={`${minimized ? 'w-16' : 'w-64'} border-r bg-background flex flex-col z-10 transition-width duration-200`}
+        className={`${minimized ? 'w-16' : 'w-64'} border-r bg-background flex flex-col z-10 transition-width duration-200 relative z-50`}
       >
         <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
           <NavLink
