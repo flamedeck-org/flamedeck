@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 // Assuming AuthContext is at ../contexts/AuthContext.tsx relative to components/
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2, AlertCircle } from 'lucide-react'; // Keep if you want a loading spinner
@@ -21,6 +21,7 @@ interface AuthContextValue {
   profile: UserProfile | null;
   loading: boolean; // Auth loading state
   profileLoading: boolean; // Profile loading state
+  signOut: () => Promise<void>; // Added signOut
   // Remove refetchProfile if not actually needed by this specific interface definition
 }
 
@@ -28,9 +29,10 @@ const ProtectedRoute = () => {
   // Log context values on every render - MOVED TO TOP
   console.log('[ProtectedRoute] Component Rendered. Attempting to log state...');
 
-  const { user, profile, loading, profileLoading } = useAuth() as AuthContextValue;
+  const { user, profile, loading, profileLoading, signOut } = useAuth() as AuthContextValue;
   const { isProUser, isLoading: isSubscriptionLoading, subscription } = useUserSubscription(); // Added
   const location = useLocation();
+  const navigate = useNavigate(); // Added useNavigate
 
   const isLoading = loading || profileLoading || isSubscriptionLoading; // Added isSubscriptionLoading
 
@@ -44,6 +46,15 @@ const ProtectedRoute = () => {
     isProUser, // Added
     subscriptionStatus: subscription?.status, // Added for debugging
   });
+
+  const handleLogout = async () => { // Added handleLogout function
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   if (isLoading) {
     console.log('[ProtectedRoute] State is Loading, returning spinner.');
@@ -137,6 +148,9 @@ const ProtectedRoute = () => {
         <CardFooter className="flex justify-center">
           <Button onClick={() => window.location.reload()} variant="destructive" className="mt-2">
             Refresh Page
+          </Button>
+          <Button onClick={handleLogout} variant="outline" className="mt-2 ml-2">
+            Sign Out
           </Button>
         </CardFooter>
       </Card>

@@ -75,3 +75,11 @@ entrypoint = "./functions/manage-stripe-subscription/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/manage-stripe-subscription/*.html" ]
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_OAUTH_CLIENT_ID)"
+secret = "env(GOOGLE_OAUTH_SECRET)"
+
+[auth]
+additional_redirect_urls=["http://localhost:8080/auth/callback"]
