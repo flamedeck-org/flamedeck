@@ -32,17 +32,6 @@ entrypoint = "./functions/cleanup-old-traces/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/cleanup-old-traces/*.html" ]
 
-[functions.trace-analysis-socket]
-enabled = true
-verify_jwt = true
-import_map = "./functions/trace-analysis-socket/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/trace-analysis-socket/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/trace-analysis-socket/*.html" ]
-
 [functions.create-stripe-checkout-session]
 enabled = true
 verify_jwt = true
@@ -92,3 +81,13 @@ file_size_limit = "50MiB"
 public = false
 file_size_limit = "50MiB"
 allowed_mime_types = ["image/png"]
+[functions.trace-analysis]
+enabled = true
+verify_jwt = true
+import_map = "./functions/trace-analysis/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/trace-analysis/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/trace-analysis/*.html" ]

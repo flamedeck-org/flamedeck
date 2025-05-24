@@ -31,7 +31,6 @@ interface ChatWindowProps {
   sendMessage: (prompt: string) => void; // Function to send a user prompt
   isLoading: boolean; // To indicate if the model is processing
   isStreaming: boolean; // Indicates if chunks are actively arriving
-  error: string | null; // To display any connection/processing errors
   suggestionPrompts?: string[]; // <-- Add new prop for suggestion prompts
 }
 
@@ -43,7 +42,7 @@ export interface ChatWindowHandle {
 // Use forwardRef to accept a ref from the parent
 export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
   (
-    { isOpen, onClose, messages, sendMessage, isLoading, isStreaming, error, suggestionPrompts },
+    { isOpen, onClose, messages, sendMessage, isLoading, isStreaming, suggestionPrompts },
     ref
   ) => {
     const [input, setInput] = useState('');
@@ -168,7 +167,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
         {/* Message Area */}
         <ScrollArea className="flex-grow p-3" ref={internalScrollAreaRef}>
           <div className="space-y-3">
-            {messages.length === 0 && !isLoading && !error && (
+            {messages.length === 0 && !isLoading && (
               <div className="flex flex-col items-center justify-center h-full text-center p-6">
                 <MessageSquareText className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-4" />
                 <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
@@ -227,13 +226,6 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
               <div className="flex justify-start">
                 <div className="p-2 rounded-lg text-sm bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100 animate-pulse">
                   Thinking...
-                </div>
-              </div>
-            )}
-            {error && (
-              <div className="flex justify-start">
-                <div className="max-w-[80%] p-2 rounded-lg text-sm bg-red-100 text-red-700 border border-red-300">
-                  Error: {error}
                 </div>
               </div>
             )}

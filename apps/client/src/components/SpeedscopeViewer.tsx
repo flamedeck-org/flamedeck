@@ -57,7 +57,6 @@ interface SpeedscopeViewerProps {
   onStartReply: (commentId: string) => void;
   onCancelReply: () => void;
   onCommentUpdated: (updatedComment: TraceCommentWithAuthor) => void;
-  onRegisterSnapshotter?: (generator: SnapshotGenerator) => void; // Optional prop
 }
 
 const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
@@ -70,7 +69,6 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
   onStartReply,
   onCancelReply,
   onCommentUpdated,
-  onRegisterSnapshotter,
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -329,15 +327,6 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
     },
     [glCanvas, chronoViewRef, leftHeavyViewRef, sandwichViewRef]
   );
-
-  // Register the snapshot generator with the parent
-  useEffect(() => {
-    if (onRegisterSnapshotter) {
-      console.log('[SpeedscopeViewer] Registering snapshot generator.');
-      onRegisterSnapshotter(generateSnapshotCallback);
-    }
-  }, [onRegisterSnapshotter, generateSnapshotCallback]);
-  // --- End Snapshot Logic ---
 
   if (isLoading) {
     return (

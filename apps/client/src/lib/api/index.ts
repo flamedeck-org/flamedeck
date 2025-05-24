@@ -8,6 +8,11 @@ import * as storageApi from './storage';
 
 export * from './types';
 export * from './comments';
+export * from './traces';
+export * from './tracePermissions';
+export * from './users';
+export * from './utils';
+export * from './trace-analysis';
 
 export const traceApi = {
   ...tracesApi,
