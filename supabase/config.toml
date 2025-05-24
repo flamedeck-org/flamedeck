@@ -83,3 +83,12 @@ secret = "env(GOOGLE_OAUTH_SECRET)"
 
 [auth]
 additional_redirect_urls=["http://localhost:8080/auth/callback"]
+
+[storage.buckets.traces]
+public = false
+file_size_limit = "50MiB"
+
+[storage.buckets.ai-snapshots]
+public = false
+file_size_limit = "50MiB"
+allowed_mime_types = ["image/png"]
