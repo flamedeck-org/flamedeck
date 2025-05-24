@@ -5,13 +5,17 @@ import { createStripePortalSession } from '@/lib/api/subscription';
 import { toast } from 'sonner';
 import PageHeader from '@/components/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, Zap, Crown, Infinity, MessageSquare, Database, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import UpgradeButton from '@/components/billing/UpgradeButton';
+import { subscriptionTiers } from '@/components/PricingTable';
 
 function BillingPage() {
   const { subscription, isProUser, isLoading: isSubscriptionLoading } = useUserSubscription();
   const [isCreatingPortalSession, setIsCreatingPortalSession] = useState(false);
+
+  const proTier = useMemo(() => subscriptionTiers.find(tier => tier.name === 'Pro'), []);
+  const freeTier = useMemo(() => subscriptionTiers.find(tier => tier.name === 'Free'), []);
 
   const handleManageBilling = useCallback(async () => {
     if (
@@ -46,6 +50,85 @@ function BillingPage() {
       (subscription.status === 'active' || subscription.status === 'trialing')
     );
   }, [isProUser, subscription]);
+
+  const renderUpgradePrompt = () => {
+    if (!proTier || !freeTier) return null;
+
+    return (
+      <div className="grid lg:grid-cols-2 gap-8">
+        {/* Current Plan - Free */}
+        <div className="bg-muted/30 rounded-lg border p-6 relative">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-muted rounded-md">
+                <Database className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Free Plan</h3>
+                <p className="text-sm text-muted-foreground">Current plan</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-muted-foreground">$0</div>
+              <div className="text-sm text-muted-foreground">per month</div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {freeTier.features.map((feature) => (
+              <div key={feature} className="flex items-start gap-3">
+                <Check className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span className="text-sm text-muted-foreground leading-relaxed">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pro Plan - Upgrade */}
+        <div className="bg-gradient-to-br from-primary/5 via-primary/3 to-primary/5 rounded-lg border-2 border-primary/20 p-6 relative shadow-sm">
+          <div className="absolute -top-3 left-6">
+            <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
+              Recommended
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-md">
+                <Crown className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-primary">Pro Plan</h3>
+                <p className="text-sm text-muted-foreground">Unlock full potential</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-primary">${proTier.price}</div>
+              <div className="text-sm text-muted-foreground">per month</div>
+            </div>
+          </div>
+
+          <div className="space-y-3 mb-6">
+            {proTier.features.map((feature) => (
+              <div key={feature} className="flex items-start gap-3">
+                <Check className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span className="text-sm leading-relaxed font-medium">{feature}</span>
+              </div>
+            ))}
+          </div>
+
+          <UpgradeButton className="w-full h-12 text-base font-semibold shadow-sm">
+            <Crown className="mr-2 h-4 w-4" />
+            Upgrade to Pro
+          </UpgradeButton>
+
+          <p className="text-xs text-center text-muted-foreground mt-3">
+            Cancel anytime • Instant activation
+          </p>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -104,12 +187,7 @@ function BillingPage() {
                 )}
               </div>
             ) : (
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground mb-2">
-                  You do not have an active subscription.
-                </p>
-                <UpgradeButton />
-              </div>
+              renderUpgradePrompt()
             )}
 
             {canManageSubscription || (subscription && subscription.status === 'past_due') ? (
