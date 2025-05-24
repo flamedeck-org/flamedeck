@@ -1003,6 +1003,11 @@ export async function processAiTurnLogic(payload: ProcessAiTurnPayload): Promise
   });
   const realtimeChannel = supabaseAdmin.channel(`private-chat-results-${userId}`);
 
+  if (!realtimeChannel) {
+    console.error('[Node AI Processor] Failed to initialize Realtime channel for user ${userId}');
+    throw new Error('Failed to initialize Realtime channel');
+  }
+
   let langfuseHandler: CallbackHandler | undefined = undefined;
   let langfuseClient: Langfuse | undefined = undefined;
 
