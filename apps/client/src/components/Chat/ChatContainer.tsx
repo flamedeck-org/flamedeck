@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
-import { useTraceAnalysisSocket } from '@/hooks/useTraceAnalysisSocket';
+import { useTraceAnalysisApi } from '@/hooks/useTraceAnalysisApi';
 import {
   FloatingChatButton,
   ChatWindow,
@@ -7,84 +7,66 @@ import {
   type ChatWindowHandle,
 } from '@/components/Chat';
 import { v4 as uuidv4 } from 'uuid';
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth to get user ID
-import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
-import type { RealtimeChannel } from '@supabase/supabase-js'; // Import type for channel ref
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import * as Sentry from '@sentry/react';
+import type { TraceAnalysisPayload, TraceAnalysisApiResponse } from '@/lib/api';
 
 interface ChatContainerProps {
   traceId: string | null;
 }
 
+const DEBUG_LOG_PREFIX = '[ChatContainerDebug]';
+
 export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) => {
-  const { user } = useAuth(); // Get user from Auth context
+  const { user } = useAuth();
   const userId = user?.id;
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const currentMessageRef = useRef<ChatMessage | null>(null); // Ref to track current streaming message
-  const chatWindowRef = useRef<ChatWindowHandle>(null); // <-- Create ref for ChatWindow
+  const currentMessageRef = useRef<ChatMessage | null>(null);
+  const chatWindowRef = useRef<ChatWindowHandle>(null);
 
-  const {
-    connect: connectSocket,
-    disconnect: disconnectSocket,
-    sendMessage: sendRawSocketMessage,
-    isConnected: isSocketConnected,
-    lastMessage: lastSocketMessage, // Renamed to avoid confusion
-    error: socketErrorEvent,
-  } = useTraceAnalysisSocket();
+  const traceAnalysisMutation = useTraceAnalysisApi();
 
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [isWaitingForModel, setIsWaitingForModel] = useState<boolean>(false);
-  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null); // Still useful for non-message errors or global state
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const [isWaitingForModelResponse, setIsWaitingForModelResponse] = useState<boolean>(false);
 
-  // For now just create a session on mount
-  const currentSessionId = useMemo(() => {
-    return uuidv4();
-  }, []);
+  const currentSessionId = useMemo(() => uuidv4(), []);
 
-  console.log('[ChatContainer] currentSessionId:', currentSessionId);
-
-  // Effect to manage WebSocket, Realtime connections, and initial history load
   useEffect(() => {
     let channel: RealtimeChannel | null = null;
 
     if (isChatOpen && userId && traceId) {
-      console.log(`[ChatContainer] Fetching history for session: ${currentSessionId}`);
-      setChatError(null);
-
-      if (!isSocketConnected) {
-        console.log('[ChatContainer] Calling connectSocket()');
-        connectSocket();
-      }
+      setChatError(null); // Clear general errors when chat opens/re-focuses
 
       const channelName = `private-chat-results-${userId}`;
       channel = supabase.channel(channelName, { config: { broadcast: { self: false } } });
 
       channel.on('broadcast', { event: 'ai_response' }, (message) => {
         const payload = message.payload;
-        let newError: string | null = null;
-        let forceScroll = true; // Default to true for new messages/significant updates
+        let forceScroll = true;
 
         setChatMessages((prevMessages) => {
-          const messageId = uuidv4(); // Fallback id if toolCallId is missing
+          const messageId = uuidv4();
           let updatedMessages = [...prevMessages];
-          let messageExists = false;
 
-          // Handle new tool events by finding and updating, or adding if not found
           if (payload.type === 'tool_start') {
-            messageExists = prevMessages.some((msg) => msg.id === payload.toolCallId);
-            if (messageExists) {
+            const existingMsg = prevMessages.find((msg) => msg.id === payload.toolCallId);
+            if (existingMsg) {
               updatedMessages = prevMessages.map((msg) =>
                 msg.id === payload.toolCallId
                   ? {
-                      ...msg,
-                      sender: 'tool',
-                      text: payload.message || `Running ${payload.toolName}...`,
-                      toolName: payload.toolName,
-                      toolStatus: 'running',
-                      resultType: undefined, // Clear previous results
-                      imageUrl: undefined,
-                    }
+                    ...msg,
+                    sender: 'tool',
+                    text: payload.message || `Running ${payload.toolName}...`,
+                    toolName: payload.toolName,
+                    toolStatus: 'running',
+                    resultType: undefined,
+                    imageUrl: undefined,
+                  }
                   : msg
               );
             } else {
@@ -97,27 +79,22 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
                 toolStatus: 'running',
               });
             }
-            setIsWaitingForModel(true);
             setIsStreaming(false);
+            setIsWaitingForModelResponse(true);
           } else if (payload.type === 'tool_result') {
-            console.log('[ChatContainer] Received tool_result payload:', JSON.stringify(payload)); // DEBUG LOG
             updatedMessages = prevMessages.map((msg) =>
               msg.id === payload.toolCallId
                 ? {
-                    ...msg,
-                    sender: 'tool', // Ensure sender is 'tool'
-                    text: payload.textContent || `${payload.toolName} completed.`,
-                    toolStatus: payload.status as ChatMessage['toolStatus'],
-                    resultType: payload.resultType as ChatMessage['resultType'],
-                    imageUrl: payload.imageUrl,
-                  }
+                  ...msg,
+                  sender: 'tool',
+                  text: payload.textContent || `${payload.toolName} completed.`,
+                  toolStatus: payload.status as ChatMessage['toolStatus'],
+                  resultType: payload.resultType as ChatMessage['resultType'],
+                  imageUrl: payload.imageUrl,
+                }
                 : msg
             );
-            messageExists = updatedMessages.some(
-              (msg) => msg.id === payload.toolCallId && msg.toolStatus === payload.status
-            );
             if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
-              // If no running message was found, add new (should be rare)
               updatedMessages.push({
                 id: payload.toolCallId || messageId,
                 sender: 'tool',
@@ -129,23 +106,22 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
                 imageUrl: payload.imageUrl,
               });
             }
-            setIsWaitingForModel(true);
             setIsStreaming(false);
+            setIsWaitingForModelResponse(true);
           } else if (payload.type === 'tool_error') {
             updatedMessages = prevMessages.map((msg) =>
               msg.id === payload.toolCallId
                 ? {
-                    ...msg,
-                    sender: 'tool', // Ensure sender is 'tool'
-                    text: payload.message || `Error in ${payload.toolName}.`,
-                    toolStatus: 'error',
-                    resultType: undefined,
-                    imageUrl: undefined,
-                  }
+                  ...msg,
+                  sender: 'tool',
+                  text: payload.message || `Error in ${payload.toolName}.`,
+                  toolStatus: 'error',
+                  resultType: undefined,
+                  imageUrl: undefined,
+                }
                 : msg
             );
             if (!prevMessages.some((msg) => msg.id === payload.toolCallId)) {
-              // If no running message was found, add new
               updatedMessages.push({
                 id: payload.toolCallId || messageId,
                 sender: 'tool',
@@ -155,62 +131,53 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
                 toolStatus: 'error',
               });
             }
-            setIsWaitingForModel(false);
             setIsStreaming(false);
+            setIsWaitingForModelResponse(true);
           } else if (payload.type === 'model_chunk_start') {
             setIsStreaming(true);
+            setIsWaitingForModelResponse(false);
             const newMessage: ChatMessage = {
-              id: messageId, // Model messages get a new uuid
+              id: messageId,
               sender: 'model',
               text: payload.chunk,
             };
             currentMessageRef.current = newMessage;
             updatedMessages.push(newMessage);
-            // forceScroll is true by default
           } else if (payload.type === 'model_chunk_append' && currentMessageRef.current) {
             setIsStreaming(true);
+            setIsWaitingForModelResponse(false);
             updatedMessages = updatedMessages.map((msg) =>
               msg.id === currentMessageRef.current!.id
                 ? { ...msg, text: msg.text + payload.chunk }
                 : msg
             );
-            forceScroll = false; // Don't force scroll for appended chunks
+            forceScroll = false;
           } else if (payload.type === 'model_response_end') {
-            setIsWaitingForModel(false);
             setIsStreaming(false);
+            setIsWaitingForModelResponse(false);
             currentMessageRef.current = null;
-            forceScroll = false; // Don't force scroll for end event
+            forceScroll = false;
           } else if (payload.type === 'error') {
-            // General AI processing error
-            newError = payload.message ?? 'An unknown error occurred during AI processing.';
+            const newError = payload.message ?? 'An unknown error occurred during AI processing.';
             updatedMessages.push({ id: messageId, sender: 'error', text: `Error: ${newError}` });
-            setIsWaitingForModel(false);
+            setChatError(newError); // Set general UI error state
             setIsStreaming(false);
+            setIsWaitingForModelResponse(false);
             currentMessageRef.current = null;
-            forceScroll = true; // <-- Force scroll for errors
           } else {
-            // Only log unknown types if they are not 'request_snapshot'
             if (payload.type !== 'request_snapshot') {
-              console.warn('Received unknown payload type via Realtime:', payload.type);
+              Sentry.captureMessage(`Received unknown payload type via Realtime: ${payload.type}`);
             }
           }
           return updatedMessages;
         });
 
-        // Explicitly scroll after state update, using the force flag
         setTimeout(() => {
           chatWindowRef.current?.scrollToBottom(forceScroll);
         }, 0);
-
-        // Update error state outside the message update if needed
-        if (payload.type === 'error' || payload.type === 'model_response_end') {
-          setChatError(newError);
-        }
       });
 
-      // Listen for specific chat limit errors or other critical chat_errors
       channel.on('broadcast', { event: 'chat_error' }, (message) => {
-        console.log('[ChatContainer] Received chat_error event:', message.payload);
         const payload = message.payload as {
           message: string;
           error_code?: string;
@@ -219,14 +186,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
         };
         let errorMessageText =
           payload.message || 'A chat limit has been reached or a chat-related error occurred.';
-        let isLimitError = false;
         let errType: string | undefined = payload.error_code;
 
         if (
           payload.limit_type &&
           ['lifetime_analyses', 'monthly_sessions', 'session_messages'].includes(payload.limit_type)
         ) {
-          isLimitError = true;
           errType = payload.limit_type;
         }
 
@@ -239,21 +204,11 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
             errorType: errType,
           },
         ]);
-        setIsWaitingForModel(false); // Stop showing "thinking..."
         setIsStreaming(false);
-
-        // Optionally, disable input if the error indicates it
-        // This part would require ChatWindow to accept a new prop like `isInputDisabled`
-        // and for handleSendMessage to check it.
-        // For now, we primarily rely on the error message display.
+        setIsWaitingForModelResponse(false);
         if (payload.should_disable_input) {
-          // Placeholder: logic to disable input would go here if ChatWindow supports it directly
-          console.log('[ChatContainer] Server indicated input should be disabled.');
-          // If we want to disable input, we might need a new state like `isInputDisabled`
-          // and pass it to ChatWindow, which would then disable its input field.
-          // For example: setIsInputDisabled(true);
+          Sentry.captureMessage('Server indicated input should be disabled due to chat_error.');
         }
-
         setTimeout(() => {
           chatWindowRef.current?.scrollToBottom(true);
         }, 0);
@@ -261,24 +216,22 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
 
       channel.subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-          console.log(
-            `[ChatContainer] Realtime SUBSCRIBED.` // Removed socket check here
-          ); // Log connection status
+          // Subscribed to Realtime
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          setChatError(`Realtime connection failed: ${status}`);
+          const realtimeErrorMsg = `Realtime connection failed: ${status}`;
+          setChatError(realtimeErrorMsg); // Set general UI error state
           setChatMessages((prev) => [
             ...prev,
-            { id: uuidv4(), sender: 'error', text: `Realtime connection failed: ${status}` },
+            { id: uuidv4(), sender: 'error', text: realtimeErrorMsg },
           ]);
+          Sentry.captureMessage(`Realtime channel error: ${status}`, { extra: { err } });
+          setIsStreaming(false);
+          setIsWaitingForModelResponse(false);
         }
       });
 
       channelRef.current = channel;
     } else {
-      if (isSocketConnected) {
-        disconnectSocket();
-      }
-
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -286,136 +239,35 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
     }
 
     return () => {
-      if (isSocketConnected) {
-        disconnectSocket();
-      }
-
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [
-    isChatOpen,
-    userId,
-    traceId,
-    isSocketConnected,
-    connectSocket,
-    disconnectSocket,
-    currentSessionId,
-  ]);
+  }, [isChatOpen, userId, traceId, currentSessionId]);
 
-  // Effect to handle initial connection/ack from WebSocket
-  useEffect(() => {
-    // Handle the ack message "Requesting initial analysis..."
-    if (!lastSocketMessage) return;
-
-    console.log('[ChatContainer] Processing lastSocketMessage:', lastSocketMessage);
-
-    if (lastSocketMessage.type === 'server_ready') {
-      console.log(
-        '[ChatContainer] Received server_ready message from WebSocket:',
-        lastSocketMessage.message
-      );
-      // Potentially update a system message here if needed, or just log
-      // For now, we expect start_analysis to be sent by another effect
-    } else if (lastSocketMessage.type === 'connection_ack') {
-      console.log('[ChatContainer] WebSocket ACK received:', lastSocketMessage.message);
-      setChatMessages((prev) => {
-        const connectingMsgIndex = prev.findIndex(
-          (msg) =>
-            msg.text === 'Connecting to analysis service...' ||
-            msg.text === 'Connecting to AI analysis...'
-        );
-        if (connectingMsgIndex !== -1) {
-          const updated = [...prev];
-          // Update the text to reflect the server is starting
-          updated[connectingMsgIndex] = {
-            ...updated[connectingMsgIndex],
-            text: lastSocketMessage.message,
-          };
-          return updated;
-        } else {
-          // Avoid adding duplicate messages if already present
-          if (!prev.some((msg) => msg.text === lastSocketMessage.message)) {
-            return [...prev, { id: uuidv4(), sender: 'system', text: lastSocketMessage.message }];
-          }
-          return prev;
-        }
-      });
-      setIsWaitingForModel(true);
-      setChatError(null);
-    } else if (lastSocketMessage?.type === 'waiting_for_model') {
-      // console.log("WebSocket received waiting_for_model");
-      setIsWaitingForModel(true);
-      setChatError(null);
-    } else if (lastSocketMessage.type === 'error') {
-      // console.error("WebSocket direct error message:", lastSocketMessage.message); // REMOVE
-      const errorMsg = lastSocketMessage.message ?? 'Unknown WebSocket error';
-      setChatMessages((prev) => [
+  const handleApiError = useCallback((error: any, context?: string) => {
+    console.log(DEBUG_LOG_PREFIX, 'handleApiError CALLED. Context:', context, 'Error:', error?.message, 'Timestamp:', new Date().toISOString());
+    const errorMsg = error?.message || `Failed to ${context || 'perform action'}.`;
+    setChatMessages((prev) => {
+      console.log(DEBUG_LOG_PREFIX, 'Adding error message to chatMessages via handleApiError. Message:', errorMsg);
+      return [
         ...prev,
         { id: uuidv4(), sender: 'error', text: `Error: ${errorMsg}` },
-      ]);
-      setChatError(errorMsg);
-      setIsWaitingForModel(false);
-    } else if (
-      lastSocketMessage.type !== 'connection_ack' &&
-      lastSocketMessage.type !== 'server_ready'
-    ) {
-      console.log(
-        '[ChatContainer] Received other/unexpected direct WS message:',
-        lastSocketMessage
-      );
-    }
-  }, [lastSocketMessage]);
+      ];
+    });
+    setChatError(errorMsg); // Set general UI error state
+    setIsStreaming(false);
+    setIsWaitingForModelResponse(false);
+    setTimeout(() => {
+      chatWindowRef.current?.scrollToBottom(true);
+    }, 0);
+  }, []);
 
-  // Effect to handle raw socket errors (connection failures, etc.)
-  useEffect(() => {
-    if (socketErrorEvent) {
-      // Check for ignorable 1006 closure FIRST
-      if (socketErrorEvent instanceof CloseEvent && socketErrorEvent.code === 1006) {
-        console.warn(
-          '[ChatContainer] WebSocket CloseEvent 1006 (Abnormal Closure) detected by socketErrorEvent handler. Usually means server dropped connection without a clean handshake.'
-        );
-        setIsWaitingForModel(false);
-        return;
-      }
-
-      // If it wasn't the ignorable 1006 error, proceed to handle other errors
-      console.log(
-        '[ChatContainer] socketErrorEvent handler processing other error:',
-        socketErrorEvent
-      );
-      let errorMsg = 'WebSocket connection error.';
-
-      if (socketErrorEvent instanceof Error) {
-        errorMsg = socketErrorEvent.message;
-      } else if (typeof socketErrorEvent === 'object' && socketErrorEvent !== null) {
-        if ('code' in socketErrorEvent) {
-          if ('reason' in socketErrorEvent && socketErrorEvent.reason) {
-            errorMsg = `WebSocket closed: ${socketErrorEvent.reason} (Code: ${socketErrorEvent.code})`;
-          } else {
-            errorMsg = `WebSocket closed (Code: ${socketErrorEvent.code})`;
-          }
-        } else if ('type' in socketErrorEvent) {
-          errorMsg = `WebSocket error event: ${socketErrorEvent.type}`;
-        }
-      }
-
-      // Add the non-ignorable error to the chat messages
-      const errorId = uuidv4();
-      // console.log("[ChatContainer] Adding error to chat messages:", errorMsg); // REMOVE
-      setChatMessages((prev) => [...prev, { id: errorId, sender: 'error', text: errorMsg }]);
-
-      setChatError(errorMsg);
-      setIsWaitingForModel(false);
-    }
-  }, [socketErrorEvent]);
-
-  // handleSendMessage (Add userId and traceId to user_prompt)
   const handleSendMessage = useCallback(
-    (prompt: string) => {
-      if (prompt.trim() && isSocketConnected && userId && traceId && currentSessionId) {
+    async (prompt: string) => {
+      console.log(DEBUG_LOG_PREFIX, 'handleSendMessage CALLED. Prompt:', prompt, 'Timestamp:', new Date().toISOString());
+      if (prompt.trim() && userId && traceId && currentSessionId) {
         const newUserMessage: ChatMessage = {
           id: uuidv4(),
           sender: 'user',
@@ -423,47 +275,60 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
           timestamp: Date.now(),
         };
         setChatMessages((prev) => [...prev, newUserMessage]);
-        setIsWaitingForModel(true);
-        setChatError(null);
-        setIsStreaming(false);
+        setChatError(null); // Clear previous general error on new message send
+        setIsWaitingForModelResponse(true);
 
         setTimeout(() => {
           chatWindowRef.current?.scrollToBottom(true);
         }, 0);
 
-        sendRawSocketMessage({
+        const payload: TraceAnalysisPayload = {
           type: 'user_prompt',
           prompt: prompt,
           userId: userId,
           traceId: traceId,
           sessionId: currentSessionId,
-        });
-      } else if (!isSocketConnected) {
-        setChatError('Cannot send message: WebSocket not connected.');
-        setChatMessages((prev) => [
-          ...prev,
-          { id: uuidv4(), sender: 'error', text: 'Cannot send message: WebSocket not connected.' },
-        ]);
+        };
+        console.log(DEBUG_LOG_PREFIX, 'Calling mutateAsync with payload:', payload, 'Timestamp:', new Date().toISOString());
+        try {
+          const response = await traceAnalysisMutation.mutateAsync(payload);
+          if (response?.error) {
+            handleApiError({ message: response.error }, 'send message (response.error branch)');
+          }
+        } catch (e) {
+          handleApiError(e, 'send message (catch branch)');
+        }
       } else if (!userId) {
-        setChatError('Cannot send message: User not identified.');
+        const noUserError = 'Cannot send message: User not identified.';
         setChatMessages((prev) => [
           ...prev,
-          { id: uuidv4(), sender: 'error', text: 'Cannot send message: User not identified.' },
+          { id: uuidv4(), sender: 'error', text: noUserError },
         ]);
+        setChatError(noUserError);
+        setIsWaitingForModelResponse(false);
+        Sentry.captureMessage('handleSendMessage: User not identified.');
       } else if (!currentSessionId) {
-        setChatError('Cannot send message: Session not initialized.');
+        const noSessionError = 'Cannot send message: Session not initialized.';
+        setChatMessages((prev) => [
+          ...prev,
+          { id: uuidv4(), sender: 'error', text: noSessionError },
+        ]);
+        setChatError(noSessionError);
+        setIsWaitingForModelResponse(false);
+        Sentry.captureMessage('handleSendMessage: Session not initialized.');
       }
     },
-    [isSocketConnected, sendRawSocketMessage, userId, traceId, currentSessionId]
+    [userId, traceId, currentSessionId, traceAnalysisMutation, handleApiError]
   );
 
-  // Only render button if traceId and userId are available
   if (!traceId || !userId) {
-    // Optionally show a message indicating chat is unavailable
     return null;
   }
 
-  const suggestionPrompts = ['Analyze this trace', 'Show me the top 10 slowest functions'];
+  const suggestionPrompts = [
+    'Analyze this trace',
+    'Show me the top 10 slowest functions',
+  ];
 
   return (
     <>
@@ -475,9 +340,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
           onClose={() => setIsChatOpen(false)}
           messages={chatMessages}
           sendMessage={handleSendMessage}
-          isLoading={isWaitingForModel}
-          isStreaming={isStreaming}
-          error={chatError}
+          isLoading={traceAnalysisMutation.isPending || isWaitingForModelResponse || isStreaming}
+          isStreaming={isStreaming} // Retain for specific stream visual cues if needed beyond general loading
           suggestionPrompts={suggestionPrompts}
         />
       )}

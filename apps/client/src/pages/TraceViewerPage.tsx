@@ -181,75 +181,6 @@ const TraceViewerPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
-  // --- Snapshot Handling Callbacks ---
-  const handleRegisterSnapshotter = useCallback((generator: SnapshotGenerator) => {
-    console.log('[TraceViewerPage] Snapshot generator registered.');
-    snapshotGeneratorRef.current = generator;
-  }, []);
-
-  // Original handler for ChatContainer
-  const handleTriggerSnapshotForChat = useCallback(
-    async (requestId: string, viewType: string, frameKey?: string) => {
-      if (!snapshotGeneratorRef.current) {
-        console.error('[TraceViewerPage] Snapshot generator not registered!');
-        setSnapshotResultForClient({
-          requestId,
-          status: 'error',
-          error: 'Snapshot function not available.',
-        });
-        return;
-      }
-      try {
-        console.log(
-          `[TraceViewerPage] Triggering snapshot for ${viewType}, requestId ${requestId} (for Chat)`
-        );
-        const imageDataUrl = await snapshotGeneratorRef.current(viewType, frameKey);
-        if (imageDataUrl) {
-          setSnapshotResultForClient({ requestId, status: 'success', data: imageDataUrl });
-        } else {
-          throw new Error('Snapshot generation returned null.');
-        }
-      } catch (error: unknown) {
-        console.error('[TraceViewerPage] Snapshot generation failed:', error);
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to generate snapshot.';
-        setSnapshotResultForClient({ requestId, status: 'error', error: errorMessage });
-      }
-    },
-    [] // No dependencies needed as it uses a ref
-  );
-
-  // --- Test function to trigger snapshot locally ---
-  const handleTriggerSnapshotForTest = useCallback(async () => {
-    setTestSnapshot({ dataUrl: null, error: 'Generating...' }); // Indicate loading
-    if (!snapshotGeneratorRef.current) {
-      console.error('[TraceViewerPage] Snapshot generator not registered!');
-      setTestSnapshot({ dataUrl: null, error: 'Snapshot function not available.' });
-      return;
-    }
-    try {
-      console.log(`[TraceViewerPage] Triggering snapshot for ${selectedView} (for Test)`);
-      const imageDataUrl = await snapshotGeneratorRef.current(selectedView); // Use current view
-      if (imageDataUrl) {
-        setTestSnapshot({ dataUrl: imageDataUrl, error: null });
-      } else {
-        throw new Error('Snapshot generation returned null.');
-      }
-    } catch (error: unknown) {
-      console.error('[TraceViewerPage] Test snapshot generation failed:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to generate test snapshot.';
-      setTestSnapshot({ dataUrl: null, error: errorMessage });
-    }
-  }, [selectedView]); // Recreate if selectedView changes
-  // ---------------------------------------------
-
-  const clearSnapshotResult = useCallback(() => {
-    console.log('[TraceViewerPage] Clearing snapshot result for chat.');
-    setSnapshotResultForClient(null);
-  }, []);
-  // -----------------------------------
-
   // --- Share Handler ---
   const handleShareClick = useCallback(() => {
     if (id) {
@@ -404,34 +335,9 @@ const TraceViewerPage: React.FC = () => {
                 onStartReply={commentManagement?.handleStartReply}
                 onCancelReply={commentManagement?.handleCancelReply}
                 onCommentUpdated={commentManagement?.handleCommentUpdate}
-                onRegisterSnapshotter={handleRegisterSnapshotter}
               />
             </ErrorBoundary>
-            {/* <ChatContainer 
-                traceId={id}
-                triggerSnapshot={handleTriggerSnapshotForChat}
-                snapshotResult={snapshotResultForClient}
-                clearSnapshotResult={clearSnapshotResult}
-            /> */}
           </div>
-          {/* --- Display Test Snapshot --- */}
-          {/* {(testSnapshot.dataUrl || testSnapshot.error) && (
-            <div className="absolute bottom-4 left-4 bg-card p-2 border rounded shadow-lg z-20 max-w-sm max-h-sm overflow-auto">
-                <h4 className="text-sm font-semibold mb-1">Test Snapshot Result:</h4>
-                {testSnapshot.error && <p className="text-xs text-destructive">{testSnapshot.error}</p>}
-                {testSnapshot.dataUrl && (
-                    <img 
-                        src={testSnapshot.dataUrl} 
-                        alt={`Snapshot of ${selectedView} view`} 
-                        className="max-w-full h-auto mt-1"
-                    />
-                )}
-                 <Button variant="ghost" size="sm" className="mt-1 w-full" onClick={() => setTestSnapshot({ dataUrl: null, error: null })}>
-                    Close Test Snapshot
-                </Button>
-            </div>
-          )} */}
-          {/* -------------------------- */}
         </div>
       )}
 

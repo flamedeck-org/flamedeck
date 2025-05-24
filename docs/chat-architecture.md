@@ -9,13 +9,13 @@ To provide an interactive chat interface where users can ask questions about a l
 ## Key Architectural Decisions & Solutions
 
 - **Processing Backend:** Core AI processing (LangGraph, LLM interactions, tool execution, chat limit enforcement) is handled by a dedicated Node.js server (`apps/flamechart-server`) to overcome Supabase Edge Function timeouts and resource limits.
-- **WebSocket Handling:** The `trace-analysis-socket` Supabase Edge Function acts as a lightweight WebSocket handler, primarily forwarding client requests to the `flamechart-server`.
+- **HTTP Request Handling (Edge Function):** The `trace-analysis` Supabase Edge Function (previously `trace-analysis-socket`) acts as a lightweight HTTP POST handler. It receives client requests (for starting analysis or sending a user prompt), validates them, and forwards them as an HTTP POST request to the `flamechart-server`. It then relays the HTTP response from `flamechart-server` (e.g., a `202 Accepted` or an error status) back to the client.
 - **Chat History Persistence:**
   - Conversation history (user prompts, AI responses, tool interactions) is stored in a `chat_messages` table in the Supabase database.
   - The `flamechart-server` (`ai-processor.ts`) is responsible for saving all message types to this table and fetching history from it to provide context to the LLM.
 - **Client-Side Session Management:**
   - The client (`apps/client/src/components/Chat/ChatContainer.tsx`) generates a unique `sessionId` when a chat window is opened for a trace (for that browser session).
-  - This `sessionId` is passed with every request through the WebSocket to `trace-analysis-socket`, then to `flamechart-server`.
+  - This `sessionId` is passed with every HTTP request to the `trace-analysis` Edge Function, then to `flamechart-server`.
   - The `flamechart-server` uses this `sessionId` to scope database operations (inserts and selects) for `chat_messages`, ensuring conversations are isolated per session.
 - **Chat Usage Limits & Subscription Plans:**
   - The system enforces chat usage limits based on user subscription plans. These limits include:
@@ -28,7 +28,7 @@ To provide an interactive chat interface where users can ask questions about a l
     - An initial comprehensive check is performed before processing a user's turn.
     - The relevant session message limit is stored in the LangGraph `AgentState`.
     - The `agentNode` performs an in-graph check against the message limit before each LLM call.
-    - If limits are exceeded, an error is sent to the client, and further processing is halted.
+    - If limits are exceeded, an error is sent to the client (via Realtime `chat_error`), and further processing is halted.
 - **Large Trace Files & LLM Context:**
   - The `ai-processor.ts` module (on `flamechart-server`) fetches the trace file from Supabase Storage.
   - An `initialSetupNode` in its LangGraph workflow parses the trace and generates a concise summary for the `SystemMessage`, optimizing LLM context usage.
@@ -42,10 +42,11 @@ To provide an interactive chat interface where users can ask questions about a l
        b. The `base64Image` data (e.g., `{type: 'image_url', image_url: {url: 'data:image/png;base64,...'}}`).
     3. This temporary `HumanMessage` is added to the messages passed to the LLM for _that specific turn only_ and is not persisted in the graph's message history itself.
     4. The AI's textual analysis of the image (part of its `AIMessage` response) _is_ saved to the persistent chat history in the database. This ensures only the most recent image is directly processed by the LLM as base64 per turn.
-- **Real-time Updates:**
-  - Supabase Realtime is used for streaming responses. The `ai-processor.ts` module (on `flamechart-server`) establishes the Realtime channel and streams LLM token chunks, tool events, and chat limit errors to the client.
-- **Debugging:**
+- **Real-time Updates (for AI Responses):**
+  - Supabase Realtime is used for streaming AI-generated responses. The `ai-processor.ts` module (on `flamechart-server`) establishes the Realtime channel and streams LLM token chunks, tool events, and critical `chat_error` messages (like limit exceeded) to the client.
+- **Debugging & Error Reporting:**
   - `agentNode` (on `flamechart-server`) has the capability to save the exact messages being sent to the LLM to local JSON files for debugging purposes.
+  - Client-side API call errors (e.g., network issues when contacting the Edge Function) are reported to Sentry via the `useTraceAnalysisApi` hook.
 
 ## System Prompt Sourcing
 
@@ -83,40 +84,43 @@ To provide an interactive chat interface where users can ask questions about a l
 1.  **Client-Side UI (`apps/client/src/components/Chat/`)**
 
     - `ChatContainer.tsx`:
-      - Manages WebSocket connection and Supabase Realtime subscription.
+      - Manages Supabase Realtime subscription for receiving streamed AI responses and events.
       - Generates and manages `sessionId` for the current chat interaction.
-      - On chat open, fetches initial chat history for the current `sessionId` from the DB via `chatHistory.ts`.
-      - Sends `start_analysis` and `user_prompt` messages (now including `sessionId` but _no history array_) via WebSocket.
-      - Receives Realtime messages (AI stream, tool events, **chat limit errors**) for live UI updates.
+      - Uses the `useTraceAnalysisApi` hook (which utilizes `react-query`) to send user prompts as HTTP POST requests to the `trace-analysis` Edge Function. The hook handles API request state (loading, error) and Sentry integration for these calls.
+      - Receives Realtime messages (AI stream, tool events, `chat_error` events for limits) for live UI updates.
       - Optimistically adds new user messages to its local state.
-      - **Handles `chat_error` events from the backend to display limit messages and disable input if necessary.**
+      - Handles API call errors (e.g., network failure to Edge Function) by displaying messages in the chat.
+      - Manages a loading state (`isPending` from `react-query` combined with `isWaitingForModelResponse` and `isStreaming`) to show a "thinking..." indicator.
     - `ChatWindow.tsx` & `ToolMessageItem.tsx`: Render messages, including special UI for tool calls (collapsible, status icons, image display via fetched object URL) **and displays chat limit error messages and upgrade prompts.**
 
-2.  **Client-Side API (`apps/client/src/lib/api/chatHistory.ts`)**
+2.  **Client-Side API (`apps/client/src/lib/api/trace-analysis.ts` & `apps/client/src/hooks/useTraceAnalysisApi.ts`)**
+    - `callTraceAnalysisApi.ts`: Contains the `callTraceAnalysisApi` function that makes the actual `fetch` (HTTP POST) call to the `trace-analysis` Edge Function.
+    - `useTraceAnalysisApi.ts`: Contains the `useTraceAnalysisApi` custom hook.
+        - This hook uses `react-query`'s `useMutation` to wrap `callTraceAnalysisApi`.
+        - It manages loading, error, and data states for the API mutation.
+        - It includes an `onError` handler to report API call failures to Sentry.
+    - `apps/client/src/lib/api/chatHistory.ts`: Contains `fetchChatHistory(userId, traceId, sessionId, limit)` function to query the `chat_messages` table (used for fetching initial history if implemented).
 
-    - Contains `fetchChatHistory(userId, traceId, sessionId, limit)` function to query the `chat_messages` table.
-
-3.  **WebSocket Handler (`supabase/functions/trace-analysis-socket/index.ts`)**
-
-    - Manages WebSocket connections.
-    - Receives `start_analysis` (with `userId`, `traceId`, `sessionId`) and `user_prompt` (with `userId`, `traceId`, `prompt`, `sessionId`) messages.
+3.  **HTTP Handler (`supabase/functions/trace-analysis/index.ts`)**
+    - Manages HTTP POST requests (replaces the previous WebSocket handler).
+    - Receives `user_prompt` (with `userId`, `traceId`, `prompt`, `sessionId`) messages as JSON in the POST body.
     - Reads `AI_ANALYSIS_MODEL` environment variable to determine the AI model to be used.
-    - **Forwards these requests as HTTP POST to `/api/v1/ai/process-turn` on `apps/flamechart-server`**, including `sessionId` and the desired `modelName` in the payload. No longer forwards client-side `history`.
-    - Secured with an `X-Internal-Auth-Token`.
-    - Sends WebSocket acks (`connection_ack`, `waiting_for_model`) to the client.
+    - **Forwards these requests as HTTP POST to `/api/v1/ai/process-turn` on `apps/flamechart-server`**, including `sessionId` and the desired `modelName` in the payload.
+    - Relays the HTTP response (status code and body) from `flamechart-server` back to the client. This response is typically an acknowledgment (e.g., `202 Accepted`) or an error from `flamechart-server`.
+    - Secured with an `X-Internal-Auth-Token` for the call to `flamechart-server`.
 
 4.  **AI Processor (`apps/flamechart-server/src/ai-processor.ts` and related modules)**
-
     - Express.js route handler (`POST /api/v1/ai/process-turn`) on `flamechart-server`.
-    - Authenticates request from `trace-analysis-socket`.
-    - **`processAiTurnLogic` function:**
-      - **Chat Limit Enforcement (Initial):** Calls `checkChatLimits` from the `chat-limits` module at the beginning of a turn. If a limit (lifetime sessions, monthly sessions, or already over messages for session) is hit, sends an error to the client via Realtime and halts further processing for the turn.
+    - Authenticates request from the `trace-analysis` Edge Function.
+    - **Immediately returns an HTTP `202 Accepted` response** after basic validation to acknowledge receipt of the task.
+    - **`processAiTurnLogic` function (runs asynchronously after the 202 response):**
+      - **Chat Limit Enforcement (Initial):** Calls `checkChatLimits` from the `chat-limits` module at the beginning of a turn. If a limit is hit, sends a `chat_error` to the client via Realtime and halts further processing for the turn.
       - Fetches full user limit context using `getUserChatLimitContext`.
       - Initializes `ChatOpenAI` (LLM client) using the provided `modelName`.
       - Saves the incoming user prompt to `chat_messages` table.
       - Fetches existing chat history.
       - Initializes `AgentState` for LangGraph, now including `chatMessagesPerSessionLimit` and `planName` from the fetched context.
-      - Establishes Supabase Realtime channel.
+      - Establishes Supabase Realtime channel for streaming subsequent responses.
       - Invokes the LangGraph (`app.stream()`).
       - **Chat Counter Increment:** If it was the first message of the session and no initial limits were hit, calls `incrementChatCounter` from the `chat-limits` module after successful graph processing for the turn.
     - **LangGraph `AgentState` (Relevant Additions):**
@@ -139,7 +143,7 @@ To provide an interactive chat interface where users can ask questions about a l
         - Sends `tool_start`, `tool_result`, `tool_error` events to client via Realtime.
     - After graph completion (or early exit due to limits), sends appropriate messages (`model_response_end` or `chat_error`) via Realtime and cleans up the channel.
     - Environment variables needed: `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PROCESS_AI_TURN_SECRET`.
-    - Note: `AI_ANALYSIS_MODEL` is now read by `trace-analysis-socket`, not directly by `ai-processor`.
+    - Note: `AI_ANALYSIS_MODEL` is now read by the `trace-analysis` Edge Function, not directly by `ai-processor`.
     - Langfuse Integration (Mandatory for system prompt fetching and optional for full observability tracing):
       - `LANGFUSE_PUBLIC_KEY`: Public key for Langfuse.
       - `LANGFUSE_PRIVATE_KEY`: Secret key for Langfuse.
@@ -173,32 +177,42 @@ To provide an interactive chat interface where users can ask questions about a l
 
 ## Data Flow Example (User Prompt - Considering Chat Limits)
 
-1.  User types a prompt. Client sends `user_prompt` to `trace-analysis-socket`, then to `apps/flamechart-server` (`/api/v1/ai/process-turn`).
-2.  `apps/flamechart-server` (`processAiTurnLogic`):
+1.  User types a prompt. Client's `ChatContainer.tsx` calls `useTraceAnalysisApi` hook's `mutateAsync` function. This sends an HTTP POST to the `trace-analysis` Edge Function.
+2.  `trace-analysis` Edge Function:
+    a. Validates the request.
+    b. Forwards the payload as an HTTP POST to `apps/flamechart-server` (`/api/v1/ai/process-turn`).
+    c. Awaits `flamechart-server`'s immediate response.
+3.  `apps/flamechart-server` (`/api/v1/ai/process-turn` endpoint):
     a. Authenticates request.
-    b. **Initial Limit Check:** Calls `checkChatLimits`. If a limit is hit (e.g., user is free and has used all 5 lifetime sessions), send `chat_error` to client and **STOP**. Client UI displays error and disables input.
-    c. Fetches `limitContext` (plan details like messages per session).
-    d. Saves user prompt to `chat_messages`.
-    e. Fetches chat history (now including the new prompt).
-    f. Initializes `AgentState` including `chatMessagesPerSessionLimit`.
+    b. Performs basic validation.
+    c. **Immediately sends an HTTP `202 Accepted` response back to the Edge Function.**
+4.  `trace-analysis` Edge Function:
+    a. Relays the `202 Accepted` (or any error from step 3b) back to the client. The `mutateAsync` call in the client resolves.
+5.  `apps/flamechart-server` (`processAiTurnLogic`, now running asynchronously):
+    a. **Initial Limit Check:** Calls `checkChatLimits`. If a limit is hit, send `chat_error` to client via Realtime and **STOP**. Client UI displays error.
+    b. Fetches `limitContext` (plan details like messages per session).
+    c. Saves user prompt to `chat_messages`.
+    d. Fetches chat history.
+    e. Initializes `AgentState` including `chatMessagesPerSessionLimit`.
+    f. Establishes Supabase Realtime channel for streaming subsequent data.
     g. Invokes LangGraph.
-3.  **Graph Execution (on `apps/flamechart-server`):**
+6.  **Graph Execution (on `apps/flamechart-server`):**
     a. `initialSetupNode`:
-        i. Loads trace profile (using local `profile-loader.ts`).
-        ii. **Crucially, fetches the system prompt from Langfuse via `system-prompt-loader.ts`. If this fails, the process stops and an error is sent to the client.**
+        i. Loads trace profile.
+        ii. **Crucially, fetches the system prompt from Langfuse.** If this fails, an error is sent via Realtime.
         iii. Generates a summary of the trace.
-        iv. Prepares the initial `SystemMessage` using the fetched prompt and trace summary.
+        iv. Prepares `SystemMessage`.
     b. `agentNode`:
-        i. **In-Graph Message Limit Check:** Checks current human/AI message count in `state.messages` against `state.chatMessagesPerSessionLimit`. If over limit, send `chat_error` to client, set `sessionMessageLimitHitInGraph = true`, and graph proceeds to `END`. Client UI displays error, disables input.
+        i. **In-Graph Message Limit Check:** If over limit, send `chat_error` via Realtime, and graph ENDs.
         ii. If not over limit, LLM processes prompt + history.
-        iii. Saves AI response/tool calls to `chat_messages`.
-    c. (If tool call) `toolHandlerNode`: Executes tool, saves result to `chat_messages`.
+        iii. Saves AI response/tool calls to `chat_messages`. (Streamed via Realtime)
+    c. (If tool call) `toolHandlerNode`: Executes tool, saves result. (Events streamed via Realtime)
     d. (If tool call) `agentNode` re-invoked:
         i. **In-Graph Message Limit Check again.**
         ii. LLM processes tool result.
-        iii. Saves AI response to `chat_messages`.
-4.  After graph completion (or early END due to limits):
+        iii. Saves AI response to `chat_messages`. (Streamed via Realtime)
+7.  After graph completion (or early END due to limits):
     a. If `isFirstMessageOfSession` was true and no initial limits were hit, `incrementChatCounter` is called.
     b. `model_response_end` (or existing `chat_error`) is sent to client via Realtime.
 
-This ensures limits are checked at appropriate stages and user experience is managed when limits are encountered.
+This ensures limits are checked, requests are acknowledged quickly, and AI processing happens asynchronously with results streamed via Realtime.
