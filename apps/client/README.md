@@ -19,16 +19,11 @@ You can run the entire FlameDeck stack locally for developing new features.
 ```bash
 # Start locally
 yarn supabase start
-
-# Delete the old db if necessary
 yarn supabase db reset
-
-# Dump the production database
-yarn supabase db dump -f prod_schema.sql
-
-# Populate postgres
-psql -h localhost -p 54322 -U postgres -d postgres -f prod_schema.sql
 ```
+
+NOTE: To sync auth and storage changes you need to run `yarn supabase db pull --schema auth` and `yarn supabase db pull --schema storage`. You might need to comment out some stuff at the top of storage.
+
 3. Fill in all the env variables in supabase/functions/.env
 4. Serve the edge functions:
 
@@ -55,5 +50,3 @@ VITE_STRIPE_PUBLISHABLE_KEY=<test-perishable-key>
 ```bash
 yarn nx run client:dev
 ```
-
-8. Right now creating a new user doesn't create a user_profile entry for some reason - just copy the UUID from the user in supabase and manually create the row
