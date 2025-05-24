@@ -9,9 +9,9 @@ interface FloatingChatButtonProps {
 export const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({ onClick }) => {
   return (
     <Button
-      variant="default" // Or choose another variant like 'secondary'
+      variant="gradient"
       size="icon"
-      className="fixed bottom-6 right-6 rounded-full shadow-lg w-14 h-14 z-50" // Positioned bottom-right
+      className="fixed border border bottom-6 right-6 rounded-full shadow-lg w-14 h-14 z-50"
       onClick={onClick}
       aria-label="Toggle Chat"
     >
