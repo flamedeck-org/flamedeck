@@ -153,10 +153,6 @@ const TraceDetail: React.FC = () => {
   const { replyingToCommentId, handleStartReply, handleCancelReply, handleCommentUpdate } =
     useCommentManagement(id, isAuthenticated);
 
-  // State for scenario editing
-  // const [isEditingScenario, setIsEditingScenario] = useState(false);
-  // const [editedScenario, setEditedScenario] = useState('');
-
   // Structure the comments
   const structuredComments = useMemo(() => {
     return allComments ? structureComments(allComments) : [];
@@ -349,7 +345,7 @@ const TraceDetail: React.FC = () => {
         <Layout>
           <PageLayout>
             <PageHeader
-              title={<TraceTitle trace={undefined} currentUser={undefined} />}
+              title={<TraceTitle trace={undefined} />}
               actions={<Skeleton className="h-9 w-36 rounded-md" />}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -507,34 +503,32 @@ const TraceDetail: React.FC = () => {
                           <h3 className="text-lg font-semibold">{getCommentSectionTitle('overview')}</h3>
                           {/* No context link for overview */}
                         </div>
-                        <div className="border rounded-md px-4">
-                          {/* Render existing overview comments or empty state */}
-                          {groupedComments['overview'] && groupedComments['overview'].length > 0 ? (
-                            groupedComments['overview'].map((comment) => (
-                              <CommentItem
-                                key={comment.id}
-                                traceId={trace.id}
-                                comment={comment}
-                                replyingToCommentId={replyingToCommentId}
-                                onStartReply={handleStartReply}
-                                onCancelReply={handleCancelReply}
-                                onCommentUpdated={handleCommentUpdate}
-                              />
-                            ))
-                          ) : (
-                            <div className="text-muted-foreground italic py-4 text-sm">
-                              No comments yet. Be the first to add one!
-                            </div>
-                          )}
-                          {/* Always render the form for overview */}
-                          <div className="py-4 border-t">
-                            <CommentForm
+                        {/* Render existing overview comments or empty state */}
+                        {groupedComments['overview'] && groupedComments['overview'].length > 0 ? (
+                          groupedComments['overview'].map((comment) => (
+                            <CommentItem
+                              key={comment.id}
                               traceId={trace.id}
-                              commentType="overview"
-                              commentIdentifier={null}
-                              placeholder="Add a general comment..."
+                              comment={comment}
+                              replyingToCommentId={replyingToCommentId}
+                              onStartReply={handleStartReply}
+                              onCancelReply={handleCancelReply}
+                              onCommentUpdated={handleCommentUpdate}
                             />
+                          ))
+                        ) : (
+                          <div className="text-muted-foreground italic py-4 text-sm">
+                            No comments yet. Be the first to add one!
                           </div>
+                        )}
+                        {/* Always render the form for overview */}
+                        <div className="pt-4">
+                          <CommentForm
+                            traceId={trace.id}
+                            commentType="overview"
+                            commentIdentifier={null}
+                            placeholder="Add a general comment..."
+                          />
                         </div>
                       </div>
                     </CardContent>
@@ -573,20 +567,18 @@ const TraceDetail: React.FC = () => {
                                 </Link>
                               )}
                             </div>
-                            <div className="border rounded-md px-4">
-                              {commentsInSection.map((comment) => (
-                                <CommentItem
-                                  key={comment.id}
-                                  traceId={trace.id}
-                                  comment={comment}
-                                  replyingToCommentId={replyingToCommentId}
-                                  onStartReply={handleStartReply}
-                                  onCancelReply={handleCancelReply}
-                                  onCommentUpdated={handleCommentUpdate}
-                                />
-                              ))}
-                              {/* No form needed for non-overview types here */}
-                            </div>
+                            {commentsInSection.map((comment) => (
+                              <CommentItem
+                                key={comment.id}
+                                traceId={trace.id}
+                                comment={comment}
+                                replyingToCommentId={replyingToCommentId}
+                                onStartReply={handleStartReply}
+                                onCancelReply={handleCancelReply}
+                                onCommentUpdated={handleCommentUpdate}
+                              />
+                            ))}
+                            {/* No form needed for non-overview types here */}
                           </CardContent>
                         </Card>
                       );

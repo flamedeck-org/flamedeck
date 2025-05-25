@@ -147,11 +147,11 @@ export function TraceTitle({ trace }: TraceTitleProps) {
 
     if (isEditingScenario) {
         return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                 <Input
                     value={editedScenario}
                     onChange={handleInputChange}
-                    className="h-9 md:text-2xl text-2xl font-bold"
+                    className="h-11 md:text-2xl text-xl font-bold bg-background/80 backdrop-blur-sm border border-border hover:border-foreground/20 focus:border-red-500/50 transition-all duration-300 shadow-sm"
                     autoFocus
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') handleSave();
@@ -164,7 +164,7 @@ export function TraceTitle({ trace }: TraceTitleProps) {
                     onClick={handleSave}
                     disabled={updateScenarioMutation.isPending}
                     aria-label="Save scenario"
-                    className="h-8 w-10"
+                    className="h-10 w-10 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                 >
                     {updateScenarioMutation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -178,7 +178,7 @@ export function TraceTitle({ trace }: TraceTitleProps) {
                     onClick={handleCancel}
                     disabled={updateScenarioMutation.isPending}
                     aria-label="Cancel editing scenario"
-                    className="h-8 w-10"
+                    className="h-10 w-10 bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-red-500/50 text-muted-foreground hover:text-red-600 transition-all duration-300 shadow-sm hover:shadow-md"
                 >
                     <X className="h-4 w-4" />
                 </Button>
@@ -189,7 +189,7 @@ export function TraceTitle({ trace }: TraceTitleProps) {
     console.log('trace.owner?.id', trace.owner?.id, 'currentUser?.id', user?.id);
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 group">
             <h1 className="text-2xl font-bold truncate" title={displayScenario}>
                 {displayScenario}
             </h1>
@@ -199,6 +199,7 @@ export function TraceTitle({ trace }: TraceTitleProps) {
                     size="icon"
                     onClick={handleEditClick}
                     aria-label="Edit scenario name"
+                    className="h-9 w-9 bg-background/60 backdrop-blur-sm border border-border/50 hover:bg-background/80 hover:border-foreground/30 text-muted-foreground hover:text-foreground transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 opacity-0 group-hover:opacity-100"
                 >
                     <Edit className="h-4 w-4" />
                 </Button>
