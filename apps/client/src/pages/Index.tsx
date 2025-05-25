@@ -243,8 +243,8 @@ function Index() {
                 </div>
                 <div className="lg:col-span-3">
                   <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
-                    <div className="relative bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 overflow-hidden group-hover:shadow-3xl transition-all duration-500">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl md:rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
+                    <div className="relative bg-card/80 backdrop-blur-xl rounded-xl md:rounded-3xl shadow-2xl border border-border/50 overflow-hidden group-hover:shadow-3xl transition-all duration-500">
                       <img
                         src={screenshotPath}
                         alt="FlameDeck homescreen showing trace management"
@@ -273,8 +273,8 @@ function Index() {
                 </div>
                 <div className="lg:col-span-3 lg:order-first">
                   <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
-                    <div className="relative bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 overflow-hidden group-hover:shadow-3xl transition-all duration-500">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl md:rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
+                    <div className="relative bg-card/80 backdrop-blur-xl rounded-xl md:rounded-3xl shadow-2xl border border-border/50 overflow-hidden group-hover:shadow-3xl transition-all duration-500">
                       <img
                         src={aiScreenshotPath}
                         alt="FlameDeck AI chat analyzing a performance trace"
@@ -303,8 +303,8 @@ function Index() {
                 </div>
                 <div className="lg:col-span-3">
                   <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
-                    <div className="relative bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 p-6 md:p-10 group-hover:shadow-3xl transition-all duration-500">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl md:rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
+                    <div className="relative bg-card/80 backdrop-blur-xl rounded-xl md:rounded-3xl shadow-2xl border border-border/50 p-6 md:p-10 group-hover:shadow-3xl transition-all duration-500">
                       <div className="grid grid-cols-3 gap-3 md:gap-6">
                         {[
                           { name: 'Node.js', icon: SiNodedotjs as React.ElementType, color: 'text-green-500' },
