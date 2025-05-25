@@ -42,6 +42,9 @@
     /* Adjust trace colors if needed for light mode */
     --trace-foreground: 210 40% 98%;
 
+    --shadow: 0 0% 0%;
+    /* Black shadow for light mode */
+
     --radius: 0.5rem;
 
     /* Define Navbar Height */
@@ -87,6 +90,9 @@
     --trace: 210 40% 98%;
     /* Adjust trace colors if needed for dark mode */
     --trace-foreground: 222.2 47.4% 11.2%;
+
+    --shadow: 220 15% 25%;
+    /* Dark gray shadow for dark mode - subtle and natural */
   }
 
   /* Hide browser's default clear button for search inputs */

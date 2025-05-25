@@ -18,6 +18,7 @@ interface ActiveChatViewProps {
     suggestionPrompts?: string[];
     onBack: () => void;
     isNewSession: boolean;
+    sendMessage: (prompt: string) => void;
 }
 
 export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
@@ -33,6 +34,7 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
             suggestionPrompts,
             onBack,
             isNewSession,
+            sendMessage,
         },
         ref
     ) => {
@@ -60,8 +62,7 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
         }));
 
         const handleSuggestionClick = (prompt: string) => {
-            onInputChange(prompt);
-            onSend();
+            sendMessage(prompt);
         };
 
         // Function to format inline code like GitHub

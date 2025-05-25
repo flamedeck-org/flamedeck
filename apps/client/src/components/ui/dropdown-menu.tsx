@@ -61,7 +61,7 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+        'z-50 min-w-[8rem] overflow-hidden rounded-xl border bg-background/95 backdrop-blur-lg p-2 text-foreground shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
         className
       )}
       {...props}
@@ -74,18 +74,49 @@ const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
     inset?: boolean;
+    icon?: React.ReactNode;
+    iconVariant?: 'default' | 'primary' | 'secondary' | 'accent';
+    rightContent?: React.ReactNode;
   }
->(({ className, inset, ...props }, ref) => (
-  <DropdownMenuPrimitive.Item
-    ref={ref}
-    className={cn(
-      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-      inset && 'pl-8',
-      className
-    )}
-    {...props}
-  />
-));
+>(({ className, inset, icon, iconVariant = 'default', rightContent, children, ...props }, ref) => {
+  const iconVariants = {
+    default: 'bg-gradient-to-br from-gray-400/20 to-slate-400/20 border-gray-400/30',
+    primary: 'bg-gradient-to-br from-red-500/20 to-yellow-500/20 border-red-500/40',
+    secondary: 'bg-gradient-to-br from-blue-400/20 to-purple-400/20 border-blue-400/30',
+    accent: 'bg-gradient-to-br from-yellow-400/20 to-orange-400/20 border-yellow-400/30',
+  };
+
+  return (
+    <DropdownMenuPrimitive.Item
+      ref={ref}
+      className={cn(
+        'relative flex cursor-pointer select-none items-center rounded-lg px-3 py-1.5 text-sm outline-none transition-all duration-200 hover:bg-background/80 hover:backdrop-blur-sm focus:bg-background/80 focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:hover:bg-white/5 hover:bg-black/5',
+        inset && 'pl-8',
+        className
+      )}
+      {...props}
+    >
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-3">
+          {icon && (
+            <div className={cn(
+              'w-8 h-8 rounded-lg flex items-center justify-center border',
+              iconVariants[iconVariant]
+            )}>
+              {icon}
+            </div>
+          )}
+          <span className="font-medium">{children}</span>
+        </div>
+        {rightContent && (
+          <div className="ml-6">
+            {rightContent}
+          </div>
+        )}
+      </div>
+    </DropdownMenuPrimitive.Item>
+  );
+});
 DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName;
 
 const DropdownMenuCheckboxItem = React.forwardRef<
