@@ -254,29 +254,6 @@ Our primary design language uses glassmorphism for modern, sophisticated interfa
     rgba(234, 179, 8, 0.05)
   );
 }
-
-/* Floating orbs */
-.floating-orb-1 {
-  position: absolute;
-  top: 25%;
-  right: -16rem;
-  width: 24rem;
-  height: 24rem;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(234, 179, 8, 0.2));
-  border-radius: 50%;
-  filter: blur(48px);
-}
-
-.floating-orb-2 {
-  position: absolute;
-  bottom: 25%;
-  left: -16rem;
-  width: 24rem;
-  height: 24rem;
-  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(239, 68, 68, 0.2));
-  border-radius: 50%;
-  filter: blur(48px);
-}
 ```
 
 ### Full Gradient Background (Login)

@@ -140,7 +140,7 @@ const TraceDetail: React.FC = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { openModal } = useSharingModal();
-  const { user: currentUser, profile: currentProfile } = useAuth();
+  const { user: currentUser } = useAuth();
 
   const { data: trace, isLoading: traceLoading, error: traceError } = useTraceDetails(id);
 
@@ -313,7 +313,6 @@ const TraceDetail: React.FC = () => {
     </div>
   );
 
-  const traceId = trace?.id;
   const owner = trace?.owner;
 
   const ownerDisplayName = React.useMemo(() => {
@@ -391,7 +390,7 @@ const TraceDetail: React.FC = () => {
       <Layout>
         <PageLayout>
           <PageHeader
-            title={<TraceTitle trace={trace} currentUser={currentProfile as any} />}
+            title={<TraceTitle trace={trace} />}
             subtitle={ownerSubtitle}
             actions={headerActions}
           />
