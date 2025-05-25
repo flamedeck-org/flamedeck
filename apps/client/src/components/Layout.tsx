@@ -49,7 +49,7 @@ const Layout: React.FC<LayoutProps> = ({
           className={`flex-1 h-full overflow-y-auto ${mainPaddingClasses} ${conditionalElevation} ${className}`}
         >
           {children}
-          {footer && <div className="mt-auto m-[-30px]">{footer}</div>}
+          {footer && <div className="mt-auto m-[-1.5em] md:m-[-2em]">{footer}</div>}
         </main>
       </div>
     </div>
