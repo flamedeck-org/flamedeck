@@ -314,66 +314,62 @@ function TraceListComponent() {
       // Empty State Rendering (different messages for empty folder vs empty search)
       return (
         <Card>
-          <DraggableArea
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            isDragging={isDragging}
-            draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
-            baseClassName="p-1" // Ensure consistent padding
-            className="pt-12 pb-12 text-center flex flex-col justify-center items-center"
-          >
-            <CardContent className="p-0 flex flex-col items-center justify-center">
-              {/* Remove padding from CardContent itself */}
-              {isSearchingAndEmpty ? (
-                <img
-                  src="empty-search.png"
-                  alt="No results found"
-                  className="w-60 h-auto md:w-60 mb-8"
-                />
-              ) : (
-                <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              )}
-              <h3 className="text-xl font-medium mb-2">
-                {isSearchingAndEmpty
-                  ? 'No Results Found'
-                  : currentFolderId
-                    ? 'Folder is Empty'
-                    : 'No Items Yet'}
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                {isSearchingAndEmpty ? (
-                  `Your search for "${searchQuery}" did not match any items.`
-                ) : (
-                  <>
-                    Drag and drop a trace file or upload a trace programatically via our{' '}
-                    <Link to="/docs/api-keys" className="underline hover:text-primary">
-                      API
-                    </Link>
-                    .
-                  </>
-                )}
-              </p>
-              {isSearchingAndEmpty ? (
-                <Button onClick={handleClearSearch} variant="outline" size="sm">
+          <CardContent className="pt-12 pb-12 text-center">
+            {isSearchingAndEmpty ? (
+              <>
+                <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No matching traces found</h3>
+                <p className="text-muted-foreground mb-4">
+                  We couldn't find any traces or folders matching "{searchQuery}". Try adjusting your search terms.
+                </p>
+                <Button onClick={handleClearSearch} variant="outline">
+                  <X className="mr-2 h-4 w-4" />
                   Clear Search
                 </Button>
-              ) : (
+              </>
+            ) : (
+              <>
+                <FolderIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  {currentFolderId ? 'This folder is empty' : 'No traces yet'}
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Get started by uploading your first performance trace file.{' '}
+                  <Link to="/docs/api-keys" className="text-primary hover:underline">
+                    Learn about our API
+                  </Link>{' '}
+                  for programmatic uploads.
+                </p>
                 <div className="flex justify-center gap-2">
                   <CreateFolderDialog
                     isOpen={isCreateFolderDialogOpen}
                     setIsOpen={setIsCreateFolderDialogOpen}
                     onSubmit={handleDialogSubmit}
                     isPending={isCreatingFolder}
-                    triggerElement={createFolderButton}
+                    triggerElement={
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isCreatingFolder || isCurrentlyLoading}
+                      >
+                        <FolderPlus className="mr-2 h-4 w-4" />
+                        New Folder
+                      </Button>
+                    }
                   />
-                  <Button variant="primary-outline" size="sm" disabled={isCurrentlyLoading} onClick={() => openTraceUploadModal(null, currentFolderId)}>
-                    <UploadCloud className="mr-2 h-4 w-4" /> Upload Trace
+                  <Button
+                    variant="primary-outline"
+                    size="sm"
+                    disabled={isCurrentlyLoading}
+                    onClick={() => openTraceUploadModal(null, currentFolderId)}
+                  >
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                    Upload New Trace
                   </Button>
                 </div>
-              )}
-            </CardContent>
-          </DraggableArea>
+              </>
+            )}
+          </CardContent>
         </Card>
       );
     }

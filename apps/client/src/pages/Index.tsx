@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import PricingTable from '@/components/PricingTable';
-import { UploadCloud, Database, BarChart, Search, Users, Code, FileCode } from 'lucide-react';
+import { UploadCloud, Database, BarChart, Search, Users, Code, FileCode, ArrowRight, Star } from 'lucide-react';
 import SharedPageSEO from '@/components/seo/SharedPageSEO';
 import { useAtom } from '@/lib/speedscope-core/atom';
 import { colorSchemeAtom, ColorScheme } from '@/components/speedscope-ui/theme';
@@ -56,19 +56,18 @@ function Index() {
     : '/screenshots/chat_light.png';
 
   const pageFooter = (
-    <footer className="bg-background py-8 px-4 sm:px-6 lg:px-8 border-t border-border">
+    <footer className="bg-background/80 backdrop-blur-lg py-12 px-4 sm:px-6 lg:px-8 border-t border-border/50">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
         <p className="text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} FlameDeck. All rights reserved.
         </p>
-        <div className="flex space-x-6">
-          <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+        <div className="flex space-x-8">
+          <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
             Login
           </Link>
-          <Link to="/docs/api-keys" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+          <Link to="/docs/api-keys" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
             API Docs
           </Link>
-          {/* Add more links here if needed */}
         </div>
       </div>
     </footer>
@@ -83,130 +82,199 @@ function Index() {
         ogType="website"
       />
       <Layout footer={pageFooter}>
+        {/* Background Elements */}
+        <div className="fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-50/30 via-background to-yellow-50/30 dark:from-red-950/20 dark:via-background dark:to-yellow-950/20" />
+          <div className="absolute top-1/4 -right-64 w-96 h-96 bg-gradient-to-br from-red-400/20 to-yellow-400/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 -left-64 w-96 h-96 bg-gradient-to-br from-yellow-400/20 to-red-400/20 rounded-full blur-3xl" />
+        </div>
+
         <FadeInOnScroll>
-          {/* Hero Section - entire content now wrapped */}
-          <div className="min-h-[80vh] flex flex-col items-center justify-center py-24 px-4 text-center rounded-3xl">
-            <div className="max-w-4xl space-y-10">
-              <div className="space-y-4">
-                <div className="inline-block bg-primary p-3 rounded-lg mb-4">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="w-10 h-10 text-primary-foreground"
-                  >
-                    <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+          {/* Hero Section */}
+          <div className="min-h-[70vh] flex flex-col items-center justify-center py-16 px-4 text-center relative">
+            <div className="max-w-5xl space-y-8">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-500/10 to-yellow-500/10 border border-red-500/20 text-sm font-medium text-foreground backdrop-blur-sm">
+                <Star className="w-4 h-4 text-yellow-500" />
+                <span>AI-Powered Performance Analysis</span>
+              </div>
+
+              {/* Main Hero Content */}
+              <div className="space-y-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-yellow-500 bg-clip-text text-transparent blur-sm opacity-30">
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight">
+                      Performance Debugging
+                      <span className="block mt-1">Made Simple</span>
+                    </h1>
+                  </div>
+                  <h1 className="relative text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight">
+                    Performance Debugging
+                    <span className="block bg-gradient-to-r from-red-500 via-red-400 to-yellow-500 bg-clip-text text-transparent mt-1">
+                      Made Simple
+                    </span>
+                  </h1>
                 </div>
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-                  Performance Debugging
-                  <span className="block bg-gradient-to-r from-red-500 to-yellow-500 bg-clip-text text-transparent mt-2 pb-1">
-                    Made Simple
+
+                <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light">
+                  Upload, store, and analyze performance traces with powerful visualizations.
+                  <span className="block mt-1 font-medium bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                    Debug performance issues faster than ever with AI-powered insights.
                   </span>
-                </h1>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                  Upload, store, and analyze performance traces with powerful visualizations. Debug
-                  performance issues faster than ever before with AI-powered insights.
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-4 justify-center">
-                <Link to="/login">
-                  <Button size="lg" variant="gradient" className="text-lg px-8">
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link to="/login" className="group">
+                  <Button
+                    size="lg"
+                    className="text-lg px-8 py-3 bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white shadow-2xl shadow-red-500/25 transition-all duration-300 group-hover:scale-105 group-hover:shadow-3xl group-hover:shadow-red-500/40"
+                  >
                     Get Started for Free
+                    <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <a href="#pricing">
-                  <Button size="lg" variant="outline" className="text-lg px-8">
+                <a href="#pricing" className="group">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="text-lg px-8 py-3 border-2 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg"
+                  >
                     View Pricing
                   </Button>
                 </a>
               </div>
+            </div>
+          </div>
+        </FadeInOnScroll>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
-                <div className="p-6 border rounded-lg bg-card text-left space-y-3">
-                  <UploadCloud className="h-8 w-8 text-primary mb-2" />
-                  <div className="text-2xl font-bold">Effortless Upload</div>
-                  <p className="text-muted-foreground">
-                    Drag & drop traces, or integrate seamlessly with our{' '}
-                    <Link to="/docs/api-keys" className="underline hover:text-primary">
-                      API
-                    </Link>{' '}
-                    &{' '}
-                    <Link to="/docs/cli-upload" className="underline hover:text-primary">
-                      CLI
-                    </Link>
-                    . No complicated setup.
-                  </p>
-                </div>
-                <div className="p-6 border rounded-lg bg-card text-left space-y-3">
-                  <Search className="h-8 w-8 text-primary mb-2" />
-                  <div className="text-2xl font-bold">AI-Driven Insights</div>
-                  <p className="text-muted-foreground">
-                    Performance optimization is hard. Let AI analyze your traces and pinpoint key
-                    issues.
-                  </p>
-                </div>
-                <div className="p-6 border rounded-lg bg-card text-left space-y-3">
-                  <BarChart className="h-8 w-8 text-primary mb-2" />
-                  <div className="text-2xl font-bold">Clear Visualizations</div>
-                  <p className="text-muted-foreground">
-                    Understand complex data at a glance with interactive flame graphs.
-                  </p>
-                </div>
+        {/* Feature Cards Section - moved outside hero */}
+        <FadeInOnScroll delay={0.1}>
+          <div className="py-16 px-4">
+            <div className="max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  {
+                    icon: UploadCloud,
+                    title: "Effortless Upload",
+                    description: "Drag & drop traces, or integrate seamlessly with our API & CLI. No complicated setup.",
+                    links: [
+                      { text: "API", to: "/docs/api-keys" },
+                      { text: "CLI", to: "/docs/cli-upload" }
+                    ]
+                  },
+                  {
+                    icon: Search,
+                    title: "AI-Driven Insights",
+                    description: "Performance optimization is hard. Let AI analyze your traces and pinpoint key issues."
+                  },
+                  {
+                    icon: BarChart,
+                    title: "Clear Visualizations",
+                    description: "Understand complex data at a glance with interactive flame graphs."
+                  }
+                ].map((feature, index) => (
+                  <div
+                    key={feature.title}
+                    className="group p-6 bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:border-primary/30"
+                  >
+                    <div className="flex flex-col items-start text-left space-y-3">
+                      <div className="p-3 bg-gradient-to-br from-red-500/10 to-yellow-500/10 rounded-xl border border-red-500/20 group-hover:from-red-500/20 group-hover:to-yellow-500/20 transition-all duration-300">
+                        <feature.icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-bold">{feature.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {feature.description.split(/(\bAPI\b|\bCLI\b)/).map((part, i) => {
+                          if (part === 'API' && feature.links) {
+                            return (
+                              <Link key={i} to={feature.links[0].to} className="underline hover:text-primary transition-colors">
+                                {part}
+                              </Link>
+                            );
+                          }
+                          if (part === 'CLI' && feature.links) {
+                            return (
+                              <Link key={i} to={feature.links[1].to} className="underline hover:text-primary transition-colors">
+                                {part}
+                              </Link>
+                            );
+                          }
+                          return part;
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </FadeInOnScroll>
 
         <FadeInOnScroll delay={0.2}>
-          {/* Features Section - entire content now wrapped */}
-          <div className="py-24 px-4 bg-background dark:bg-secondary/50 rounded-3xl border border-border">
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  Why FlameDeck?
+          {/* Features Section */}
+          <div className="py-32 px-4 relative">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-20">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                  Why Choose FlameDeck?
                 </h2>
-                {/* <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                  FlameDeck combines ease of use with powerful AI to help your team ship faster, more
-                  performant applications.
-                </p> */}
+                <div className="w-20 h-1 bg-gradient-to-r from-red-500 to-yellow-500 mx-auto rounded-full" />
               </div>
 
               {/* Feature 1: Store and Manage */}
-              <div className="grid md:grid-cols-5 gap-12 items-stretch mb-24">
-                <div className="space-y-4 md:col-span-2">
-                  <Database className="h-12 w-12 text-primary mb-4" />
-                  <h3 className="text-3xl font-bold">Store and Manage Performance Profiles</h3>
-                  <p className="text-xl text-muted-foreground">
+              <div className="grid lg:grid-cols-5 gap-16 items-center mb-32">
+                <div className="space-y-6 lg:col-span-2">
+                  <div className="inline-flex p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-2xl border border-blue-500/20">
+                    <Database className="h-12 w-12 text-blue-500" />
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-bold leading-tight">
+                    Store and Manage
+                    <span className="block text-blue-500">Performance Profiles</span>
+                  </h3>
+                  <p className="text-xl text-muted-foreground leading-relaxed">
                     Keeping track of profiles when debugging issues with your application is messy and
                     confusing. Organize them all in one place with FlameDeck, making it easy to find
                     what you need, when you need it.
                   </p>
                 </div>
-                <div className="bg-card rounded-lg shadow-lg flex items-center justify-center overflow-hidden md:col-span-3 border border-border">
-                  <img
-                    src={screenshotPath}
-                    alt="FlameDeck homescreen showing trace management"
-                    className="object-contain w-full"
-                  />
+                <div className="lg:col-span-3">
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
+                    <div className="relative bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 overflow-hidden group-hover:shadow-3xl transition-all duration-500">
+                      <img
+                        src={screenshotPath}
+                        alt="FlameDeck homescreen showing trace management"
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Feature 2: Analyze with AI */}
-              <div className="grid md:grid-cols-5 gap-12 items-stretch mb-24">
-                <div className="bg-card rounded-lg shadow-lg flex items-center justify-center overflow-hidden md:order-first md:col-span-3 border border-border">
-                  <img
-                    src={aiScreenshotPath}
-                    alt="FlameDeck AI chat analyzing a performance trace"
-                    className="object-contain w-full"
-                  />
+              <div className="grid lg:grid-cols-5 gap-16 items-center mb-32">
+                <div className="lg:col-span-3 lg:order-first">
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
+                    <div className="relative bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 overflow-hidden group-hover:shadow-3xl transition-all duration-500">
+                      <img
+                        src={aiScreenshotPath}
+                        alt="FlameDeck AI chat analyzing a performance trace"
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-4 md:order-last md:col-span-2">
-                  <Search className="h-12 w-12 text-primary mb-4" />
-                  <h3 className="text-3xl font-bold">Analyze with AI</h3>
-                  <p className="text-xl text-muted-foreground">
+                <div className="space-y-6 lg:col-span-2 lg:order-last">
+                  <div className="inline-flex p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl border border-green-500/20">
+                    <Search className="h-12 w-12 text-green-500" />
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-bold leading-tight">
+                    Analyze with
+                    <span className="block text-green-500">AI</span>
+                  </h3>
+                  <p className="text-xl text-muted-foreground leading-relaxed">
                     Performance debugging is hard and time-consuming. FlameDeck uses state-of-the-art
                     AI models to analyze your performance profiles, pinpoint bottlenecks, and provide
                     actionable insights.
@@ -215,33 +283,46 @@ function Index() {
               </div>
 
               {/* Feature 3: Bring Any Profile */}
-              <div className="grid md:grid-cols-5 gap-12 items-stretch">
-                <div className="space-y-4 md:col-span-2">
-                  <UploadCloud className="h-12 w-12 text-primary mb-4" />
-                  <h3 className="text-3xl font-bold">Bring Any Profile</h3>
-                  <p className="text-xl text-muted-foreground">
+              <div className="grid lg:grid-cols-5 gap-16 items-center">
+                <div className="space-y-6 lg:col-span-2">
+                  <div className="inline-flex p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
+                    <UploadCloud className="h-12 w-12 text-purple-500" />
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-bold leading-tight">
+                    Bring Any
+                    <span className="block text-purple-500">Profile</span>
+                  </h3>
+                  <p className="text-xl text-muted-foreground leading-relaxed">
                     FlameDeck supports a wide range of profiling formats from various languages and
                     runtimes. Seamlessly import profiles from Node.js, Chrome, React Native, Go,
                     Rust, and more.
                   </p>
                 </div>
-                <div className="bg-card rounded-lg shadow-lg flex items-center justify-center overflow-hidden md:col-span-3 border border-border p-6">
-                  <div className="grid grid-cols-3 gap-4 w-full">
-                    {[
-                      { name: 'Node.js', icon: SiNodedotjs as React.ElementType },
-                      { name: 'Chrome', icon: SiGooglechrome as React.ElementType },
-                      { name: 'Rust', icon: SiRust as React.ElementType },
-                      { name: 'Go', icon: SiGo as React.ElementType },
-                      { name: 'Python', icon: SiPython as React.ElementType },
-                      { name: 'React Native', icon: SiReact as React.ElementType },
-                      // If we had a FileCode example still, it would be:
-                      // { name: 'Generic File', icon: FileCode as React.ElementType },
-                    ].map((lang) => (
-                      <div key={lang.name} className="flex flex-col items-center p-3 bg-background rounded-md space-y-2">
-                        <lang.icon className="h-8 w-8 text-primary" />
-                        <span className="text-sm text-center text-muted-foreground">{lang.name}</span>
+                <div className="lg:col-span-3">
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
+                    <div className="relative bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 p-10 group-hover:shadow-3xl transition-all duration-500">
+                      <div className="grid grid-cols-3 gap-6">
+                        {[
+                          { name: 'Node.js', icon: SiNodedotjs as React.ElementType, color: 'text-green-500' },
+                          { name: 'Chrome', icon: SiGooglechrome as React.ElementType, color: 'text-blue-500' },
+                          { name: 'Rust', icon: SiRust as React.ElementType, color: 'text-orange-500' },
+                          { name: 'Go', icon: SiGo as React.ElementType, color: 'text-cyan-500' },
+                          { name: 'Python', icon: SiPython as React.ElementType, color: 'text-yellow-500' },
+                          { name: 'React Native', icon: SiReact as React.ElementType, color: 'text-blue-400' },
+                        ].map((lang) => (
+                          <div
+                            key={lang.name}
+                            className="group/lang flex flex-col items-center p-6 bg-background/50 backdrop-blur-sm rounded-2xl border border-border/30 hover:border-border/60 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                          >
+                            <lang.icon className={`h-10 w-10 ${lang.color} mb-3 transition-transform group-hover/lang:scale-110`} />
+                            <span className="text-sm font-medium text-center text-muted-foreground group-hover/lang:text-foreground transition-colors">
+                              {lang.name}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -250,13 +331,18 @@ function Index() {
         </FadeInOnScroll>
 
         <FadeInOnScroll delay={0.4}>
-          {/* Pricing Section - entire content now wrapped */}
-          <div id="pricing" className="py-24 px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-              <p className="text-xl text-muted-foreground">Choose the plan that's right for you</p>
+          {/* Pricing Section */}
+          <div id="pricing" className="py-32 px-4 bg-gradient-to-br from-background/50 to-secondary/30 backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                  Simple, Transparent Pricing
+                </h2>
+                <p className="text-xl text-muted-foreground">Choose the plan that's right for you</p>
+                <div className="w-20 h-1 bg-gradient-to-r from-red-500 to-yellow-500 mx-auto rounded-full mt-6" />
+              </div>
+              <PricingTable />
             </div>
-            <PricingTable />
           </div>
         </FadeInOnScroll>
       </Layout>

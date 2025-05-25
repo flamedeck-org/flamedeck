@@ -24,7 +24,7 @@ interface SidebarProps {
 
 const ICON_SIZE = 'h-6 w-6';
 const LIST_ICON_SIZE = 'h-5 w-5';
-const MINIMIZED_BUTTON_SIZE = 'h-10 w-10';
+const MINIMIZED_BUTTON_SIZE = 'h-9 w-full px-3';
 
 const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
   const { user, signOut, profile, profileLoading } = useAuth();
@@ -75,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
           <NavLink
             to="/traces"
             className={({ isActive }) =>
-              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${isActive
+              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 pl-3.5 pr-3 py-2 h-9'} rounded-md text-sm font-medium transition-colors ${isActive
                 ? 'bg-accent text-accent-foreground'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`
@@ -99,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 px-3 py-2'} rounded-md text-sm font-medium transition-colors ${isActive
+              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 pl-3.5 pr-3 py-2 h-9'} rounded-md text-sm font-medium transition-colors ${isActive
                 ? 'bg-accent text-accent-foreground'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`
@@ -175,7 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className={`${minimized ? `${MINIMIZED_BUTTON_SIZE} justify-center p-0` : 'w-full justify-start px-3 py-2 h-auto'} flex items-center text-left mt-4`}
+                      className={`${minimized ? `${MINIMIZED_BUTTON_SIZE} justify-center p-0` : 'w-full justify-start pl-3.5 pr-3 py-2 h-9'} flex items-center text-left mt-4`}
                       aria-label="User menu"
                       title={minimized ? displayName : undefined}
                     >

@@ -16,10 +16,9 @@ const SettingsNavLink: React.FC<SettingsNavLinkProps> = ({ to, label, ariaLabel,
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-          isActive
-            ? 'bg-accent text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
+          ? 'bg-accent text-accent-foreground'
+          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
         }`
       }
       aria-label={ariaLabel}
@@ -32,7 +31,7 @@ const SettingsNavLink: React.FC<SettingsNavLinkProps> = ({ to, label, ariaLabel,
 
 const SettingsSidebar: React.FC = () => {
   return (
-    <aside className="w-64 border-r bg-background flex flex-col">
+    <aside className="w-64 h-full border-r bg-background flex flex-col">
       <nav className="flex-1 px-2 py-6 space-y-1">
         <h2 className="px-4 py-2 text-lg font-semibold tracking-tight">Settings</h2>
         <SettingsNavLink
