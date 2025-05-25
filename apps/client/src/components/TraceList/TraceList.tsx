@@ -197,6 +197,7 @@ function TraceListComponent() {
       variant="outline"
       onClick={handleOpenCreateFolderDialog}
       disabled={isCreatingFolder || isCurrentlyLoading}
+      className="bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-foreground/20 transition-all duration-300"
     >
       <FolderPlus className="mr-2 h-4 w-4" /> New Folder
     </Button>
@@ -211,7 +212,13 @@ function TraceListComponent() {
         isPending={isCreatingFolder}
         triggerElement={createFolderButton}
       />
-      <Button size="sm" disabled={isCurrentlyLoading} variant="primary-outline" onClick={() => openTraceUploadModal(null, currentFolderId)}>
+      <Button
+        size="sm"
+        disabled={isCurrentlyLoading}
+        variant="primary-outline"
+        onClick={() => openTraceUploadModal(null, currentFolderId)}
+        className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white border-0 transition-all duration-300"
+      >
         <UploadCloud className="mr-2 h-4 w-4" /> Upload New Trace
       </Button>
     </div>
@@ -228,10 +235,21 @@ function TraceListComponent() {
   const renderContent = () => {
     if (error) {
       return (
-        <Card>
+        <Card className="bg-card/90 backdrop-blur-sm border border-border">
           <CardContent className="pt-12 pb-12 text-center">
-            <p className="text-destructive mb-4">Error loading contents: {error.message}</p>
-            <Button onClick={() => window.location.reload()}>Try Again</Button>
+            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/30 flex items-center justify-center">
+              <X className="h-8 w-8 text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Error Loading Contents</h3>
+            <p className="text-muted-foreground mb-6">
+              {error.message}
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white border-0 transition-all duration-300"
+            >
+              Try Again
+            </Button>
           </CardContent>
         </Card>
       );
@@ -240,11 +258,11 @@ function TraceListComponent() {
     if (isLoading) {
       // Skeleton state for initial load
       return (
-        <Card>
+        <Card className="bg-card/90 backdrop-blur-sm border border-border">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableRow className="bg-background/50 backdrop-blur-sm hover:bg-background/70 border-b border-border">
                   <TableHead className="pl-6 py-3">
                     <Skeleton className="h-4 w-20" />
                   </TableHead>
@@ -273,7 +291,7 @@ function TraceListComponent() {
               </TableHeader>
               <TableBody>
                 {[...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
+                  <TableRow key={i} className="border-b border-border">
                     <TableCell className="pl-6 py-3">
                       <Skeleton className="h-4 w-3/4" />
                     </TableCell>
@@ -313,34 +331,42 @@ function TraceListComponent() {
     if (isEmpty) {
       // Empty State Rendering (different messages for empty folder vs empty search)
       return (
-        <Card>
+        <Card className="bg-card/90 backdrop-blur-sm border border-border">
           <CardContent className="pt-12 pb-12 text-center">
             {isSearchingAndEmpty ? (
               <>
-                <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No matching traces found</h3>
-                <p className="text-muted-foreground mb-4">
-                  We couldn't find any traces or folders matching "{searchQuery}". Try adjusting your search terms.
+                <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-blue-500/20 to-blue-400/20 rounded-xl border border-blue-500/40 flex items-center justify-center">
+                  <Search className="h-8 w-8 text-blue-500" />
+                </div>
+                <h3 className="text-lg font-bold mb-2">No matching traces found</h3>
+                <p className="text-muted-foreground mb-6">
+                  We couldn't find any traces or folders matching "<span className="font-medium text-foreground">{searchQuery}</span>". Try adjusting your search terms.
                 </p>
-                <Button onClick={handleClearSearch} variant="outline">
+                <Button
+                  onClick={handleClearSearch}
+                  variant="outline"
+                  className="bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-foreground/20 transition-all duration-300"
+                >
                   <X className="mr-2 h-4 w-4" />
                   Clear Search
                 </Button>
               </>
             ) : (
               <>
-                <FolderIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
+                <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/40 flex items-center justify-center">
+                  <FolderIcon className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-bold mb-2">
                   {currentFolderId ? 'This folder is empty' : 'No traces yet'}
                 </h3>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-muted-foreground mb-6">
                   Get started by uploading your first performance trace file.{' '}
-                  <Link to="/docs/api-keys" className="text-primary hover:underline">
+                  <Link to="/docs/api-keys" className="text-red-500 hover:text-red-400 hover:underline transition-colors font-medium">
                     Learn about our API
                   </Link>{' '}
                   for programmatic uploads.
                 </p>
-                <div className="flex justify-center gap-2">
+                <div className="flex justify-center gap-3">
                   <CreateFolderDialog
                     isOpen={isCreateFolderDialogOpen}
                     setIsOpen={setIsCreateFolderDialogOpen}
@@ -351,6 +377,7 @@ function TraceListComponent() {
                         size="sm"
                         variant="outline"
                         disabled={isCreatingFolder || isCurrentlyLoading}
+                        className="bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-foreground/20 transition-all duration-300"
                       >
                         <FolderPlus className="mr-2 h-4 w-4" />
                         New Folder
@@ -362,6 +389,7 @@ function TraceListComponent() {
                     size="sm"
                     disabled={isCurrentlyLoading}
                     onClick={() => openTraceUploadModal(null, currentFolderId)}
+                    className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white border-0 transition-all duration-300"
                   >
                     <UploadCloud className="mr-2 h-4 w-4" />
                     Upload New Trace
@@ -376,27 +404,19 @@ function TraceListComponent() {
 
     // Default: List Rendering
     return (
-      <DraggableArea
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        isDragging={isDragging}
-        draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-primary rounded-lg p-1"
-        baseClassName="p-1"
-        className="flex flex-col flex-grow"
-      >
-        <Card>
+      <>
+        <Card className="bg-card/90 backdrop-blur-sm border border-border overflow-hidden">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="pl-6">Name</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Branch</TableHead>
-                  <TableHead>Commit</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
+                <TableRow className="bg-background/50 backdrop-blur-sm hover:bg-background/70 border-b border-border">
+                  <TableHead className="pl-6 font-semibold text-foreground">Name</TableHead>
+                  <TableHead className="font-semibold text-foreground">Owner</TableHead>
+                  <TableHead className="font-semibold text-foreground">Branch</TableHead>
+                  <TableHead className="font-semibold text-foreground">Commit</TableHead>
+                  <TableHead className="font-semibold text-foreground">Duration</TableHead>
+                  <TableHead className="font-semibold text-foreground">Last Updated</TableHead>
+                  <TableHead className="text-right pr-6 font-semibold text-foreground">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -424,9 +444,14 @@ function TraceListComponent() {
         </Card>
 
         <div ref={loadMoreRef} className="h-10 flex justify-center items-center">
-          {isFetchingNextPage && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+          {isFetchingNextPage && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-background/80 backdrop-blur-sm rounded-full border border-border">
+              <Loader2 className="h-4 w-4 animate-spin text-red-500" />
+              <span className="text-sm text-muted-foreground font-medium">Loading more traces...</span>
+            </div>
+          )}
         </div>
-      </DraggableArea>
+      </>
     );
   };
 
@@ -435,34 +460,46 @@ function TraceListComponent() {
   return (
     <PageLayout>
       <PageHeader subtitle={headerSubtitle} title={headerTitle} actions={primaryActions} />
-      <div className="mb-4">
+      <div className="mb-6">
         <div className="relative w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search scenarios, branches, commits..."
-            value={localSearchQuery}
-            onChange={handleLocalSearchChange}
-            className="pl-8 pr-8 w-full hide-native-search-cancel-button"
-            aria-label="Search traces"
-          />
-          {localSearchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1.5 top-1.5 h-7 w-7"
-              onClick={handleClearSearch}
-              aria-label="Clear search"
-              disabled={isCurrentlyLoading} // Use combined loading state
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+          <div className="bg-background/80 backdrop-blur-sm border border-border rounded-lg">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search scenarios, branches, commits..."
+              value={localSearchQuery}
+              onChange={handleLocalSearchChange}
+              className="pl-10 pr-10 bg-transparent border-0 focus:ring-2 focus:ring-red-500/30 hide-native-search-cancel-button"
+              aria-label="Search traces"
+            />
+            {localSearchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-2 h-7 w-7 hover:bg-background border border-border/50 hover:border-border"
+                onClick={handleClearSearch}
+                aria-label="Clear search"
+                disabled={isCurrentlyLoading}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Render the content based on state */}
-      {renderContent()}
+      {/* Render the content wrapped with DraggableArea */}
+      <DraggableArea
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        isDragging={isDragging}
+        draggingClassName="outline-dashed outline-2 outline-offset-[-4px] outline-red-500 rounded-lg p-1 bg-red-500/10"
+        baseClassName="p-1"
+        className="flex flex-col flex-grow"
+      >
+        {renderContent()}
+      </DraggableArea>
     </PageLayout>
   );
 }

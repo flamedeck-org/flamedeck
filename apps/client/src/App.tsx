@@ -4,7 +4,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ScrollToTop from './components/utils/ScrollToTop';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import Index from './pages/Index.tsx';
 import Login from './pages/Login.tsx';
@@ -70,54 +70,78 @@ function RootHandler() {
 
 const queryClient = new QueryClient();
 
+// Component to handle GL canvas clearing on navigation
+function NavigationHandler() {
+  const location = useLocation();
+  const glCanvas = useAtom(glCanvasAtom);
+
+  useEffect(() => {
+    // Clear the GL canvas on route changes by temporarily setting it to null
+    if (glCanvas) {
+      // Set canvas to null to clear it
+      glCanvasAtom.set(null);
+
+      // Restore the canvas on the next tick
+      setTimeout(() => {
+        glCanvasAtom.set(glCanvas);
+      }, 0);
+    }
+  }, [location.pathname, glCanvas]);
+
+  return null;
+}
+
 // Wrapper component for conditional routing
 const AppRoutes = () => {
   // Remove useAuth from here again, RootHandler and ProtectedRoute handle checks
 
   return (
-    <Routes>
-      {/* Handle the root path explicitly using RootHandler */}
-      <Route path="/" element={<RootHandler />} />
+    <>
+      <NavigationHandler />
+      <Routes>
+        {/* Handle the root path explicitly using RootHandler */}
+        <Route path="/" element={<RootHandler />} />
 
-      {/* Other Public Routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/auth/callback" element={<AuthCallbackPage />} />
-      <Route path="/payment-success" element={<PaymentSuccessPage />} />
-      <Route path="/payment-cancel" element={<PaymentCancelPage />} />
+        {/* Other Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
+        <Route path="/payment-cancel" element={<PaymentCancelPage />} />
 
-      {/* Documentation Routes - accessible to all */}
-      <Route path="/docs" element={<DocsLayout />}>
-        <Route index element={<Navigate to="/docs/api-keys" replace />} />
-        <Route path="api-keys" element={<DocsApiKeysPage />} />
-        <Route path="cli-upload" element={<DocsCliUploadPage />} />
-        <Route path="npm-upload" element={<DocsNpmUploadPage />} />
-        <Route path="react-native" element={<DocsReactNativePage />} />
-      </Route>
-
-      {/* Public Trace Viewer Route - outside ProtectedRoute */}
-      <Route path="/traces/:id/view" element={<TraceViewerPage />} />
-
-      {/* Onboarding Route - Must be outside ProtectedRoute */}
-      <Route path="/onboarding/username" element={<UsernameStep />} />
-      <Route path="/onboarding/upgrade" element={<OnboardingUpgradeStep />} />
-
-      {/* Protected Routes - NO LONGER includes the root path "/" */}
-      <Route element={<ProtectedRoute />}>
-        {/* ProtectedRoute now only guards these specific authenticated paths */}
-        <Route path="/traces" element={<Traces />} />
-        <Route path="/traces/folder/:folderId" element={<Traces />} />
-        <Route path="/traces/:id" element={<TraceDetail />} />
-        <Route path="/settings" element={<SettingsLayout />}>
-          <Route index element={<Navigate to="/settings/general" replace />} />
-          <Route path="general" element={<SettingsPage />} />
-          <Route path="api-keys" element={<ApiKeysPage />} />
-          <Route path="billing" element={<BillingPage />} />
+        {/* Documentation Routes - accessible to all */}
+        <Route path="/docs" element={<DocsLayout />}>
+          <Route index element={<Navigate to="/docs/api-keys" replace />} />
+          <Route path="api-keys" element={<DocsApiKeysPage />} />
+          <Route path="cli-upload" element={<DocsCliUploadPage />} />
+          <Route path="npm-upload" element={<DocsNpmUploadPage />} />
+          <Route path="react-native" element={<DocsReactNativePage />} />
         </Route>
-      </Route>
 
-      {/* Catch-all Not Found Route */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* Public Trace Viewer Route - outside ProtectedRoute */}
+        <Route path="/traces/:id/view" element={<TraceViewerPage />} />
+
+        {/* Onboarding Route - Must be outside ProtectedRoute */}
+        <Route path="/onboarding/username" element={<UsernameStep />} />
+        <Route path="/onboarding/upgrade" element={<OnboardingUpgradeStep />} />
+
+        {/* Protected Routes - NO LONGER includes the root path "/" */}
+        <Route element={<ProtectedRoute />}>
+          {/* ProtectedRoute now only guards these specific authenticated paths */}
+          <Route path="/traces" element={<Traces />} />
+          <Route path="/traces/folder/:folderId" element={<Traces />} />
+          <Route path="/traces/:id" element={<TraceDetail />} />
+          <Route path="/settings" element={<SettingsLayout />}>
+            <Route index element={<Navigate to="/settings/general" replace />} />
+            <Route path="general" element={<SettingsPage />} />
+            <Route path="api-keys" element={<ApiKeysPage />} />
+            <Route path="billing" element={<BillingPage />} />
+          </Route>
+        </Route>
+
+        {/* Catch-all Not Found Route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 };
 

@@ -1,6 +1,6 @@
 import { Component } from 'react';
 
-import type { ProfileGroup } from '@flamedeck/speedscope-core/profile';
+import type { ProfileGroup, FrameInfo } from '@flamedeck/speedscope-core/profile';
 import { SandwichViewContainer } from './sandwich-view';
 import type { ActiveProfileState } from '../../lib/speedscope-core/app-state/active-profile-state';
 import { LeftHeavyFlamechartView, ChronoFlamechartView } from './flamechart-view-container';
@@ -18,9 +18,9 @@ const importModule = import('@flamedeck/speedscope-import');
 //
 // We put them all in one place so we can directly control the relative priority
 // of these.
-importModule.then(() => {});
-import('@flamedeck/speedscope-core/demangle-cpp').then(() => {});
-import('source-map').then(() => {});
+importModule.then(() => { });
+import('@flamedeck/speedscope-core/demangle-cpp').then(() => { });
+import('source-map').then(() => { });
 
 interface GLCanvasProps {
   canvasContext: CanvasContext | null;
@@ -99,8 +99,6 @@ export class GLCanvas extends Component<GLCanvasProps> {
     window.removeEventListener('resize', this.onWindowResize);
   }
   render() {
-    // TODO: Fix theme styling
-    // const style = getStyle(this.props.theme)
     return (
       <div ref={this.containerRef} className="absolute inset-0 -z-1 pointer-events-none">
         <canvas ref={this.ref} width={1} height={1} />
@@ -174,14 +172,11 @@ export class Application extends Component<ApplicationProps> {
       case ViewMode.CHRONO_FLAME_CHART:
         view = (
           <ChronoFlamechartView
-            flamechart={activeProfileState.profile.getAppendOrderCalltreeRoot()}
-            flamechartRenderer={activeProfileState.chronoRenderer}
-            canvasContext={this.props.canvasContext}
-            theme={this.props.theme}
             activeProfileState={activeProfileState}
-            flamechartID={FlamechartID.CHRONO}
-            flamechartViewState={activeProfileState.chronoViewState}
-            updateFlamechartViewState={this.props.setFlamechartViewState!}
+            glCanvas={this.props.glCanvas}
+            onNodeSelect={(node, cellId) => {
+              // Handle node selection if needed
+            }}
           />
         );
         break;
@@ -189,14 +184,11 @@ export class Application extends Component<ApplicationProps> {
       case ViewMode.LEFT_HEAVY_FLAME_GRAPH:
         view = (
           <LeftHeavyFlamechartView
-            flamechart={activeProfileState.profile.getGroupedCalltreeRoot()}
-            flamechartRenderer={activeProfileState.leftHeavyRenderer}
-            canvasContext={this.props.canvasContext}
-            theme={this.props.theme}
             activeProfileState={activeProfileState}
-            flamechartID={FlamechartID.LEFT_HEAVY}
-            flamechartViewState={activeProfileState.leftHeavyViewState}
-            updateFlamechartViewState={this.props.setFlamechartViewState!}
+            glCanvas={this.props.glCanvas}
+            onNodeSelect={(node, cellId) => {
+              // Handle node selection if needed
+            }}
           />
         );
         break;
@@ -204,13 +196,11 @@ export class Application extends Component<ApplicationProps> {
       case ViewMode.SANDWICH_VIEW:
         view = (
           <SandwichViewContainer
-            profile={activeProfileState.profile}
-            sandwichViewState={activeProfileState.sandwichViewState}
-            theme={this.props.theme}
-            canvasContext={this.props.canvasContext}
             activeProfileState={activeProfileState}
-            setSelectedFrame={this.props.setSelectedFrame!}
-            setFlamechartViewState={this.props.setFlamechartViewState!}
+            glCanvas={this.props.glCanvas!}
+            onFrameSelectForComment={(key) => {
+              // Handle frame selection for comments if needed
+            }}
           />
         );
         break;
