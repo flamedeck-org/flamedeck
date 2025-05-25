@@ -34,13 +34,9 @@ const Layout: React.FC<LayoutProps> = ({
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Background Elements - only show for logged in users */}
       {isLoggedIn && !isProfileView && (
-        <div className="fixed inset-0 z-0 overflow-hidden">
-          {/* Primary gradient background following brand guidelines */}
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/[0.05] via-transparent to-yellow-500/[0.05]" />
-          <div className="absolute inset-0 bg-gradient-to-tl from-yellow-400/[0.04] via-transparent to-red-400/[0.04]" />
-
-          {/* Additional subtle overlay for depth */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/[0.02] to-transparent" />
+        <div className="fixed inset-0 z-0 overflow-hidden bg-secondary">
+          {/* <div className="absolute inset-0 bg-gradient-to-br from-red-500/[0.08] via-transparent to-yellow-500/[0.08]" />
+          <div className="absolute inset-0 bg-gradient-to-tl from-yellow-400/[0.06] via-transparent to-red-500/[0.06]" /> */}
         </div>
       )}
 
