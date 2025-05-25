@@ -35,6 +35,7 @@ interface ChatWindowProps {
   onSessionsUpdate: (sessions: ChatSession[]) => void;
   onSelectSession: (sessionId: string) => void;
   onStartNewChat: () => void;
+  onRefetchSessions: () => Promise<void>;
   messages: ChatMessage[];
   sendMessage: (prompt: string) => void; // Function to send a user prompt
   isLoading: boolean; // To indicate if the model is processing
@@ -62,6 +63,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
       onSessionsUpdate,
       onSelectSession,
       onStartNewChat,
+      onRefetchSessions,
       messages,
       sendMessage,
       isLoading,
@@ -169,6 +171,8 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
 
     const handleBackToList = () => {
       setCurrentView({ type: 'conversation-list' });
+      // Refetch sessions to ensure we have the latest conversations
+      onRefetchSessions();
     };
 
     const handleSend = () => {
@@ -187,11 +191,6 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
         e.preventDefault(); // Prevent newline in input
         handleSend();
       }
-    };
-
-    const handleSuggestionClick = (prompt: string) => {
-      sendMessage(prompt);
-      setInput(''); // Clear input after sending suggestion
     };
 
     return (
@@ -216,6 +215,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
             suggestionPrompts={suggestionPrompts}
             onBack={handleBackToList}
             isNewSession={currentView.isNewSession}
+            sendMessage={sendMessage}
           />
         )}
 

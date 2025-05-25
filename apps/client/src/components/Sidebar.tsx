@@ -180,6 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                       title={minimized ? displayName : undefined}
                     >
                       <UserAvatar
+                        // @ts-ignore
                         profile={profile}
                         currentUser={user}
                         size="lg"
@@ -207,16 +208,20 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
                   </TooltipContent>
                 )}
                 <DropdownMenuContent align="end" side="right" sideOffset={10} className="w-56 mb-2">
-                  <DropdownMenuItem onClick={() => navigate('/settings/general')}>
-                    <UserIcon className="mr-2 h-4 w-4" />
+                  <DropdownMenuItem
+                    onClick={() => navigate('/settings/general')}
+                    icon={<UserIcon className="h-4 w-4 text-muted-foreground" />}
+                    iconVariant="default"
+                  >
                     Manage Account
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogout}
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                    icon={<LogOut className="h-4 w-4 text-red-500" />}
+                    iconVariant="primary"
+                    className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>

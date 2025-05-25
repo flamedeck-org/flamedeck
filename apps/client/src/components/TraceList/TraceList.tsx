@@ -360,7 +360,7 @@ function TraceListComponent() {
                   {currentFolderId ? 'This folder is empty' : 'No traces yet'}
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  Get started by uploading your first performance trace file.{' '}
+                  Drag and drop your first performance trace file.{' '}
                   <Link to="/docs/api-keys" className="text-red-500 hover:text-red-400 hover:underline transition-colors font-medium">
                     Learn about our API
                   </Link>{' '}

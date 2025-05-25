@@ -4,7 +4,7 @@ This document outlines the architecture of the AI Trace Analysis chat feature.
 
 ## Goal
 
-To provide an interactive chat interface where users can ask questions about a loaded performance trace file and receive insights from an AI language model (e.g., GPT-4o), leveraging context from the trace file itself, including visual context from flamegraph snapshots, and allowing the AI to request specific data retrieval actions (tools). This feature also incorporates usage limits based on user subscription plans.
+To provide an interactive chat interface where users can ask questions about a loaded performance trace file and receive insights from an AI language model (e.g., GPT-4o), leveraging context from the trace file itself, including visual context from flamegraph snapshots, and allowing the AI to request specific data retrieval actions (tools). This feature also incorporates usage limits based on user subscription plans and provides an upsell experience for unauthenticated users.
 
 ## Key Architectural Decisions & Solutions
 
@@ -79,6 +79,17 @@ To provide an interactive chat interface where users can ask questions about a l
   - `increment_monthly_chat_sessions(p_user_subscription_id UUID)`: Increments the monthly session counter for a user's subscription.
   - `reset_expired_monthly_limits()`: (Updated) Resets `monthly_chat_sessions_count` along with other monthly counters at the end of a billing period.
 
+## Unauthenticated User Experience
+
+- **Chat Teaser for Logged-Out Users:** When unauthenticated users view traces via the `/traces/:id/view` route, they see an `UnauthenticatedChatTeaser` component instead of the full chat functionality.
+- **Teaser Features:**
+  - Displays sample AI analysis questions to showcase the feature's capabilities
+  - Includes a prominent "Sign Up Free" call-to-action button that redirects to `/login`
+  - Features brand gradient styling consistent with the application design
+  - Dismissible via localStorage (`flamedeck-chat-teaser-dismissed`) so users can hide it if not interested
+  - Uses glassmorphism design with backdrop blur effects
+- **Authentication-Based Conditional Rendering:** The `SpeedscopeViewer` component conditionally renders either `ChatContainer` (for authenticated users) or `UnauthenticatedChatTeaser` (for unauthenticated users) based on the user's authentication status.
+
 ## Components
 
 1.  **Client-Side UI (`apps/client/src/components/Chat/`)**
@@ -92,6 +103,13 @@ To provide an interactive chat interface where users can ask questions about a l
       - Handles API call errors (e.g., network failure to Edge Function) by displaying messages in the chat.
       - Manages a loading state (`isPending` from `react-query` combined with `isWaitingForModelResponse` and `isStreaming`) to show a "thinking..." indicator.
     - `ChatWindow.tsx` & `ToolMessageItem.tsx`: Render messages, including special UI for tool calls (collapsible, status icons, image display via fetched object URL) **and displays chat limit error messages and upgrade prompts.**
+    - `UnauthenticatedChatTeaser.tsx`: 
+      - Displays for unauthenticated users as an upsell component
+      - Shows sample AI analysis questions to demonstrate functionality
+      - Includes "Sign Up Free" CTA button linking to `/login`
+      - Dismissible with localStorage persistence (`flamedeck-chat-teaser-dismissed`)
+      - Uses brand gradient styling (red-500 to yellow-500) with glassmorphism effects
+      - Features Sparkles icon and AI branding to highlight the intelligent analysis capabilities
 
 2.  **Client-Side API (`apps/client/src/lib/api/trace-analysis.ts` & `apps/client/src/hooks/useTraceAnalysisApi.ts`)**
     - `callTraceAnalysisApi.ts`: Contains the `callTraceAnalysisApi` function that makes the actual `fetch` (HTTP POST) call to the `trace-analysis` Edge Function.
@@ -177,7 +195,14 @@ To provide an interactive chat interface where users can ask questions about a l
 
 ## Data Flow Example (User Prompt - Considering Chat Limits)
 
+**For Authenticated Users:**
 1.  User types a prompt. Client's `ChatContainer.tsx` calls `useTraceAnalysisApi` hook's `mutateAsync` function. This sends an HTTP POST to the `trace-analysis` Edge Function.
+
+**For Unauthenticated Users:**
+1.  User sees `UnauthenticatedChatTeaser` with sample questions and signup prompt. No actual chat functionality is available.
+2.  User can either dismiss the teaser (stored in localStorage) or click "Sign Up Free" to navigate to `/login`.
+
+**Continuing with authenticated flow:**
 2.  `trace-analysis` Edge Function:
     a. Validates the request.
     b. Forwards the payload as an HTTP POST to `apps/flamechart-server` (`/api/v1/ai/process-turn`).

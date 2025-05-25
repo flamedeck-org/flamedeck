@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { traceApi } from '@/lib/api';
-import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle, MessageSquare } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
 import PageHeader from '@/components/PageHeader';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -517,8 +517,14 @@ const TraceDetail: React.FC = () => {
                             />
                           ))
                         ) : (
-                          <div className="text-muted-foreground italic py-4 text-sm">
-                            No comments yet. Be the first to add one!
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/40 flex items-center justify-center">
+                              <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <h3 className="text-lg font-bold mb-2">No comments yet</h3>
+                            <p className="text-muted-foreground mb-6">
+                              Be the first to share your insights about this trace.
+                            </p>
                           </div>
                         )}
                         {/* Always render the form for overview */}

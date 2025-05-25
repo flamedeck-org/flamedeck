@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Folder } from '@/lib/api';
 import { traceApi } from '@/lib/api';
 import type { TraceUpload, ApiError } from '@/types';
-import { AlertCircle, Loader2, Edit } from 'lucide-react';
+import { AlertCircle, Loader2, Edit, CheckCircle } from 'lucide-react';
 import { useTraceProcessor } from './hooks/useTraceProcessor';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -267,18 +268,22 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
             variant: 'destructive',
           });
         } else {
-          // const newTraceId = response.data?.id;
+          const newTraceId = response.data?.id;
           toast({
-            title: 'Trace saved',
-            description: 'Your trace file has been processed and uploaded successfully',
-            // action: newTraceId ? (
-            //   <ToastAction
-            //     altText="View Trace"
-            //     onClick={() => navigate(`/traces/${newTraceId}/view`)}
-            //   >
-            //     View Trace
-            //   </ToastAction>
-            // ) : undefined,
+            title: 'Success!',
+            description: 'Your trace file has been processed and is ready to view',
+            className: 'md:max-w-[500px]',
+            action: newTraceId ? (
+              <div className="flex flex-col gap-2 min-w-fit">
+                <ToastAction
+                  altText="Explore trace"
+                  onClick={() => navigate(`/traces/${newTraceId}/view`)}
+                  className="min-w-[120px]"
+                >
+                  Explore trace
+                </ToastAction>
+              </div>
+            ) : undefined,
           });
 
           queryClient.invalidateQueries({ queryKey: getFolderViewQueryKey(selectedFolderId, '') });

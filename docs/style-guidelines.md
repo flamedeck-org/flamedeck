@@ -332,6 +332,246 @@ Our primary design language uses glassmorphism for modern, sophisticated interfa
 }
 ```
 
+## Empty States
+
+Empty states are crucial for user experience, providing guidance and maintaining engagement when content is unavailable. FlameDeck uses consistent patterns for empty states across the application.
+
+### Design Principles
+
+1. **Clear Visual Hierarchy**: Use consistent typography and spacing
+2. **Contextual Messaging**: Explain what the empty state means and what users can do
+3. **Actionable When Possible**: Provide clear next steps or actions
+4. **Brand Consistent**: Use FlameDeck's visual language and color palette
+5. **Encouraging Tone**: Maintain a positive, helpful tone
+
+### Visual Pattern
+
+#### Standard Empty State Structure
+```css
+.empty-state {
+  text-align: center;
+  padding: 2rem 0; /* py-8 */
+}
+
+.empty-state-icon {
+  width: 4rem; /* w-16 */
+  height: 4rem; /* h-16 */
+  margin: 0 auto 1.5rem; /* mx-auto mb-6 */
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(234, 179, 8, 0.2));
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 0.75rem; /* rounded-xl */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state-title {
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 700; /* font-bold */
+  margin-bottom: 0.5rem; /* mb-2 */
+  color: hsl(var(--foreground));
+}
+
+.empty-state-description {
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 1.5rem; /* mb-6 */
+  max-width: 28rem; /* max-w-md */
+  margin-left: auto;
+  margin-right: auto;
+}
+```
+
+### Empty State Types
+
+#### 1. No Data Empty State
+For when a section or list has no content yet.
+
+```jsx
+<div className="text-center py-8">
+  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/40 flex items-center justify-center">
+    <FolderIcon className="h-8 w-8 text-muted-foreground" />
+  </div>
+  <h3 className="text-lg font-bold mb-2">No traces yet</h3>
+  <p className="text-muted-foreground mb-6">
+    Get started by uploading your first performance trace file.
+  </p>
+  <Button className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white">
+    Upload New Trace
+  </Button>
+</div>
+```
+
+#### 2. Search Results Empty State
+For when search queries return no results.
+
+```jsx
+<div className="text-center py-8">
+  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-blue-500/20 to-blue-400/20 rounded-xl border border-blue-500/40 flex items-center justify-center">
+    <Search className="h-8 w-8 text-blue-500" />
+  </div>
+  <h3 className="text-lg font-bold mb-2">No matching traces found</h3>
+  <p className="text-muted-foreground mb-6">
+    We couldn't find any traces matching "<span className="font-medium text-foreground">{searchQuery}</span>". Try adjusting your search terms.
+  </p>
+  <Button variant="outline" onClick={handleClearSearch}>
+    <X className="mr-2 h-4 w-4" />
+    Clear Search
+  </Button>
+</div>
+```
+
+#### 3. Error Empty State
+For when there's an error loading content.
+
+```jsx
+<div className="text-center py-8">
+  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/30 flex items-center justify-center">
+    <X className="h-8 w-8 text-red-500" />
+  </div>
+  <h3 className="text-lg font-bold mb-2">Error Loading Contents</h3>
+  <p className="text-muted-foreground mb-6">
+    {error.message}
+  </p>
+  <Button onClick={() => window.location.reload()}>
+    Try Again
+  </Button>
+</div>
+```
+
+#### 4. Feature/Section Empty State
+For specific features or sections that don't have content yet.
+
+```jsx
+<div className="text-center py-8">
+  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/40 flex items-center justify-center">
+    <MessageSquare className="h-8 w-8 text-muted-foreground" />
+  </div>
+  <h3 className="text-lg font-bold mb-2">No comments yet</h3>
+  <p className="text-muted-foreground mb-6">
+    Be the first to share your insights about this trace.
+  </p>
+</div>
+```
+
+### Content Guidelines
+
+#### Titles
+- Keep titles short and descriptive (2-4 words ideal)
+- Use present tense ("No traces yet" vs "No traces found")
+- Avoid technical jargon
+- Be specific to the context
+
+#### Descriptions
+- Explain what the empty state means
+- Provide context about why it's empty
+- Suggest actionable next steps when appropriate
+- Keep under 20 words when possible
+- Use encouraging, positive language
+
+#### Common Title Patterns
+- "No [items] yet" - for first-time empty states
+- "No matching [items] found" - for search results
+- "This [container] is empty" - for folders/categories
+- "Error loading [content]" - for error states
+
+### Icon Selection
+
+#### Icon Categories by Context
+```css
+/* Data/Content Icons */
+.icon-data { /* Folder, FileText, Database */ }
+
+/* Search Icons */
+.icon-search { /* Search, Filter */ }
+
+/* Error Icons */
+.icon-error { /* X, AlertCircle, AlertTriangle */ }
+
+/* Feature-Specific Icons */
+.icon-comments { /* MessageSquare, MessageCircle */ }
+.icon-analytics { /* BarChart, TrendingUp */ }
+.icon-upload { /* Upload, UploadCloud */ }
+```
+
+#### Icon Color Guidelines
+- **Data empty states**: `text-muted-foreground` (neutral)
+- **Search empty states**: `text-blue-500` (informational)
+- **Error states**: `text-red-500` (attention)
+- **Feature empty states**: `text-muted-foreground` (neutral)
+
+### Responsive Considerations
+
+```css
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .empty-state {
+    padding: 1.5rem 1rem; /* py-6 px-4 */
+  }
+  
+  .empty-state-icon {
+    width: 3rem; /* w-12 */
+    height: 3rem; /* h-12 */
+    margin-bottom: 1rem; /* mb-4 */
+  }
+  
+  .empty-state-description {
+    font-size: 0.875rem; /* text-sm */
+  }
+}
+```
+
+### Integration with Cards
+
+Empty states should be placed within the same card containers as content for visual consistency:
+
+```jsx
+<Card className="bg-card/90 backdrop-blur-sm border border-border">
+  <CardContent className="pt-12 pb-12">
+    {/* Empty state content */}
+  </CardContent>
+</Card>
+```
+
+### Accessibility
+
+- Ensure empty states are announced by screen readers
+- Provide adequate color contrast for all text and icons
+- Make action buttons keyboard accessible
+- Use semantic HTML structure
+
+```jsx
+<div role="status" aria-live="polite" className="text-center py-8">
+  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/40 flex items-center justify-center">
+    <MessageSquare className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+  </div>
+  <h3 className="text-lg font-bold mb-2">No comments yet</h3>
+  <p className="text-muted-foreground mb-6">
+    Be the first to share your insights about this trace.
+  </p>
+</div>
+```
+
+### Animation Guidelines
+
+Empty states should appear with subtle animations when content changes:
+
+```css
+.empty-state {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+```
+
 ## Layout Guidelines
 
 ### Container Sizes

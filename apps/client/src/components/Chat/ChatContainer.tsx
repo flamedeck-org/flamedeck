@@ -381,6 +381,21 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
     }
   }, [traceId]);
 
+  // Function to refetch sessions (for when going back to list)
+  const handleRefetchSessions = useCallback(async () => {
+    if (!traceId) return;
+    setIsLoadingSessions(true);
+    try {
+      const fetchedSessions = await fetchChatSessions(traceId);
+      setSessions(fetchedSessions);
+    } catch (error) {
+      console.error('Failed to refresh chat sessions:', error);
+      setSessions([]);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, [traceId]);
+
   const handleCloseChat = useCallback(() => {
     setIsChatOpen(false);
   }, []);
@@ -410,6 +425,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
           onSessionsUpdate={(newSessions) => setSessions(newSessions)}
           onSelectSession={handleSessionSelection}
           onStartNewChat={handleNewSession}
+          onRefetchSessions={handleRefetchSessions}
           messages={chatMessages}
           sendMessage={handleSendMessage}
           isLoading={traceAnalysisMutation.isPending || isWaitingForModelResponse || isStreaming}
