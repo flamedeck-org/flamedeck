@@ -68,6 +68,9 @@ function Index() {
           <Link to="/docs/api-keys" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
             API Docs
           </Link>
+          <a href="mailto:support@flamedeck.com" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
+            Support
+          </a>
         </div>
       </div>
     </footer>

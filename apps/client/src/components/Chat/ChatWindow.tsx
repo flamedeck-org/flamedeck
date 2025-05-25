@@ -155,25 +155,32 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     };
 
     return (
-      <div className="fixed bottom-24 right-6 w-[32rem] h-[calc(100vh-15rem)] bg-background border border-gray-300 dark:border-gray-700 rounded-lg shadow-xl flex flex-col z-40 overflow-hidden">
+      <div className="fixed bottom-24 right-6 w-[32rem] h-[calc(100vh-15rem)] bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl flex flex-col z-40 overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center pl-3 pr-3 pt-1 pb-1 border-b dark:border-gray-700 bg-background">
-          <h3 className="font-semibold text-gray-800 dark:text-gray-100">AI Trace Analysis</h3>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close Chat">
+        <div className="flex justify-between items-center px-4 py-3 border-b border-border/50 bg-gradient-to-r from-background/90 to-background/70 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-gradient-to-r from-red-500 to-yellow-500 rounded-lg">
+              <MessageSquareText className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="font-bold text-foreground">AI Trace Analysis</h3>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close Chat" className="h-8 w-8 p-0 hover:bg-background/80">
             <X className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Message Area */}
-        <ScrollArea className="flex-grow p-3" ref={internalScrollAreaRef}>
-          <div className="space-y-3">
+        <ScrollArea className="flex-grow p-4" ref={internalScrollAreaRef}>
+          <div className="space-y-4">
             {messages.length === 0 && !isLoading && (
-              <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                <MessageSquareText className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-4" />
-                <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+              <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                <div className="p-4 bg-gradient-to-br from-red-500/10 to-yellow-500/10 border border-red-500/20 rounded-2xl mb-4">
+                  <MessageSquareText className="w-8 h-8 text-red-500 mx-auto" />
+                </div>
+                <p className="text-lg font-bold text-foreground mb-2">
                   Ready to analyze your trace!
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-muted-foreground">
                   Ask a question or use one of the suggestions below to get started.
                 </p>
               </div>
@@ -186,34 +193,34 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
               if (msg.sender === 'tool') {
                 return <ToolMessageItem key={msg.id} message={msg} />;
               }
-              // Existing rendering for user, model, system, error messages
+              // Enhanced rendering for user, model, system, error messages
               return (
                 <div
                   key={msg.id}
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] p-2 rounded-lg text-sm whitespace-pre-wrap break-words ${msg.sender === 'user'
-                      ? 'bg-blue-500 text-white'
+                    className={`max-w-[85%] p-3 rounded-xl text-sm whitespace-pre-wrap break-words shadow-sm ${msg.sender === 'user'
+                      ? 'bg-primary text-primary-foreground shadow-primary/25'
                       : msg.sender === 'model'
-                        ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100' // Specific for model
+                        ? 'bg-muted/80 backdrop-blur-sm text-foreground border border-border/50'
                         : msg.sender === 'error'
                           ? isLimitError
-                            ? 'bg-background border border-red-300'
-                            : 'bg-red-100 text-red-700 border border-red-300'
-                          : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100' // Default for system/other
+                            ? 'bg-gradient-to-br from-red-50/80 to-yellow-50/80 dark:from-red-950/30 dark:to-yellow-950/30 border border-red-200/60 dark:border-red-800/60 text-foreground backdrop-blur-sm'
+                            : 'bg-red-50/90 dark:bg-red-950/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 backdrop-blur-sm'
+                          : 'bg-muted/80 backdrop-blur-sm text-foreground border border-border/50'
                       }`}
                   >
                     {msg.text}
                     {msg.sender === 'error' && isLimitError && (
                       <Button
-                        variant="gradient"
+                        variant="default"
                         size="sm"
                         onClick={(e) => {
-                          e.stopPropagation(); // Prevent click from bubbling to the parent div
+                          e.stopPropagation();
                           openUpgradeModal();
                         }}
-                        className="mt-2 ml-auto block" // Added ml-auto and block for positioning
+                        className="mt-3 ml-auto block bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                       >
                         Upgrade to Pro
                       </Button>
@@ -224,7 +231,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
             })}
             {isLoading && !isStreaming && (
               <div className="flex justify-start">
-                <div className="p-2 rounded-lg text-sm bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100 animate-pulse">
+                <div className="p-3 rounded-xl text-sm bg-muted/80 backdrop-blur-sm text-foreground border border-border/50 animate-pulse">
                   Thinking...
                 </div>
               </div>
@@ -234,14 +241,14 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
 
         {/* Suggestion Bubbles Area */}
         {suggestionPrompts && suggestionPrompts.length > 0 && messages.length === 0 && (
-          <div className="p-2 border-t dark:border-gray-700 flex flex-wrap gap-2 justify-center bg-background">
+          <div className="p-3 border-t border-border/50 flex flex-wrap gap-2 justify-center bg-background/50 backdrop-blur-sm">
             {suggestionPrompts.map((prompt) => (
               <Button
                 key={prompt}
                 variant="outline"
                 size="sm"
                 onClick={() => handleSuggestionClick(prompt)}
-                className="dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+                className="text-xs bg-background/80 backdrop-blur-sm border-border/60 hover:bg-muted/80 hover:border-border transition-all duration-200 hover:scale-105"
               >
                 {prompt}
               </Button>
@@ -250,24 +257,32 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
         )}
 
         {/* Input Area */}
-        <div className="p-3 border-t dark:border-gray-700 flex items-center space-x-2 bg-background chat-input-area">
-          <Input
-            type="text"
-            placeholder="Ask about the trace..."
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading}
-            className="flex-grow dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-          />
-          <Button
-            onClick={handleSend}
-            size="icon"
-            disabled={isLoading || !input.trim()}
-            aria-label="Send Message"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+        <div className="p-4 border-t border-border/50 bg-background/80 backdrop-blur-sm chat-input-area">
+          <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative">
+            <div className="flex items-end rounded-xl border border-border/60 bg-background/80 backdrop-blur-sm ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 pr-10">
+              <Input
+                type="text"
+                placeholder="Ask about the trace..."
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                disabled={isLoading}
+                className="flex-grow border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 rounded-xl"
+              />
+              <div className="absolute right-1 bottom-1">
+                <Button
+                  type="submit"
+                  variant="ghost"
+                  size="icon"
+                  disabled={isLoading || !input.trim()}
+                  aria-label="Send Message"
+                  className="h-8 w-8 rounded-full bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:bg-muted disabled:text-muted-foreground disabled:from-muted disabled:to-muted"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     );
