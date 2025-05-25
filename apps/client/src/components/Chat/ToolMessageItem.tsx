@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertCircle, Cog } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { type ChatMessage } from './ChatWindow'; // Assuming ChatMessage is exported from ChatWindow.tsx
 
@@ -90,24 +90,25 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
   }, [message.id, message.imageUrl, message.resultType, imageDataUrl, imageError, isFetchingImage]);
 
   // Default styling for tool messages (neutral)
-  let borderColor = 'border-gray-300 dark:border-gray-600';
-  let textColor = 'text-gray-900 dark:text-gray-100';
-  let bgColor = 'bg-blue-100 dark:bg-blue-900/30 ';
+  let borderColor = 'border-border/60';
+  let textColor = 'text-foreground';
+  let bgColor = 'bg-muted/40 backdrop-blur-sm';
   let StatusIcon = null;
 
   // Determine icon and specific error styling
   if (message.toolStatus === 'running') {
-    StatusIcon = <Loader2 size={18} className="animate-spin mr-2 text-blue-500" />;
-    // No specific background/border change for running, uses default neutral
+    StatusIcon = <Cog size={18} className="animate-spin mr-2 text-blue-500" />;
+    bgColor = 'bg-blue-50/80 dark:bg-blue-950/30 backdrop-blur-sm';
+    borderColor = 'border-blue-400/80 dark:border-blue-500/80';
   } else if (message.toolStatus === 'success' || message.toolStatus === 'success_with_warning') {
-    StatusIcon = <CheckCircle size={18} className="mr-2 text-green-500" />;
-    // No specific background/border change for success, uses default neutral
+    StatusIcon = <CheckCircle2 size={18} className="mr-2 text-green-500" />;
+    bgColor = 'bg-gradient-to-br from-slate-50/80 to-gray-50/80 dark:from-slate-950/40 dark:to-gray-950/40 backdrop-blur-sm';
+    borderColor = 'border-green-400/90 dark:border-green-500/90';
   } else if (message.toolStatus === 'error') {
-    StatusIcon = <XCircle size={18} className="mr-2 text-red-500" />;
-    // Keep distinct styling for errors
-    bgColor = 'bg-red-50 dark:bg-red-900/30';
-    borderColor = 'border-red-300 dark:border-red-700/50';
-    textColor = 'text-red-700 dark:text-red-300'; // Text color for error state also distinct
+    StatusIcon = <AlertCircle size={18} className="mr-2 text-red-500" />;
+    bgColor = 'bg-gradient-to-br from-red-50/80 to-red-50/80 dark:from-red-950/30 dark:to-red-950/30 backdrop-blur-sm';
+    borderColor = 'border-red-400/90 dark:border-red-500/90';
+    textColor = 'text-red-700 dark:text-red-300';
   }
 
   const getToolName = useCallback((toolName: string) => {
@@ -115,6 +116,8 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
       return 'Flamegraph Snapshot';
     } else if (toolName === 'generate_sandwich_flamegraph_screenshot') {
       return 'Sandwich Flamegraph Snapshot';
+    } else if (toolName === 'get_top_functions') {
+      return 'Top Functions';
     }
     return toolName?.replace(/_/g, ' ') || 'Tool Execution';
   }, []);
@@ -128,11 +131,11 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
   return (
     <div className={`flex justify-start`}>
       <div
-        className={`w-full max-w-[90%] p-0 rounded-lg text-sm border ${borderColor} ${bgColor} ${textColor} overflow-hidden`}
+        className={`w-full max-w-[90%] p-0 rounded-xl text-sm border-2 ${borderColor} ${bgColor} ${textColor} overflow-hidden shadow-sm`}
       >
         <button
           onClick={toggleExpand}
-          className="w-full flex justify-between items-center p-3 text-left focus:outline-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+          className="w-full flex justify-between items-center px-4 py-2.5 text-left focus:outline-none hover:bg-background/20 transition-all duration-200"
         >
           <span className="font-semibold flex items-center">
             {StatusIcon}
@@ -140,34 +143,43 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
           </span>
           <span className="flex items-center">
             {message.toolStatus !== 'running' && (
-              <span className="font-normal text-xs mr-2">
-                ({isExpanded ? 'Hide Details' : 'Show Details'})
+              <span className="font-medium text-xs mr-3 px-2 py-1 bg-background/40 rounded-md border border-border/30 text-muted-foreground">
+                {isExpanded ? 'Hide Details' : 'Show Details'}
               </span>
             )}
             {message.toolStatus !== 'running' &&
-              (isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />)}
+              (isExpanded ? <ChevronUp size={18} className="opacity-70 hover:opacity-100 transition-opacity" /> : <ChevronDown size={18} className="opacity-70 hover:opacity-100 transition-opacity" />)}
           </span>
         </button>
 
         {/* Collapsible Content - only show details if not running OR if running and expanded (though running usually won't have details yet) */}
         {(isExpanded || message.toolStatus === 'running') && (
-          <div className="p-3 border-t border-[inherit]">
+          <div className="px-4 pb-4 border-t border-border/30">
             {shouldDisplayText && message.text && (
-              <div className="whitespace-pre-wrap break-words mb-2">{message.text}</div>
+              <div className="whitespace-pre-wrap break-words mt-3 text-sm leading-relaxed">{message.text}</div>
             )}
 
             {message.resultType === 'image' && message.toolStatus !== 'running' && (
-              <div className="mt-2 flex justify-center">
-                {isFetchingImage && <p className="text-xs italic">Loading image...</p>}
+              <div className="mt-4 flex justify-center">
+                {isFetchingImage && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading image...
+                  </div>
+                )}
                 {imageError && (
-                  <p className="text-xs text-red-500">Error loading image: {imageError}</p>
+                  <p className="text-sm text-red-500 bg-red-50/50 dark:bg-red-950/20 px-3 py-2 rounded-lg border border-red-200/50 dark:border-red-800/50">
+                    Error loading image: {imageError}
+                  </p>
                 )}
                 {imageDataUrl && (
-                  <img
-                    src={imageDataUrl}
-                    alt={`${message.toolName || 'Tool'} result`}
-                    className="rounded max-w-full h-auto max-h-72 object-contain border dark:border-gray-500 shadow-md"
-                  />
+                  <div className="rounded-xl overflow-hidden border-2 border-border/40 shadow-lg">
+                    <img
+                      src={imageDataUrl}
+                      alt={`${message.toolName || 'Tool'} result`}
+                      className="max-w-full h-auto max-h-80 object-contain"
+                    />
+                  </div>
                 )}
               </div>
             )}
