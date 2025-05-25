@@ -72,11 +72,12 @@ const queryClient = new QueryClient();
 
 // Component to handle GL canvas clearing on navigation
 function NavigationHandler() {
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   const location = useLocation();
   const glCanvas = useAtom(glCanvasAtom);
 
   useEffect(() => {
-    // Clear the GL canvas on route changes by temporarily setting it to null
     if (glCanvas) {
       // Set canvas to null to clear it
       glCanvasAtom.set(null);
@@ -86,7 +87,7 @@ function NavigationHandler() {
         glCanvasAtom.set(glCanvas);
       }, 0);
     }
-  }, [location.pathname, glCanvas]);
+  }, [location.pathname, glCanvas, isAuthenticated]);
 
   return null;
 }
