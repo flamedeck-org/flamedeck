@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 export const subscriptionTiers = [
   {
@@ -10,7 +11,7 @@ export const subscriptionTiers = [
     name: 'Free',
     price: '0',
     features: [
-      '1 AI chat conversation per month',
+      '3 AI chat conversations per month',
       '30-day trace retention',
       '10 uploads per month',
       'Basic collaboration and sharing features',

@@ -27,7 +27,7 @@ INSERT INTO public.subscription_plans (
     '2025-04-29 05:47:36.554488+00',      -- created_at
     '2025-04-29 05:47:36.554488+00',      -- updated_at
     25,                                   -- chat_messages_per_session
-    1,                                    -- chat_sessions_limit
+    3,                                    -- chat_sessions_limit
     'monthly',                            -- chat_sessions_period
     NULL                                  -- stripe_price_id (was empty, assuming NULL)
 ),

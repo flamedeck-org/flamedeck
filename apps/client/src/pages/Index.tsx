@@ -94,16 +94,16 @@ function Index() {
 
         <FadeInOnScroll>
           {/* Hero Section */}
-          <div className="min-h-[70vh] flex flex-col items-center justify-center py-16 px-4 text-center relative">
-            <div className="max-w-5xl space-y-8">
+          <div className="min-h-[70vh] flex flex-col items-center justify-center py-12 md:py-16 px-4 text-center relative">
+            <div className="max-w-5xl space-y-8 md:space-y-8">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-500/10 to-yellow-500/10 border border-red-500/20 text-sm font-medium text-foreground backdrop-blur-sm">
-                <Star className="w-4 h-4 text-yellow-500" />
+              <div className="inline-flex items-center gap-2 px-4 md:px-4 py-2 md:py-2 rounded-full bg-gradient-to-r from-red-500/10 to-yellow-500/10 border border-red-500/20 text-sm md:text-sm font-medium text-foreground backdrop-blur-sm">
+                <Star className="w-4 h-4 md:w-4 md:h-4 text-yellow-500" />
                 <span>AI-Powered Performance Analysis</span>
               </div>
 
               {/* Main Hero Content */}
-              <div className="space-y-6">
+              <div className="space-y-6 md:space-y-6">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-yellow-500 bg-clip-text text-transparent blur-sm opacity-30">
                     <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight">
@@ -119,30 +119,30 @@ function Index() {
                   </h1>
                 </div>
 
-                <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light">
+                <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light px-4 md:px-0">
                   Upload, store, and analyze performance traces with powerful visualizations.
-                  <span className="block mt-1 font-medium bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                  <span className="block mt-2 font-medium bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
                     Debug performance issues faster than ever with AI-powered insights.
                   </span>
                 </p>
               </div>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-4 justify-center items-center pt-2">
                 <Link to="/login" className="group">
                   <Button
                     size="lg"
-                    className="text-lg px-8 py-3 bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white shadow-2xl shadow-red-500/25 transition-all duration-300 group-hover:scale-105 group-hover:shadow-3xl group-hover:shadow-red-500/40"
+                    className="text-lg md:text-lg px-8 md:px-8 py-3 md:py-3 bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white shadow-2xl shadow-red-500/25 transition-all duration-300 group-hover:scale-105 group-hover:shadow-3xl group-hover:shadow-red-500/40"
                   >
                     Get Started for Free
-                    <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="ml-2 w-5 h-5 md:w-5 md:h-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
                 <a href="#pricing" className="group">
                   <Button
                     size="lg"
                     variant="outline"
-                    className="text-lg px-8 py-3 border-2 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg"
+                    className="text-lg md:text-lg px-8 md:px-8 py-3 md:py-3 border-2 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg"
                   >
                     View Pricing
                   </Button>
@@ -154,9 +154,9 @@ function Index() {
 
         {/* Feature Cards Section - moved outside hero */}
         <FadeInOnScroll delay={0.1}>
-          <div className="py-16 px-4">
+          <div className="py-8 md:py-16 px-4">
             <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 {[
                   {
                     icon: UploadCloud,
@@ -180,13 +180,13 @@ function Index() {
                 ].map((feature, index) => (
                   <div
                     key={feature.title}
-                    className="group p-6 bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:border-primary/30"
+                    className="group p-4 md:p-6 bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:border-primary/30"
                   >
-                    <div className="flex flex-col items-start text-left space-y-3">
-                      <div className="p-3 bg-gradient-to-br from-red-500/10 to-yellow-500/10 rounded-xl border border-red-500/20 group-hover:from-red-500/20 group-hover:to-yellow-500/20 transition-all duration-300">
-                        <feature.icon className="h-6 w-6 text-primary" />
+                    <div className="flex flex-col items-start text-left space-y-2 md:space-y-3">
+                      <div className="p-2 md:p-3 bg-gradient-to-br from-red-500/10 to-yellow-500/10 rounded-xl border border-red-500/20 group-hover:from-red-500/20 group-hover:to-yellow-500/20 transition-all duration-300">
+                        <feature.icon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                       </div>
-                      <h3 className="text-lg font-bold">{feature.title}</h3>
+                      <h3 className="text-base md:text-lg font-bold">{feature.title}</h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {feature.description.split(/(\bAPI\b|\bCLI\b)/).map((part, i) => {
                           if (part === 'API' && feature.links) {
@@ -216,26 +216,26 @@ function Index() {
 
         <FadeInOnScroll delay={0.2}>
           {/* Features Section */}
-          <div className="py-32 px-4 relative">
+          <div className="py-16 md:py-32 px-4 relative">
             <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-20">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <div className="text-center mb-12 md:mb-20">
+                <h2 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6">
                   Why Choose FlameDeck?
                 </h2>
                 <div className="w-20 h-1 bg-gradient-to-r from-red-500 to-yellow-500 mx-auto rounded-full" />
               </div>
 
               {/* Feature 1: Store and Manage */}
-              <div className="grid lg:grid-cols-5 gap-16 items-center mb-32">
-                <div className="space-y-6 lg:col-span-2">
-                  <div className="inline-flex p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-2xl border border-blue-500/20">
-                    <Database className="h-12 w-12 text-blue-500" />
+              <div className="grid lg:grid-cols-5 gap-8 md:gap-16 items-center mb-16 md:mb-32">
+                <div className="space-y-4 md:space-y-6 lg:col-span-2">
+                  <div className="inline-flex p-3 md:p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-2xl border border-blue-500/20">
+                    <Database className="h-8 w-8 md:h-12 md:w-12 text-blue-500" />
                   </div>
-                  <h3 className="text-3xl md:text-4xl font-bold leading-tight">
+                  <h3 className="text-2xl md:text-4xl font-bold leading-tight">
                     Store and Manage
                     <span className="block text-blue-500">Performance Profiles</span>
                   </h3>
-                  <p className="text-xl text-muted-foreground leading-relaxed">
+                  <p className="text-base md:text-xl text-muted-foreground leading-relaxed">
                     Keeping track of profiles when debugging issues with your application is messy and
                     confusing. Organize them all in one place with FlameDeck, making it easy to find
                     what you need, when you need it.
@@ -256,7 +256,21 @@ function Index() {
               </div>
 
               {/* Feature 2: Analyze with AI */}
-              <div className="grid lg:grid-cols-5 gap-16 items-center mb-32">
+              <div className="grid lg:grid-cols-5 gap-8 md:gap-16 items-center mb-16 md:mb-32">
+                <div className="space-y-4 md:space-y-6 lg:col-span-2 lg:order-last">
+                  <div className="inline-flex p-3 md:p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl border border-green-500/20">
+                    <Search className="h-8 w-8 md:h-12 md:w-12 text-green-500" />
+                  </div>
+                  <h3 className="text-2xl md:text-4xl font-bold leading-tight">
+                    Analyze with
+                    <span className="block text-green-500">AI</span>
+                  </h3>
+                  <p className="text-base md:text-xl text-muted-foreground leading-relaxed">
+                    Performance debugging is hard and time-consuming. FlameDeck uses state-of-the-art
+                    AI models to analyze your performance profiles, pinpoint bottlenecks, and provide
+                    actionable insights.
+                  </p>
+                </div>
                 <div className="lg:col-span-3 lg:order-first">
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
@@ -269,33 +283,19 @@ function Index() {
                     </div>
                   </div>
                 </div>
-                <div className="space-y-6 lg:col-span-2 lg:order-last">
-                  <div className="inline-flex p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl border border-green-500/20">
-                    <Search className="h-12 w-12 text-green-500" />
-                  </div>
-                  <h3 className="text-3xl md:text-4xl font-bold leading-tight">
-                    Analyze with
-                    <span className="block text-green-500">AI</span>
-                  </h3>
-                  <p className="text-xl text-muted-foreground leading-relaxed">
-                    Performance debugging is hard and time-consuming. FlameDeck uses state-of-the-art
-                    AI models to analyze your performance profiles, pinpoint bottlenecks, and provide
-                    actionable insights.
-                  </p>
-                </div>
               </div>
 
               {/* Feature 3: Bring Any Profile */}
-              <div className="grid lg:grid-cols-5 gap-16 items-center">
-                <div className="space-y-6 lg:col-span-2">
-                  <div className="inline-flex p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
-                    <UploadCloud className="h-12 w-12 text-purple-500" />
+              <div className="grid lg:grid-cols-5 gap-8 md:gap-16 items-center">
+                <div className="space-y-4 md:space-y-6 lg:col-span-2">
+                  <div className="inline-flex p-3 md:p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20">
+                    <UploadCloud className="h-8 w-8 md:h-12 md:w-12 text-purple-500" />
                   </div>
-                  <h3 className="text-3xl md:text-4xl font-bold leading-tight">
+                  <h3 className="text-2xl md:text-4xl font-bold leading-tight">
                     Bring Any
                     <span className="block text-purple-500">Profile</span>
                   </h3>
-                  <p className="text-xl text-muted-foreground leading-relaxed">
+                  <p className="text-base md:text-xl text-muted-foreground leading-relaxed">
                     FlameDeck supports a wide range of profiling formats from various languages and
                     runtimes. Seamlessly import profiles from Node.js, Chrome, React Native, Go,
                     Rust, and more.
@@ -304,8 +304,8 @@ function Index() {
                 <div className="lg:col-span-3">
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500" />
-                    <div className="relative bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 p-10 group-hover:shadow-3xl transition-all duration-500">
-                      <div className="grid grid-cols-3 gap-6">
+                    <div className="relative bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 p-6 md:p-10 group-hover:shadow-3xl transition-all duration-500">
+                      <div className="grid grid-cols-3 gap-3 md:gap-6">
                         {[
                           { name: 'Node.js', icon: SiNodedotjs as React.ElementType, color: 'text-green-500' },
                           { name: 'Chrome', icon: SiGooglechrome as React.ElementType, color: 'text-blue-500' },
@@ -316,10 +316,10 @@ function Index() {
                         ].map((lang) => (
                           <div
                             key={lang.name}
-                            className="group/lang flex flex-col items-center p-6 bg-background/50 backdrop-blur-sm rounded-2xl border border-border/30 hover:border-border/60 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                            className="group/lang flex flex-col items-center p-3 md:p-6 bg-background/50 backdrop-blur-sm rounded-2xl border border-border/30 hover:border-border/60 transition-all duration-300 hover:scale-105 hover:shadow-lg"
                           >
-                            <lang.icon className={`h-10 w-10 ${lang.color} mb-3 transition-transform group-hover/lang:scale-110`} />
-                            <span className="text-sm font-medium text-center text-muted-foreground group-hover/lang:text-foreground transition-colors">
+                            <lang.icon className={`h-6 w-6 md:h-10 md:w-10 ${lang.color} mb-2 md:mb-3 transition-transform group-hover/lang:scale-110`} />
+                            <span className="text-xs md:text-sm font-medium text-center text-muted-foreground group-hover/lang:text-foreground transition-colors">
                               {lang.name}
                             </span>
                           </div>
@@ -335,14 +335,14 @@ function Index() {
 
         <FadeInOnScroll delay={0.4}>
           {/* Pricing Section */}
-          <div id="pricing" className="py-32 px-4 bg-gradient-to-br from-background/50 to-secondary/30 backdrop-blur-sm">
+          <div id="pricing" className="py-16 md:py-32 px-4 bg-gradient-to-br from-background/50 to-secondary/30 backdrop-blur-sm">
             <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-16">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <div className="text-center mb-12 md:mb-16">
+                <h2 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6">
                   Simple, Transparent Pricing
                 </h2>
-                <p className="text-xl text-muted-foreground">Choose the plan that's right for you</p>
-                <div className="w-20 h-1 bg-gradient-to-r from-red-500 to-yellow-500 mx-auto rounded-full mt-6" />
+                <p className="text-lg md:text-xl text-muted-foreground">Choose the plan that's right for you</p>
+                <div className="w-20 h-1 bg-gradient-to-r from-red-500 to-yellow-500 mx-auto rounded-full mt-4 md:mt-6" />
               </div>
               <PricingTable />
             </div>
