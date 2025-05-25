@@ -90,7 +90,7 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
   }, [message.id, message.imageUrl, message.resultType, imageDataUrl, imageError, isFetchingImage]);
 
   // Default styling for tool messages (neutral)
-  let borderColor = 'border-border/60';
+  let borderColor = 'border-border/20';
   let textColor = 'text-foreground';
   let bgColor = 'bg-muted/40 backdrop-blur-sm';
   let StatusIcon = null;
@@ -99,15 +99,15 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
   if (message.toolStatus === 'running') {
     StatusIcon = <Cog size={18} className="animate-spin mr-2 text-blue-500" />;
     bgColor = 'bg-blue-50/80 dark:bg-blue-950/30 backdrop-blur-sm';
-    borderColor = 'border-blue-400/80 dark:border-blue-500/80';
+    borderColor = 'border-blue-300/40 dark:border-blue-600/40';
   } else if (message.toolStatus === 'success' || message.toolStatus === 'success_with_warning') {
     StatusIcon = <CheckCircle2 size={18} className="mr-2 text-green-500" />;
     bgColor = 'bg-gradient-to-br from-slate-50/80 to-gray-50/80 dark:from-slate-950/40 dark:to-gray-950/40 backdrop-blur-sm';
-    borderColor = 'border-green-400/90 dark:border-green-500/90';
+    borderColor = 'border-green-300/40 dark:border-green-600/40';
   } else if (message.toolStatus === 'error') {
     StatusIcon = <AlertCircle size={18} className="mr-2 text-red-500" />;
     bgColor = 'bg-gradient-to-br from-red-50/80 to-red-50/80 dark:from-red-950/30 dark:to-red-950/30 backdrop-blur-sm';
-    borderColor = 'border-red-400/90 dark:border-red-500/90';
+    borderColor = 'border-red-300/40 dark:border-red-600/40';
     textColor = 'text-red-700 dark:text-red-300';
   }
 
@@ -131,7 +131,7 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
   return (
     <div className={`flex justify-start`}>
       <div
-        className={`w-full max-w-[90%] p-0 rounded-xl text-sm border-2 ${borderColor} ${bgColor} ${textColor} overflow-hidden shadow-sm`}
+        className={`w-full max-w-[90%] p-0 rounded-xl text-sm border ${borderColor} ${bgColor} ${textColor} overflow-hidden shadow-sm`}
       >
         <button
           onClick={toggleExpand}
@@ -154,7 +154,7 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
 
         {/* Collapsible Content - only show details if not running OR if running and expanded (though running usually won't have details yet) */}
         {(isExpanded || message.toolStatus === 'running') && (
-          <div className="px-4 pb-4 border-t border-border/30">
+          <div className="px-4 pb-4 border-t border-border/20">
             {shouldDisplayText && message.text && (
               <div className="whitespace-pre-wrap break-words mt-3 text-sm leading-relaxed">{message.text}</div>
             )}
