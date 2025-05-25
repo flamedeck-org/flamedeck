@@ -140,7 +140,7 @@ const TraceDetail: React.FC = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { openModal } = useSharingModal();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, profile: currentProfile } = useAuth();
 
   const { data: trace, isLoading: traceLoading, error: traceError } = useTraceDetails(id);
 
@@ -242,56 +242,74 @@ const TraceDetail: React.FC = () => {
   };
 
   const headerActions = (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center gap-3">
+      {/* Primary action button with gradient */}
       <Link
         to={`/traces/${id}/view`}
         state={{ blobPath: trace?.blob_path }}
-        className={buttonVariants({ variant: 'gradient', size: 'sm' })}
+        className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white border-0 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
       >
         <Eye className="mr-2 h-4 w-4" /> Explore Trace
       </Link>
 
-      <Button variant="outline" size="sm" onClick={handleShareClick} aria-label="Share Trace">
-        <Share2 className="h-4 w-4" />
-      </Button>
+      <div className="flex items-center gap-2">
+        {/* Share button with glassmorphic design */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleShareClick}
+          aria-label="Share Trace"
+          className="bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-foreground/20 transition-all duration-300 shadow-sm hover:shadow-md"
+        >
+          <Share2 className="h-4 w-4" />
+        </Button>
 
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            variant="destructive-outline"
-            size="sm"
-            disabled={deleteMutation.isPending}
-            aria-label="Delete Trace"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the trace{' '}
-              <strong>{trace?.scenario || `ID: ${trace?.id?.substring(0, 7)}`}</strong> and all
-              associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => id && deleteMutation.mutate(id)}
+        {/* Delete button with enhanced styling */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
               disabled={deleteMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              aria-label="Delete Trace"
+              className="bg-background/80 backdrop-blur-sm border border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50 text-red-600 hover:text-red-700 transition-all duration-300 shadow-sm hover:shadow-md"
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-background/95 backdrop-blur-lg border border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the trace{' '}
+                <strong>{trace?.scenario || `ID: ${trace?.id?.substring(0, 7)}`}</strong> and all
+                associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-foreground/20 transition-all duration-300">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => id && deleteMutation.mutate(id)}
+                disabled={deleteMutation.isPending}
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 transition-all duration-300"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-      <Link to="/traces" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Traces
-      </Link>
+        {/* Back button with glassmorphic design */}
+        <Link
+          to="/traces"
+          className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-foreground/20 transition-all duration-300 shadow-sm hover:shadow-md"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Traces
+        </Link>
+      </div>
     </div>
   );
 
@@ -311,6 +329,7 @@ const TraceDetail: React.FC = () => {
   const ownerSubtitle = owner ? (
     <div className="flex items-center space-x-1.5 text-sm text-muted-foreground">
       <span>Owned by</span>
+      {/* @ts-ignore */}
       <UserAvatar profile={owner} currentUser={currentUser} size="sm" />
       <span className="font-medium text-foreground">{ownerDisplayName}</span>
     </div>
@@ -372,7 +391,7 @@ const TraceDetail: React.FC = () => {
       <Layout>
         <PageLayout>
           <PageHeader
-            title={<TraceTitle trace={trace} currentUser={currentUser} />}
+            title={<TraceTitle trace={trace} currentUser={currentProfile as any} />}
             subtitle={ownerSubtitle}
             actions={headerActions}
           />
@@ -395,27 +414,27 @@ const TraceDetail: React.FC = () => {
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground">Scenario</div>
-                <div className="text-lg font-medium truncate" title={trace?.scenario}>
+                <div className="text-sm text-muted-foreground font-medium">Scenario</div>
+                <div className="text-lg font-semibold truncate mt-1" title={trace?.scenario}>
                   {trace?.scenario || 'N/A'}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground">Uploaded</div>
-                <div className="text-lg font-medium">{formatDate(trace?.uploaded_at)}</div>
+                <div className="text-sm text-muted-foreground font-medium">Uploaded</div>
+                <div className="text-lg font-semibold mt-1">{formatDate(trace?.uploaded_at)}</div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground">Commit</div>
-                <div className="text-lg font-medium font-mono truncate" title={trace?.commit_sha}>
+                <div className="text-sm text-muted-foreground font-medium">Commit</div>
+                <div className="text-lg font-semibold font-mono truncate mt-1" title={trace?.commit_sha}>
                   {trace?.commit_sha || 'N/A'}
                 </div>
                 {trace?.branch && (
@@ -426,87 +445,101 @@ const TraceDetail: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground">Duration</div>
-                <div className="text-lg font-medium text-primary">
+                <div className="text-sm text-muted-foreground font-medium">Duration</div>
+                <div className="text-lg font-semibold text-red-600 mt-1">
                   {formatDuration(trace?.duration_ms)}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground">Profile Format</div>
-                <div className="text-lg font-medium">{getProfileTypeName(trace?.profile_type)}</div>
+                <div className="text-sm text-muted-foreground font-medium">Profile Format</div>
+                <div className="text-lg font-semibold mt-1">{getProfileTypeName(trace?.profile_type)}</div>
               </CardContent>
             </Card>
           </div>
 
           {trace.notes && (
-            <Card className="mt-4">
+            <Card className="mt-6 bg-card/90 backdrop-blur-sm border border-border shadow-sm">
               <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground">Notes</div>
-                <div className="whitespace-pre-wrap">{trace.notes}</div>
+                <div className="text-sm text-muted-foreground font-medium mb-3">Notes</div>
+                <div className="whitespace-pre-wrap text-foreground leading-relaxed">{trace.notes}</div>
               </CardContent>
             </Card>
           )}
 
           {trace.id && (
             <div className="mt-8">
-              <h2 className="text-xl font-semibold mb-4">Comments</h2>
-              <Separator className="mb-6" />
+              <h2 className="text-2xl font-bold mb-6">Comments</h2>
+              <Separator className="mb-8" />
 
               {/* Grouped Comment Lists */}
               {/* Handle Loading State */}
-              {commentsLoading && <Skeleton className="h-20 w-full rounded-md" />}
+              {commentsLoading && (
+                <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
+                  <CardContent className="pt-6">
+                    <Skeleton className="h-20 w-full rounded-md" />
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Handle Error State */}
               {!commentsLoading && commentsError && (
-                <div className="text-destructive p-4 border rounded-md">
-                  Error loading comments: {commentsError.message}
-                </div>
+                <Card className="bg-card/90 backdrop-blur-sm border border-red-500/30 shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className="text-red-600 p-4 rounded-md bg-red-500/10">
+                      Error loading comments: {commentsError.message}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Handle Success State (With Comments) */}
               {!commentsLoading && !commentsError && (
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {/* --- Render Overview Section First --- */}
-                  <div key="overview">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-md font-medium">{getCommentSectionTitle('overview')}</h3>
-                      {/* No context link for overview */}
-                    </div>
-                    <div className="border rounded-md px-4">
-                      {/* Render existing overview comments or empty state */}
-                      {groupedComments['overview'] && groupedComments['overview'].length > 0 ? (
-                        groupedComments['overview'].map((comment) => (
-                          <CommentItem
-                            key={comment.id}
-                            traceId={trace.id}
-                            comment={comment}
-                            replyingToCommentId={replyingToCommentId}
-                            onStartReply={handleStartReply}
-                            onCancelReply={handleCancelReply}
-                            onCommentUpdated={handleCommentUpdate}
-                          />
-                        ))
-                      ) : (
-                        <div className="text-muted-foreground italic py-4 text-sm">
-                          No comments yet. Be the first to add one!
+                  <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
+                    <CardContent className="pt-6">
+                      <div key="overview">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-semibold">{getCommentSectionTitle('overview')}</h3>
+                          {/* No context link for overview */}
                         </div>
-                      )}
-                      {/* Always render the form for overview */}
-                      <div className="py-4 border-t">
-                        <CommentForm
-                          traceId={trace.id}
-                          commentType="overview"
-                          commentIdentifier={null}
-                          placeholder="Add a general comment..."
-                        />
+                        <div className="border rounded-md px-4">
+                          {/* Render existing overview comments or empty state */}
+                          {groupedComments['overview'] && groupedComments['overview'].length > 0 ? (
+                            groupedComments['overview'].map((comment) => (
+                              <CommentItem
+                                key={comment.id}
+                                traceId={trace.id}
+                                comment={comment}
+                                replyingToCommentId={replyingToCommentId}
+                                onStartReply={handleStartReply}
+                                onCancelReply={handleCancelReply}
+                                onCommentUpdated={handleCommentUpdate}
+                              />
+                            ))
+                          ) : (
+                            <div className="text-muted-foreground italic py-4 text-sm">
+                              No comments yet. Be the first to add one!
+                            </div>
+                          )}
+                          {/* Always render the form for overview */}
+                          <div className="py-4 border-t">
+                            <CommentForm
+                              traceId={trace.id}
+                              commentType="overview"
+                              commentIdentifier={null}
+                              placeholder="Add a general comment..."
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
 
                   {/* --- Render Other Comment Sections --- */}
                   {commentTypes
@@ -521,40 +554,42 @@ const TraceDetail: React.FC = () => {
                       }
 
                       return (
-                        <div key={commentType}>
-                          <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-md font-medium">{sectionTitle}</h3>
-                            {viewType && (
-                              <Link
-                                to={`/traces/${trace.id}/view`}
-                                state={{
-                                  initialView: viewType,
-                                  blobPath: trace.blob_path,
-                                }}
-                                className={
-                                  buttonVariants({ variant: 'outline', size: 'sm' }) +
-                                  ' flex items-center'
-                                }
-                              >
-                                View in Context <ExternalLink className="ml-1.5 h-3 w-3" />
-                              </Link>
-                            )}
-                          </div>
-                          <div className="border rounded-md px-4">
-                            {commentsInSection.map((comment) => (
-                              <CommentItem
-                                key={comment.id}
-                                traceId={trace.id}
-                                comment={comment}
-                                replyingToCommentId={replyingToCommentId}
-                                onStartReply={handleStartReply}
-                                onCancelReply={handleCancelReply}
-                                onCommentUpdated={handleCommentUpdate}
-                              />
-                            ))}
-                            {/* No form needed for non-overview types here */}
-                          </div>
-                        </div>
+                        <Card key={commentType} className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
+                          <CardContent className="pt-6">
+                            <div className="flex justify-between items-center mb-4">
+                              <h3 className="text-lg font-semibold">{sectionTitle}</h3>
+                              {viewType && (
+                                <Link
+                                  to={`/traces/${trace.id}/view`}
+                                  state={{
+                                    initialView: viewType,
+                                    blobPath: trace.blob_path,
+                                  }}
+                                  className={
+                                    buttonVariants({ variant: 'outline', size: 'sm' }) +
+                                    ' flex items-center'
+                                  }
+                                >
+                                  View in Context <ExternalLink className="ml-1.5 h-3 w-3" />
+                                </Link>
+                              )}
+                            </div>
+                            <div className="border rounded-md px-4">
+                              {commentsInSection.map((comment) => (
+                                <CommentItem
+                                  key={comment.id}
+                                  traceId={trace.id}
+                                  comment={comment}
+                                  replyingToCommentId={replyingToCommentId}
+                                  onStartReply={handleStartReply}
+                                  onCancelReply={handleCancelReply}
+                                  onCommentUpdated={handleCommentUpdate}
+                                />
+                              ))}
+                              {/* No form needed for non-overview types here */}
+                            </div>
+                          </CardContent>
+                        </Card>
                       );
                     })}
                 </div>

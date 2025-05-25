@@ -15,7 +15,7 @@ const SettingsLayout = () => {
             <SettingsSidebar />
           </div>
           {/* Scrollable content area */}
-          <div className="flex-1 h-full overflow-y-auto bg-secondary dark:bg-background">
+          <div className="flex-1 h-full overflow-y-auto">
             <div className="px-6 md:px-8 py-6 w-full">
               <Outlet /> {/* Renders the nested route's component */}
             </div>
