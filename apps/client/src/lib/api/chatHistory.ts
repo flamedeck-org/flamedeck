@@ -62,7 +62,14 @@ export async function fetchChatHistory(
         imageUrl: dbMsg.content_image_url || undefined,
       };
     }
-  );
+  ).filter(msg => {
+    // Filter out empty messages, except for tool messages which might have empty text but have other content
+    if (msg.sender === 'tool') {
+      return true; // Keep tool messages regardless of text content
+    }
+    // For other message types, only keep if there's actual text content
+    return msg.text && msg.text.trim() !== '';
+  });
 
   return mappedMessages;
 }

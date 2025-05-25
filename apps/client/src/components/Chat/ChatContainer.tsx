@@ -12,6 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react';
 import type { TraceAnalysisPayload, TraceAnalysisApiResponse } from '@/lib/api';
+import { fetchChatSessions, fetchChatHistory } from '@/lib/api/chatHistory';
+import type { ChatSession } from '@/lib/api/chatHistory';
 
 interface ChatContainerProps {
   traceId: string | null;
@@ -33,8 +35,59 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
   const [chatError, setChatError] = useState<string | null>(null); // Still useful for non-message errors or global state
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [isWaitingForModelResponse, setIsWaitingForModelResponse] = useState<boolean>(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => uuidv4());
+  const [isLoadingMessages, setIsLoadingMessages] = useState<boolean>(false);
 
-  const currentSessionId = useMemo(() => uuidv4(), []);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+
+  const handleApiError = useCallback((error: any, context?: string) => {
+    console.log(DEBUG_LOG_PREFIX, 'handleApiError CALLED. Context:', context, 'Error:', error?.message, 'Timestamp:', new Date().toISOString());
+    const errorMsg = error?.message || `Failed to ${context || 'perform action'}.`;
+    setChatMessages((prev) => {
+      console.log(DEBUG_LOG_PREFIX, 'Adding error message to chatMessages via handleApiError. Message:', errorMsg);
+      return [
+        ...prev,
+        { id: uuidv4(), sender: 'error', text: `Error: ${errorMsg}` },
+      ];
+    });
+    setChatError(errorMsg); // Set general UI error state
+    setIsStreaming(false);
+    setIsWaitingForModelResponse(false);
+    setTimeout(() => {
+      chatWindowRef.current?.scrollToBottom(true);
+    }, 0);
+  }, []);
+
+  // Function to load messages for a specific session
+  const loadSessionMessages = useCallback(async (sessionId: string) => {
+    if (!userId || !traceId) return;
+
+    setIsLoadingMessages(true);
+    try {
+      const messages = await fetchChatHistory(userId, traceId, sessionId);
+      setChatMessages(messages);
+    } catch (error) {
+      console.error('Failed to load session messages:', error);
+      setChatMessages([]);
+      handleApiError(error, 'load session messages');
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  }, [userId, traceId, handleApiError]);
+
+  // Function to handle session selection
+  const handleSessionSelection = useCallback((sessionId: string) => {
+    setCurrentSessionId(sessionId);
+    loadSessionMessages(sessionId);
+  }, [loadSessionMessages]);
+
+  // Function to start a new session
+  const handleNewSession = useCallback(() => {
+    const newSessionId = uuidv4();
+    setCurrentSessionId(newSessionId);
+    setChatMessages([]); // Clear messages for new session
+  }, []);
 
   useEffect(() => {
     let channel: RealtimeChannel | null = null;
@@ -136,6 +189,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
           } else if (payload.type === 'model_chunk_start') {
             setIsStreaming(true);
             setIsWaitingForModelResponse(false);
+
+            // Filter out empty chunks or thinking blocks
+            if (!payload.chunk || payload.chunk.trim() === '') {
+              return updatedMessages; // Don't create a message for empty chunks
+            }
+
             const newMessage: ChatMessage = {
               id: messageId,
               sender: 'model',
@@ -146,11 +205,15 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
           } else if (payload.type === 'model_chunk_append' && currentMessageRef.current) {
             setIsStreaming(true);
             setIsWaitingForModelResponse(false);
-            updatedMessages = updatedMessages.map((msg) =>
-              msg.id === currentMessageRef.current!.id
-                ? { ...msg, text: msg.text + payload.chunk }
-                : msg
-            );
+
+            // Only append if there's actual content
+            if (payload.chunk && payload.chunk.trim() !== '') {
+              updatedMessages = updatedMessages.map((msg) =>
+                msg.id === currentMessageRef.current!.id
+                  ? { ...msg, text: msg.text + payload.chunk }
+                  : msg
+              );
+            }
             forceScroll = false;
           } else if (payload.type === 'model_response_end') {
             setIsStreaming(false);
@@ -246,24 +309,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
     };
   }, [isChatOpen, userId, traceId, currentSessionId]);
 
-  const handleApiError = useCallback((error: any, context?: string) => {
-    console.log(DEBUG_LOG_PREFIX, 'handleApiError CALLED. Context:', context, 'Error:', error?.message, 'Timestamp:', new Date().toISOString());
-    const errorMsg = error?.message || `Failed to ${context || 'perform action'}.`;
-    setChatMessages((prev) => {
-      console.log(DEBUG_LOG_PREFIX, 'Adding error message to chatMessages via handleApiError. Message:', errorMsg);
-      return [
-        ...prev,
-        { id: uuidv4(), sender: 'error', text: `Error: ${errorMsg}` },
-      ];
-    });
-    setChatError(errorMsg); // Set general UI error state
-    setIsStreaming(false);
-    setIsWaitingForModelResponse(false);
-    setTimeout(() => {
-      chatWindowRef.current?.scrollToBottom(true);
-    }, 0);
-  }, []);
-
   const handleSendMessage = useCallback(
     async (prompt: string) => {
       console.log(DEBUG_LOG_PREFIX, 'handleSendMessage CALLED. Prompt:', prompt, 'Timestamp:', new Date().toISOString());
@@ -321,6 +366,25 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
     [userId, traceId, currentSessionId, traceAnalysisMutation, handleApiError]
   );
 
+  // Fetch sessions when opening chat
+  const handleOpenChat = useCallback(async () => {
+    setIsChatOpen(true);
+    setIsLoadingSessions(true);
+    try {
+      const fetchedSessions = await fetchChatSessions(traceId);
+      setSessions(fetchedSessions);
+    } catch (error) {
+      console.error('Failed to load chat sessions:', error);
+      setSessions([]);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, [traceId]);
+
+  const handleCloseChat = useCallback(() => {
+    setIsChatOpen(false);
+  }, []);
+
   if (!traceId || !userId) {
     return null;
   }
@@ -332,12 +396,20 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
 
   return (
     <>
-      <FloatingChatButton onClick={() => setIsChatOpen((prev) => !prev)} />
+      <FloatingChatButton
+        onClick={handleOpenChat}
+        isOpen={isChatOpen}
+      />
       {isChatOpen && (
         <ChatWindow
           ref={chatWindowRef}
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
+          traceId={traceId}
+          onClose={handleCloseChat}
+          sessions={sessions}
+          isLoadingSessions={isLoadingSessions}
+          onSessionsUpdate={(newSessions) => setSessions(newSessions)}
+          onSelectSession={handleSessionSelection}
+          onStartNewChat={handleNewSession}
           messages={chatMessages}
           sendMessage={handleSendMessage}
           isLoading={traceAnalysisMutation.isPending || isWaitingForModelResponse || isStreaming}
