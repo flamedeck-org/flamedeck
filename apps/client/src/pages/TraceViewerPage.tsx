@@ -13,7 +13,7 @@ import type { ApiResponse } from '@/types';
 import type { FallbackProps } from 'react-error-boundary';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, MessageSquare, Palette, Share2 } from 'lucide-react';
+import { ArrowLeft, Share2 } from 'lucide-react';
 import { TraceViewerCommentSidebar } from '@/components/TraceViewerCommentList/TraceViewerCommentSidebar';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import type { ApiError } from '@/types';

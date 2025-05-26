@@ -1,4 +1,8 @@
 project_id = "jczffinsulwdzhgzggcj"
+
+[edge_runtime]
+policy = "per_worker"
+
 [functions.api-upload-trace]
 enabled = true
 verify_jwt = true
