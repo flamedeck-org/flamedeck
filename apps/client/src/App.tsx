@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ScrollToTop from './components/utils/ScrollToTop';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 import Index from './pages/Index.tsx';
 import Login from './pages/Login.tsx';
 import Traces from './pages/Traces.tsx';
@@ -165,31 +166,33 @@ const App = () => {
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <SharingModalProvider>
-            <TraceUploadModalProvider>
-              <UpgradeModalProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                    <ScrollToTop />
-                    <div className="h-full w-full flex flex-col speedscope-app-container relative">
-                      <Navbar />
-                      <GLCanvas
-                        theme={theme}
-                        setGLCanvas={glCanvasAtom.set}
-                        canvasContext={canvasContext}
-                      />
-                      <AppRoutes />
-                    </div>
-                    <SharingModal />
-                    <TraceUploadModal />
-                    <UpgradeModal />
-                  </BrowserRouter>
-                </TooltipProvider>
-              </UpgradeModalProvider>
-            </TraceUploadModalProvider>
-          </SharingModalProvider>
+          <SidebarProvider>
+            <SharingModalProvider>
+              <TraceUploadModalProvider>
+                <UpgradeModalProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                      <ScrollToTop />
+                      <div className="h-full w-full flex flex-col speedscope-app-container relative">
+                        <Navbar />
+                        <GLCanvas
+                          theme={theme}
+                          setGLCanvas={glCanvasAtom.set}
+                          canvasContext={canvasContext}
+                        />
+                        <AppRoutes />
+                      </div>
+                      <SharingModal />
+                      <TraceUploadModal />
+                      <UpgradeModal />
+                    </BrowserRouter>
+                  </TooltipProvider>
+                </UpgradeModalProvider>
+              </TraceUploadModalProvider>
+            </SharingModalProvider>
+          </SidebarProvider>
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>

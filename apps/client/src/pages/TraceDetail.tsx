@@ -10,21 +10,10 @@ import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { traceApi } from '@/lib/api';
-import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle, MessageSquare, Sparkles, Globe, Lock, Loader2 } from 'lucide-react';
+import { Eye, ExternalLink, AlertTriangle, MessageSquare, Sparkles, Globe, Lock, Loader2 } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
 import PageHeader from '@/components/PageHeader';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import CommentForm from '@/components/CommentForm';
 import type { StructuredComment } from '@/components/comments';
 import { CommentItem } from '@/components/comments';
@@ -42,7 +31,7 @@ import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format, formatDistanceToNow, isToday, isYesterday, isThisYear } from 'date-fns';
-import { TraceTitle, FlamegraphPreview } from '@/components/TraceDetail';
+import { TraceTitle, FlamegraphPreview, TraceDetailHeaderActions } from '@/components/TraceDetail';
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -342,75 +331,12 @@ const TraceDetail: React.FC = () => {
   };
 
   const headerActions = (
-    <div className="flex items-center gap-3">
-      {/* Primary action button with gradient */}
-      <Link
-        to={`/traces/${id}/view?blob=${encodeURIComponent(trace?.blob_path || '')}`}
-        state={{ blobPath: trace?.blob_path }}
-        className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white border-0 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-      >
-        <Eye className="mr-2 h-4 w-4" /> Explore Trace
-      </Link>
-
-      <div className="flex items-center gap-2">
-        {/* Share button with glassmorphic design */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleShareClick}
-          aria-label="Share Trace"
-          className="bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-foreground/20 transition-all duration-300 shadow-sm hover:shadow-md"
-        >
-          <Share2 className="h-4 w-4" />
-        </Button>
-
-        {/* Delete button with enhanced styling */}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={deleteMutation.isPending}
-              aria-label="Delete Trace"
-              className="bg-background/80 backdrop-blur-sm border border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50 text-red-600 hover:text-red-700 transition-all duration-300 shadow-sm hover:shadow-md"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="bg-background/95 backdrop-blur-lg border border-border">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the trace{' '}
-                <strong>{trace?.scenario || `ID: ${trace?.id?.substring(0, 7)}`}</strong> and all
-                associated data.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-foreground/20 transition-all duration-300">
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => id && deleteMutation.mutate(id)}
-                disabled={deleteMutation.isPending}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 transition-all duration-300"
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Back button with glassmorphic design */}
-        <Link
-          to="/traces"
-          className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-background hover:border-foreground/20 transition-all duration-300 shadow-sm hover:shadow-md"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Traces
-        </Link>
-      </div>
-    </div>
+    <TraceDetailHeaderActions
+      traceId={id}
+      trace={trace}
+      onShareClick={handleShareClick}
+      deleteMutation={deleteMutation}
+    />
   );
 
   const owner = trace?.owner;

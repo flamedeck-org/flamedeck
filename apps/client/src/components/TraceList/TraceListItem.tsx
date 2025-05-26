@@ -174,11 +174,11 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
   const expirationStatus = trace.expires_at
     ? getExpirationStatus(trace.expires_at)
     : {
-        isExpiring: false,
-        daysRemaining: null,
-        expirationDate: null,
-        formattedExpirationDate: null,
-      };
+      isExpiring: false,
+      daysRemaining: null,
+      expirationDate: null,
+      formattedExpirationDate: null,
+    };
 
   return (
     <>
@@ -197,10 +197,6 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
             <UserAvatar profile={trace.owner} currentUser={currentUser} size="md" />
             <span className="text-sm truncate">{ownerDisplayName}</span>
           </div>
-        </TableCell>
-        <TableCell className="py-4 font-mono text-xs">{trace.branch || 'N/A'}</TableCell>
-        <TableCell className="py-4 font-mono text-xs">
-          {trace.commit_sha ? trace.commit_sha.substring(0, 7) : 'N/A'}
         </TableCell>
         <TableCell className="py-4">{formatDuration(trace.duration_ms)}</TableCell>
         <TableCell className="py-4 text-muted-foreground text-sm">
