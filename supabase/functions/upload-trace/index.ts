@@ -388,7 +388,16 @@ serve(async (req) => {
           console.log(`Cleaned up orphaned storage object: ${storagePath}`);
         }
 
-        throw new Error(`Failed to create trace record: ${rpcError.message}`);
+        // Return proper error response with RPC error details instead of throwing
+        return new Response(JSON.stringify({
+          error: rpcError.message || 'Failed to create trace record',
+          code: rpcError.code,
+          details: rpcError.details,
+          hint: rpcError.hint,
+        }), {
+          status: rpcError.code === 'P0002' ? 429 : 500, // 429 for rate limit, 500 for other errors
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
 
       const traceId = rpcData?.id;

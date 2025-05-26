@@ -5,6 +5,7 @@ import type { TraceMetadata } from '@/types';
 import type { ApiResponse } from '@/types';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { deleteStorageObject } from './utils';
+import { StandardApiError, createStandardApiError, parseEdgeFunctionError } from './errors';
 
 // Basic metadata needed for trace upload (server will handle processing)
 type TraceUploadMetadata = {
@@ -15,7 +16,7 @@ type TraceUploadMetadata = {
 };
 
 // Get a single trace by ID
-export async function getTrace(id: string): Promise<ApiResponse<TraceMetadata>> {
+export async function getTrace(id: string): Promise<TraceMetadata> {
   try {
     const { data, error } = await supabase
       .from('traces')
@@ -42,20 +43,17 @@ export async function getTrace(id: string): Promise<ApiResponse<TraceMetadata>> 
       }
     }
 
+    if (!data) {
+      throw new StandardApiError('Trace not found', 'TRACE_NOT_FOUND');
+    }
+
     // If data is null *without* an error being thrown above (e.g., owner profile missing but trace exists)
     // or if data exists, return it.
     // The explicit type cast might still be needed depending on how Supabase handles the null owner join
-    return { data: data as TraceMetadata | null, error: null };
+    return data as TraceMetadata;
   } catch (error) {
     console.error(`Error fetching trace details for ${id}:`, error);
-    // Check if it's a PostgrestError to extract details
-    const apiError: ApiError = {
-      message: error instanceof Error ? error.message : 'Failed to fetch trace details',
-      code: (error as PostgrestError)?.code,
-      details: (error as PostgrestError)?.details,
-      hint: (error as PostgrestError)?.hint,
-    };
-    return { data: null, error: apiError };
+    throw createStandardApiError(error, 'Failed to fetch trace details');
   }
 }
 
@@ -113,90 +111,65 @@ export async function uploadTrace(
   userId: string,
   folderId: string | null = null,
   makePublic?: boolean
-): Promise<ApiResponse<TraceMetadata>> {
-  try {
-    // Check if userId is provided (basic sanity check, RLS is the main guard)
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-
-    // Get the current session for authentication
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-      throw new Error('Authentication required to upload files');
-    }
-
-    // Prepare FormData for the unified endpoint
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('scenario', metadata.scenario);
-
-    if (metadata.commit_sha) formData.append('commitSha', metadata.commit_sha);
-    if (metadata.branch) formData.append('branch', metadata.branch);
-    if (metadata.notes) formData.append('notes', metadata.notes);
-    if (folderId) formData.append('folderId', folderId);
-    if (makePublic) formData.append('public', 'true');
-
-    console.log(`Uploading raw file "${file.name}" to unified endpoint`);
-
-    // Call the unified edge function
-    const { data, error } = await supabase.functions.invoke('upload-trace', {
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
-
-    if (error) {
-      console.error('Unified upload function error:', error);
-      throw new Error(error.message || 'Failed to upload trace via unified function');
-    }
-
-    if (!data) {
-      throw new Error('No data returned from upload function');
-    }
-
-    console.log('Unified upload successful:', data);
-
-    // The RPC function returns the trace data, but we need to add owner info for the client
-    // Since we're the uploader, we can construct the owner info from the current user
-    const { data: { user } } = await supabase.auth.getUser();
-    const traceWithOwner = {
-      ...data,
-      owner: user ? {
-        id: user.id,
-        username: user.user_metadata?.username || null,
-        avatar_url: user.user_metadata?.avatar_url || null,
-        first_name: user.user_metadata?.first_name || null,
-        last_name: user.user_metadata?.last_name || null,
-      } : null,
-    };
-
-    return { data: traceWithOwner as TraceMetadata, error: null };
-  } catch (error) {
-    console.error('Upload trace failed:', error);
-
-    // Return structured error
-    const apiError: ApiError = {
-      message: error instanceof Error ? error.message : 'Failed to upload trace',
-      code: (error as PostgrestError)?.code,
-      details: (error as PostgrestError)?.details,
-      hint: (error as PostgrestError)?.hint,
-    };
-
-    // Check for specific limit exceeded errors
-    if (error instanceof Error && error.message.includes('limit')) {
-      const pgErrorCode = (error as any)?.code;
-      if (pgErrorCode === 'P0002') {
-        apiError.message = 'Monthly upload limit reached. Please upgrade or wait until next cycle.';
-      } else if (pgErrorCode === 'P0003') {
-        apiError.message =
-          'Total trace storage limit reached. Please delete older traces or upgrade your plan.';
-      }
-    }
-
-    return { data: null, error: apiError };
+): Promise<TraceMetadata> {
+  // Check if userId is provided (basic sanity check, RLS is the main guard)
+  if (!userId) {
+    throw new StandardApiError('User ID is required');
   }
+
+  // Get the current session for authentication
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    throw new StandardApiError('Authentication required to upload files');
+  }
+
+  // Prepare FormData for the unified endpoint
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('scenario', metadata.scenario);
+
+  if (metadata.commit_sha) formData.append('commitSha', metadata.commit_sha);
+  if (metadata.branch) formData.append('branch', metadata.branch);
+  if (metadata.notes) formData.append('notes', metadata.notes);
+  if (folderId) formData.append('folderId', folderId);
+  if (makePublic) formData.append('public', 'true');
+
+  console.log(`Uploading raw file "${file.name}" to unified endpoint`);
+
+  // Call the unified edge function
+  const { data, error } = await supabase.functions.invoke('upload-trace', {
+    body: formData,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (error) {
+    console.error('Unified upload function error:', error);
+    throw await parseEdgeFunctionError(error, 'Failed to upload trace via unified function');
+  }
+
+  if (!data) {
+    throw new StandardApiError('No data returned from upload function');
+  }
+
+  console.log('Unified upload successful:', data);
+
+  // The RPC function returns the trace data, but we need to add owner info for the client
+  // Since we're the uploader, we can construct the owner info from the current user
+  const { data: { user } } = await supabase.auth.getUser();
+  const traceWithOwner = {
+    ...data,
+    owner: user ? {
+      id: user.id,
+      username: user.user_metadata?.username || null,
+      avatar_url: user.user_metadata?.avatar_url || null,
+      first_name: user.user_metadata?.first_name || null,
+      last_name: user.user_metadata?.last_name || null,
+    } : null,
+  };
+
+  return traceWithOwner as TraceMetadata;
 }
 
 // --- NEW: Rename Trace ---

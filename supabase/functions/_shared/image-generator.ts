@@ -32,36 +32,45 @@ export async function generateFlamegraphImages(
             darkImagePath: null
         };
 
+        // Prepare upload promises for successful generations
+        const uploadPromises: Promise<{ type: 'light' | 'dark'; path: string }>[] = [];
+
         if (lightImageBuffer.status === 'fulfilled') {
-            try {
-                results.lightImagePath = await uploadImageToStorage(
-                    supabaseAdmin,
-                    traceId,
-                    'light',
-                    lightImageBuffer.value
-                );
-                console.log(`Light mode image uploaded: ${results.lightImagePath}`);
-            } catch (error) {
-                console.error('Failed to upload light mode image:', error);
-            }
+            uploadPromises.push(
+                uploadImageToStorage(supabaseAdmin, traceId, 'light', lightImageBuffer.value)
+                    .then(path => ({ type: 'light' as const, path }))
+            );
         } else {
             console.error('Failed to generate light mode image:', lightImageBuffer.reason);
         }
 
         if (darkImageBuffer.status === 'fulfilled') {
-            try {
-                results.darkImagePath = await uploadImageToStorage(
-                    supabaseAdmin,
-                    traceId,
-                    'dark',
-                    darkImageBuffer.value
-                );
-                console.log(`Dark mode image uploaded: ${results.darkImagePath}`);
-            } catch (error) {
-                console.error('Failed to upload dark mode image:', error);
-            }
+            uploadPromises.push(
+                uploadImageToStorage(supabaseAdmin, traceId, 'dark', darkImageBuffer.value)
+                    .then(path => ({ type: 'dark' as const, path }))
+            );
         } else {
             console.error('Failed to generate dark mode image:', darkImageBuffer.reason);
+        }
+
+        // Upload all successful images in parallel
+        if (uploadPromises.length > 0) {
+            const uploadResults = await Promise.allSettled(uploadPromises);
+
+            uploadResults.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    const { type, path } = result.value;
+                    if (type === 'light') {
+                        results.lightImagePath = path;
+                        console.log(`Light mode image uploaded: ${path}`);
+                    } else {
+                        results.darkImagePath = path;
+                        console.log(`Dark mode image uploaded: ${path}`);
+                    }
+                } else {
+                    console.error(`Failed to upload image:`, result.reason);
+                }
+            });
         }
 
         return results;

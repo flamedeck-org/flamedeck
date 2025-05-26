@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import type { ProfileType } from '../utils';
+import { type ProfileType } from '@flamedeck/speedscope-import';
 import { processAndPrepareTraceUpload } from '../utils';
 
 interface UseTraceProcessorProps {
@@ -10,7 +10,7 @@ interface UseTraceProcessorProps {
 interface UseTraceProcessorReturn {
   isProcessing: boolean;
   processingError: string | null;
-  processedFile: Blob | null;
+  processedFile: File | null;
   processedDurationMs: number | null;
   profileType: ProfileType | null;
 }
@@ -18,7 +18,7 @@ interface UseTraceProcessorReturn {
 export function useTraceProcessor({ file }: UseTraceProcessorProps): UseTraceProcessorReturn {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
-  const [processedFile, setProcessedFile] = useState<Blob | null>(null);
+  const [processedFile, setProcessedFile] = useState<File | null>(null);
   const [processedDurationMs, setProcessedDurationMs] = useState<number | null>(null);
   const [profileType, setProfileType] = useState<ProfileType | null>(null);
   const currentFileRef = useRef<File | null>(null);

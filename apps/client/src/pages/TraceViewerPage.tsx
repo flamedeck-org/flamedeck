@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +34,7 @@ import {
 import { type FlamegraphThemeName } from '@flamedeck/speedscope-theme/types.ts';
 import { useSharingModal } from '@/hooks/useSharingModal';
 import { UnauthenticatedChatTeaser } from '@/components/Chat/UnauthenticatedChatTeaser';
+import { useTraceDetails } from '@/hooks/useTraceDetails';
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -113,46 +114,43 @@ const TraceViewerPage: React.FC = () => {
   });
   // ------------------------------------
 
-  // --- Conditionally fetch trace details ---
-  const traceDetailsQueryKey = useMemo(
-    () => (isAuthenticated ? ['traceDetails', id] : ['publicTraceDetails', id]),
-    [isAuthenticated, id]
-  );
-
-  const fetchTraceDetailsFn = useMemo(() => {
-    // Explicitly type the functions being returned
-    return (): Promise<
-      ApiResponse<TraceMetadata> | ApiResponse<{ id: string; blob_path: string }>
-    > => (isAuthenticated ? traceApi.getTrace(id) : traceApi.getPublicTrace(id));
-  }, [isAuthenticated, id]);
-
-  // Define the expected type for the query data, which depends on authentication state
-  type TraceDetailsQueryData =
-    | ApiResponse<TraceMetadata>
-    | ApiResponse<{ id: string; blob_path: string }>;
-
+  // --- Fetch trace details for authenticated users ---
   const {
-    data: traceDetailsApiResponse, // Renamed from traceData
-    isLoading: isLoadingTraceDetails, // Renamed from isLoadingTrace
-    error: traceDetailsError, // Renamed from traceError
-  } = useQuery<TraceDetailsQueryData, ApiError>({
-    queryKey: traceDetailsQueryKey,
-    queryFn: fetchTraceDetailsFn,
-    enabled: !!id && !blobPathFromState, // Only fetch if ID exists and blob path isn't in state
-    staleTime: 5 * 60 * 1000, // Stale time of 5 minutes
+    data: authenticatedTraceData,
+    isLoading: isLoadingAuthenticatedTrace,
+    error: authenticatedTraceError,
+  } = useTraceDetails(isAuthenticated && !blobPathFromState ? id : null);
+
+  // --- Fetch public trace details for unauthenticated users ---
+  const {
+    data: publicTraceApiResponse,
+    isLoading: isLoadingPublicTrace,
+    error: publicTraceError,
+  } = useQuery<ApiResponse<{ id: string; blob_path: string }>, ApiError>({
+    queryKey: ['publicTraceDetails', id],
+    queryFn: () => traceApi.getPublicTrace(id),
+    enabled: !isAuthenticated && !!id && !blobPathFromState,
+    staleTime: 5 * 60 * 1000,
     retry: (failureCount, error: ApiError) => {
       // Don't retry on 404-like errors (not found or not public)
       if (error?.code === '404' || error?.code === 'PGRST116') {
         return false;
       }
-      // Standard retry logic for other errors
       return failureCount < 3;
     },
   });
-  // -----------------------------------------
 
-  // Extract data differently based on authentication state
-  const traceData = traceDetailsApiResponse?.data;
+  // Extract the actual data from public trace response
+  const publicTraceData = publicTraceApiResponse?.data;
+
+  // Combine loading states
+  const isLoadingTraceDetails = isLoadingAuthenticatedTrace || isLoadingPublicTrace;
+
+  // Combine errors
+  const traceDetailsError = authenticatedTraceError || publicTraceError || publicTraceApiResponse?.error;
+
+  // Get the trace data (authenticated has full metadata, public only has id/blob_path)
+  const traceData = authenticatedTraceData || publicTraceData;
 
   // Get the blob path (conditionally)
   const blobPath =
