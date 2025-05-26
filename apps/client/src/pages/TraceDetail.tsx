@@ -317,13 +317,6 @@ const TraceDetail: React.FC = () => {
     },
   });
 
-  // updateScenarioMutation and its handlers are now in TraceTitle component
-  // const updateScenarioMutation = useMutation({ ... });
-  // const handleEditScenarioClick = () => { ... };
-  // const handleScenarioInputChange = (event: React.ChangeEvent<HTMLInputElement>) => { ... };
-  // const handleScenarioSave = () => { ... };
-  // const handleScenarioCancel = () => { ... };
-
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'Unknown';
     const date = new Date(dateString);
