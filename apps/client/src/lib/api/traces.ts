@@ -1,11 +1,18 @@
 import type { ApiError } from '@/types';
 
 import { supabase } from '@/integrations/supabase/client';
-import type { TraceMetadata, TraceUpload } from '@/types';
+import type { TraceMetadata } from '@/types';
 import type { ApiResponse } from '@/types';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { deleteStorageObject } from './utils';
-import { uploadJson } from './storage';
+
+// Basic metadata needed for trace upload (server will handle processing)
+type TraceUploadMetadata = {
+  scenario: string;
+  commit_sha?: string | null;
+  branch?: string | null;
+  notes?: string | null;
+};
 
 // Get a single trace by ID
 export async function getTrace(id: string): Promise<ApiResponse<TraceMetadata>> {
@@ -102,89 +109,72 @@ export async function getPublicTrace(
 // Upload a new trace
 export async function uploadTrace(
   file: File,
-  metadata: Omit<TraceUpload, 'blob_path'>,
+  metadata: TraceUploadMetadata,
   userId: string,
   folderId: string | null = null,
   makePublic?: boolean
 ): Promise<ApiResponse<TraceMetadata>> {
-  const bucket = 'traces';
-  let filePathInBucket: string | null = null;
   try {
     // Check if userId is provided (basic sanity check, RLS is the main guard)
     if (!userId) {
       throw new Error('User ID is required');
     }
 
-    // 2. Generate unique storage path
-    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
-    const fileName = file.name.endsWith('.gz') ? file.name : `${file.name}.gz`; // Ensure .gz
-    filePathInBucket = `${timestamp}/${fileName}`;
-
-    // 3. Read and Parse File Content
-    let jsonObjectToUpload: unknown;
-    try {
-      const fileContent = await file.text();
-      jsonObjectToUpload = JSON.parse(fileContent);
-    } catch (parseError) {
-      console.error('Error reading or parsing processed file for uploadJson:', parseError);
-      throw new Error('Invalid JSON content in processed file.');
+    // Get the current session for authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      throw new Error('Authentication required to upload files');
     }
 
-    // 4. Upload Compressed JSON via uploadJson
-    console.log(`Attempting compressed upload to bucket: ${bucket}, path: ${filePathInBucket}`);
-    const uploadResult = await uploadJson(bucket, filePathInBucket, jsonObjectToUpload);
+    // Prepare FormData for the unified endpoint
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('scenario', metadata.scenario);
 
-    // Handle upload failure - does not require cleanup as nothing was stored yet
-    if ('error' in uploadResult) {
-      throw uploadResult.error;
-    }
-    console.log(`Compressed upload successful. Path: ${uploadResult.path}`); // path is relative to bucket
+    if (metadata.commit_sha) formData.append('commitSha', metadata.commit_sha);
+    if (metadata.branch) formData.append('branch', metadata.branch);
+    if (metadata.notes) formData.append('notes', metadata.notes);
+    if (folderId) formData.append('folderId', folderId);
+    if (makePublic) formData.append('public', 'true');
 
-    // ---- Upload successful, proceed to DB insert ----
+    console.log(`Uploading raw file "${file.name}" to unified endpoint`);
 
-    // 5. Construct full storage path for DB record
-    const storagePath = `${bucket}/${uploadResult.path}`;
-
-    // 6. Insert Trace Metadata into Database (Now RPC Call)
-    console.log(`Calling create_trace RPC for user ${userId}, public: ${makePublic ?? false}`);
-    const { data: rpcData, error: rpcError } = await supabase.rpc('create_trace', {
-      p_user_id: userId,
-      p_blob_path: storagePath,
-      p_upload_source: 'web' as const,
-      p_make_public: makePublic ?? false,
-      p_commit_sha: metadata.commit_sha,
-      p_branch: metadata.branch,
-      p_scenario: metadata.scenario,
-      p_duration_ms: Math.round(metadata.duration_ms),
-      p_file_size_bytes: file.size, // Size of the *original* file or processed file if different; RPC expects bigint
-      p_profile_type: metadata.profile_type,
-      p_notes: metadata.notes,
-      p_folder_id: folderId,
+    // Call the unified edge function
+    const { data, error } = await supabase.functions.invoke('upload-trace', {
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
     });
 
-    // Handle DB insert failure - Requires cleanup of the uploaded storage object
-    if (rpcError) {
-      console.error('RPC call to create_trace failed after successful storage upload:', rpcError);
-      // Throw a new error to be caught by the outer catch block for cleanup
-      throw new Error(`RPC call to create_trace failed: ${rpcError.message}`);
+    if (error) {
+      console.error('Unified upload function error:', error);
+      throw new Error(error.message || 'Failed to upload trace via unified function');
     }
 
-    // Success!
-    return { data: rpcData as TraceMetadata, error: null };
+    if (!data) {
+      throw new Error('No data returned from upload function');
+    }
+
+    console.log('Unified upload successful:', data);
+
+    // The RPC function returns the trace data, but we need to add owner info for the client
+    // Since we're the uploader, we can construct the owner info from the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    const traceWithOwner = {
+      ...data,
+      owner: user ? {
+        id: user.id,
+        username: user.user_metadata?.username || null,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        first_name: user.user_metadata?.first_name || null,
+        last_name: user.user_metadata?.last_name || null,
+      } : null,
+    };
+
+    return { data: traceWithOwner as TraceMetadata, error: null };
   } catch (error) {
     console.error('Upload trace failed:', error);
-
-    // Cleanup: Attempt to delete the storage object if upload might have succeeded
-    // Check if filePathInBucket was determined (meaning we got past step 2)
-    if (filePathInBucket) {
-      console.warn(
-        'Upload process failed, attempting to clean up potentially orphaned storage object...'
-      );
-      // Use the helper function for deletion
-      await deleteStorageObject(bucket, filePathInBucket);
-    } else {
-      console.log('Upload failed early, no storage object cleanup needed.');
-    }
 
     // Return structured error
     const apiError: ApiError = {
@@ -194,23 +184,16 @@ export async function uploadTrace(
       hint: (error as PostgrestError)?.hint,
     };
 
-    // --- Check for specific limit exceeded errors from trigger ---
+    // Check for specific limit exceeded errors
     if (error instanceof Error && error.message.includes('limit')) {
-      // General check for limit errors
-      const pgErrorCode = (error as any)?.code; // Attempt to get Postgres error code
+      const pgErrorCode = (error as any)?.code;
       if (pgErrorCode === 'P0002') {
-        // Monthly Limit
         apiError.message = 'Monthly upload limit reached. Please upgrade or wait until next cycle.';
-        // Optionally add: apiError.code = 'MONTHLY_LIMIT_EXCEEDED';
       } else if (pgErrorCode === 'P0003') {
-        // Total Limit
         apiError.message =
           'Total trace storage limit reached. Please delete older traces or upgrade your plan.';
-        // Optionally add: apiError.code = 'TOTAL_LIMIT_EXCEEDED';
       }
-      // Keep original DB message if code doesn't match known ones
     }
-    // --- End Limit Check Error Handling ---
 
     return { data: null, error: apiError };
   }

@@ -160,7 +160,7 @@ const Login: React.FC = () => {
 
               <CardFooter className="flex flex-col items-center text-center px-8 pb-10">
                 <p className="text-sm text-muted-foreground">
-                  Performance profiling for engineering teams
+                  Performance debugging made simple
                 </p>
                 <p className="text-xs text-muted-foreground/70 mt-1">
                   Start analyzing your traces in seconds
