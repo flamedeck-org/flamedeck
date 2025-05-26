@@ -622,7 +622,6 @@ const TraceDetail: React.FC = () => {
 
               {/* Quick Actions */}
               <div className="space-y-3">
-                <h4 className="text-lg font-bold text-foreground">Quick Actions</h4>
                 <div className="grid grid-cols-1 gap-2">
                   <Link
                     to={`/traces/${id}/view?blob=${encodeURIComponent(trace?.blob_path || '')}`}

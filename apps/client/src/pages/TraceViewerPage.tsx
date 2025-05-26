@@ -35,6 +35,7 @@ import { type FlamegraphThemeName } from '@flamedeck/speedscope-theme/types.ts';
 import { useSharingModal } from '@/hooks/useSharingModal';
 import { UnauthenticatedChatTeaser } from '@/components/Chat/UnauthenticatedChatTeaser';
 import { useTraceDetails } from '@/hooks/useTraceDetails';
+import { TraceViewerHeaderActions } from '@/components/TraceViewer/TraceViewerHeaderActions';
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -87,6 +88,7 @@ const TraceViewerPage: React.FC = () => {
   const initialView = viewFromQuery || initialViewFromState || 'time_ordered';
 
   const [selectedView, setSelectedView] = useState<SpeedscopeViewType>(initialView);
+  const [isCommentSidebarOpen, setIsCommentSidebarOpen] = useState(false);
 
   // Track if we've done the initial view setup
   const hasInitializedView = useRef(false);
@@ -99,7 +101,6 @@ const TraceViewerPage: React.FC = () => {
   const blobPathFromState = location.state?.blobPath as string | undefined;
 
   // --- Call comment hook unconditionally ---
-  // NOTE: useCommentManagement needs to be updated to handle isAuthenticated=false internally
   const commentManagement = useCommentManagement(id, isAuthenticated);
   // -----------------------------------------
 
@@ -210,6 +211,14 @@ const TraceViewerPage: React.FC = () => {
   }, [id, openModal]);
   // -------------------
 
+  const handleShowComments = useCallback(() => {
+    setIsCommentSidebarOpen(true);
+  }, []);
+
+  const handleFlamegraphThemeChange = useCallback((theme: FlamegraphThemeName) => {
+    flamegraphThemeAtom.set(theme);
+  }, []);
+
   // Whether we're loading data
   const isLoading = (isLoadingTraceDetails && !blobPathFromState) || (isLoadingBlob && !!blobPath);
 
@@ -269,72 +278,14 @@ const TraceViewerPage: React.FC = () => {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="flex items-center gap-2">
-              {/* --- Add Test Snapshot Button --- */}
-              {/* <Button variant="outline" size="sm" onClick={handleTriggerSnapshotForTest} title="Generate snapshot for current view">
-                Test Snapshot
-              </Button> */}
-              {/* ------------------------------ */}
-              {/* --- Flamegraph Theme Selector --- */}
-              <Select
-                value={selectedFlamegraphTheme}
-                onValueChange={(value: FlamegraphThemeName) => flamegraphThemeAtom.set(value)}
-              >
-                <SelectTrigger
-                  className="w-[150px] h-8 py-0.5 text-sm"
-                  title="Select Flamegraph Theme"
-                >
-                  <SelectValue placeholder="Select theme..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(flamegraphThemeDisplayNames) as FlamegraphThemeName[]).map(
-                    (themeName) => {
-                      const previewGradient = flamegraphThemePreviews[themeName];
-                      return (
-                        <SelectItem
-                          key={themeName}
-                          value={themeName}
-                          className="data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground [&_svg]:hidden pl-3"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="inline-block w-4 h-4 rounded-sm border border-border"
-                              style={
-                                previewGradient
-                                  ? { background: previewGradient }
-                                  : { backgroundColor: 'transparent' }
-                              }
-                              aria-hidden="true"
-                            />
-                            <span>{flamegraphThemeDisplayNames[themeName]}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    }
-                  )}
-                </SelectContent>
-              </Select>
-              {/* --------------------------------- */}
-              {isAuthenticated && commentManagement && (
-                <TraceViewerCommentSidebar traceId={id} activeView={selectedView} />
-              )}
-              {/* --- Add Share Button --- */}
-              {isAuthenticated && (
-                <Button variant="ghost" size="sm" onClick={handleShareClick} title="Share Trace">
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              )}
-              {/* ------------------------- */}
-              <Link
-                to={isAuthenticated ? `/traces/${id}` : '/'}
-                title={isAuthenticated ? 'Back to Details' : 'Back to Home'}
-              >
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  {isAuthenticated ? 'Back to Details' : 'Back Home'}
-                </Button>
-              </Link>
-            </div>
+            <TraceViewerHeaderActions
+              traceId={id}
+              isAuthenticated={isAuthenticated}
+              onShowComments={handleShowComments}
+              onShare={handleShareClick}
+              selectedFlamegraphTheme={selectedFlamegraphTheme}
+              onFlamegraphThemeChange={handleFlamegraphThemeChange}
+            />
           </div>
           <div className="flex-grow overflow-hidden relative">
             <ErrorBoundary
@@ -372,6 +323,16 @@ const TraceViewerPage: React.FC = () => {
         ) : (
           <UnauthenticatedChatTeaser traceId={id} />
         )
+      )}
+
+      {/* Conditionally render TraceViewerCommentSidebar based on isCommentSidebarOpen */}
+      {isAuthenticated && commentManagement && (
+        <TraceViewerCommentSidebar
+          traceId={id}
+          activeView={selectedView}
+          isOpen={isCommentSidebarOpen}
+          onOpenChange={setIsCommentSidebarOpen}
+        />
       )}
     </Layout>
   );

@@ -31,15 +31,17 @@ const SettingsLayout = () => {
   return (
     <AuthGuard>
       <Layout hideNav={false} noPadding={true}>
-        {/* Custom settings layout that overrides the main layout constraints */}
-        <div className="flex h-full w-full">
-          {/* Desktop Sidebar - Hidden on mobile and tablet, flush to left edge */}
-          <div className="hidden lg:block flex-shrink-0">
-            <SettingsSidebar />
+        {/* Custom settings layout with proper height management */}
+        <div className="flex h-full w-full overflow-hidden">
+          {/* Desktop Sidebar - Hidden on mobile and tablet, full height */}
+          <div className="hidden lg:block flex-shrink-0 w-64">
+            <div className="h-full">
+              <SettingsSidebar />
+            </div>
           </div>
 
-          {/* Main Content - Only this area scrolls */}
-          <div className="flex-1 h-full overflow-y-auto">
+          {/* Main Content - This area scrolls independently */}
+          <div className="flex-1 overflow-y-auto">
             <div className="px-6 md:px-8 py-6 w-full">
               {/* Mobile Settings Navigation - Only visible on mobile/tablet */}
               <div className="lg:hidden mb-6">

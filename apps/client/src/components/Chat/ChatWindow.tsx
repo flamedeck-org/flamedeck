@@ -194,7 +194,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     };
 
     return (
-      <div className="fixed bottom-24 right-6 w-[32rem] h-[calc(100vh-15rem)] bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl flex flex-col z-40 overflow-hidden">
+      <div className="fixed top-16 left-0 right-0 bottom-0 md:bottom-24 md:right-6 md:top-auto md:left-auto w-full h-[calc(100vh-4rem)] md:w-[32rem] md:h-[calc(100vh-15rem)] bg-background/95 backdrop-blur-xl border-0 md:border border-border/50 md:rounded-2xl shadow-2xl flex flex-col z-40 overflow-hidden">
         {currentView.type === 'conversation-list' ? (
           <ConversationListView
             sessions={sessions}
@@ -219,13 +219,13 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
           />
         )}
 
-        {/* Close button - always visible */}
+        {/* Close button - positioned differently for mobile vs desktop */}
         <Button
           variant="ghost"
           size="sm"
           onClick={onClose}
           aria-label="Close Chat"
-          className="absolute top-2 right-2 h-6 w-6 p-0 hover:bg-background/80 z-50 text-muted-foreground hover:text-foreground"
+          className="absolute top-4 right-4 md:top-2 md:right-2 h-8 w-8 md:h-6 md:w-6 p-0 hover:bg-background/80 z-50 text-muted-foreground hover:text-foreground"
         >
           ✕
         </Button>
