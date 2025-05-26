@@ -8,11 +8,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { traceApi } from '@/lib/api';
-import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle, MessageSquare, Sparkles } from 'lucide-react';
+import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle, MessageSquare, Sparkles, Globe, Lock, Loader2 } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
 import PageHeader from '@/components/PageHeader';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +37,7 @@ import { useTraceDetails } from '@/hooks/useTraceDetails';
 import { useTraceComments } from '@/hooks/useTraceComments';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDuration } from '@/lib/utils';
-import type { TraceCommentWithAuthor } from '@/lib/api';
+import type { TraceCommentWithAuthor, TracePermissionWithUser, TraceRole } from '@/lib/api';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -176,6 +177,42 @@ const TraceDetail: React.FC = () => {
   // Determine authentication status
   const isAuthenticated = !!currentUser;
 
+  // Fetch trace permissions to determine public access state
+  const {
+    data: permissionsData,
+    isLoading: isLoadingPermissions,
+    error: permissionsError,
+  } = useQuery<TracePermissionWithUser[] | null, string>({
+    queryKey: ['tracePermissions', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const permResponse = await traceApi.getTracePermissions(id);
+      if (permResponse.error) {
+        throw permResponse.error;
+      }
+      return permResponse.data;
+    },
+    enabled: !!id && isAuthenticated,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const permissions: TracePermissionWithUser[] = useMemo(
+    () => permissionsData ?? [],
+    [permissionsData]
+  );
+
+  // Calculate current public access state
+  const publicPermission = useMemo(() => permissions.find((p) => p.user === null), [permissions]);
+  const isPublic = publicPermission?.role === 'viewer';
+
+  // Calculate user permissions for access control
+  const currentUserPermission = useMemo(
+    () => permissions.find((p) => p.user?.id === currentUser?.id),
+    [permissions, currentUser]
+  );
+  const canManagePermissions =
+    currentUserPermission?.role === 'editor' || currentUserPermission?.role === 'owner';
+
   // Use the new hook
   const { replyingToCommentId, handleStartReply, handleCancelReply, handleCommentUpdate } =
     useCommentManagement(id, isAuthenticated);
@@ -229,6 +266,53 @@ const TraceDetail: React.FC = () => {
         title: 'Error deleting trace',
         description: error.message,
         variant: 'destructive',
+      });
+    },
+  });
+
+  // Mutation for toggling public access
+  const togglePublicAccessMutation = useMutation({
+    mutationFn: (makePublic: boolean) => {
+      if (!id) throw new Error('Trace ID is missing');
+      const targetRole: TraceRole | null = makePublic ? 'viewer' : null;
+      return traceApi.setPublicTraceAccess(id, targetRole);
+    },
+    onSuccess: (data, makePublic) => {
+      if (makePublic) {
+        // Show toast with copy link action when making public
+        toast({
+          title: 'Trace is now public',
+          description: 'Anyone with the link can now view this trace.',
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = `${window.location.origin}/traces/${id}/view`;
+                navigator.clipboard.writeText(url).then(() => {
+                  toast({ title: 'Link copied to clipboard' });
+                }).catch(() => {
+                  toast({ title: 'Failed to copy link', variant: 'destructive' });
+                });
+              }}
+            >
+              Copy Link
+            </Button>
+          ),
+        });
+      } else {
+        toast({
+          title: 'Trace is now private',
+          description: 'Only people with access can view this trace.',
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['tracePermissions', id] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error updating access',
+        description: error.message,
+        variant: 'destructive'
       });
     },
   });
@@ -540,6 +624,39 @@ const TraceDetail: React.FC = () => {
                       <ExternalLink className="h-3.5 w-3.5" />
                     </div>
                   </Link>
+
+                  {/* Public Access Toggle - Only show if user can manage permissions */}
+                  {canManagePermissions && (
+                    <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-green-500/5 to-emerald-500/5 hover:from-green-500/10 hover:to-emerald-500/10 border border-border/80 hover:border-green-500/30 rounded-xl transition-all duration-300 hover:shadow-md">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                          {isLoadingPermissions ? (
+                            <Loader2 className="h-4 w-4 text-white animate-spin" />
+                          ) : isPublic ? (
+                            <Globe className="h-4 w-4 text-white" />
+                          ) : (
+                            <Lock className="h-4 w-4 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-sm text-foreground group-hover:text-green-600 transition-colors duration-300">
+                            Public Access
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {isPublic ? 'Anyone with the link can view' : 'Only people with access can view'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <Switch
+                          checked={isPublic}
+                          onCheckedChange={(checked) => togglePublicAccessMutation.mutate(checked)}
+                          disabled={togglePublicAccessMutation.isPending || isLoadingPermissions}
+                          className="data-[state=checked]:bg-green-500"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -799,3 +916,4 @@ const TraceDetail: React.FC = () => {
 };
 
 export default TraceDetail;
+
