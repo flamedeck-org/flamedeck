@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { traceApi } from '@/lib/api';
-import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle, MessageSquare, Sparkles } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
 import PageHeader from '@/components/PageHeader';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -268,7 +268,7 @@ const TraceDetail: React.FC = () => {
     <div className="flex items-center gap-3">
       {/* Primary action button with gradient */}
       <Link
-        to={`/traces/${id}/view`}
+        to={`/traces/${id}/view?blob=${encodeURIComponent(trace?.blob_path || '')}`}
         state={{ blobPath: trace?.blob_path }}
         className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white border-0 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
       >
@@ -496,7 +496,7 @@ const TraceDetail: React.FC = () => {
                 <h4 className="text-lg font-bold text-foreground">Quick Actions</h4>
                 <div className="grid grid-cols-1 gap-2">
                   <Link
-                    to={`/traces/${id}/view`}
+                    to={`/traces/${id}/view?blob=${encodeURIComponent(trace?.blob_path || '')}`}
                     state={{ blobPath: trace?.blob_path }}
                     className="group flex items-center justify-between p-4 bg-gradient-to-r from-red-500/5 to-yellow-500/5 hover:from-red-500/10 hover:to-yellow-500/10 border border-border/80 hover:border-red-500/30 rounded-xl transition-all duration-300 hover:shadow-md"
                   >
@@ -514,6 +514,29 @@ const TraceDetail: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
+                  </Link>
+
+                  <Link
+                    to={`/traces/${id}/view?chat=open&blob=${encodeURIComponent(trace?.blob_path || '')}`}
+                    state={{ blobPath: trace?.blob_path }}
+                    className="group flex items-center justify-between p-4 bg-gradient-to-r from-purple-500/5 to-blue-500/5 hover:from-purple-500/10 hover:to-blue-500/10 border border-border/80 hover:border-purple-500/30 rounded-xl transition-all duration-300 hover:shadow-md"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                        <Sparkles className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm text-foreground group-hover:text-purple-600 transition-colors duration-300">
+                          Analyze with AI
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Get AI insights and analysis
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <ExternalLink className="h-3.5 w-3.5" />
                     </div>
                   </Link>
@@ -630,10 +653,10 @@ const TraceDetail: React.FC = () => {
                                     <h3 className="text-lg font-semibold">{sectionTitle}</h3>
                                     {viewType && (
                                       <Link
-                                        to={`/traces/${trace.id}/view`}
+                                        to={`/traces/${trace.id}/view?view=${viewType}&blob=${encodeURIComponent(trace.blob_path || '')}`}
                                         state={{
                                           initialView: viewType,
-                                          blobPath: trace.blob_path,
+                                          blobPath: trace.blob_path
                                         }}
                                         className={
                                           buttonVariants({ variant: 'outline', size: 'sm' }) +
