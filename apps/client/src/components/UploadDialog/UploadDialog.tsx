@@ -244,20 +244,14 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       setUploadError(null);
 
       try {
-        const finalMetadata: Omit<TraceUpload, 'blob_path'> = {
-          ...formData,
-          duration_ms: processedDurationMs,
-          profile_type: profileType,
-        };
-
-        const fileToUpload = new File([processedFile], `${file.name}.speedscope.json`, {
-          type: processedFile.type,
-        });
+        // Send the original raw file to the unified endpoint
+        // Server will handle its own processing
         const response = await traceApi.uploadTrace(
-          fileToUpload,
-          finalMetadata,
+          file, // Send raw file, not processed file
+          formData, // Basic metadata only
           user.id,
-          selectedFolderId
+          selectedFolderId,
+          false // makePublic - no UI for this currently, default to private
         );
 
         if (response.error) {
