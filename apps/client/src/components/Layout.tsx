@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import MobileSidebar from './MobileSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 
@@ -44,12 +45,30 @@ const Layout: React.FC<LayoutProps> = ({
       <div
         className={`flex-1 flex ${isLoggedIn ? 'flex-row' : 'flex-col'} overflow-hidden mt-[var(--navbar-height)]`}
       >
-        {isLoggedIn && <Sidebar minimized={shouldMinimizeSidebar} />}
+        {/* Desktop Sidebar - Hidden on mobile, minimized on medium, full on large+ */}
+        {isLoggedIn && (
+          <>
+            {/* Medium screens - minimized sidebar */}
+            <div className="hidden md:block lg:hidden">
+              <Sidebar minimized={true} />
+            </div>
+            {/* Large screens - full sidebar (unless forced minimized by page type) */}
+            <div className="hidden lg:block">
+              <Sidebar minimized={shouldMinimizeSidebar} />
+            </div>
+          </>
+        )}
+
+        {/* Mobile Sidebar - Only renders when open */}
+        {isLoggedIn && <MobileSidebar minimized={shouldMinimizeSidebar} />}
+
         <main
           className={`flex-1 h-full overflow-y-auto ${mainPaddingClasses} ${conditionalElevation} ${className}`}
         >
-          {children}
-          {footer && <div className="mt-auto m-[-1.5em] md:m-[-2em]">{footer}</div>}
+          <div className={`mx-auto w-full ${noPadding ? '' : 'xl:max-w-7xl'}`}>
+            {children}
+            {footer && <div className="mt-auto m-[-1.5em] md:m-[-2em]">{footer}</div>}
+          </div>
         </main>
       </div>
     </div>

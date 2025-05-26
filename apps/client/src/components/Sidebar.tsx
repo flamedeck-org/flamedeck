@@ -20,13 +20,14 @@ import { SidebarActionButtons } from './SidebarActionButtons';
 
 interface SidebarProps {
   minimized?: boolean;
+  mobile?: boolean;
 }
 
 const ICON_SIZE = 'h-6 w-6';
 const LIST_ICON_SIZE = 'h-5 w-5';
 const MINIMIZED_BUTTON_SIZE = 'h-9 w-full px-3';
 
-const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
+const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) => {
   const { user, signOut, profile, profileLoading } = useAuth();
   const navigate = useNavigate();
   const displayName = useDisplayName(profile, user);
@@ -69,7 +70,12 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false }) => {
   return (
     <TooltipProvider delayDuration={0}>
       <aside
-        className={`${minimized ? 'w-16' : 'w-64'} border-r bg-background flex flex-col z-10 transition-width duration-200 relative z-50`}
+        className={`${mobile
+          ? 'w-full h-full'
+          : minimized
+            ? 'w-16 h-full'
+            : 'w-64 h-full'
+          } border-r bg-background flex flex-col z-10 transition-width duration-200 relative z-50`}
       >
         <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
           <NavLink

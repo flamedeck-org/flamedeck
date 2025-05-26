@@ -273,16 +273,7 @@ function TraceListComponent() {
                     <Skeleton className="h-4 w-16" />
                   </TableHead>
                   <TableHead className="py-3">
-                    <Skeleton className="h-4 w-16" />
-                  </TableHead>
-                  <TableHead className="py-3">
                     <Skeleton className="h-4 w-20" />
-                  </TableHead>
-                  <TableHead className="py-3">
-                    <Skeleton className="h-4 w-12" />
-                  </TableHead>
-                  <TableHead className="py-3">
-                    <Skeleton className="h-4 w-24" />
                   </TableHead>
                   <TableHead className="text-right pr-6 py-3">
                     <Skeleton className="h-9 w-9 float-right" />
@@ -300,15 +291,6 @@ function TraceListComponent() {
                     </TableCell>
                     <TableCell className="py-3">
                       <Skeleton className="h-4 w-1/4" />
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <Skeleton className="h-4 w-1/4" />
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <Skeleton className="h-4 w-1/3" />
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <Skeleton className="h-4 w-1/5" />
                     </TableCell>
                     <TableCell className="py-3">
                       <Skeleton className="h-4 w-1/2" />
@@ -412,8 +394,6 @@ function TraceListComponent() {
                 <TableRow className="bg-background/50 backdrop-blur-sm hover:bg-background/70 border-b border-border">
                   <TableHead className="pl-6 font-semibold text-foreground">Name</TableHead>
                   <TableHead className="font-semibold text-foreground">Owner</TableHead>
-                  <TableHead className="font-semibold text-foreground">Branch</TableHead>
-                  <TableHead className="font-semibold text-foreground">Commit</TableHead>
                   <TableHead className="font-semibold text-foreground">Duration</TableHead>
                   <TableHead className="font-semibold text-foreground">Last Updated</TableHead>
                   <TableHead className="text-right pr-6 font-semibold text-foreground">Actions</TableHead>
