@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { FolderSelectDialog } from '@/components/FolderSelectDialog';
 import { getFolderViewQueryKey } from '@/components/TraceList/hooks/useTraces';
 import { getSubscriptionUsageQueryKey } from '@/hooks/useSubscriptionUsage';
+import { useUpgradeModal } from '@/hooks/useUpgradeModal';
 
 // Define the shape of our form data
 type FormFields = Omit<
@@ -37,11 +38,11 @@ interface UploadDialogProps {
 export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(initialFile || null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const { user } = useAuth();
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(initialFolderId || null);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { openModal: openUpgradeModal } = useUpgradeModal();
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -122,7 +123,6 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFile = e.target.files?.[0];
-      setUploadError(null);
 
       if (selectedFile) {
         if (selectedFile.size > 100 * 1024 * 1024) {
@@ -149,7 +149,6 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
   const clearFile = useCallback(() => {
     setFile(null);
     // Also clear potential processing errors related to the old file
-    setUploadError(null);
     setValue('scenario', '');
     // If we clear the file, and there was an initial file, we might want to inform the parent
     // This depends on whether the UploadDialog is intended to be fully standalone
@@ -161,7 +160,6 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       const droppedFile = e.dataTransfer.files[0];
-      setUploadError(null);
 
       if (droppedFile) {
         if (droppedFile.size > 100 * 1024 * 1024) {
@@ -241,64 +239,98 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       }
 
       setIsUploading(true);
-      setUploadError(null);
 
       try {
-        // Send the original raw file to the unified endpoint
-        // Server will handle its own processing
-        const response = await traceApi.uploadTrace(
-          file, // Send raw file, not processed file
-          formData, // Basic metadata only
+        // ARCHITECTURAL CHANGE: Send processed speedscope file instead of original
+        // This reduces upload size significantly and saves on upload costs since speedscope
+        // format is much more compact than original trace files.
+        // 
+        // Note: The server will still need to:
+        // 1. Detect that this is already a speedscope file (not raw)
+        // 2. Skip the speedscope-import processing step
+        // 3. Calculate duration_ms and profile_type from the speedscope data
+        // 4. Compress and store the file as usual
+
+        const traceData = await traceApi.uploadTrace(
+          processedFile, // Already a File object - no conversion needed
+          formData, // Keep original form data without additional processing metadata
           user.id,
           selectedFolderId,
           false // makePublic - no UI for this currently, default to private
         );
 
-        if (response.error) {
-          setUploadError(response.error.message);
-          toast({
-            title: 'Upload failed',
-            description: response.error.message,
-            variant: 'destructive',
-          });
+        // Success case - API now returns the trace data directly
+        const newTraceId = traceData?.id;
+        toast({
+          title: 'Success!',
+          description: 'Your trace file has been processed and is ready to view',
+          className: 'md:max-w-[500px]',
+          action: newTraceId ? (
+            <div className="flex flex-col gap-2 min-w-fit">
+              <ToastAction
+                altText="Explore trace"
+                onClick={() => navigate(`/traces/${newTraceId}/view`)}
+                className="min-w-[120px]"
+              >
+                Explore trace
+              </ToastAction>
+            </div>
+          ) : undefined,
+        });
+
+        queryClient.invalidateQueries({ queryKey: getFolderViewQueryKey(selectedFolderId, '') });
+        if (user?.id) {
+          queryClient.invalidateQueries({ queryKey: getSubscriptionUsageQueryKey(user.id) });
+        }
+
+        if (onClose) onClose();
+
+        // Navigate to folder (keep existing navigation)
+        if (selectedFolderId) {
+          navigate(`/traces/folder/${selectedFolderId}`);
         } else {
-          const newTraceId = response.data?.id;
-          toast({
-            title: 'Success!',
-            description: 'Your trace file has been processed and is ready to view',
-            className: 'md:max-w-[500px]',
-            action: newTraceId ? (
-              <div className="flex flex-col gap-2 min-w-fit">
-                <ToastAction
-                  altText="Explore trace"
-                  onClick={() => navigate(`/traces/${newTraceId}/view`)}
-                  className="min-w-[120px]"
-                >
-                  Explore trace
-                </ToastAction>
-              </div>
-            ) : undefined,
-          });
-
-          queryClient.invalidateQueries({ queryKey: getFolderViewQueryKey(selectedFolderId, '') });
-          if (user?.id) {
-            queryClient.invalidateQueries({ queryKey: getSubscriptionUsageQueryKey(user.id) });
-          }
-
-          if (onClose) onClose();
-
-          // Navigate to folder (keep existing navigation)
-          if (selectedFolderId) {
-            navigate(`/traces/folder/${selectedFolderId}`);
-          } else {
-            navigate('/traces');
-          }
+          navigate('/traces');
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'An unknown error occurred during upload.';
-        setUploadError(errorMessage);
-        toast({ title: 'Upload failed', description: errorMessage, variant: 'destructive' });
+        // Handle thrown StandardApiError or other errors
+        console.error('Upload failed:', error);
+
+        let errorMessage = 'An unknown error occurred during upload.';
+        let toastTitle = 'Upload failed';
+        let toastDescription = errorMessage;
+        let upgradeAction: React.ReactElement | undefined = undefined;
+
+        // Check if it's our StandardApiError
+        if (error && typeof error === 'object' && 'code' in error) {
+          const apiError = error as any;
+          errorMessage = apiError.message || errorMessage;
+
+          // Show user-friendly error messages based on error code
+          if (apiError.code === 'P0002') {
+            toastTitle = 'Upload Limit Reached';
+            toastDescription = apiError.hint || 'You have reached your monthly upload limit. Upgrade your plan or wait until the next cycle.';
+            upgradeAction = (
+              <ToastAction altText="Upgrade plan" onClick={openUpgradeModal}>
+                Upgrade
+              </ToastAction>
+            );
+          } else if (apiError.code === 'P0003') {
+            toastTitle = 'Storage Limit Reached';
+            toastDescription = 'You have reached your storage limit. Please delete older traces or upgrade your plan.';
+          } else {
+            toastDescription = errorMessage;
+          }
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+          toastDescription = errorMessage;
+        }
+
+        toast({
+          title: toastTitle,
+          description: toastDescription,
+          variant: 'destructive',
+          action: upgradeAction,
+        });
       } finally {
         setIsUploading(false);
       }
@@ -317,6 +349,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
       user,
       onClose,
       queryClient,
+      openUpgradeModal,
     ]
   );
 
@@ -345,13 +378,6 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
 
   return (
     <>
-      {uploadError && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle className="pb-2">Upload Error</AlertTitle>
-          <AlertDescription className="pb-2">{uploadError}</AlertDescription>
-        </Alert>
-      )}
       {processingError && !isProcessing && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />

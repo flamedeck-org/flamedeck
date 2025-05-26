@@ -23,13 +23,8 @@ export function useTraceDetails(traceId: string | null | undefined) {
         // Return null if traceId is not provided, consistent with enabled flag
         return null;
       }
-      const response = await traceApi.getTrace(traceId);
-      if (response.error) {
-        // Throw the structured error object to be caught by react-query
-        throw response.error;
-      }
-      // Return the data on success
-      return response.data;
+      // getTrace now throws errors directly and returns TraceMetadata directly
+      return await traceApi.getTrace(traceId);
     },
     enabled: !!traceId, // Only run the query if traceId is truthy
     staleTime: 5 * 60 * 1000, // Cache data for 5 minutes

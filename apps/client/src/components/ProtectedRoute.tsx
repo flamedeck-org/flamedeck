@@ -128,7 +128,7 @@ const ProtectedRoute = () => {
     { user, profile, loading, profileLoading }
   );
   return (
-    <div className="flex justify-center w-full p-4 pt-[var(--header-height,64px)]">
+    <div className="flex justify-center w-full p-4 pt-[var(--header-height,64px)] bg-background">
       <Card className="w-full max-w-md border-destructive/50 bg-destructive/5 mt-8">
         <CardHeader className="text-center">
           <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-destructive/10 mb-4">
