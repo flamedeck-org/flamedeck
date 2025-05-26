@@ -154,7 +154,7 @@ async fn main() -> Result<()> {
 
             // --- Build Request URL ---
             let api_base_url = args.supabase_url.as_deref().unwrap_or(DEFAULT_SUPABASE_FUNCTIONS_URL);
-            let url = reqwest::Url::parse_with_params(&format!("{}/api-upload-trace", api_base_url), &params)
+            let url = reqwest::Url::parse_with_params(&format!("{}/upload-trace", api_base_url), &params)
                 .context("Failed to construct request URL")?;
 
             // --- Build HTTP Client and Headers ---
