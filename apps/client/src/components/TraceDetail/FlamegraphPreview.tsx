@@ -161,7 +161,7 @@ function FlamegraphPreviewImpl({
                 <img
                     src={imageUrl}
                     alt="Flamegraph preview"
-                    className="w-full h-full object-cover rounded-lg shadow-lg"
+                    className="w-full h-full object-cover rounded-lg shadow-lg transition-all duration-300 group-hover:blur-sm"
                     onLoad={handleImageLoad}
                     onError={handleImageError}
                 />
