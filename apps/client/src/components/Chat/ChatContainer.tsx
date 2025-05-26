@@ -17,11 +17,12 @@ import type { ChatSession } from '@/lib/api/chatHistory';
 
 interface ChatContainerProps {
   traceId: string | null;
+  initialOpen?: boolean;
 }
 
 const DEBUG_LOG_PREFIX = '[ChatContainerDebug]';
 
-export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) => {
+export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId, initialOpen = false }) => {
   const { user } = useAuth();
   const userId = user?.id;
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -30,7 +31,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId }) =>
 
   const traceAnalysisMutation = useTraceAnalysisApi();
 
-  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(initialOpen);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatError, setChatError] = useState<string | null>(null); // Still useful for non-message errors or global state
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
