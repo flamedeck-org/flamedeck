@@ -214,7 +214,7 @@ dependencies = [
 
 [[package]]
 name = "flamedeck"
-version = "0.0.3"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
