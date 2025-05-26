@@ -47,4 +47,12 @@ For Homebrew distribution, the formula in the separate `flamedeck-org/homebrew-f
     git push origin vX.Y.Z-cli
     ```
 1.  Update `version`, `url`s, and `sha256` checksums in `Formula/flamedeck.rb` in the `homebrew-flamedeck` repository. You can find all releases here: [https://github.com/flamedeck-org/flamedeck/releases](https://github.com/flamedeck-org/flamedeck/releases)
+
+    **Getting SHA256 checksums:**
+    ```bash
+    # Replace vX.Y.Z-cli with your actual version
+    curl -sL https://github.com/flamedeck-org/flamedeck/releases/download/vX.Y.Z-cli/flamedeck-macos-x64 | shasum -a 256
+    curl -sL https://github.com/flamedeck-org/flamedeck/releases/download/vX.Y.Z-cli/flamedeck-macos-arm64 | shasum -a 256
+    ```
+
 1.  Commit and push the changes to the `homebrew-flamedeck` repository.
