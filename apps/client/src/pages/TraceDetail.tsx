@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { traceApi } from '@/lib/api';
 import { ArrowLeft, Trash2, Eye, Share2, ExternalLink, AlertTriangle, MessageSquare } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
@@ -39,8 +40,8 @@ import type { TraceCommentWithAuthor } from '@/lib/api';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { format } from 'date-fns';
-import { TraceTitle } from '@/components/TraceDetail';
+import { format, formatDistanceToNow, isToday, isYesterday, isThisYear } from 'date-fns';
+import { TraceTitle, FlamegraphPreview } from '@/components/TraceDetail';
 
 // Function to get human-readable profile type name
 const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
@@ -69,6 +70,32 @@ const getProfileTypeName = (profileType: ProfileType | string | undefined): stri
   };
 
   return typeMap[profileType] || profileType; // Return mapped name or the original string if not in map
+};
+
+// Function to format upload date in a readable, concise way
+const formatUploadDate = (dateString: string | undefined): string => {
+  if (!dateString) return 'Unknown';
+
+  const date = new Date(dateString);
+  const now = new Date();
+
+  // If it's today, show relative time
+  if (isToday(date)) {
+    return formatDistanceToNow(date, { addSuffix: true });
+  }
+
+  // If it's yesterday, show "Yesterday"
+  if (isYesterday(date)) {
+    return 'Yesterday';
+  }
+
+  // If it's this year, show month and day
+  if (isThisYear(date)) {
+    return format(date, 'MMM d');
+  }
+
+  // If it's older, show month, day, and year
+  return format(date, 'MMM d, yyyy');
 };
 
 // Helper to map comment type to SpeedscopeViewType
@@ -409,188 +436,337 @@ const TraceDetail: React.FC = () => {
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
-              <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground font-medium">Scenario</div>
-                <div className="text-lg font-semibold truncate mt-1" title={trace?.scenario}>
-                  {trace?.scenario || 'N/A'}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Main Content Layout - Flamegraph on left, Details on right */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Flamegraph Preview */}
+            <div className="space-y-8">
+              <FlamegraphPreview
+                trace={trace}
+                lightImagePath={trace.light_image_path}
+                darkImagePath={trace.dark_image_path}
+              />
+            </div>
 
-            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
-              <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground font-medium">Uploaded</div>
-                <div className="text-lg font-semibold mt-1">{formatDate(trace?.uploaded_at)}</div>
-              </CardContent>
-            </Card>
+            {/* Right Column - Trace Details and Notes */}
+            <div className="space-y-6">
+              {/* Header Section */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-transparent to-yellow-500/5 rounded-xl" />
+                <Card className="relative bg-card/95 backdrop-blur-lg border border-border/80 shadow-lg hover:shadow-xl hover:border-border transition-all duration-500 rounded-xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-background/50 to-background/30" />
+                  <CardContent className="relative pt-6 pb-6 px-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-xl font-bold tracking-tight text-foreground">Trace Overview</h3>
+                        <div className="w-12 h-0.5 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full mt-2" />
+                      </div>
+                      <div className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-red-500/10 to-yellow-500/10 border border-red-500/30 rounded-lg backdrop-blur-sm">
+                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">Active</span>
+                      </div>
+                    </div>
 
-            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
-              <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground font-medium">Commit</div>
-                <div className="text-lg font-semibold font-mono truncate mt-1" title={trace?.commit_sha}>
-                  {trace?.commit_sha || 'N/A'}
-                </div>
-                {trace?.branch && (
-                  <div className="text-sm text-muted-foreground mt-1 truncate" title={trace.branch}>
-                    {trace.branch}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
-              <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground font-medium">Duration</div>
-                <div className="text-lg font-semibold text-red-600 mt-1">
-                  {formatDuration(trace?.duration_ms)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all duration-300">
-              <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground font-medium">Profile Format</div>
-                <div className="text-lg font-semibold mt-1">{getProfileTypeName(trace?.profile_type)}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {trace.notes && (
-            <Card className="mt-6 bg-card/90 backdrop-blur-sm border border-border shadow-sm">
-              <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground font-medium mb-3">Notes</div>
-                <div className="whitespace-pre-wrap text-foreground leading-relaxed">{trace.notes}</div>
-              </CardContent>
-            </Card>
-          )}
-
-          {trace.id && (
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold mb-6">Comments</h2>
-              <Separator className="mb-8" />
-
-              {/* Grouped Comment Lists */}
-              {/* Handle Loading State */}
-              {commentsLoading && (
-                <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
-                  <CardContent className="pt-6">
-                    <Skeleton className="h-20 w-full rounded-md" />
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Handle Error State */}
-              {!commentsLoading && commentsError && (
-                <Card className="bg-card/90 backdrop-blur-sm border border-red-500/30 shadow-sm">
-                  <CardContent className="pt-6">
-                    <div className="text-red-600 p-4 rounded-md bg-red-500/10">
-                      Error loading comments: {commentsError.message}
+                    {/* Key Metrics Row */}
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Duration</div>
+                        <div className="text-2xl font-black bg-gradient-to-r from-red-500 to-yellow-500 bg-clip-text text-transparent leading-none">
+                          {formatDuration(trace?.duration_ms)}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Profile Type</div>
+                        <div className="text-lg font-bold text-foreground leading-tight">
+                          {getProfileTypeName(trace?.profile_type)}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Uploaded</div>
+                        <div className="text-lg font-bold text-foreground leading-tight">
+                          {formatUploadDate(trace?.uploaded_at)}
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
-              )}
+              </div>
 
-              {/* Handle Success State (With Comments) */}
-              {!commentsLoading && !commentsError && (
-                <div className="space-y-8">
-                  {/* --- Render Overview Section First --- */}
-                  <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
-                    <CardContent className="pt-6">
-                      <div key="overview">
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-semibold">{getCommentSectionTitle('overview')}</h3>
-                          {/* No context link for overview */}
+              {/* Quick Actions */}
+              <div className="space-y-3">
+                <h4 className="text-lg font-bold text-foreground">Quick Actions</h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <Link
+                    to={`/traces/${id}/view`}
+                    state={{ blobPath: trace?.blob_path }}
+                    className="group flex items-center justify-between p-4 bg-gradient-to-r from-red-500/5 to-yellow-500/5 hover:from-red-500/10 hover:to-yellow-500/10 border border-border/80 hover:border-red-500/30 rounded-xl transition-all duration-300 hover:shadow-md"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-yellow-500 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                        <Eye className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm text-foreground group-hover:text-red-600 transition-colors duration-300">
+                          Explore Trace
                         </div>
-                        {/* Render existing overview comments or empty state */}
-                        {groupedComments['overview'] && groupedComments['overview'].length > 0 ? (
-                          groupedComments['overview'].map((comment) => (
-                            <CommentItem
-                              key={comment.id}
-                              traceId={trace.id}
-                              comment={comment}
-                              replyingToCommentId={replyingToCommentId}
-                              onStartReply={handleStartReply}
-                              onCancelReply={handleCancelReply}
-                              onCommentUpdated={handleCommentUpdate}
-                            />
-                          ))
-                        ) : (
-                          <div className="text-center py-8">
-                            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/40 flex items-center justify-center">
-                              <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                            <h3 className="text-lg font-bold mb-2">No comments yet</h3>
-                            <p className="text-muted-foreground mb-6">
-                              Be the first to share your insights about this trace.
-                            </p>
-                          </div>
-                        )}
-                        {/* Always render the form for overview */}
-                        <div className="pt-4">
-                          <CommentForm
-                            traceId={trace.id}
-                            commentType="overview"
-                            commentIdentifier={null}
-                            placeholder="Add a general comment..."
-                          />
+                        <div className="text-xs text-muted-foreground">
+                          Interactive flamegraph analysis
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <div className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                  {/* --- Render Other Comment Sections --- */}
-                  {commentTypes
-                    .filter((type) => type !== 'overview') // Exclude overview as it's handled above
-                    .map((commentType) => {
-                      const commentsInSection = groupedComments[commentType];
-                      const viewType = commentTypeToViewType(commentType);
-                      const sectionTitle = getCommentSectionTitle(commentType);
+          {/* Tabbed Interface - Comments and Metadata */}
+          {trace.id && (
+            <div className="mt-8">
+              <Tabs defaultValue="comments" className="w-full">
+                <TabsList className="inline-flex rounded-none bg-transparent text-foreground p-0 border-none w-full justify-start">
+                  <TabsTrigger
+                    value="comments"
+                    className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground"
+                  >
+                    Comments
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="metadata"
+                    className="px-6 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground"
+                  >
+                    Metadata
+                  </TabsTrigger>
+                </TabsList>
 
-                      if (!commentsInSection || commentsInSection.length === 0) {
-                        return null;
-                      }
+                <TabsContent value="comments" className="mt-6">
+                  <div className="space-y-6">
+                    {/* Handle Loading State */}
+                    {commentsLoading && (
+                      <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
+                        <CardContent className="pt-6">
+                          <Skeleton className="h-20 w-full rounded-md" />
+                        </CardContent>
+                      </Card>
+                    )}
 
-                      return (
-                        <Card key={commentType} className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
+                    {/* Handle Error State */}
+                    {!commentsLoading && commentsError && (
+                      <Card className="bg-card/90 backdrop-blur-sm border border-red-500/30 shadow-sm">
+                        <CardContent className="pt-6">
+                          <div className="text-red-600 p-4 rounded-md bg-red-500/10">
+                            Error loading comments: {commentsError.message}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Handle Success State (With Comments) */}
+                    {!commentsLoading && !commentsError && (
+                      <div className="space-y-8">
+                        {/* --- Render Overview Section First --- */}
+                        <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
                           <CardContent className="pt-6">
-                            <div className="flex justify-between items-center mb-4">
-                              <h3 className="text-lg font-semibold">{sectionTitle}</h3>
-                              {viewType && (
-                                <Link
-                                  to={`/traces/${trace.id}/view`}
-                                  state={{
-                                    initialView: viewType,
-                                    blobPath: trace.blob_path,
-                                  }}
-                                  className={
-                                    buttonVariants({ variant: 'outline', size: 'sm' }) +
-                                    ' flex items-center'
-                                  }
-                                >
-                                  View in Context <ExternalLink className="ml-1.5 h-3 w-3" />
-                                </Link>
+                            <div key="overview">
+                              <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold">{getCommentSectionTitle('overview')}</h3>
+                                {/* No context link for overview */}
+                              </div>
+                              {/* Render existing overview comments or empty state */}
+                              {groupedComments['overview'] && groupedComments['overview'].length > 0 ? (
+                                groupedComments['overview'].map((comment) => (
+                                  <CommentItem
+                                    key={comment.id}
+                                    traceId={trace.id}
+                                    comment={comment}
+                                    replyingToCommentId={replyingToCommentId}
+                                    onStartReply={handleStartReply}
+                                    onCancelReply={handleCancelReply}
+                                    onCommentUpdated={handleCommentUpdate}
+                                  />
+                                ))
+                              ) : (
+                                <div className="text-center py-8">
+                                  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/40 flex items-center justify-center">
+                                    <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                                  </div>
+                                  <h3 className="text-lg font-bold mb-2">No comments yet</h3>
+                                  <p className="text-muted-foreground mb-6">
+                                    Be the first to share your insights about this trace.
+                                  </p>
+                                </div>
                               )}
+                              {/* Always render the form for overview */}
+                              <div className="pt-4">
+                                <CommentForm
+                                  traceId={trace.id}
+                                  commentType="overview"
+                                  commentIdentifier={null}
+                                  placeholder="Add a general comment..."
+                                />
+                              </div>
                             </div>
-                            {commentsInSection.map((comment) => (
-                              <CommentItem
-                                key={comment.id}
-                                traceId={trace.id}
-                                comment={comment}
-                                replyingToCommentId={replyingToCommentId}
-                                onStartReply={handleStartReply}
-                                onCancelReply={handleCancelReply}
-                                onCommentUpdated={handleCommentUpdate}
-                              />
-                            ))}
-                            {/* No form needed for non-overview types here */}
                           </CardContent>
                         </Card>
-                      );
-                    })}
-                </div>
-              )}
+
+                        {/* --- Render Other Comment Sections --- */}
+                        {commentTypes
+                          .filter((type) => type !== 'overview') // Exclude overview as it's handled above
+                          .map((commentType) => {
+                            const commentsInSection = groupedComments[commentType];
+                            const viewType = commentTypeToViewType(commentType);
+                            const sectionTitle = getCommentSectionTitle(commentType);
+
+                            if (!commentsInSection || commentsInSection.length === 0) {
+                              return null;
+                            }
+
+                            return (
+                              <Card key={commentType} className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
+                                <CardContent className="pt-6">
+                                  <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold">{sectionTitle}</h3>
+                                    {viewType && (
+                                      <Link
+                                        to={`/traces/${trace.id}/view`}
+                                        state={{
+                                          initialView: viewType,
+                                          blobPath: trace.blob_path,
+                                        }}
+                                        className={
+                                          buttonVariants({ variant: 'outline', size: 'sm' }) +
+                                          ' flex items-center'
+                                        }
+                                      >
+                                        View in Context <ExternalLink className="ml-1.5 h-3 w-3" />
+                                      </Link>
+                                    )}
+                                  </div>
+                                  {commentsInSection.map((comment) => (
+                                    <CommentItem
+                                      key={comment.id}
+                                      traceId={trace.id}
+                                      comment={comment}
+                                      replyingToCommentId={replyingToCommentId}
+                                      onStartReply={handleStartReply}
+                                      onCancelReply={handleCancelReply}
+                                      onCommentUpdated={handleCommentUpdate}
+                                    />
+                                  ))}
+                                  {/* No form needed for non-overview types here */}
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="metadata" className="mt-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column - Trace Metadata */}
+                    <Card className="bg-card/90 backdrop-blur-sm border border-border/80 shadow-sm hover:shadow-md hover:border-border transition-all duration-300 rounded-xl">
+                      <CardContent className="pt-6 pb-6 px-6">
+                        <h3 className="text-lg font-bold text-foreground mb-4">Trace Metadata</h3>
+                        <div className="space-y-4">
+                          {/* Scenario */}
+                          <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-b-0">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-6 h-6 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-lg border border-red-500/30 flex items-center justify-center">
+                                <div className="w-2 h-2 bg-red-500 rounded-sm" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Scenario</div>
+                                <div className="text-sm font-semibold text-foreground truncate" title={trace?.scenario}>
+                                  {trace?.scenario || 'N/A'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Git Information */}
+                          {(trace?.commit_sha || trace?.branch) && (
+                            <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-b-0">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-6 h-6 bg-gradient-to-br from-green-500/20 to-green-400/20 rounded-lg border border-green-500/30 flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-green-500 rounded-sm transform rotate-45" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Git Information</div>
+                                  <div className="flex items-center justify-between">
+                                    {trace?.commit_sha && (
+                                      <div className="text-sm font-mono font-semibold text-foreground truncate" title={trace.commit_sha}>
+                                        {trace.commit_sha}
+                                      </div>
+                                    )}
+                                    {trace?.branch && (
+                                      <div className="flex items-center space-x-2 ml-4">
+                                        <div className="text-xs text-muted-foreground truncate" title={trace.branch}>
+                                          {trace.branch}
+                                        </div>
+                                        <div className="px-1.5 py-0.5 bg-green-500/10 border border-green-500/20 rounded-md text-xs font-medium text-green-600">
+                                          branch
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Upload Date */}
+                          <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-b-0">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-6 h-6 bg-gradient-to-br from-blue-500/20 to-blue-400/20 rounded-lg border border-blue-500/30 flex items-center justify-center">
+                                <div className="w-2 h-2 bg-blue-500 rounded-sm" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Upload Date</div>
+                                <div className="text-sm font-semibold text-foreground">
+                                  {formatDate(trace?.uploaded_at)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Right Column - Notes */}
+                    {trace.notes && (
+                      <Card className="bg-card/95 backdrop-blur-lg border border-border/80 shadow-sm rounded-xl">
+                        <CardContent className="pt-6 pb-6 px-6">
+                          <h3 className="text-lg font-bold text-foreground mb-4">Notes</h3>
+                          <div className="relative">
+                            <div className="absolute -left-2 top-0 w-1 h-full bg-gradient-to-b from-red-500 to-yellow-500 rounded-full" />
+                            <div className="whitespace-pre-wrap text-foreground leading-relaxed text-sm pl-4">
+                              {trace.notes}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Placeholder for when no notes exist */}
+                    {!trace.notes && (
+                      <Card className="bg-card/95 backdrop-blur-lg border border-border/80 shadow-sm rounded-xl">
+                        <CardContent className="pt-6 pb-6 px-6">
+                          <h3 className="text-lg font-bold text-foreground mb-4">Notes</h3>
+                          <div className="text-center py-8">
+                            <div className="text-muted-foreground">
+                              No notes available for this trace.
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </PageLayout>

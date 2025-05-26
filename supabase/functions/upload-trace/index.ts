@@ -9,6 +9,7 @@ import { serve } from 'std/http/server.ts';
 import { createClient, SupabaseClient } from 'supabase-js';
 import { corsHeaders } from 'shared/cors.ts';
 import { authenticateRequest } from 'shared/auth.ts';
+import { generateFlamegraphImages } from 'shared/image-generator.ts';
 import * as pako from 'pako';
 import { JSON_parse } from 'uint8array-json-parser';
 import Long from 'long';
@@ -113,6 +114,7 @@ async function processTraceFile(
   compressedSize: number;
   durationMs: number;
   profileType: ProfileType;
+  profileJsonString: string;
 }> {
   console.log(`Processing trace file: ${fileName}, size: ${fileBuffer.byteLength} bytes`);
 
@@ -135,13 +137,16 @@ async function processTraceFile(
   const jsonString = JSON.stringify(serializableProfile);
   const uint8Array = new TextEncoder().encode(jsonString);
 
-  // Compress the data
+  // Keep JSON string for image generation
+  const profileJsonString = jsonString;
+
+  // Compress the data for storage
   const compressedBuffer = await gzipCompressDeno(uint8Array);
   const compressedSize = compressedBuffer.byteLength;
 
   console.log(`Compression complete - original: ${uint8Array.byteLength}, compressed: ${compressedSize}`);
 
-  return { compressedBuffer, compressedSize, durationMs, profileType };
+  return { compressedBuffer, compressedSize, durationMs, profileType, profileJsonString };
 }
 
 // --- Storage Upload Helper ---
@@ -326,7 +331,7 @@ serve(async (req) => {
       });
     }
 
-    const { compressedBuffer, compressedSize, durationMs, profileType } = processedData;
+    const { compressedBuffer, compressedSize, durationMs, profileType, profileJsonString } = processedData;
 
     // Upload to storage
     let storagePath: string;
@@ -341,6 +346,13 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Generate flamegraph images (non-blocking, with graceful failure)
+    let lightImagePath: string | null = null;
+    let darkImagePath: string | null = null;
+
+    // We'll generate images after trace creation to use the proper trace ID
+    // For now, we create the trace without images and update later if generation succeeds
 
     // Create database record
     try {
@@ -357,6 +369,8 @@ serve(async (req) => {
         p_profile_type: profileType,
         p_notes: metadata.notes,
         p_folder_id: metadata.folderId,
+        p_light_image_path: null, // Will be updated after image generation
+        p_dark_image_path: null,  // Will be updated after image generation
       };
 
       console.log('Creating trace record via RPC:', rpcParams);
@@ -377,7 +391,43 @@ serve(async (req) => {
         throw new Error(`Failed to create trace record: ${rpcError.message}`);
       }
 
-      console.log(`Trace upload successful. ID: ${rpcData?.id}`);
+      const traceId = rpcData?.id;
+      console.log(`Trace upload successful. ID: ${traceId}`);
+
+      // Generate flamegraph images asynchronously after trace creation
+      if (traceId) {
+        try {
+          console.log('Generating flamegraph images...');
+          const imageResults = await generateFlamegraphImages(
+            traceId,
+            profileJsonString,
+            supabaseAdmin
+          );
+
+          // Update trace record with image paths if generation was successful
+          if (imageResults.lightImagePath || imageResults.darkImagePath) {
+            const { error: updateError } = await supabaseAdmin
+              .from('traces')
+              .update({
+                light_image_path: imageResults.lightImagePath,
+                dark_image_path: imageResults.darkImagePath
+              })
+              .eq('id', traceId);
+
+            if (updateError) {
+              console.error('Failed to update trace with image paths:', updateError);
+            } else {
+              console.log(`Updated trace ${traceId} with image paths - light: ${!!imageResults.lightImagePath}, dark: ${!!imageResults.darkImagePath}`);
+              // Update the response data
+              rpcData.light_image_path = imageResults.lightImagePath;
+              rpcData.dark_image_path = imageResults.darkImagePath;
+            }
+          }
+        } catch (imageError) {
+          console.warn(`Image generation failed for trace ${traceId}:`, imageError);
+          // Don't fail the entire request if image generation fails
+        }
+      }
 
       return new Response(JSON.stringify(rpcData), {
         status: 201,

@@ -79,8 +79,14 @@ file_size_limit = "50MiB"
 
 [storage.buckets.ai-snapshots]
 public = false
-file_size_limit = "50MiB"
+file_size_limit = "10MiB"
 allowed_mime_types = ["image/png"]
+
+[storage.buckets.flamegraph-images]
+public = false
+file_size_limit = "10MiB"
+allowed_mime_types = ["image/png"]
+
 [functions.trace-analysis]
 enabled = true
 verify_jwt = true
