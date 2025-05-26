@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { FOLDER_VIEW_QUERY_KEY } from './hooks/useTraces'; // Ensure this query key is correct
 import type { ApiError, ApiResponse } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, FolderEdit, X } from 'lucide-react';
 
 interface RenameFolderDialogProps {
   isOpen: boolean;
@@ -87,23 +87,32 @@ function RenameFolderDialogComponent({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      {/* Optional Trigger can be rendered here if needed, but typically handled by the parent */}
-      {/* {!triggerElement && <DialogTrigger asChild>...</DialogTrigger>} */}
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Rename Folder</DialogTitle>
-          <DialogDescription>Enter a new name for the folder "{currentName}".</DialogDescription>
+      <DialogContent className="sm:max-w-[425px] bg-card/90 backdrop-blur-sm border border-border/30 shadow-sm">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="flex items-center text-xl font-bold">
+            <div className="w-10 h-10 mr-3 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-xl border border-green-500/30 flex items-center justify-center">
+              <FolderEdit className="h-5 w-5 text-green-500" />
+            </div>
+            Rename Folder
+          </DialogTitle>
+          <DialogDescription className="text-base pl-13 text-muted-foreground leading-relaxed">
+            Enter a new name for the folder{' '}
+            <span className="font-bold text-foreground bg-gradient-to-r from-green-500/10 to-blue-500/10 px-2 py-1 rounded-md border border-green-500/20">
+              "{currentName}"
+            </span>.
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="folder-name" className="text-right">
+
+        <div className="space-y-2 py-1">
+          <div className="space-y-1.5">
+            <Label htmlFor="folder-name" className="text-sm font-medium text-foreground">
               Name
             </Label>
             <Input
               id="folder-name"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="col-span-3"
+              className="bg-background/50 backdrop-blur-sm transition-all duration-300"
               disabled={isPending}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !isPending) handleSave();
@@ -111,15 +120,22 @@ function RenameFolderDialogComponent({
             />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isPending}>
+
+        <DialogFooter className="gap-2 pt-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+            disabled={isPending}
+            className="bg-background/50 backdrop-blur-sm border-border/30 hover:bg-background/80 hover:shadow-md transition-all duration-300"
+          >
+            <X className="mr-2 h-4 w-4" />
             Cancel
           </Button>
           <Button
             onClick={handleSave}
             disabled={isPending || !newName.trim() || newName.trim() === currentName}
           >
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
         </DialogFooter>

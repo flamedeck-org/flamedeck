@@ -11,8 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, Loader2, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { traceApi } from '@/lib/api';
 import type { RecursiveFolderContents } from '@/types';
@@ -84,11 +83,18 @@ function DeleteFolderDialogComponent({
 
   const renderDescription = () => {
     if (isLoadingContents) {
-      return <Skeleton className="h-4 w-4/5" />;
+      return (
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+      );
     }
     if (contentsError) {
       return (
-        <span className="text-destructive">Error loading contents: {contentsError.message}</span>
+        <span className="text-destructive font-medium">
+          Error loading contents: {contentsError.message}
+        </span>
       );
     }
     if (contentsData) {
@@ -108,11 +114,13 @@ function DeleteFolderDialogComponent({
       }
 
       return (
-        <>
-          This action cannot be undone. This will permanently delete the folder
-          <strong className="mx-1">"{folderName}"</strong>
+        <div className="text-muted-foreground leading-relaxed">
+          This action cannot be undone. This will permanently delete the folder{' '}
+          <span className="font-bold text-foreground bg-gradient-to-r from-red-500/10 to-yellow-500/10 px-2 py-1 rounded-md border border-red-500/20">
+            "{folderName}"
+          </span>{' '}
           {contentDescription}.
-        </>
+        </div>
       );
     }
     return 'Loading folder contents...';
@@ -120,25 +128,22 @@ function DeleteFolderDialogComponent({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <AlertCircle className="mr-2 h-5 w-5 text-destructive" /> Permanently Delete Folder?
+      <DialogContent className="sm:max-w-[525px] bg-card/90 backdrop-blur-sm border border-border/30 shadow-sm">
+        <DialogHeader className="space-y-4">
+          <DialogTitle className="flex items-center text-xl font-bold">
+            <div className="w-10 h-10 mr-3 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/30 flex items-center justify-center">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+            </div>
+            Permanently Delete Folder?
           </DialogTitle>
-          <DialogDescription>{renderDescription()}</DialogDescription>
+          <DialogDescription className="text-base pl-13">
+            {renderDescription()}
+          </DialogDescription>
         </DialogHeader>
 
-        <Alert variant="destructive" className="my-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Warning</AlertTitle>
-          <AlertDescription>
-            Please type the name of the folder to confirm deletion.
-          </AlertDescription>
-        </Alert>
-
-        <div className="grid gap-4 py-2">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="confirm-folder-name" className="text-right">
+        <div className="space-y-3 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="confirm-folder-name" className="text-sm font-medium text-foreground">
               Folder Name
             </Label>
             <Input
@@ -146,21 +151,27 @@ function DeleteFolderDialogComponent({
               value={confirmInput}
               onChange={(e) => setConfirmInput(e.target.value)}
               placeholder={folderName}
-              className="col-span-3"
+              className="bg-background/50 backdrop-blur-sm border-border/30 focus:border-red-500/50 focus:ring-red-500/20 transition-all duration-300"
               disabled={isPending || isLoadingContents || !!contentsError}
               aria-describedby="confirm-folder-description"
             />
           </div>
           <p
             id="confirm-folder-description"
-            className="text-xs text-muted-foreground px-1 col-span-4 text-center"
+            className="text-xs text-muted-foreground text-center bg-muted/30 py-1.5 px-3 rounded-lg backdrop-blur-sm"
           >
-            Type <span className="font-semibold">{folderName}</span> to enable deletion.
+            Type <span className="font-semibold text-foreground">{folderName}</span> to enable deletion.
           </p>
         </div>
-        <DialogFooter>
+
+        <DialogFooter className="gap-3 pt-3">
           <DialogClose asChild>
-            <Button variant="outline" disabled={isPending}>
+            <Button
+              variant="outline"
+              disabled={isPending}
+              className="bg-background/50 backdrop-blur-sm border-border/30 hover:bg-background/80 hover:shadow-md transition-all duration-300"
+            >
+              <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
           </DialogClose>
@@ -169,9 +180,11 @@ function DeleteFolderDialogComponent({
             onClick={handleConfirmClick}
             disabled={!isMatch || isPending || isLoadingContents || !!contentsError}
             aria-label={`Confirm deletion of folder ${folderName}`}
+            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {isLoadingContents ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {(isPending || isLoadingContents) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             {!isPending && !isLoadingContents ? 'Delete Permanently' : 'Deleting...'}
           </Button>
         </DialogFooter>
