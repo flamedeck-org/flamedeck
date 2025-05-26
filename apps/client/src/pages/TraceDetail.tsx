@@ -456,13 +456,139 @@ const TraceDetail: React.FC = () => {
         <Layout>
           <PageLayout>
             <PageHeader
-              title={<TraceTitle trace={undefined} />}
-              actions={<Skeleton className="h-9 w-36 rounded-md" />}
+              title={<Skeleton className="h-8 w-96 rounded" />}
+              subtitle={
+                <div className="flex items-center space-x-1.5">
+                  <Skeleton className="h-3 w-16 rounded" />
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                  <Skeleton className="h-3 w-12 rounded" />
+                </div>
+              }
+              actions={
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-32 rounded-lg" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-10 w-10 rounded-lg" />
+                    <Skeleton className="h-10 w-10 rounded-lg" />
+                    <Skeleton className="h-10 w-32 rounded-lg" />
+                  </div>
+                </div>
+              }
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-28" />
-              ))}
+
+            {/* Main Content Layout - Flamegraph on left, Details on right */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column - Flamegraph Preview Skeleton */}
+              <div className="space-y-8">
+                <div className="relative rounded-xl bg-card/50 h-96 flex items-center justify-center">
+                  <div className="text-center space-y-3">
+                    <Skeleton className="h-12 w-12 mx-auto rounded-lg" />
+                    <Skeleton className="h-5 w-40 rounded mx-auto" />
+                    <Skeleton className="h-3 w-56 rounded mx-auto" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Trace Details Skeleton */}
+              <div className="space-y-4">
+                {/* Trace Overview Card Skeleton */}
+                <div className="relative">
+                  <Card className="relative bg-card/95 backdrop-blur-lg border border-border/80 rounded-xl">
+                    <CardContent className="pt-6 pb-6 px-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <Skeleton className="h-6 w-32 rounded" />
+                          <Skeleton className="h-1 w-12 rounded-full mt-2" />
+                        </div>
+                        <Skeleton className="h-8 w-20 rounded-lg" />
+                      </div>
+
+                      {/* Key Metrics Row Skeleton */}
+                      <div className="grid grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-16 rounded" />
+                          <Skeleton className="h-8 w-20 rounded" />
+                        </div>
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-20 rounded" />
+                          <Skeleton className="h-6 w-24 rounded" />
+                        </div>
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-16 rounded" />
+                          <Skeleton className="h-6 w-16 rounded" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Quick Actions Skeleton */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-4 border border-border/80 rounded-xl">
+                      <div className="flex items-center space-x-3">
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                        <div className="space-y-1">
+                          <Skeleton className="h-4 w-24 rounded" />
+                          <Skeleton className="h-3 w-36 rounded" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-3 w-3 rounded" />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border border-border/80 rounded-xl">
+                      <div className="flex items-center space-x-3">
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                        <div className="space-y-1">
+                          <Skeleton className="h-4 w-28 rounded" />
+                          <Skeleton className="h-3 w-32 rounded" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-3 w-3 rounded" />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border border-border/80 rounded-xl">
+                      <div className="flex items-center space-x-3">
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                        <div className="space-y-1">
+                          <Skeleton className="h-4 w-24 rounded" />
+                          <Skeleton className="h-3 w-40 rounded" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-6 w-10 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabbed Interface Skeleton */}
+            <div className="mt-8">
+              <div className="inline-flex rounded-none bg-transparent text-foreground p-0 border-none w-full justify-start border-b border-border">
+                <div className="px-6 py-3 border-b-2 border-primary">
+                  <Skeleton className="h-4 w-20 rounded" />
+                </div>
+                <div className="px-6 py-3">
+                  <Skeleton className="h-4 w-16 rounded" />
+                </div>
+              </div>
+              <div className="mt-6 space-y-6">
+                <Card className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center">
+                        <Skeleton className="h-6 w-40 rounded" />
+                      </div>
+                      <div className="text-center py-8 space-y-4">
+                        <Skeleton className="h-16 w-16 mx-auto rounded-xl" />
+                        <Skeleton className="h-5 w-32 mx-auto rounded" />
+                        <Skeleton className="h-4 w-56 mx-auto rounded" />
+                      </div>
+                      <div className="pt-4 border-t border-border">
+                        <Skeleton className="h-20 w-full rounded-lg" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </PageLayout>
         </Layout>
