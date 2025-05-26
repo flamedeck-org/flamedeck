@@ -347,13 +347,6 @@ serve(async (req) => {
       });
     }
 
-    // Generate flamegraph images (non-blocking, with graceful failure)
-    let lightImagePath: string | null = null;
-    let darkImagePath: string | null = null;
-
-    // We'll generate images after trace creation to use the proper trace ID
-    // For now, we create the trace without images and update later if generation succeeds
-
     // Create database record
     try {
       const rpcParams = {
@@ -369,8 +362,8 @@ serve(async (req) => {
         p_profile_type: profileType,
         p_notes: metadata.notes,
         p_folder_id: metadata.folderId,
-        p_light_image_path: null, // Will be updated after image generation
-        p_dark_image_path: null,  // Will be updated after image generation
+        p_light_image_path: null, // Will be updated by background image generation
+        p_dark_image_path: null,  // Will be updated by background image generation
       };
 
       console.log('Creating trace record via RPC:', rpcParams);
@@ -403,39 +396,11 @@ serve(async (req) => {
       const traceId = rpcData?.id;
       console.log(`Trace upload successful. ID: ${traceId}`);
 
-      // Generate flamegraph images asynchronously after trace creation
+      // Run image generation as a background task (non-blocking)
       if (traceId) {
-        try {
-          console.log('Generating flamegraph images...');
-          const imageResults = await generateFlamegraphImages(
-            traceId,
-            profileJsonString,
-            supabaseAdmin
-          );
-
-          // Update trace record with image paths if generation was successful
-          if (imageResults.lightImagePath || imageResults.darkImagePath) {
-            const { error: updateError } = await supabaseAdmin
-              .from('traces')
-              .update({
-                light_image_path: imageResults.lightImagePath,
-                dark_image_path: imageResults.darkImagePath
-              })
-              .eq('id', traceId);
-
-            if (updateError) {
-              console.error('Failed to update trace with image paths:', updateError);
-            } else {
-              console.log(`Updated trace ${traceId} with image paths - light: ${!!imageResults.lightImagePath}, dark: ${!!imageResults.darkImagePath}`);
-              // Update the response data
-              rpcData.light_image_path = imageResults.lightImagePath;
-              rpcData.dark_image_path = imageResults.darkImagePath;
-            }
-          }
-        } catch (imageError) {
-          console.warn(`Image generation failed for trace ${traceId}:`, imageError);
-          // Don't fail the entire request if image generation fails
-        }
+        EdgeRuntime.waitUntil(
+          generateBackgroundImages(traceId, profileJsonString, supabaseAdmin)
+        );
       }
 
       return new Response(JSON.stringify(rpcData), {
@@ -461,3 +426,40 @@ serve(async (req) => {
     });
   }
 });
+
+// Background task function for image generation
+async function generateBackgroundImages(
+  traceId: string,
+  profileJsonString: string,
+  supabaseAdmin: SupabaseClient
+): Promise<void> {
+  try {
+    console.log(`Starting background image generation for trace: ${traceId}`);
+
+    const imageResults = await generateFlamegraphImages(
+      traceId,
+      profileJsonString,
+      supabaseAdmin
+    );
+
+    // Update trace record with image paths if generation was successful
+    if (imageResults.lightImagePath || imageResults.darkImagePath) {
+      const { error: updateError } = await supabaseAdmin
+        .from('traces')
+        .update({
+          light_image_path: imageResults.lightImagePath,
+          dark_image_path: imageResults.darkImagePath,
+        })
+        .eq('id', traceId);
+
+      if (updateError) {
+        console.error(`Failed to update trace ${traceId} with image paths:`, updateError);
+      } else {
+        console.log(`Successfully updated trace ${traceId} with image paths - light: ${!!imageResults.lightImagePath}, dark: ${!!imageResults.darkImagePath}`);
+      }
+    }
+  } catch (error) {
+    console.warn(`Background image generation failed for trace ${traceId}:`, error);
+    // Don't throw - this is a background task
+  }
+}
