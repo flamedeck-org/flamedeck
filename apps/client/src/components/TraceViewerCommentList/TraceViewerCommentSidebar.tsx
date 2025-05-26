@@ -1,6 +1,13 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose
+} from '@/components/ui/sheet';
 import { TraceViewerCommentList } from './TraceViewerCommentList';
 import { MessageSquare } from 'lucide-react';
 import type { SpeedscopeViewType } from '../SpeedscopeViewer';
@@ -8,21 +15,26 @@ import type { SpeedscopeViewType } from '../SpeedscopeViewer';
 interface TraceViewerCommentSidebarProps {
   traceId: string;
   activeView: SpeedscopeViewType;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function TraceViewerCommentSidebar({ traceId, activeView }: TraceViewerCommentSidebarProps) {
+export function TraceViewerCommentSidebar({
+  traceId,
+  activeView,
+  isOpen,
+  onOpenChange,
+}: TraceViewerCommentSidebarProps) {
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <MessageSquare className="h-4 w-4" />
-          <span className="sr-only">View Comments</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        {/* Pass traceId and activeView to the list */}
-        <TraceViewerCommentList traceId={traceId} activeView={activeView} />
-      </PopoverContent>
-    </Popover>
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent className="w-[350px] sm:w-[400px] p-0 flex flex-col">
+        <SheetHeader className="p-4 border-b">
+          <SheetTitle>Comments</SheetTitle>
+        </SheetHeader>
+        <div className="flex-grow overflow-y-auto">
+          <TraceViewerCommentList traceId={traceId} activeView={activeView} />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

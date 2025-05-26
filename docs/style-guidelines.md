@@ -601,6 +601,78 @@ Empty states should appear with subtle animations when content changes:
 }
 ```
 
+## Responsiveness Guidelines
+
+Ensuring FlameDeck is accessible and user-friendly across a wide range of devices is paramount. Our responsive design strategy focuses on a mobile-first approach, progressively enhancing the layout and features for larger screens.
+
+### Core Principles
+
+1.  **Mobile-First**: Design and develop for the smallest screens first, then scale up. This ensures a solid foundation for core content and functionality.
+2.  **Fluid Layouts**: Utilize flexible grids, percentages, and relative units (like `rem` and `em`) to allow content to adapt gracefully to different viewport sizes.
+3.  **Progressive Enhancement**: Start with a baseline experience that works for all users and then add enhancements (more complex layouts, richer interactions) for users with more capable browsers or larger screens.
+4.  **Content Prioritization**: On smaller screens, prioritize essential content and functionality. Less critical elements can be hidden or moved to secondary navigation.
+
+### Breakpoints
+
+We adhere to Tailwind CSS's default breakpoints, which provide a versatile foundation for responsive design:
+
+-   `sm`: `640px`
+-   `md`: `768px`
+-   `lg`: `1024px`
+-   `xl`: `1280px`
+-   `2xl`: `1536px`
+
+Use these breakpoints with Tailwind's responsive prefixes (e.g., `md:text-lg`, `lg:flex`) to adapt styling and layout.
+
+### Layout Strategies
+
+-   **Flexbox & Grid**: Leverage CSS Flexbox and Grid for creating adaptable and complex layouts that reflow naturally.
+-   **Vertical Stacking**: On smaller screens (typically mobile), stack elements vertically for better readability and usability. As screen size increases, transition to multi-column layouts.
+    ```css
+    /* Example: Stacking on mobile, horizontal on medium screens */
+    .responsive-container {
+      display: flex;
+      flex-direction: column; /* Stack by default (mobile) */
+    }
+
+    @media (min-width: 768px) { /* md breakpoint */
+      .responsive-container {
+        flex-direction: row; /* Horizontal layout on medium screens and up */
+      }
+    }
+    ```
+-   **Conditional Visibility**: Use Tailwind's responsive display utilities (e.g., `hidden md:block`) to show or hide elements based on screen size. This is useful for optimizing navigation or ancillary content.
+
+### Navigation
+
+-   **Mobile Navigation**: Implement collapsible navigation patterns (e.g., hamburger menus, off-canvas sidebars) for mobile devices to save screen real estate.
+-   **Accessibility**: Ensure mobile navigation is easily discoverable, accessible via keyboard, and provides clear feedback.
+-   **Primary Actions**: Keep primary calls-to-action visible and easily accessible, even on the smallest screens.
+
+### Typography
+
+-   **Responsive Font Sizes**: Use Tailwind's responsive font size utilities (e.g., `text-base md:text-lg`) or CSS `clamp()` for fluid typography that scales with the viewport.
+    ```css
+    .responsive-title {
+      font-size: clamp(1.5rem, 5vw, 3rem); /* Example fluid font size */
+    }
+    ```
+-   **Line Height & Spacing**: Adjust line height, margins, and padding on smaller screens to improve readability and avoid cramped text.
+
+### Touch Targets
+
+-   **Minimum Size**: Ensure all interactive elements (buttons, links, form controls) have a minimum touch target size of 44x44 CSS pixels to prevent accidental taps.
+-   **Spacing**: Provide adequate spacing between touch targets to avoid mis-clicks.
+
+### Images & Media
+
+-   **Responsive Images**: Images should scale fluidly within their containers. Use `max-w-full` and `h-auto` by default.
+    ```html
+    <img src="path/to/image.jpg" alt="Descriptive alt text" class="max-w-full h-auto rounded-lg">
+    ```
+-   **Art Direction**: For critical imagery, consider using the `<picture>` element or responsive image attributes (`srcset`, `sizes`) to serve different image versions optimized for various screen sizes and resolutions. This can improve performance and visual presentation.
+-   **Video & Embeds**: Ensure embedded media (videos, maps) are responsive and do not break the layout on smaller screens.
+
 ## Dark Mode Considerations
 
 ### Color Adaptations

@@ -417,22 +417,27 @@ export const ChatContainer: React.FC<ChatContainerProps> = memo(({ traceId, init
         isOpen={isChatOpen}
       />
       {isChatOpen && (
-        <ChatWindow
-          ref={chatWindowRef}
-          traceId={traceId}
-          onClose={handleCloseChat}
-          sessions={sessions}
-          isLoadingSessions={isLoadingSessions}
-          onSessionsUpdate={(newSessions) => setSessions(newSessions)}
-          onSelectSession={handleSessionSelection}
-          onStartNewChat={handleNewSession}
-          onRefetchSessions={handleRefetchSessions}
-          messages={chatMessages}
-          sendMessage={handleSendMessage}
-          isLoading={traceAnalysisMutation.isPending || isWaitingForModelResponse || isStreaming}
-          isStreaming={isStreaming} // Retain for specific stream visual cues if needed beyond general loading
-          suggestionPrompts={suggestionPrompts}
-        />
+        <>
+          {/* Mobile backdrop - only visible on mobile */}
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden" onClick={handleCloseChat} />
+
+          <ChatWindow
+            ref={chatWindowRef}
+            traceId={traceId}
+            onClose={handleCloseChat}
+            sessions={sessions}
+            isLoadingSessions={isLoadingSessions}
+            onSessionsUpdate={(newSessions) => setSessions(newSessions)}
+            onSelectSession={handleSessionSelection}
+            onStartNewChat={handleNewSession}
+            onRefetchSessions={handleRefetchSessions}
+            messages={chatMessages}
+            sendMessage={handleSendMessage}
+            isLoading={traceAnalysisMutation.isPending || isWaitingForModelResponse || isStreaming}
+            isStreaming={isStreaming} // Retain for specific stream visual cues if needed beyond general loading
+            suggestionPrompts={suggestionPrompts}
+          />
+        </>
       )}
     </>
   );

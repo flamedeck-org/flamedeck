@@ -10,6 +10,7 @@ interface LayoutProps {
   hideNav?: boolean;
   noPadding?: boolean;
   isProfileView?: boolean;
+  noScroll?: boolean;
   footer?: React.ReactNode;
   className?: string;
 }
@@ -19,6 +20,7 @@ const Layout: React.FC<LayoutProps> = ({
   hideNav = false,
   noPadding = false,
   isProfileView = false,
+  noScroll = false,
   footer,
   className = '',
 }) => {
@@ -30,6 +32,7 @@ const Layout: React.FC<LayoutProps> = ({
   const shouldMinimizeSidebar = isProfileView || isSettingsPage;
   const conditionalElevation = isProfileView ? '' : 'z-10';
   const mainPaddingClasses = noPadding ? '' : 'px-6 md:px-8 py-6';
+  const scrollClasses = noScroll ? 'overflow-hidden' : 'overflow-y-auto';
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -63,9 +66,9 @@ const Layout: React.FC<LayoutProps> = ({
         {isLoggedIn && <MobileSidebar minimized={shouldMinimizeSidebar} />}
 
         <main
-          className={`flex-1 h-full overflow-y-auto ${mainPaddingClasses} ${conditionalElevation} ${className}`}
+          className={`flex-1 h-full ${scrollClasses} ${mainPaddingClasses} ${conditionalElevation} ${className}`}
         >
-          <div className={`mx-auto w-full ${noPadding ? '' : 'xl:max-w-7xl'}`}>
+          <div className={`mx-auto h-full w-full ${(!user || noPadding) ? '' : 'xl:max-w-7xl'}`}>
             {children}
             {footer && <div className="mt-auto m-[-1.5em] md:m-[-2em]">{footer}</div>}
           </div>
