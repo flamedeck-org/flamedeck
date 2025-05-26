@@ -25,6 +25,8 @@ export interface TraceMetadata {
   owner: UserProfile | null; // Joined user profile data
   folder_id: string | null; // UUID of the parent folder
   upload_source: 'web' | 'api'; // Source of the upload
+  light_image_path: string | null; // Path to light mode flamegraph image
+  dark_image_path: string | null; // Path to dark mode flamegraph image
 }
 
 // Type for uploading new traces (subset of TraceMetadata)

@@ -311,11 +311,13 @@ export type Database = {
           blob_path: string
           branch: string | null
           commit_sha: string | null
+          dark_image_path: string | null
           duration_ms: number | null
           expires_at: string | null
           file_size_bytes: number | null
           folder_id: string | null
           id: string
+          light_image_path: string | null
           metadata: Json | null
           notes: string | null
           profile_type: string | null
@@ -329,11 +331,13 @@ export type Database = {
           blob_path: string
           branch?: string | null
           commit_sha?: string | null
+          dark_image_path?: string | null
           duration_ms?: number | null
           expires_at?: string | null
           file_size_bytes?: number | null
           folder_id?: string | null
           id?: string
+          light_image_path?: string | null
           metadata?: Json | null
           notes?: string | null
           profile_type?: string | null
@@ -347,11 +351,13 @@ export type Database = {
           blob_path?: string
           branch?: string | null
           commit_sha?: string | null
+          dark_image_path?: string | null
           duration_ms?: number | null
           expires_at?: string | null
           file_size_bytes?: number | null
           folder_id?: string | null
           id?: string
+          light_image_path?: string | null
           metadata?: Json | null
           notes?: string | null
           profile_type?: string | null
@@ -511,16 +517,20 @@ export type Database = {
           p_folder_id: string
           p_upload_source: string
           p_make_public: boolean
+          p_light_image_path?: string
+          p_dark_image_path?: string
         }
         Returns: {
           blob_path: string
           branch: string | null
           commit_sha: string | null
+          dark_image_path: string | null
           duration_ms: number | null
           expires_at: string | null
           file_size_bytes: number | null
           folder_id: string | null
           id: string
+          light_image_path: string | null
           metadata: Json | null
           notes: string | null
           profile_type: string | null
@@ -584,22 +594,7 @@ export type Database = {
               p_search_query: string
               p_folder_id?: string
             }
-        Returns: {
-          id: string
-          user_id: string
-          uploaded_at: string
-          commit_sha: string
-          branch: string
-          scenario: string
-          device_model: string
-          duration_ms: number
-          blob_path: string
-          file_size_bytes: number
-          notes: string
-          profile_type: string
-          owner: Json
-          folder_id: string
-        }[]
+        Returns: Database["public"]["CompositeTypes"]["trace_with_owner"][]
       }
       get_user_accessible_traces_count: {
         Args:
@@ -825,3 +820,4 @@ export const Constants = {
     },
   },
 } as const
+
