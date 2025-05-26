@@ -35,21 +35,16 @@ Releases are handled automatically via GitHub Actions when a tag matching `v*.*.
 
 For Homebrew distribution, the formula in the separate `flamedeck-org/homebrew-flamedeck` repository must be manually updated after each release:
 
-1.  Update `version`, `url`s, and `sha256` checksums in `Formula/flamedeck.rb`.
-2.  Commit and push the changes to the `homebrew-flamedeck` repository.
-
-To create a new release with binaries for Linux, macOS, and Windows:
-
+1.  Update Cargo.toml version and push to main
 1.  **Create a new tag:**
     ```bash
     # Replace vX.Y.Z with the desired version number (e.g., v0.1.0)
     git tag vX.Y.Z-cli
     ```
-
-2.  **Push the tag to GitHub:**
+1.  **Push the tag to GitHub:**
     ```bash
     # Replace vX.Y.Z with the same version number
     git push origin vX.Y.Z-cli
     ```
-
-You can find all releases here: [https://github.com/flamedeck-org/flamedeck/releases](https://github.com/flamedeck-org/flamedeck/releases)
+1.  Update `version`, `url`s, and `sha256` checksums in `Formula/flamedeck.rb` in the `homebrew-flamedeck` repository. You can find all releases here: [https://github.com/flamedeck-org/flamedeck/releases](https://github.com/flamedeck-org/flamedeck/releases)
+1.  Commit and push the changes to the `homebrew-flamedeck` repository.
