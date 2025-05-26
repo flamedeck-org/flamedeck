@@ -20,35 +20,10 @@ This script demonstrates how to use the `@flamedeck/upload` package to upload a 
     ```
     Replace `your_actual_api_key_here` with your actual API key.
 
-## Running the Script
+## Running the Test Script
 
-Once the prerequisites are met, you can run the test script using `ts-node` (if you have it installed globally or as a dev dependency) or by compiling it with `tsc` and then running the JavaScript output with `node`.
-
-### Using `ts-node` (Recommended for simplicity)
-
-Navigate to the `packages/client-uploader/examples/node-upload` directory and run:
+Make sure uploading works before deploying a new version. Navigate to the `packages/client-uploader/examples/node-upload` directory and run:
 
 ```bash
-cd packages/client-uploader/examples/node-upload
-npx ts-node upload-test.ts
+FLAMEDECK_API_KEY=<my-key> yarn nx run @flamedeck/upload:example:node-upload
 ```
-
-### Compiling and Running with Node
-
-1.  Navigate to the `packages/client-uploader/examples/node-upload` directory.
-2.  Compile the TypeScript file (ensure you have `typescript` installed, perhaps as a dev dependency in the `client-uploader` package or globally):
-    ```bash
-    cd packages/client-uploader/examples/node-upload
-    tsc upload-test.ts
-    ```
-3.  Run the compiled JavaScript file:
-    ```bash
-    node upload-test.js
-    ```
-
-## Script Behavior
-
-*   The script will read the `dummy-trace.json` file located in the same directory.
-*   It will attempt to upload this trace to Flamedeck using the API key from your environment.
-*   It will log success information (Trace ID, View URL) or error details to the console.
-*   You can modify `upload-test.ts` to change the scenario, notes, public status, or to test other `UploadOptions`. 

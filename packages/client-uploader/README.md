@@ -58,10 +58,20 @@ This will generate the distributable files (CommonJS, ESM, Type Definitions) in 
 
 ## Publishing to NPM (for Maintainers)
 
+NOTE: Make sure that uploading works before incrementing the script version:
+
+```bash
+FLAMEDECK_API_KEY=<my-key> yarn nx run @flamedeck/upload:example:node-upload
+```
+
 1.  **Update Version:** Increment the `version` number in `packages/client-uploader/package.json` according to semantic versioning.
 2.  **Login to NPM:** Ensure you are logged into the correct NPM account that has publish access to the `@flamedeck` organization:
     ```bash
     npm login
+    ```
+4. Build the package
+    ```bash
+    yarn nx run @flamedeck/upload:build 
     ```
 3.  **Run Publish Command:** Use the Nx target to build and publish:
     ```bash
