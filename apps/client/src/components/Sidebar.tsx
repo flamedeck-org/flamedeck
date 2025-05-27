@@ -9,8 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
-import { ListTree, LogOut, User as UserIcon, Settings as SettingsIcon, Star } from 'lucide-react';
-import type { Database } from '@flamedeck/supabase-integration';
+import { ListTree, LogOut, User as UserIcon, Settings as SettingsIcon, Star, Clock } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useSubscriptionUsage } from '@/hooks/useSubscriptionUsage';
 import { Progress } from '@/components/ui/progress';
@@ -129,34 +128,56 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) 
         </nav>
 
         {!minimized && (showMonthlyUsage || showTotalUsage) && (
-          <div className="px-4 pb-4 border-b">
-            {showMonthlyUsage && (
-              <>
-                <div className="text-xs text-muted-foreground mb-1 flex justify-between">
-                  <span className="font-medium text-foreground">Monthly Uploads</span>
-                  <span className="font-medium text-foreground">
-                    {usageData.monthly_uploads_used} / {usageData.monthly_upload_limit}
-                  </span>
-                </div>
-                <Progress value={monthlyUsagePercent} className="h-2" />
-                {resetsIn && (
-                  <div className="text-xs text-muted-foreground mt-1 text-center">
-                    Resets {resetsIn}
+          <div className="px-4 pb-4">
+            <div className="bg-background/50 backdrop-blur-sm border border rounded-lg p-3 space-y-2">
+              {showMonthlyUsage && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">Monthly Uploads</span>
+                    <span className="text-xs font-medium text-foreground">
+                      {usageData.monthly_uploads_used} / {usageData.monthly_upload_limit}
+                    </span>
                   </div>
-                )}
-              </>
-            )}
-            {showTotalUsage && (
-              <>
-                <div className="text-xs text-muted-foreground mb-1 flex justify-between">
-                  <span className="font-medium text-foreground">Total Traces</span>
-                  <span className="font-medium text-foreground">
-                    {usageData.current_total_traces} / {usageData.total_trace_limit}
-                  </span>
+                  <div className="space-y-1.5">
+                    <div className="relative">
+                      <Progress
+                        value={monthlyUsagePercent}
+                        className="h-2 bg-muted/80"
+                      />
+                      <div
+                        className="absolute top-0 left-0 h-2 rounded-full bg-gradient-to-r from-red-500 to-yellow-500 transition-all duration-300"
+                        style={{ width: `${Math.min(monthlyUsagePercent, 100)}%` }}
+                      />
+                    </div>
+                    {resetsIn && (
+                      <div className="text-center text-xs text-muted-foreground">
+                        Resets {resetsIn}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <Progress value={totalUsagePercent} className="h-2" />
-              </>
-            )}
+              )}
+              {showTotalUsage && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">Total Traces</span>
+                    <span className="text-xs font-medium text-foreground">
+                      {usageData.current_total_traces} / {usageData.total_trace_limit}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Progress
+                      value={totalUsagePercent}
+                      className="h-2 bg-muted/80"
+                    />
+                    <div
+                      className="absolute top-0 left-0 h-2 rounded-full bg-gradient-to-r from-red-500 to-yellow-500 transition-all duration-300"
+                      style={{ width: `${Math.min(totalUsagePercent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
