@@ -222,7 +222,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
           </div>
         </TableCell>
         <TableCell className="text-right pr-6 py-4">
-          <div onClick={handleStopPropagation} className="inline-flex items-center gap-1">
+          <div onClick={handleStopPropagation} className="flex items-center gap-1 justify-end">
             <Button
               variant="outline"
               size="sm"

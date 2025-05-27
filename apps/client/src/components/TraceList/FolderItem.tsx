@@ -143,13 +143,11 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
         </TableCell>
         <TableCell className="text-muted-foreground">Folder</TableCell>
         <TableCell>&nbsp;</TableCell>
-        <TableCell>&nbsp;</TableCell>
-        <TableCell>&nbsp;</TableCell>
         <TableCell className="text-muted-foreground">
           {formatRelativeDate(folder.updated_at || folder.created_at)}
         </TableCell>
         <TableCell className="text-right pr-6 py-4">
-          <div onClick={handleStopPropagation} className="inline-flex items-center">
+          <div onClick={handleStopPropagation} className="flex items-center gap-1 justify-end">
             <Button
               variant="ghost"
               size="icon"
