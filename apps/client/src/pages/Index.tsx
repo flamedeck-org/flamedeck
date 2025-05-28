@@ -1,10 +1,9 @@
 import { memo, useEffect, useState, useCallback } from 'react';
-// import { Helmet } from 'react-helmet-async'; // No longer directly needed here
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import PricingTable from '@/components/PricingTable';
-import { UploadCloud, Database, BarChart, Search, Users, Code, FileCode, ArrowRight, Star } from 'lucide-react';
+import { UploadCloud, Database, BarChart, Search, ArrowRight, Star } from 'lucide-react';
 import SharedPageSEO from '@/components/seo/SharedPageSEO';
 import { useAtom } from '@/lib/speedscope-core/atom';
 import { colorSchemeAtom, ColorScheme } from '@/components/speedscope-ui/theme';
@@ -70,6 +69,12 @@ function Index() {
           </Link>
           <a href="mailto:support@flamedeck.com" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
             Support
+          </a>
+          <a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
+            Privacy Policy
+          </a>
+          <a href="#" className="termly-display-preferences text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
+            Consent Preferences
           </a>
         </div>
       </div>
