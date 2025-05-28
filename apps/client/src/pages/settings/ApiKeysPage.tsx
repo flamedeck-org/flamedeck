@@ -133,27 +133,27 @@ function ApiKeysPage() {
   }, [apiKeys]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader title="API Keys" />
 
       {/* Create New Key Card */}
       <Card className="bg-card/90 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
-        <CardHeader className="space-y-3">
+        <CardHeader className="pb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/30 flex items-center justify-center">
-              <Plus className="h-6 w-6 text-red-500" />
+            <div className="w-10 h-10 bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-xl border border-red-500/30 flex items-center justify-center flex-shrink-0">
+              <Plus className="h-5 w-5 text-red-500" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold">Create New API Key</CardTitle>
-              <CardDescription className="text-base">
+              <CardTitle className="text-lg font-semibold">Create New API Key</CardTitle>
+              <CardDescription className="text-sm">
                 Generate a new key for programmatic access.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-3">
-            <Label htmlFor="key-description" className="text-sm font-medium">
+        <CardContent className="space-y-4 pt-0 pb-5">
+          <div className="space-y-2">
+            <Label htmlFor="key-description" className="text-xs font-medium">
               Description
             </Label>
             <Input
@@ -162,20 +162,20 @@ function ApiKeysPage() {
               value={newKeyDescription}
               onChange={(e) => setNewKeyDescription(e.target.value)}
               disabled={createApiKeyMutation.isPending}
-              className="h-11"
+              className="h-10 text-sm"
             />
             <p className="text-xs text-muted-foreground">
               Choose a descriptive name to help you identify this key later.
             </p>
           </div>
 
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Permissions</Label>
-            <div className="space-y-3">
+          <div className="space-y-2.5">
+            <Label className="text-xs font-medium">Permissions</Label>
+            <div className="space-y-2">
               {AVAILABLE_SCOPES.map((scope) => (
                 <div
                   key={scope.id}
-                  className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30 border border-border/50"
+                  className="flex items-start space-x-2.5 p-2.5 rounded-md bg-muted/30 border border-border/50"
                 >
                   <Checkbox
                     id={`scope-${scope.id}`}
@@ -185,13 +185,13 @@ function ApiKeysPage() {
                     className="mt-0.5"
                   />
                   <div className="flex-1">
-                    <Label htmlFor={`scope-${scope.id}`} className="font-medium cursor-pointer">
+                    <Label htmlFor={`scope-${scope.id}`} className="text-sm font-medium cursor-pointer leading-tight">
                       {scope.label}
                     </Label>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       Allows uploading performance trace files via API
                     </p>
-                    <Badge variant="outline" className="mt-2 text-xs">
+                    <Badge variant="outline" className="mt-1.5 text-xs">
                       {scope.id}
                     </Badge>
                   </div>
@@ -200,7 +200,7 @@ function ApiKeysPage() {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="pt-6">
+        <CardFooter className="pt-0 pb-5">
           <Button
             onClick={handleCreateKey}
             disabled={
@@ -209,7 +209,7 @@ function ApiKeysPage() {
               !newKeyDescription.trim()
             }
             className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white shadow-sm hover:shadow-md transition-all duration-300"
-            size="lg"
+            size="default"
           >
             {createApiKeyMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <Key className="mr-2 h-4 w-4" />
@@ -222,12 +222,12 @@ function ApiKeysPage() {
       <Card className="bg-card/90 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
         <CardHeader className="space-y-3">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-blue-400/20 rounded-xl border border-blue-500/30 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-blue-500" />
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-blue-400/20 rounded-xl border border-blue-500/30 flex items-center justify-center">
+              <Shield className="h-5 w-5 text-blue-500" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold">Existing API Keys</CardTitle>
-              <CardDescription className="text-base">
+              <CardTitle className="text-lg font-bold">Existing API Keys</CardTitle>
+              <CardDescription className="text-sm">
                 Manage your existing API keys.
               </CardDescription>
             </div>
