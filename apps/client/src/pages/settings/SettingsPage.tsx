@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, UserCircle2, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
@@ -135,24 +135,31 @@ function SettingsPage() {
         <PageHeader title="General Settings" />
       )}
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Profile Form Card */}
-        <Card>
-          <CardHeader>
+        <Card className="bg-card/90 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardHeader className="pb-4">
             {isLoading ? (
               <>
                 <Skeleton className="h-8 w-40 mb-2" />
                 <Skeleton className="h-4 w-64" />
               </>
             ) : (
-              <>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Update your personal information</CardDescription>
-              </>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-blue-400/20 rounded-xl border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                  <UserCircle2 className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold">Profile Information</CardTitle>
+                  <CardDescription className="text-sm">
+                    Update your personal information
+                  </CardDescription>
+                </div>
+              </div>
             )}
           </CardHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-0">
               {isLoading ? (
                 <>
                   <FormFieldSkeleton label="Email" />
@@ -227,21 +234,28 @@ function SettingsPage() {
         </Card>
 
         {/* Danger Zone Card */}
-        <Card className="border-destructive">
-          <CardHeader>
+        <Card className="border-destructive bg-card/90 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
+          <CardHeader className="pb-4">
             {isLoading ? (
               <>
                 <Skeleton className="h-8 w-32 mb-2" />
                 <Skeleton className="h-4 w-56" />
               </>
             ) : (
-              <>
-                <CardTitle className="text-destructive">Danger Zone</CardTitle>
-                <CardDescription>Irreversible account actions</CardDescription>
-              </>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-xl border border-red-500/30 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold text-destructive">Danger Zone</CardTitle>
+                  <CardDescription className="text-sm">
+                    Irreversible account actions
+                  </CardDescription>
+                </div>
+              </div>
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {isLoading ? (
               <>
                 <div className="flex items-start space-x-2 mb-4">
@@ -263,9 +277,11 @@ function SettingsPage() {
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Delete Account</Button>
+                    <Button variant="destructive" className="shadow-sm hover:shadow-md transition-all duration-300">
+                      Delete Account
+                    </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="bg-card/95 backdrop-blur-sm border border-border/50">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                       <AlertDialogDescription>

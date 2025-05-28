@@ -133,15 +133,22 @@ function BillingPage() {
   return (
     <>
       <PageHeader title="Billing & Subscription" />
-      <div className="space-y-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Subscription Details</CardTitle>
-            <CardDescription>
-              View your current subscription plan and manage your billing information.
-            </CardDescription>
+      <div className="space-y-6">
+        <Card className="bg-card/90 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardHeader className="pb-8">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500/20 to-orange-400/20 rounded-xl border border-orange-500/30 flex items-center justify-center flex-shrink-0">
+                <CreditCard className="h-5 w-5 text-orange-500" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold">Subscription Details</CardTitle>
+                <CardDescription className="text-sm">
+                  View your current subscription plan and manage your billing information.
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-0">
             {isSubscriptionLoading ? (
               <div className="flex items-center space-x-2">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
