@@ -1,8 +1,12 @@
 {
-    "rewrites": [
-      {
-        "source": "/((?!api/|_next/|static/|assets/|favicon.ico|logo192.png|manifest.json|sw.js).*)",
-        "destination": "/index.html"
-      }
-    ]
-  }
+  "rewrites": [
+    {
+      "source": "/privacy-policy",
+      "destination": "/privacy-policy.html"
+    },
+    {
+      "source": "/((?!api/|_next/|static/|assets/|favicon.ico|logo192.png|manifest.json|sw.js).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
