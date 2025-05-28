@@ -89,7 +89,7 @@ export default function DocsLayout() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="relative bg-background">
+        <main className="relative bg-secondary">
           <div className="xl:max-w-7xl mx-auto w-full p-6 lg:p-8">
             {/* Mobile Menu Button */}
             <div className="md:hidden pb-6">
