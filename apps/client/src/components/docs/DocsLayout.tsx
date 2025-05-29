@@ -8,6 +8,7 @@ import { Menu, BookOpen, Key, Terminal, Package, Smartphone } from 'lucide-react
 // Modify DocsSidebarNav to accept onLinkClick
 interface DocsSidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   onLinkClick?: () => void; // Optional callback
+  showTitle?: boolean; // Optional prop to control title visibility
 }
 
 interface DocsNavLinkProps {
@@ -39,7 +40,7 @@ function DocsNavLink({ to, children, onClick, icon: Icon }: DocsNavLinkProps) {
   );
 }
 
-function DocsSidebarNav({ className, onLinkClick, ...props }: DocsSidebarNavProps) {
+function DocsSidebarNav({ className, onLinkClick, showTitle = true, ...props }: DocsSidebarNavProps) {
   const handleLinkClick = () => {
     if (onLinkClick) {
       onLinkClick();
@@ -48,15 +49,17 @@ function DocsSidebarNav({ className, onLinkClick, ...props }: DocsSidebarNavProp
 
   return (
     <div className={cn('space-y-1', className)} {...props}>
-      <div className="px-3 py-2">
-        <h2 className="mb-2 px-1 text-lg font-semibold tracking-tight flex items-center gap-2">
-          <BookOpen className="h-5 w-5 text-primary" />
-          Documentation
-        </h2>
-        <p className="px-1 text-xs text-muted-foreground mb-4">
-          Learn how to integrate FlameDeck into your workflow
-        </p>
-      </div>
+      {showTitle && (
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-1 text-lg font-semibold tracking-tight flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            Documentation
+          </h2>
+          <p className="px-1 text-xs text-muted-foreground mb-4">
+            Learn how to integrate FlameDeck into your workflow
+          </p>
+        </div>
+      )}
       <nav className="space-y-1">
         <DocsNavLink to="/docs/api-keys" onClick={handleLinkClick} icon={Key}>
           API Keys
@@ -112,7 +115,7 @@ export default function DocsLayout() {
                         Documentation
                       </SheetTitle>
                     </SheetHeader>
-                    <DocsSidebarNav onLinkClick={() => setOpen(false)} />
+                    <DocsSidebarNav onLinkClick={() => setOpen(false)} showTitle={false} />
                   </div>
                 </SheetContent>
               </Sheet>

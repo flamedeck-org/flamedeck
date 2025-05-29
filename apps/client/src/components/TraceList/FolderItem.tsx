@@ -133,20 +133,20 @@ function FolderItemComponent({ folder, onClick }: FolderItemProps) {
         }}
         onContextMenu={handleContextMenu} // Add context menu handler to the row
       >
-        <TableCell className="pl-6 font-medium">
-          <div className="flex items-center">
+        <TableCell className="pl-6 font-medium w-full md:w-1/2">
+          <div className="flex items-center min-w-0">
             <FolderIcon className="h-5 w-5 mr-3 text-blue-500 flex-shrink-0" />
             <span className="truncate" title={folder.name}>
               {folder.name}
             </span>
           </div>
         </TableCell>
-        <TableCell className="text-muted-foreground">Folder</TableCell>
-        <TableCell>&nbsp;</TableCell>
-        <TableCell className="text-muted-foreground">
+        <TableCell className="text-muted-foreground hidden md:table-cell">Folder</TableCell>
+        <TableCell className="hidden md:table-cell">&nbsp;</TableCell>
+        <TableCell className="text-muted-foreground hidden md:table-cell">
           {formatRelativeDate(folder.updated_at || folder.created_at)}
         </TableCell>
-        <TableCell className="text-right pr-6 py-4">
+        <TableCell className="text-right pr-6 py-4 w-20 md:w-40">
           <div onClick={handleStopPropagation} className="flex items-center gap-1 justify-end">
             <Button
               variant="ghost"

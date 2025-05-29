@@ -17,6 +17,7 @@ import {
   Folder as FolderIcon,
   FolderPlus,
   Loader2,
+  MoreVertical,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -260,42 +261,47 @@ function TraceListComponent() {
       return (
         <Card className="bg-card/90 backdrop-blur-sm border border-border">
           <CardContent className="p-0">
-            <Table>
+            <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow className="bg-background/50 backdrop-blur-sm hover:bg-background/70 border-b border-border">
-                  <TableHead className="pl-6 py-3">
-                    <Skeleton className="h-4 w-20" />
+                  <TableHead className="pl-6 py-3 w-full md:w-1/2">
+                    <Skeleton className="h-4 w-3/4" />
                   </TableHead>
-                  <TableHead className="py-3">
+                  <TableHead className="py-3 hidden md:table-cell">
                     <Skeleton className="h-4 w-24" />
                   </TableHead>
-                  <TableHead className="py-3">
+                  <TableHead className="py-3 hidden md:table-cell">
                     <Skeleton className="h-4 w-16" />
                   </TableHead>
-                  <TableHead className="py-3">
+                  <TableHead className="py-3 hidden md:table-cell">
                     <Skeleton className="h-4 w-20" />
                   </TableHead>
-                  <TableHead className="text-right pr-6 py-3">
-                    <Skeleton className="h-9 w-9 float-right" />
+                  <TableHead className="text-right pr-6 py-3 w-20 md:w-40">
+                    <div className="hidden md:block">
+                      <Skeleton className="h-9 w-9 float-right" />
+                    </div>
+                    <div className="md:hidden">
+                      <Skeleton className="h-4 w-4 ml-auto" />
+                    </div>
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {[...Array(5)].map((_, i) => (
                   <TableRow key={i} className="border-b border-border">
-                    <TableCell className="pl-6 py-3">
+                    <TableCell className="pl-6 py-3 w-full md:w-1/2">
                       <Skeleton className="h-4 w-3/4" />
                     </TableCell>
-                    <TableCell className="py-3">
+                    <TableCell className="py-3 hidden md:table-cell">
                       <Skeleton className="h-4 w-1/2" />
                     </TableCell>
-                    <TableCell className="py-3">
+                    <TableCell className="py-3 hidden md:table-cell">
                       <Skeleton className="h-4 w-1/4" />
                     </TableCell>
-                    <TableCell className="py-3">
+                    <TableCell className="py-3 hidden md:table-cell">
                       <Skeleton className="h-4 w-1/2" />
                     </TableCell>
-                    <TableCell className="text-right pr-6 py-3">
+                    <TableCell className="text-right pr-6 py-3 w-20">
                       <Skeleton className="h-9 w-9 float-right" />
                     </TableCell>
                   </TableRow>
@@ -389,14 +395,16 @@ function TraceListComponent() {
       <>
         <Card className="bg-card/90 backdrop-blur-sm border border-border overflow-hidden">
           <CardContent className="p-0">
-            <Table>
+            <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow className="bg-background/50 backdrop-blur-sm hover:bg-background/70 border-b border-border">
-                  <TableHead className="pl-6 font-semibold text-foreground">Name</TableHead>
-                  <TableHead className="font-semibold text-foreground">Owner</TableHead>
-                  <TableHead className="font-semibold text-foreground">Duration</TableHead>
-                  <TableHead className="font-semibold text-foreground">Last Updated</TableHead>
-                  <TableHead className="text-right pr-6 font-semibold text-foreground">Actions</TableHead>
+                  <TableHead className="pl-6 font-semibold text-foreground w-full md:w-1/2">Name</TableHead>
+                  <TableHead className="font-semibold text-foreground hidden md:table-cell">Owner</TableHead>
+                  <TableHead className="font-semibold text-foreground hidden md:table-cell">Duration</TableHead>
+                  <TableHead className="font-semibold text-foreground hidden md:table-cell">Last Updated</TableHead>
+                  <TableHead className="text-right pr-6 font-semibold text-foreground w-20 md:w-40">
+                    <span>Actions</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

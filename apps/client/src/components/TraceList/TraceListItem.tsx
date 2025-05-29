@@ -188,18 +188,22 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
         onContextMenu={handleContextMenu}
         className="cursor-pointer hover:bg-muted/50"
       >
-        <TableCell className="font-medium pl-6 py-3">
-          {getIconForProfileType(trace.profile_type)}
-          {trace.scenario || 'N/A'}
+        <TableCell className="font-medium pl-6 py-3 w-full md:w-1/2">
+          <div className="flex items-center min-w-0">
+            <div className="flex-shrink-0">
+              {getIconForProfileType(trace.profile_type)}
+            </div>
+            <span className="truncate">{trace.scenario || 'N/A'}</span>
+          </div>
         </TableCell>
-        <TableCell className="py-4">
+        <TableCell className="py-4 hidden md:table-cell">
           <div className="flex items-center space-x-2">
             <UserAvatar profile={trace.owner} currentUser={currentUser} size="md" />
             <span className="text-sm truncate">{ownerDisplayName}</span>
           </div>
         </TableCell>
-        <TableCell className="py-4">{formatDuration(trace.duration_ms)}</TableCell>
-        <TableCell className="py-4 text-muted-foreground text-sm">
+        <TableCell className="py-4 hidden md:table-cell">{formatDuration(trace.duration_ms)}</TableCell>
+        <TableCell className="py-4 text-muted-foreground text-sm hidden md:table-cell">
           <div className="flex items-center gap-2">
             {expirationStatus.isExpiring && (
               <TooltipProvider delayDuration={100}>
@@ -221,14 +225,14 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
             <span>{formatRelativeDate(trace.updated_at || trace.uploaded_at)}</span>
           </div>
         </TableCell>
-        <TableCell className="text-right pr-6 py-4">
+        <TableCell className="text-right pr-6 py-4 w-20 md:w-40">
           <div onClick={handleStopPropagation} className="flex items-center gap-1 justify-end">
             <Button
               variant="outline"
               size="sm"
               onClick={handleNavigateToViewer}
               aria-label={`View trace ${traceIdentifier}`}
-              className="h-8 w-8 p-0 cursor-pointer"
+              className="h-8 w-8 p-0 cursor-pointer hidden md:flex"
             >
               <Eye className="h-4 w-4" />
             </Button>
@@ -236,7 +240,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
               variant="outline"
               size="sm"
               disabled={isDeleting}
-              className="h-8 w-8 p-0 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+              className="h-8 w-8 p-0 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer hidden md:flex"
               aria-label={`Delete trace ${traceIdentifier}`}
               onClick={(e) => {
                 e.stopPropagation();
