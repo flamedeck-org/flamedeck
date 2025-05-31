@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { FastMCP } from 'fastmcp';
+import { UserError } from 'fastmcp';
 import { loadProfileFromTrace } from '../utils/profile-loader.js';
 import type { Frame } from '@flamedeck/speedscope-core/profile';
 import { formatPercent } from '@flamedeck/speedscope-core/lib-utils';
@@ -28,22 +29,33 @@ export function addTopFunctionsTool(server: FastMCP) {
         name: 'get_top_functions',
         description: 'Get top functions by performance metrics from a trace file or Flamedeck URL - you can offset the start with `offset` and limit the number with `limit`',
         parameters: topFunctionsSchema,
-        execute: async (args) => {
+        execute: async (args, { log }) => {
             const { trace, sortBy, offset, limit } = args;
-            console.log(
-                `[TopFunctionsTool] Called with trace: ${trace}, sortBy: ${sortBy}, offset: ${offset}, limit: ${limit}`
-            );
+            log.info('TopFunctionsTool called', {
+                trace,
+                sortBy,
+                offset,
+                limit
+            });
 
             try {
                 const { profileGroup } = await loadProfileFromTrace(trace);
 
                 if (!profileGroup || !profileGroup.profiles || profileGroup.profiles.length === 0) {
-                    return 'Error: Profile data is not loaded or is empty.';
+                    throw new UserError('Profile data is not loaded or is empty. Please check that the trace file exists and is valid.');
                 }
 
                 const profile = profileGroup.profiles[0];
                 if (!profile) {
-                    return 'Error: No profile found in the profile group.';
+                    throw new UserError('No profile found in the profile group.');
+                }
+
+                // Validate parameters
+                if (offset < 0) {
+                    throw new UserError('Offset must be non-negative.');
+                }
+                if (limit <= 0) {
+                    throw new UserError('Limit must be positive.');
                 }
 
                 const totalNonIdle = profile.getTotalNonIdleWeight
@@ -80,14 +92,26 @@ export function addTopFunctionsTool(server: FastMCP) {
                 });
 
                 if (results.length === 0) {
-                    return 'No function data found in the profile for the specified range.';
+                    throw new UserError('No function data found in the profile for the specified range. Try adjusting the offset or check if the profile contains frame data.');
                 }
+
+                log.info('TopFunctionsTool completed successfully', {
+                    resultCount: results.length,
+                    range: `${offset + 1} to ${offset + results.length}`
+                });
 
                 return `Displaying functions ${offset + 1} to ${offset + results.length} (sorted by ${sortBy} time):\n${results.join('\n')}`;
             } catch (error) {
-                console.error(`[TopFunctionsTool] Error:`, error);
+                if (error instanceof UserError) {
+                    throw error; // Re-throw UserError as-is
+                }
+
+                log.error('TopFunctionsTool error', {
+                    error: error instanceof Error ? error.message : String(error),
+                    trace
+                });
                 const errorMsg = error instanceof Error ? error.message : String(error);
-                return `Error executing TopFunctionsTool: ${errorMsg}`;
+                throw new UserError(`Failed to get top functions: ${errorMsg}`);
             }
         },
     });

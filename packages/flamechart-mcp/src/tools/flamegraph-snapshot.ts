@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import type { FastMCP } from 'fastmcp';
+import { imageContent, UserError } from 'fastmcp';
 import { loadProfileFromTrace } from '../utils/profile-loader.js';
 import {
     renderLeftHeavyFlamechart,
     type RenderLeftHeavyFlamechartOptions,
 } from '@flamedeck/flamechart-to-png';
-import type { FlamegraphSnapshotResult } from '../types.js';
 
 const snapshotSchema = z.object({
     trace: z.string().describe('Absolute local file path or Flamedeck URL'),
@@ -30,28 +30,29 @@ const snapshotSchema = z.object({
 export function addFlamegraphSnapshotTool(server: FastMCP) {
     server.addTool({
         name: 'generate_flamegraph_screenshot',
-        description: 'Generates a flamegraph screenshot (PNG) locally. Returns JSON string with {status, publicUrl, base64Image, message}.',
+        description: 'Generates a flamegraph screenshot (PNG) and returns it as an image.',
         parameters: snapshotSchema,
-        execute: async (args): Promise<string> => {
-            console.log('[FlamegraphSnapshotTool] Called with args:', args);
+        execute: async (args, { log }) => {
+            log.info('FlamegraphSnapshotTool called', args);
 
             try {
                 const { profileGroup } = await loadProfileFromTrace(args.trace);
 
                 if (!profileGroup) {
-                    const errorMessage = 'Failed to load profile group from trace.';
-                    console.error(`[FlamegraphSnapshotTool] ${errorMessage}`);
-                    return JSON.stringify({
-                        status: 'error',
-                        base64Image: null,
-                        publicUrl: null,
-                        message: errorMessage,
-                    } as FlamegraphSnapshotResult);
+                    throw new UserError('Failed to load profile group from trace. Please check that the trace file exists and is valid.');
                 }
 
-                console.log(
-                    `[FlamegraphSnapshotTool] Profile group "${profileGroup.name || 'Unnamed'}" loaded.`
-                );
+                log.info('Profile group loaded', {
+                    profileName: profileGroup.name || 'Unnamed'
+                });
+
+                // Validate dimensions
+                if (args.width && (args.width < 100 || args.width > 4000)) {
+                    throw new UserError('Width must be between 100 and 4000 pixels.');
+                }
+                if (args.height && (args.height < 100 || args.height > 4000)) {
+                    throw new UserError('Height must be between 100 and 4000 pixels.');
+                }
 
                 // Prepare render options from tool arguments
                 const renderOptions: RenderLeftHeavyFlamechartOptions = {};
@@ -62,46 +63,40 @@ export function addFlamegraphSnapshotTool(server: FastMCP) {
                 if (args.startDepth !== undefined) renderOptions.startDepth = args.startDepth;
                 if (args.mode) renderOptions.mode = args.mode;
 
-                console.log(
-                    '[FlamegraphSnapshotTool] Rendering PNG locally with options:',
-                    renderOptions
-                );
+                log.info('Rendering PNG locally', {
+                    width: renderOptions.width,
+                    height: renderOptions.height,
+                    startTimeMs: renderOptions.startTimeMs,
+                    endTimeMs: renderOptions.endTimeMs,
+                    startDepth: renderOptions.startDepth,
+                    mode: renderOptions.mode
+                });
                 const pngBuffer = await renderLeftHeavyFlamechart(profileGroup, renderOptions);
 
                 if (!pngBuffer || pngBuffer.length === 0) {
-                    const renderError = 'renderLeftHeavyFlamechart returned empty buffer.';
-                    console.error('[FlamegraphSnapshotTool]', renderError);
-                    return JSON.stringify({
-                        status: 'error',
-                        base64Image: null,
-                        publicUrl: null,
-                        message: renderError,
-                    } as FlamegraphSnapshotResult);
+                    throw new UserError('Failed to generate flamegraph image. The rendering process returned an empty result.');
                 }
 
-                console.log(
-                    `[FlamegraphSnapshotTool] PNG buffer generated locally, length: ${pngBuffer.length}`
-                );
+                log.info('PNG buffer generated', {
+                    bufferLength: pngBuffer.length
+                });
 
-                const base64Image = Buffer.from(pngBuffer).toString('base64');
-                const successMessage = `Flamegraph screenshot generated successfully. Image data included as base64.`;
-                console.log(`[FlamegraphSnapshotTool] ${successMessage}`);
+                // Return the image using FastMCP's imageContent
+                return imageContent({
+                    buffer: pngBuffer,
+                });
 
-                return JSON.stringify({
-                    status: 'success',
-                    publicUrl: null, // No cloud storage in MCP version
-                    base64Image: base64Image,
-                    message: successMessage,
-                } as FlamegraphSnapshotResult);
-            } catch (toolError: any) {
-                const errorMessage = `Error: Exception during flamechart generation: ${toolError.message || String(toolError)}`;
-                console.error(`[FlamegraphSnapshotTool] Unhandled exception:`, toolError);
-                return JSON.stringify({
-                    status: 'error',
-                    base64Image: null,
-                    publicUrl: null,
-                    message: errorMessage,
-                } as FlamegraphSnapshotResult);
+            } catch (error) {
+                if (error instanceof UserError) {
+                    throw error; // Re-throw UserError as-is
+                }
+
+                log.error('FlamegraphSnapshotTool error', {
+                    error: error instanceof Error ? error.message : String(error),
+                    trace: args.trace
+                });
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                throw new UserError(`Failed to generate flamegraph: ${errorMessage}`);
             }
         },
     });

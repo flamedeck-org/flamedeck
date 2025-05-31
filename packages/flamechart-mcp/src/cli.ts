@@ -19,8 +19,8 @@ Examples:
 
 Available Tools:
   - get_top_functions: Get top functions by performance metrics
-  - generate_flamegraph_screenshot: Create flamegraph PNG images
-  - generate_sandwich_flamegraph_screenshot: Create sandwich view for specific functions
+  - generate_flamegraph_screenshot: Generate flamegraph images returned as PNG
+  - generate_sandwich_flamegraph_screenshot: Generate sandwich view images for specific functions
 
 For more information, visit: https://github.com/flamedeck/flamedeck
   `);
