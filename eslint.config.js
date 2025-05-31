@@ -37,6 +37,7 @@ export default tseslint.config(
           './packages/speedscope-core/tsconfig.json',
           './packages/flamechart-to-png/tsconfig.json',
           './packages/supabase-integration/tsconfig.json',
+          './packages/flamechart-mcp/tsconfig.lib.json',
         ],
         tsconfigRootDir: import.meta.dirname,
       },
