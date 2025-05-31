@@ -1,0 +1,59 @@
+{
+    "name": "@flamedeck/flamechart-mcp",
+    "version": "0.1.0",
+    "description": "MCP server for debugging and analyzing flamegraphs using Model Context Protocol",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "bin": "./dist/cli.js",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./cli": {
+            "types": "./dist/cli.d.ts",
+            "import": "./dist/cli.js"
+        }
+    },
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "publish": "npm publish --access public",
+        "example:local": "node dist/cli.js"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "keywords": [
+        "flamedeck",
+        "flamegraph",
+        "profiling",
+        "mcp",
+        "model-context-protocol",
+        "debugging",
+        "performance"
+    ],
+    "author": "Flamedeck Team",
+    "license": "ISC",
+    "sideEffects": false,
+    "dependencies": {
+        "@flamedeck/flamechart-to-png": "workspace:*",
+        "@flamedeck/speedscope-core": "workspace:*",
+        "@flamedeck/speedscope-import": "workspace:*",
+        "fastmcp": "^2.1.4",
+        "long": "^5.2.3",
+        "pako": "^2.1.0",
+        "tslib": "^2.3.0",
+        "uint8array-json-parser": "^0.0.2",
+        "zod": "^3.23.8"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/pako": "^2.0.3",
+        "tsup": "^8.0.0",
+        "tsx": "^4.6.0",
+        "typescript": "^5.0.0"
+    }
+}

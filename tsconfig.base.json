@@ -44,6 +44,12 @@
       ],
       "@flamedeck/supabase-integration": [
         "packages/supabase-integration/src/index.ts"
+      ],
+      "@flamedeck/flamechart-mcp": [
+        "packages/flamechart-mcp/src/index.ts"
+      ],
+      "@flamedeck/flamechart-mcp/*": [
+        "packages/flamechart-mcp/src/*"
       ]
     }
   },
