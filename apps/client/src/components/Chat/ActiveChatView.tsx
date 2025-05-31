@@ -65,11 +65,14 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
             sendMessage(prompt);
         };
 
-        // Function to format inline code like GitHub
+        // Function to format inline code like GitHub while preserving newlines
         const formatMessageText = (text: string) => {
+            // Split by backticks to handle inline code
             const parts = text.split('`');
+
             return parts.map((part, index) => {
                 if (index % 2 === 1) {
+                    // This is inline code
                     return (
                         <code
                             key={index}
@@ -79,6 +82,7 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
                         </code>
                     );
                 }
+                // This is regular text - return as is to preserve whitespace
                 return part;
             });
         };
@@ -145,7 +149,7 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
                                     className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                                 >
                                     <div
-                                        className={`max-w-[85%] p-3 rounded-xl text-sm whitespace-pre-wrap break-words shadow-sm ${msg.sender === 'user'
+                                        className={`max-w-[85%] p-3 rounded-xl text-sm break-words shadow-sm ${msg.sender === 'user'
                                             ? 'bg-primary text-primary-foreground shadow-primary/25'
                                             : msg.sender === 'model'
                                                 ? 'bg-muted/80 backdrop-blur-sm text-foreground border border-border/50'
@@ -155,6 +159,7 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
                                                         : 'bg-red-50/90 dark:bg-red-950/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 backdrop-blur-sm'
                                                     : 'bg-muted/80 backdrop-blur-sm text-foreground border border-border/50'
                                             }`}
+                                        style={{ whiteSpace: 'pre-line' }}
                                     >
                                         {formatMessageText(msg.text)}
                                         {msg.sender === 'error' && isLimitError && (

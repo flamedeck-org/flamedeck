@@ -1,1 +1,2 @@
-export * from './TraceViewerHeaderActions'; 
+export * from './TraceViewerHeaderActions';
+export { TraceViewerErrorState } from './TraceViewerErrorState'; 
