@@ -19,7 +19,7 @@
     "scripts": {
         "build": "tsup",
         "dev": "tsup --watch",
-        "publish": "npm publish --access public",
+        "prepublishOnly": "yarn build",
         "example:local": "node dist/cli.js"
     },
     "files": [
@@ -37,6 +37,15 @@
     ],
     "author": "Flamedeck Team",
     "license": "ISC",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/flamedeck/flamedeck.git",
+        "directory": "packages/flamechart-mcp"
+    },
+    "homepage": "https://github.com/flamedeck/flamedeck/tree/main/packages/flamechart-mcp#readme",
+    "bugs": {
+        "url": "https://github.com/flamedeck/flamedeck/issues"
+    },
     "sideEffects": false,
     "dependencies": {
         "@flamedeck/flamechart-to-png": "workspace:*",
@@ -52,6 +61,7 @@
     "devDependencies": {
         "@types/node": "^20.0.0",
         "@types/pako": "^2.0.3",
+        "fs-extra": "^11.2.0",
         "tsup": "^8.0.0",
         "tsx": "^4.6.0",
         "typescript": "^5.0.0"

@@ -2190,6 +2190,7 @@ __metadata:
     "@types/node": "npm:^20.0.0"
     "@types/pako": "npm:^2.0.3"
     fastmcp: "npm:^2.1.4"
+    fs-extra: "npm:^11.2.0"
     long: "npm:^5.2.3"
     pako: "npm:^2.1.0"
     tslib: "npm:^2.3.0"
@@ -10131,6 +10132,7 @@ __metadata:
     eslint-plugin-prettier: "npm:^5.4.0"
     eslint-plugin-react: "npm:^7.37.5"
     eslint-plugin-react-hooks: "npm:^5.2.0"
+    fs-extra: "npm:^11.3.0"
     globals: "npm:^15.9.0"
     nx: "npm:20.8.1"
     prettier: "npm:^3.5.3"
@@ -10312,7 +10314,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fs-extra@npm:^11.2.0":
+"fs-extra@npm:^11.2.0, fs-extra@npm:^11.3.0":
   version: 11.3.0
   resolution: "fs-extra@npm:11.3.0"
   dependencies:
