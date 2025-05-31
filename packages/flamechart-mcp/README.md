@@ -75,7 +75,7 @@ Generate a flamegraph visualization as a PNG image.
 - `startDepth` (number, optional): Start depth for zoomed view
 - `mode` (string, optional): Color mode 'light' or 'dark' (default: 'light')
 
-**Returns:** JSON string with `{status, publicUrl, base64Image, message}`
+**Returns:** PNG image that can be displayed directly by MCP clients
 
 ### `generate_sandwich_flamegraph_screenshot`
 
@@ -85,7 +85,7 @@ Generate a sandwich view flamegraph for a specific function, showing both caller
 - `trace` (string): Absolute local file path or Flamedeck URL
 - `frameName` (string): Exact name of the function to focus on
 
-**Returns:** JSON string with `{status, publicUrl, base64Image, message}`
+**Returns:** PNG image that can be displayed directly by MCP clients
 
 ## Supported Trace Formats
 
@@ -180,9 +180,7 @@ npx @modelcontextprotocol/inspector node dist/cli.js
 
 ## Related Packages
 
-- [`@flamedeck/upload`](../client-uploader) - Client library for uploading traces
-- [`@flamedeck/speedscope-core`](../speedscope-core) - Core profiling logic
-- [`@flamedeck/flamechart-to-png`](../flamechart-to-png) - PNG rendering utilities
+- [`@flamedeck/upload`](https://www.npmjs.com/package/@flamedeck/upload) - Client library for uploading traces
 
 ## License
 

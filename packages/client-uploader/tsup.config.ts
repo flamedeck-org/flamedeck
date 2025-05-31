@@ -18,6 +18,19 @@ export default defineConfig({
   // },
   onSuccess: async () => {
     console.log('Build successful with tsup!');
+
+    // Copy README.md to dist directory
+    const readmePath = path.resolve(__dirname, 'README.md');
+    const distReadmePath = path.resolve(__dirname, 'dist', 'README.md');
+    try {
+      if (await fs.pathExists(readmePath)) {
+        await fs.copy(readmePath, distReadmePath);
+        console.log('Successfully copied README.md to dist');
+      }
+    } catch (error) {
+      console.error('Error copying README.md:', error);
+    }
+
     // --- Add package.json generation to dist ---
     const rootPackageJsonPath = path.resolve(__dirname, 'package.json');
     const distDir = path.resolve(__dirname, 'dist');
@@ -50,6 +63,7 @@ export default defineConfig({
           'index.cjs.map',
           'index.d.ts',
           'index.d.cts', // For CJS types if generated
+          'README.md', // Include README in package files
         ],
         keywords: packageJsonContent.keywords,
         author: packageJsonContent.author,
