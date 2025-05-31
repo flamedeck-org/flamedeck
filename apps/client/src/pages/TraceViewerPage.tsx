@@ -36,6 +36,7 @@ import { useSharingModal } from '@/hooks/useSharingModal';
 import { UnauthenticatedChatTeaser } from '@/components/Chat/UnauthenticatedChatTeaser';
 import { useTraceDetails } from '@/hooks/useTraceDetails';
 import { TraceViewerHeaderActions } from '@/components/TraceViewer/TraceViewerHeaderActions';
+import { TraceViewerErrorState } from '@/components/TraceViewer';
 
 // Define a fallback component to display on error
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -234,19 +235,22 @@ const TraceViewerPage: React.FC = () => {
       )}
 
       {!isLoading && error && (
-        <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center relative z-10">
-          <h2 className="text-xl font-semibold text-destructive">
-            {error?.code === '404' ? 'Trace Not Found or Not Public' : 'Error Loading Trace Data'}
-          </h2>
-          <p className="text-destructive mt-2">{error.message}</p>
-          {id && (
-            <Link to={`/traces/${id}`}>
-              <Button variant="outline" className="mt-4">
-                Back to Details
-              </Button>
-            </Link>
-          )}
-        </div>
+        <TraceViewerErrorState
+          title={error?.code === '404' ? 'Trace Not Found or Not Public' : 'Error Loading Trace Data'}
+          message={error.message}
+          actions={[
+            {
+              message: 'Back to Home',
+              href: '/',
+              variant: 'outline',
+            } as const,
+            ...(id ? [{
+              message: 'Back to Details',
+              href: `/traces/${id}`,
+              variant: 'gradient',
+            } as const] : []),
+          ]}
+        />
       )}
 
       {!isLoading && !error && traceBlobData && id && (
