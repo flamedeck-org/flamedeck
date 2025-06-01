@@ -1,6 +1,6 @@
 {
   "name": "@flamedeck/upload",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Client library for uploading traces to Flamedeck.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -20,6 +20,15 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flamedeck-org/flamedeck.git",
+    "directory": "packages/client-uploader"
+  },
+  "homepage": "https://github.com/flamedeck-org/flamedeck/tree/main/packages/client-uploader#readme",
+  "bugs": {
+    "url": "https://github.com/flamedeck-org/flamedeck/issues"
+  },
   "keywords": [
     "flamedeck",
     "trace",

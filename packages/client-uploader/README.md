@@ -80,3 +80,7 @@ FLAMEDECK_API_KEY=<my-key> yarn nx run @flamedeck/upload:example:node-upload
     This command automatically builds the package and runs `npm publish --access public` from the `dist` directory.
 
 *(Note: Version 0.0.1 was published incorrectly without the built JS/TS files due to an incorrect `files` entry in `package.json`. This was corrected for subsequent versions.)*
+
+## Related Packages
+
+- [`@flamedeck/flamechart-mcp`](https://www.npmjs.com/package/@flamedeck/flamechart-mcp) - MCP server for analyzing performance traces

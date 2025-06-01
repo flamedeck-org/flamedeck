@@ -1,4 +1,4 @@
-# @flamedeck/flamechart-mcp
+# Flamechart MCP Server
 
 MCP (Model Context Protocol) server for debugging and analyzing a wide range of performance profiles (go, javascript, python, etc) using flamegraphs. Use with local traces or with FlameDeck's hosted trace storage.
 
