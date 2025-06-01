@@ -4,6 +4,8 @@ MCP (Model Context Protocol) server for debugging and analyzing a wide range of 
 
 **Works entirely offline for local trace files** - no API key required! Only need a Flamedeck API key for analyzing remote traces.
 
+![Screenshot of FlameDeck MCP in action](./images/screenshot.png)
+
 ## Usage
 
 ### With Cursor / Claude Desktop
@@ -38,6 +40,39 @@ Add the following to your MCP server configuration file:
 ```
 
 > You will need to create an API key with `trace:download` permissions in your [Flamedeck settings](https://flamedeck.com/settings/api-keys).
+
+## Practical Examples for Cursor/AI Assistants
+
+### Analyzing Local Trace Files
+
+**Example prompt for Cursor:**
+```
+Analyze this trace file and find out why my React app's rendering is slow:
+/Users/developer/profiles/react-app-slow.cpuprofile
+
+Focus on any React-related functions that might be causing bottlenecks
+```
+
+### Analyzing Remote Flamedeck Traces
+
+**Example prompt for team collaboration:**
+```
+My teammate shared this performance trace from production. Analyze it and help me understand the bottlenecks:
+https://www.flamedeck.com/traces/98508d02-1f2a-4885-9607-ecadceb3d734
+
+Focus on:
+1. Database query performance 
+2. Any functions taking >100ms
+```
+
+**Example prompt for API performance investigation:**
+```
+Our API response times spiked yesterday. Root cause with this production trace:
+https://www.flamedeck.com/traces/abc123...
+
+* You can read through the codebase as you are analyzing to understand execution paths
+* If you can't find any issues, don't make anything up, just say so
+```
 
 ## Available Tools
 
@@ -98,39 +133,6 @@ Files can be gzipped - the server will automatically detect and decompress them.
 - `FLAMEDECK_API_KEY`: **Only required for remote Flamedeck URL traces**. Create an API key with `trace:download` permissions in your [Flamedeck settings](https://flamedeck.com/settings/api-keys).
 
 **Note:** The MCP server works completely offline when analyzing local trace files - no internet connection or API key needed!
-
-## Practical Examples for Cursor/AI Assistants
-
-### Analyzing Local Trace Files
-
-**Example prompt for Cursor:**
-```
-Analyze this trace file and find out why my React app's rendering is slow:
-/Users/developer/profiles/react-app-slow.cpuprofile
-
-Focus on any React-related functions that might be causing bottlenecks
-```
-
-### Analyzing Remote Flamedeck Traces
-
-**Example prompt for team collaboration:**
-```
-My teammate shared this performance trace from production. Analyze it and help me understand the bottlenecks:
-https://www.flamedeck.com/traces/98508d02-1f2a-4885-9607-ecadceb3d734
-
-Focus on:
-1. Database query performance 
-2. Any functions taking >100ms
-```
-
-**Example prompt for API performance investigation:**
-```
-Our API response times spiked yesterday. Root cause with this production trace:
-https://www.flamedeck.com/traces/abc123...
-
-* You can read through the codebase as you are analyzing to understand execution paths
-* If you can't find any issues, don't make anything up, just say so
-```
 
 ## Development
 
