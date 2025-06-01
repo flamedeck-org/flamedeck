@@ -1,6 +1,6 @@
 {
     "name": "@flamedeck/flamechart-mcp",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "MCP server for debugging and analyzing flamegraphs using Model Context Protocol",
     "type": "module",
     "main": "./dist/index.js",
