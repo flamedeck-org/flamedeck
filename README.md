@@ -4,7 +4,7 @@
 
 <h1>FlameDeck</h1>
 
-<p><em>Collaborative Performance Trace Viewer</em></p>
+<p><em>AI-Powered Performance Analysis</em></p>
 
 </div>
 
