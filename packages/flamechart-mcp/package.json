@@ -1,6 +1,6 @@
 {
     "name": "@flamedeck/flamechart-mcp",
-    "version": "0.2.3",
+    "version": "0.2.5",
     "description": "MCP server for debugging and analyzing flamegraphs using Model Context Protocol",
     "type": "module",
     "main": "./dist/index.js",
@@ -39,12 +39,12 @@
     "license": "ISC",
     "repository": {
         "type": "git",
-        "url": "https://github.com/flamedeck/flamedeck.git",
+        "url": "https://github.com/flamedeck-org/flamedeck.git",
         "directory": "packages/flamechart-mcp"
     },
-    "homepage": "https://github.com/flamedeck/flamedeck/tree/main/packages/flamechart-mcp#readme",
+    "homepage": "https://github.com/flamedeck-org/flamedeck/tree/main/packages/flamechart-mcp#readme",
     "bugs": {
-        "url": "https://github.com/flamedeck/flamedeck/issues"
+        "url": "https://github.com/flamedeck-org/flamedeck/issues"
     },
     "sideEffects": false,
     "dependencies": {

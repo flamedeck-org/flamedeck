@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { cn } from '@/lib/utils'; // Assuming you have a utility for class names
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Menu, BookOpen, Key, Terminal, Package, Smartphone } from 'lucide-react';
+import { Menu, BookOpen, Key, Terminal, Package, Smartphone, Bot } from 'lucide-react';
 
 // Modify DocsSidebarNav to accept onLinkClick
 interface DocsSidebarNavProps extends React.HTMLAttributes<HTMLElement> {
@@ -63,6 +63,9 @@ function DocsSidebarNav({ className, onLinkClick, showTitle = true, ...props }: 
       <nav className="space-y-1">
         <DocsNavLink to="/docs/api-keys" onClick={handleLinkClick} icon={Key}>
           API Keys
+        </DocsNavLink>
+        <DocsNavLink to="/docs/mcp-server" onClick={handleLinkClick} icon={Bot}>
+          MCP Server
         </DocsNavLink>
         <DocsNavLink to="/docs/cli-upload" onClick={handleLinkClick} icon={Terminal}>
           CLI Upload

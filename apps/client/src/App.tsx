@@ -18,6 +18,7 @@ import DocsApiKeysPage from './pages/DocsApiKeysPage';
 import DocsCliUploadPage from './pages/DocsCliUploadPage';
 import DocsNpmUploadPage from './pages/DocsNpmUploadPage';
 import DocsReactNativePage from './pages/DocsReactNativePage';
+import DocsMcpServerPage from './pages/DocsMcpServerPage';
 import DocsLayout from './components/docs/DocsLayout';
 import { useTheme } from './components/speedscope-ui/theme.tsx';
 import { useAtom } from './lib/speedscope-core/atom';
@@ -117,6 +118,7 @@ const AppRoutes = () => {
           <Route path="cli-upload" element={<DocsCliUploadPage />} />
           <Route path="npm-upload" element={<DocsNpmUploadPage />} />
           <Route path="react-native" element={<DocsReactNativePage />} />
+          <Route path="mcp-server" element={<DocsMcpServerPage />} />
         </Route>
 
         {/* Public Trace Viewer Route - outside ProtectedRoute */}
