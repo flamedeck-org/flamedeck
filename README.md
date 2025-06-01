@@ -1,14 +1,22 @@
-# FlameDeck
+<div align="center">
+
+<img src="apps/client/public/android-chrome-512x512.png" alt="FlameDeck Logo" width="80" height="80">
+
+<h1>FlameDeck</h1>
+
+<p><em>Collaborative Performance Trace Viewer</em></p>
+
+</div>
 
 FlameDeck is a collaborative platform for storing, analyzing, and debugging performance traces. Upload your profile once, explore it anywhere, and share insights with your team—all in one place.
 
 **Key capabilities**
 
-* **Universal format support** – Import traces from Node.js, Go, Rust, Python, Chrome, React Native, and many more.
-* **Interactive visualizations** – Timeline, Left-Heavy, and Sandwich flamegraphs powered by Speedscope with smooth, hardware-accelerated rendering.
-* **AI-powered insights** – Ask questions in plain English, automatically detect bottlenecks, and receive actionable optimization recommendations.
-* **Team collaboration** – Comment on frames, share public links, and control permissions to keep everyone on the same page.
-* **Developer-friendly workflows** – Drag-and-drop uploads in the browser, first-class CLI & REST API, and seamless CI/CD integration.
+* 🧩 **Universal format support** – Import traces from Node.js, Go, Rust, Python, Chrome, React Native, and many more.
+* 📊 **Interactive visualizations** – Timeline, Left-Heavy, and Sandwich flamegraphs powered by Speedscope with smooth, hardware-accelerated rendering.
+* 🤖 **AI-powered insights** – Ask questions in plain English, automatically detect bottlenecks, and receive actionable optimization recommendations.
+* 👥 **Team collaboration** – Comment on frames, share public links, and control permissions to keep everyone on the same page.
+* 🛠️ **Developer-friendly workflows** – Drag-and-drop uploads in the browser, first-class CLI & REST API, and seamless CI/CD integration.
 
 This monorepo contains:
 
