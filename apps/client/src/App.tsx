@@ -10,7 +10,7 @@ import { SidebarProvider } from '@/contexts/SidebarContext';
 import Index from './pages/Index.tsx';
 import Login from './pages/Login.tsx';
 import Traces from './pages/Traces.tsx';
-import TraceDetail from './pages/TraceDetail';
+import { TraceDetail } from './pages/TraceDetail';
 import ApiKeysPage from './pages/settings/ApiKeysPage';
 import NotFound from './pages/NotFound';
 import TraceViewerPage from './pages/TraceViewerPage';

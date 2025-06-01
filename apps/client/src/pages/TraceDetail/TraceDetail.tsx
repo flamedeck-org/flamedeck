@@ -17,141 +17,22 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import CommentForm from '@/components/CommentForm';
 import type { StructuredComment } from '@/components/comments';
 import { CommentItem } from '@/components/comments';
-import { Separator } from '@/components/ui/separator';
 import { buttonVariants } from '@/components/ui/button';
-import type { ProfileType } from 'packages/speedscope-import/src';
-import type { SpeedscopeViewType } from '@/components/SpeedscopeViewer';
 import { useSharingModal } from '@/hooks/useSharingModal';
 import { useTraceDetails } from '@/hooks/useTraceDetails';
 import { useTraceComments } from '@/hooks/useTraceComments';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDuration } from '@/lib/utils';
-import type { TraceCommentWithAuthor, TracePermissionWithUser, TraceRole } from '@/lib/api';
+import type { TracePermissionWithUser, TraceRole } from '@/lib/api';
 import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { format, formatDistanceToNow, isToday, isYesterday, isThisYear } from 'date-fns';
 import { TraceTitle, FlamegraphPreview, TraceDetailHeaderActions } from '@/components/TraceDetail';
+import { commentTypeToViewType, getCommentSectionTitle, structureComments } from './utils/commentUtils';
+import { getProfileTypeName } from './utils/profileUtils';
+import { formatUploadDate } from './utils/dateUtils';
 
-// Function to get human-readable profile type name
-const getProfileTypeName = (profileType: ProfileType | string | undefined): string => {
-  if (!profileType) return 'Unknown';
-
-  const typeMap: Record<ProfileType | string, string> = {
-    speedscope: 'Speedscope',
-    pprof: 'pprof (Go/Protobuf)',
-    'chrome-timeline': 'Chrome Timeline',
-    'chrome-cpuprofile': 'Chrome CPU Profile',
-    'chrome-cpuprofile-old': 'Chrome CPU Profile (Old)',
-    'chrome-heap-profile': 'Chrome Heap Profile',
-    stackprof: 'Stackprof (Ruby)',
-    'instruments-deepcopy': 'Instruments Deep Copy (macOS)',
-    'instruments-trace': 'Instruments Trace (macOS)',
-    'linux-perf': 'Linux Perf',
-    'collapsed-stack': 'Collapsed Stack',
-    'v8-prof-log': 'V8 Log',
-    firefox: 'Firefox Profile',
-    safari: 'Safari Profile',
-    haskell: 'Haskell GHC Profile',
-    'trace-event': 'Trace Event',
-    callgrind: 'Callgrind',
-    papyrus: 'Papyrus (Skyrim)',
-    unknown: 'Unknown',
-  };
-
-  return typeMap[profileType] || profileType; // Return mapped name or the original string if not in map
-};
-
-// Function to format upload date in a readable, concise way
-const formatUploadDate = (dateString: string | undefined): string => {
-  if (!dateString) return 'Unknown';
-
-  const date = new Date(dateString);
-  const now = new Date();
-
-  // If it's today, show relative time
-  if (isToday(date)) {
-    return formatDistanceToNow(date, { addSuffix: true });
-  }
-
-  // If it's yesterday, show "Yesterday"
-  if (isYesterday(date)) {
-    return 'Yesterday';
-  }
-
-  // If it's this year, show month and day
-  if (isThisYear(date)) {
-    return format(date, 'MMM d');
-  }
-
-  // If it's older, show month, day, and year
-  return format(date, 'MMM d, yyyy');
-};
-
-// Helper to map comment type to SpeedscopeViewType
-const commentTypeToViewType = (commentType: string): SpeedscopeViewType | null => {
-  switch (commentType) {
-    case 'chrono':
-      return 'time_ordered';
-    case 'left_heavy':
-      return 'left_heavy';
-    case 'sandwich':
-      return 'sandwich';
-    default:
-      return null;
-  }
-};
-
-// Helper to get a display name for the comment type section
-const getCommentSectionTitle = (commentType: string): string => {
-  switch (commentType) {
-    case 'overview':
-      return 'General Comments';
-    case 'chrono':
-      return 'Timeline View Comments';
-    case 'left_heavy':
-      return 'Left Heavy View Comments';
-    case 'sandwich':
-      return 'Sandwich View Comments';
-    default:
-      return `Comments (${commentType})`;
-  }
-};
-
-// --- Helper function to structure comments (moved here) ---
-const structureComments = (comments: TraceCommentWithAuthor[]): StructuredComment[] => {
-  const commentMap: { [key: string]: StructuredComment } = {};
-  const rootComments: StructuredComment[] = [];
-
-  comments.forEach((comment) => {
-    commentMap[comment.id] = { ...comment, replies: [] };
-  });
-
-  comments.forEach((comment) => {
-    const mappedComment = commentMap[comment.id];
-    if (comment.parent_comment_id && commentMap[comment.parent_comment_id]) {
-      // Make sure parent exists and it's not the comment itself
-      if (comment.id !== comment.parent_comment_id) {
-        commentMap[comment.parent_comment_id].replies.push(mappedComment);
-      }
-    } else {
-      rootComments.push(mappedComment);
-    }
-  });
-
-  // Optional: Sort replies within each comment (e.g., oldest first)
-  Object.values(commentMap).forEach((comment) => {
-    comment.replies.sort(
-      (a: StructuredComment, b: StructuredComment) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-  });
-
-  return rootComments;
-};
-// ---------------------------------------------------------
-
-const TraceDetail: React.FC = () => {
+export const TraceDetail: React.FC = () => {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -958,6 +839,3 @@ const TraceDetail: React.FC = () => {
     </AuthGuard>
   );
 };
-
-export default TraceDetail;
-
