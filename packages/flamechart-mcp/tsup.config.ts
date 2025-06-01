@@ -80,10 +80,14 @@ async function generateDistPackageJson() {
                 'cli.js.map',
                 'cli.d.ts',
                 'README.md',
+                'images/**/*',
             ],
             keywords: packageJsonContent.keywords,
             author: packageJsonContent.author,
             license: packageJsonContent.license,
+            repository: packageJsonContent.repository,
+            homepage: packageJsonContent.homepage,
+            bugs: packageJsonContent.bugs,
             sideEffects: packageJsonContent.sideEffects,
             dependencies: {
                 // Only include external dependencies (those not bundled)
@@ -110,6 +114,15 @@ async function generateDistPackageJson() {
         if (await fs.pathExists(readmePath)) {
             await fs.copy(readmePath, distReadmePath);
             console.log('Successfully copied README.md to dist');
+        }
+
+        // Copy images directory to dist if it exists
+        const imagesPath = path.resolve(__dirname, 'images');
+        const distImagesPath = path.resolve(distDir, 'images');
+
+        if (await fs.pathExists(imagesPath)) {
+            await fs.copy(imagesPath, distImagesPath);
+            console.log('Successfully copied images directory to dist');
         }
     } catch (error) {
         console.error('Error creating dist package.json:', error);
