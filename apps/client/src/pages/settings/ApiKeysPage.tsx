@@ -42,6 +42,7 @@ import { formatRelativeDate } from '@/lib/utils';
 // Define available scopes (could come from a config file)
 const AVAILABLE_SCOPES = [
   { id: 'trace:upload', label: 'Upload Traces' },
+  { id: 'trace:download', label: 'Download Traces' },
   // Add more scopes here if needed in the future
 ];
 
@@ -189,7 +190,12 @@ function ApiKeysPage() {
                       {scope.label}
                     </Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Allows uploading performance trace files via API
+                      {scope.id === 'trace:upload'
+                        ? 'Allows uploading performance trace files via API'
+                        : scope.id === 'trace:download'
+                          ? 'Allows downloading trace data and storage objects via API'
+                          : `Allows ${scope.label.toLowerCase()} operations via API`
+                      }
                     </p>
                     <Badge variant="outline" className="mt-1.5 text-xs">
                       {scope.id}

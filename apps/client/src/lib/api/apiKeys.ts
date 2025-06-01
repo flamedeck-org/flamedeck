@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { PostgrestError } from '@supabase/supabase-js';
-import type { ApiError, ApiResponse } from './types';
+import type { ApiError, ApiResponse } from '@/types';
 // import * as bcrypt from "bcrypt-ts"; // No longer needed, hashing done in RPC
 
 // Type for displaying API key info (excluding the hash and preview)

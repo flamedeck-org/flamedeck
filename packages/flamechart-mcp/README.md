@@ -104,7 +104,7 @@ Files can be gzipped - the server will automatically detect and decompress them.
 
 ## Environment Variables
 
-- `FLAMEDECK_API_KEY`: Required for Flamedeck URL traces (feature not yet implemented)
+- `FLAMEDECK_API_KEY`: Required for Flamedeck URL traces. Create an API key with `trace:download` permissions in your [Flamedeck settings](https://flamedeck.com/settings/api-keys).
 
 ## Examples
 
@@ -128,6 +128,26 @@ Then use with an MCP client to analyze traces:
 }
 ```
 
+### Analyzing a Flamedeck URL
+
+Set your API key and analyze traces directly from Flamedeck:
+
+```bash
+export FLAMEDECK_API_KEY="your_api_key_here"
+npx @flamedeck/flamechart-mcp
+```
+
+```json
+{
+  "tool": "get_top_functions",
+  "parameters": {
+    "trace": "https://www.flamedeck.com/traces/98508d02-1f2a-4885-9607-ecadceb3d734",
+    "sortBy": "total",
+    "limit": 15
+  }
+}
+```
+
 ### Generating Flamegraph Images
 
 ```json
@@ -142,6 +162,20 @@ Then use with an MCP client to analyze traces:
 }
 ```
 
+Or using a Flamedeck URL:
+
+```json
+{
+  "tool": "generate_flamegraph_screenshot",
+  "parameters": {
+    "trace": "https://www.flamedeck.com/traces/98508d02-1f2a-4885-9607-ecadceb3d734",
+    "width": 1600,
+    "height": 1000,
+    "mode": "light"
+  }
+}
+```
+
 ### Analyzing Specific Functions
 
 ```json
@@ -149,6 +183,18 @@ Then use with an MCP client to analyze traces:
   "tool": "generate_sandwich_flamegraph_screenshot",
   "parameters": {
     "trace": "/path/to/trace.json",
+    "frameName": "myExpensiveFunction"
+  }
+}
+```
+
+Or analyze functions from a remote trace:
+
+```json
+{
+  "tool": "generate_sandwich_flamegraph_screenshot",
+  "parameters": {
+    "trace": "https://www.flamedeck.com/traces/98508d02-1f2a-4885-9607-ecadceb3d734",
     "frameName": "myExpensiveFunction"
   }
 }
