@@ -104,7 +104,7 @@ entrypoint = "./functions/trace-analysis/index.ts"
 
 [functions.upload-trace]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/upload-trace/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -112,3 +112,14 @@ entrypoint = "./functions/upload-trace/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/upload-trace/*.html" ]
+
+[functions.download-trace]
+enabled = true
+verify_jwt = false
+import_map = "./functions/download-trace/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/download-trace/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/download-trace/*.html" ]

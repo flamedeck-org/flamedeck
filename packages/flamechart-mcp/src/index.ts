@@ -6,7 +6,7 @@ import { addSandwichSnapshotTool } from './tools/sandwich-snapshot.js';
 export function createFlamechartMCPServer() {
     const server = new FastMCP({
         name: 'Flamechart MCP',
-        version: '0.1.0',
+        version: '0.2.0',
         instructions: `
 This MCP server provides tools for analyzing and visualizing performance traces.
 
@@ -15,9 +15,14 @@ Available tools:
 - generate_flamegraph_screenshot: Create flamegraph visualizations as PNG images
 - generate_sandwich_flamegraph_screenshot: Create sandwich view for specific functions
 
-For the trace parameter in all tools, provide either:
+For the trace parameter, provide either:
 1. Absolute local file path (e.g., /path/to/trace.json)
-2. Flamedeck URL (requires FLAMEDECK_API_KEY environment variable) - Currently not implemented
+2. Flamedeck URL (e.g., https://www.flamedeck.com/traces/{id}) - requires FLAMEDECK_API_KEY environment variable
+
+The tools automatically cache loaded profiles in memory for better performance:
+• Remote URLs are cached for 5 minutes
+• Local files are cached until file modification
+• Cache holds up to 50 profiles with automatic cleanup
 
 The tools will automatically detect and handle gzipped trace files.
     `.trim(),
