@@ -13,7 +13,7 @@ export default defineConfig([
         minify: false,
         // Bundle workspace dependencies but exclude native dependencies
         noExternal: ['@flamedeck/speedscope-core', '@flamedeck/speedscope-import', '@flamedeck/flamechart-to-png'],
-        external: ['canvas', 'sharp'],
+        external: ['canvas'],
         onSuccess: async () => {
             console.log('Main library build successful!');
             await generateDistPackageJson();
@@ -28,17 +28,19 @@ export default defineConfig([
         clean: false,
         minify: false,
         banner: {
-            js: '#!/usr/bin/env node',
+            js: '#!/usr/bin/env node\n',
         },
         // Bundle workspace dependencies but exclude native dependencies
         noExternal: ['@flamedeck/speedscope-core', '@flamedeck/speedscope-import', '@flamedeck/flamechart-to-png'],
-        external: ['canvas', 'sharp'],
-        esbuildOptions(options) {
-            // Remove the shebang from the source since we're adding it via banner
-            options.banner = undefined;
-        },
+        external: ['canvas'],
         onSuccess: async () => {
             console.log('CLI build successful!');
+            // Set execute permissions for the CLI file
+            const cliPath = path.resolve(__dirname, 'dist', 'cli.js');
+            if (await fs.pathExists(cliPath)) {
+                await fs.chmod(cliPath, 0o755);
+                console.log('Set execute permissions for cli.js');
+            }
         },
     },
 ]);
@@ -91,6 +93,8 @@ async function generateDistPackageJson() {
                 tslib: packageJsonContent.dependencies.tslib,
                 'uint8array-json-parser': packageJsonContent.dependencies['uint8array-json-parser'],
                 zod: packageJsonContent.dependencies.zod,
+                // Add external native dependencies that are not bundled
+                canvas: '^3.1.0',
             },
             peerDependencies: packageJsonContent.peerDependencies || {},
         };
