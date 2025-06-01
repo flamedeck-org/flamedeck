@@ -2189,6 +2189,7 @@ __metadata:
     "@flamedeck/speedscope-import": "workspace:*"
     "@types/node": "npm:^20.0.0"
     "@types/pako": "npm:^2.0.3"
+    canvas: "npm:^3.1.0"
     fastmcp: "npm:^2.1.4"
     fs-extra: "npm:^11.2.0"
     long: "npm:^5.2.3"
