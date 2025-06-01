@@ -1,6 +1,6 @@
 {
     "name": "@flamedeck/flamechart-mcp",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "description": "MCP server for debugging and analyzing flamegraphs using Model Context Protocol",
     "type": "module",
     "main": "./dist/index.js",
@@ -51,6 +51,7 @@
         "@flamedeck/flamechart-to-png": "workspace:*",
         "@flamedeck/speedscope-core": "workspace:*",
         "@flamedeck/speedscope-import": "workspace:*",
+        "canvas": "^3.1.0",
         "fastmcp": "^2.1.4",
         "long": "^5.2.3",
         "pako": "^2.1.0",
