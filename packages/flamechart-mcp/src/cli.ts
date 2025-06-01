@@ -1,7 +1,7 @@
 import { createFlamechartMCPServer } from './index.js';
 
 function showHelp() {
-    console.log(`
+  console.log(`
 Flamechart MCP Server
 
 Usage:
@@ -27,33 +27,29 @@ For more information, visit: https://github.com/flamedeck/flamedeck
 }
 
 function main() {
-    const args = process.argv.slice(2);
+  const args = process.argv.slice(2);
 
-    if (args.includes('--help') || args.includes('-h')) {
-        showHelp();
-        process.exit(0);
-    }
+  if (args.includes('--help') || args.includes('-h')) {
+    showHelp();
+    process.exit(0);
+  }
 
-    const server = createFlamechartMCPServer();
+  const server = createFlamechartMCPServer();
 
-    console.log(`Starting Flamechart MCP Server...`);
-    console.log('Transport: stdio');
-    console.log('Ready for MCP client connections via stdio');
-
-    server.start({
-        transportType: 'stdio',
-    });
+  server.start({
+    transportType: 'stdio',
+  });
 }
 
 // Handle uncaught errors gracefully
 process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-    process.exit(1);
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    process.exit(1);
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
 
 main(); 
