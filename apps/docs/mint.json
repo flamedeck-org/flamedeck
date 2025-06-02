@@ -2,10 +2,10 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "FlameDeck",
   "logo": {
-    "dark": "/logo/dark.png",
-    "light": "/logo/light.png"
+    "dark": "/public/logo/dark.png",
+    "light": "/public/logo/light.png"
   },
-  "favicon": "/favicon-32x32.png",
+  "favicon": "/public/favicon-32x32.png",
   "colors": {
     "primary": "#f97014",
     "light": "#f97014",
