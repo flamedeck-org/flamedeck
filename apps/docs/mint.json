@@ -2,17 +2,17 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "FlameDeck",
   "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
+    "dark": "/logo/dark.png",
+    "light": "/logo/light.png"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon-32x32.png",
   "colors": {
-    "primary": "#0D9373",
-    "light": "#07C983",
-    "dark": "#0D9373",
+    "primary": "#f97014",
+    "light": "#f97014",
+    "dark": "#d55f12",
     "anchors": {
-      "from": "#0D9373",
-      "to": "#07C983"
+      "from": "#ef4444",
+      "to": "#eab308"
     }
   },
   "topbarLinks": [
@@ -29,18 +29,6 @@
     {
       "name": "API Reference",
       "url": "api-reference"
-    }
-  ],
-  "anchors": [
-    {
-      "name": "Documentation",
-      "icon": "book-open-cover",
-      "url": "https://flamedeck.com/docs"
-    },
-    {
-      "name": "Community",
-      "icon": "slack",
-      "url": "https://flamedeck.com/community"
     }
   ],
   "navigation": [
@@ -68,7 +56,7 @@
   ],
   "footerSocials": {
     "x": "https://x.com/flamedeck",
-    "github": "https://github.com/flamedeck",
+    "github": "https://github.com/flamedeck-org",
     "linkedin": "https://www.linkedin.com/company/flamedeck"
   }
 }
