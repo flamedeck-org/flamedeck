@@ -1,26 +1,65 @@
 ---
 title: Introduction
-description: 'Welcome to FlameDeck - Collaborative Performance Profiling'
+description: 'Welcome to FlameDeck - AI-Powered Performance Analysis'
 ---
 
 <img
   className="block dark:hidden"
-  src="/images/hero-light.png"
+  src="/images/chat-light.png"
   alt="Hero Light"
 />
 <img
   className="hidden dark:block"
-  src="/images/hero-dark.png"
+  src="/images/chat-dark.png"
   alt="Hero Dark"
 />
 
 ## Welcome to FlameDeck
 
-FlameDeck is a collaborative platform for viewing and analyzing performance profiles. Think of it as "Google Docs for performance traces" - you can upload, share, and collaborate on performance data with your team.
+FlameDeck is a collaborative platform for storing, analyzing, and debugging performance traces. Upload your profile once, explore it anywhere, and share insights with your team—all in one place.
 
-## What you'll learn
+## Key Capabilities
 
-This documentation will help you integrate FlameDeck into your workflow. You'll learn how to:
+<CardGroup cols={2}>
+  <Card
+    title="Universal Format Support"
+    icon="puzzle-piece"
+  >
+    Import traces from Node.js, Go, Rust, Python, Chrome, React Native, and many more
+  </Card>
+  <Card
+    title="Interactive Visualizations"
+    icon="chart-line"
+  >
+    Timeline, Left-Heavy, and Sandwich flamegraphs powered by Speedscope with smooth, hardware-accelerated rendering
+  </Card>
+  <Card
+    title="AI-Powered Insights"
+    icon="brain"
+    href="/mcp-server"
+  >
+    Ask questions in plain English, automatically detect bottlenecks, and receive actionable optimization recommendations
+  </Card>
+  <Card
+    title="Team Collaboration"
+    icon="users"
+  >
+    Comment on frames, share public links, and control permissions to keep everyone on the same page
+  </Card>
+</CardGroup>
+
+## Developer-Friendly Workflows
+
+FlameDeck is built for engineering teams with powerful integrations:
+
+- **Drag-and-drop uploads** in the browser for quick analysis
+- **First-class CLI & REST API** for seamless automation
+- **CI/CD integration** for continuous performance monitoring
+- **Multiple upload methods** to fit your existing workflow
+
+## What You'll Learn
+
+This documentation will help you integrate FlameDeck into your workflow:
 
 <CardGroup cols={2}>
   <Card
@@ -60,6 +99,7 @@ The fastest way to get started is to:
 1. **[Get an API key](/api-keys)** - Set up authentication for your account
 2. **Choose your upload method** - CLI, NPM package, or React Native integration
 3. **Start profiling** - Upload your first trace and explore the collaborative features
+4. **Leverage AI insights** - Ask questions about your performance data in plain English
 
 ## Need Help?
 
