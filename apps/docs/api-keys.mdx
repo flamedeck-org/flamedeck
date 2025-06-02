@@ -1,0 +1,44 @@
+---
+title: 'API Keys'
+description: 'Learn how to get an API key and understand the necessary scopes for interacting with the FlameDeck API.'
+---
+
+## Obtaining an API Key
+
+To interact with the FlameDeck API, you first need an API key. Follow these steps to generate one:
+
+1. **Navigate to Settings:** Log in to your FlameDeck account and go to the [API Keys settings page](https://flamedeck.com/settings/api-keys).
+2. **Create New Key:** Click on the "Create New API Key" button.
+3. **Name Your Key:** Give your key a descriptive name (e.g., "CI/CD Pipeline Key", "Local Dev Key") to help you identify its purpose later.
+4. **Select Scopes:** Choose the permissions (scopes) that this key will have. See the section below for more details on scopes. It's best practice to grant only the necessary permissions.
+5. **Generate & Copy:** Click "Generate Key". Your new API key will be displayed **only once**. Make sure to copy it immediately and store it securely.
+
+<Warning>
+**Do not share your API key or commit it to version control.** Treat your API keys like passwords and store them securely.
+</Warning>
+
+## Understanding Scopes
+
+Scopes define the specific actions an API key is allowed to perform. When creating a key, you select the scopes it should have. This follows the principle of least privilege, enhancing security.
+
+Currently, the following scopes are available:
+
+- `trace:upload`: Allows the API key to upload new trace files via the `/api/upload-trace` endpoint.
+- `trace:download`: Allows the API key to download trace data via the `/api/download-trace` endpoint.
+
+<Info>
+More scopes may be added in the future as API functionality expands. Remember to keep your API keys confidential and manage their scopes appropriately.
+</Info>
+
+## Next Steps
+
+Once you have your API key, you can start uploading traces using one of our integration methods:
+
+<CardGroup cols={2}>
+  <Card title="CLI Upload" icon="terminal" href="/cli-upload">
+    Use our command-line interface for quick uploads
+  </Card>
+  <Card title="NPM Package" icon="package" href="/npm-upload">
+    Programmatically upload from JavaScript/TypeScript projects
+  </Card>
+</CardGroup> 

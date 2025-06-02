@@ -1,0 +1,162 @@
+---
+title: 'React Native Upload'
+description: 'Learn how to profile React Native applications and upload performance traces to Flamedeck for analysis.'
+---
+
+This guide explains how to capture performance profiles from your React Native application using `react-native-release-profiler` and seamlessly upload them to Flamedeck using the `@flamedeck/upload` package.
+
+This is particularly useful for understanding the performance characteristics of your app as it runs on a real device or in a production-like environment.
+
+## Prerequisites
+
+<Steps>
+  <Step title="Install necessary packages">
+    ```bash
+    yarn add @flamedeck/upload react-native-release-profiler expo-file-system
+    # or
+    npm install @flamedeck/upload react-native-release-profiler expo-file-system
+    ```
+
+    - `@flamedeck/upload`: For uploading the trace to Flamedeck
+    - `react-native-release-profiler`: For capturing the performance profile from your React Native app
+    - `expo-file-system` (if using Expo, or a similar file system module for vanilla React Native): For reading the profile file from device storage
+  </Step>
+
+  <Step title="Get a Flamedeck API Key">
+    You'll need an API key from Flamedeck to upload traces. You can obtain one from your [Flamedeck settings page](https://flamedeck.com/settings/api-keys).
+
+    <Warning>
+    Remember to replace `'YOUR_FLAMEDECK_API_KEY'` in the code example with your actual key.
+    </Warning>
+  </Step>
+</Steps>
+
+## Integration Steps
+
+The core logic involves starting the profiler, executing the code you want to measure, stopping the profiler, reading the generated trace file, and then uploading it.
+
+### Example Implementation
+
+Here's a function demonstrating these steps. You can adapt this and trigger it, for example, from a button press in your development builds or testing scenarios.
+
+```typescript
+import { Alert } from 'react-native';
+import { UploadError, UploadOptions, uploadTraceToApi } from '@flamedeck/upload';
+import * as FileSystem from 'expo-file-system'; // For Expo projects
+import { startProfiling, stopProfiling } from 'react-native-release-profiler';
+
+// Helper function to convert base64 to ArrayBuffer
+const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
+  const binaryString = atob(base64); // atob is available in React Native
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+};
+
+// Function to capture and upload a profile
+const captureAndUploadProfile = async () => {
+  Alert.alert('Profiling Started', 'An operation is now being profiled.');
+  try {
+    startProfiling();
+
+    // --- Your Code to Profile Starts ---
+    // Example: Simulate a heavy computation or a specific app flow
+    // Replace this with the actual operations you want to measure
+    for (let i = 0; i < 50000000; i++) {
+      // This loop will take some time
+    }
+    // --- Your Code to Profile Ends ---
+
+    const profilePath = await stopProfiling(true); // true to auto-generate a file name
+
+    if (profilePath) {
+      const apiKey = 'YOUR_FLAMEDECK_API_KEY'; // Replace with your actual API key
+      const fileUri = `file://${profilePath}`;
+
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      if (!fileInfo.exists) {
+        throw new Error('Trace file does not exist at the reported path.');
+      }
+      if (fileInfo.size === 0) {
+        throw new Error('Trace file is empty. Profiling might not have captured data.');
+      }
+
+      const base64Data = await FileSystem.readAsStringAsync(fileUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      if (!base64Data) {
+        throw new Error('Failed to read trace file as base64.');
+      }
+
+      const traceData = base64ToArrayBuffer(base64Data);
+      if (traceData.byteLength === 0) {
+        throw new Error(
+          'Converted ArrayBuffer is empty. Problem with base64 conversion or original data.'
+        );
+      }
+
+      const fileName = profilePath.substring(profilePath.lastIndexOf('/') + 1);
+
+      const options: UploadOptions = {
+        apiKey: apiKey,
+        traceData: traceData,
+        fileName: fileName,
+        scenario: 'React Native Performance Profile', // Customize as needed
+        notes: 'Trace captured from a React Native app using react-native-release-profiler.',
+        public: false, // Set to true if you want the trace to be publicly accessible
+      };
+
+      const result = await uploadTraceToApi(options);
+      Alert.alert(
+        'Upload Successful',
+        `Trace uploaded!\nID: ${result.id}\nView: ${result.viewUrl}`
+      );
+    } else {
+      Alert.alert('Profiling Failed', 'Could not get profile path.');
+    }
+  } catch (error) {
+    console.error('Profiling or Upload Error:', error);
+    let alertMessage = 'An unexpected error occurred.';
+    if (error instanceof UploadError) {
+      alertMessage = `Flamedeck Upload Error: ${error.message} (Status: ${error.status})`;
+      if (error.details) console.error('Flamedeck Details:', error.details);
+    } else if (error instanceof Error) {
+      alertMessage = error.message;
+    }
+    Alert.alert('Error', alertMessage);
+  }
+};
+```
+
+## Key Implementation Notes
+
+<Note>
+**File System Access**: The example uses `expo-file-system` for Expo projects. If you're using vanilla React Native, you'll need to use a different file system library like `react-native-fs`.
+</Note>
+
+<Tip>
+**Development vs Production**: Consider adding environment checks to only enable profiling in development or specific testing builds to avoid impacting production performance.
+</Tip>
+
+<Warning>
+**API Key Security**: Never hardcode your API key in production builds. Use environment variables or secure storage mechanisms to handle API keys safely.
+</Warning>
+
+## Usage Tips
+
+1. **Trigger Profiling**: You can trigger the `captureAndUploadProfile` function from a button press, gesture, or specific app event
+2. **Profile Specific Flows**: Replace the example loop with the actual user flows or operations you want to profile
+3. **Customize Metadata**: Add relevant metadata like user ID, app version, or device information to help with analysis
+4. **Error Handling**: The example includes comprehensive error handling for common issues like empty files or upload failures
+
+## Next Steps
+
+Once you've uploaded your React Native traces to Flamedeck, you can:
+
+- Analyze performance bottlenecks in your app
+- Compare performance across different devices or app versions
+- Share traces with your team for collaborative debugging
+- Set up automated profiling in your CI/CD pipeline 

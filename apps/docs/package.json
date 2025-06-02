@@ -1,0 +1,13 @@
+{
+    "name": "flamedeck-docs",
+    "version": "1.0.0",
+    "description": "FlameDeck Documentation",
+    "scripts": {
+        "dev": "mintlify dev",
+        "build": "mintlify build",
+        "preview": "mintlify preview"
+    },
+    "devDependencies": {
+        "mintlify": "^4.0.0"
+    }
+}

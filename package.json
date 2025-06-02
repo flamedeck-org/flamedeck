@@ -25,6 +25,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "fs-extra": "^11.3.0",
     "globals": "^15.9.0",
+    "mintlify": "^4.0.0",
     "nx": "20.8.1",
     "prettier": "^3.5.3",
     "supabase": "2.23.4",

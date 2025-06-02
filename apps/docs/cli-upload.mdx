@@ -1,0 +1,164 @@
+---
+title: 'CLI Upload'
+description: 'Learn how to upload traces to Flamedeck using our Command Line Interface (CLI). Streamline your workflow with CLI uploads.'
+---
+
+The `flamedeck` command-line interface (CLI) provides a powerful and convenient way to upload trace files to Flamedeck directly from your terminal or within your CI/CD pipelines.
+
+## Installation
+
+### Using Homebrew (Recommended for macOS)
+
+1. **Tap the Flamedeck repository (only needed once):**
+   ```bash
+   brew tap flamedeck-org/flamedeck
+   ```
+
+2. **Install the CLI:**
+   ```bash
+   brew install flamedeck
+   ```
+   
+   Homebrew installs the correct binary (Intel or Apple Silicon) and adds `flamedeck` to your PATH.
+
+<Note>
+On first run, macOS Gatekeeper might show a security warning. To allow the app, find it (usually `/opt/homebrew/bin/flamedeck` or `/usr/local/bin/flamedeck`), right-click it in Finder, select "Open", and confirm.
+</Note>
+
+### Using Install Script (Recommended for Linux / macOS CI)
+
+Run the following command in your terminal. It automatically detects your OS/architecture, downloads the latest release, and installs it to `/usr/local/bin` (may prompt for sudo).
+
+```bash
+curl -sSL https://raw.githubusercontent.com/flamedeck-org/flamedeck/main/scripts/install.sh | sh
+```
+
+<Tip>
+You can pipe to `sudo sh` instead if you prefer to grant sudo upfront.
+</Tip>
+
+### Manual Installation (Linux, Windows, macOS)
+
+1. Go to the [**Latest Release**](https://github.com/flamedeck-org/flamedeck/releases/latest) page on GitHub.
+2. Download the appropriate binary for your system:
+   - `flamedeck-linux-x64`
+   - `flamedeck-macos-x64`
+   - `flamedeck-macos-arm64`
+   - `flamedeck-win-x64.exe`
+3. Rename the downloaded binary to `flamedeck` (or `flamedeck.exe` for Windows).
+4. Place the renamed binary in a directory that is part of your system's `PATH`. A common choice on Linux/macOS is `~/.local/bin` or `/usr/local/bin`.
+5. Make it executable (Linux/macOS):
+   ```bash
+   chmod +x /path/to/your/flamedeck
+   ```
+
+<Note>
+**macOS Only**: You might need to bypass Gatekeeper on first run (Right-click -> Open in Finder).
+</Note>
+
+## Basic Usage
+
+The primary command for uploading traces is `flamedeck upload`.
+
+### Prerequisites
+
+<Warning>
+**API Key Required**: You need a Flamedeck API key with `trace:upload` scope. You can provide this using the `--api-key` flag or by setting the `FLAMEDECK_API_KEY` environment variable.
+</Warning>
+
+```bash
+export FLAMEDECK_API_KEY="YOUR_API_KEY"
+```
+
+### Uploading a File
+
+To upload a trace file, specify the scenario description (`-s` or `--scenario`) and the path to your trace file:
+
+```bash
+flamedeck upload -s "My Performance Test" /path/to/my_trace.json
+```
+
+### Uploading from stdin
+
+You can also pipe trace data directly to the CLI. When reading from stdin, you **must** provide a filename using the `-n` or `--file-name` flag:
+
+```bash
+cat /path/to/trace.json | flamedeck upload -s "Piped Test" -n "trace.json"
+```
+
+## Available Options
+
+The `upload` command accepts several options to add metadata and control the upload behavior:
+
+<ParamField path="file_path" type="string">
+  (Positional argument) Path to the trace file. If omitted, the CLI reads from stdin.
+</ParamField>
+
+<ParamField path="-k, --api-key" type="string">
+  Your Flamedeck API key. Overrides the `FLAMEDECK_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="-n, --file-name" type="string" required>
+  The original filename of the trace. **Required** when reading from stdin.
+</ParamField>
+
+<ParamField path="-s, --scenario" type="string" required>
+  A descriptive name for the scenario this trace represents (e.g., "User login", "Data processing job").
+</ParamField>
+
+<ParamField path="-c, --commit" type="string">
+  The Git commit SHA associated with this trace.
+</ParamField>
+
+<ParamField path="-b, --branch" type="string">
+  The Git branch name associated with this trace.
+</ParamField>
+
+<ParamField path="--notes" type="string">
+  Free-form text notes to attach to the trace.
+</ParamField>
+
+<ParamField path="--folder-id" type="string">
+  The UUID of an existing folder to upload the trace into.
+</ParamField>
+
+<ParamField path="--metadata" type="string">
+  A JSON string containing custom key-value metadata to associate with the trace.
+  
+  Example: `--metadata '{"ci_build_id": 456, "region": "eu-west-1"}'`
+</ParamField>
+
+<ParamField path="--public" type="boolean">
+  If specified, makes the uploaded trace publicly viewable by anyone with the link. By default, traces are private.
+</ParamField>
+
+<ParamField path="--supabase-url" type="string">
+  Overrides the default Supabase functions base URL. (For advanced use or self-hosting).
+</ParamField>
+
+## Detailed Example
+
+Here's an example demonstrating several options:
+
+```bash
+flamedeck upload \
+  --scenario "User login flow - EU region" \
+  --commit "a1b2c3d4e5f6" \
+  --branch "feature/new-login" \
+  --notes "Trace captured during peak load on staging server." \
+  --folder-id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" \
+  --metadata '{"ci_build_id": 456, "region": "eu-west-1", "test_variant": "A"}' \
+  --public \
+  /path/to/another_trace.json
+```
+
+This command uploads `/path/to/another_trace.json`, associates it with the specified commit and branch, adds notes, places it in a folder, attaches custom metadata, and makes it publicly accessible.
+
+## Getting Help
+
+You can always get more information about commands and options using the `--help` flag:
+
+```bash
+flamedeck --help
+flamedeck upload --help
+``` 

@@ -5,7 +5,15 @@
       "destination": "/privacy-policy.html"
     },
     {
-      "source": "/((?!api/|_next/|static/|assets/|favicon.ico|logo192.png|manifest.json|sw.js).*)",
+      "source": "/docs",
+      "destination": "https://flamedeck.mintlify.dev/docs"
+    },
+    {
+      "source": "/docs/:match*",
+      "destination": "https://flamedeck.mintlify.dev/docs/:match*"
+    },
+    {
+      "source": "/((?!api/|_next/|static/|assets/|docs/|favicon.ico|logo192.png|manifest.json|sw.js).*)",
       "destination": "/index.html"
     }
   ]
