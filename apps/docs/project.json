@@ -1,0 +1,32 @@
+{
+    "name": "docs",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "application",
+    "sourceRoot": "apps/docs",
+    "targets": {
+        "build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "mintlify build",
+                "cwd": "apps/docs"
+            },
+            "outputs": [
+                "{projectRoot}/.mintlify/_next"
+            ]
+        },
+        "dev": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "mintlify dev",
+                "cwd": "apps/docs"
+            }
+        },
+        "preview": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "mintlify preview",
+                "cwd": "apps/docs"
+            }
+        }
+    }
+}
