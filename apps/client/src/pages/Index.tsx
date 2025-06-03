@@ -16,15 +16,22 @@ import {
   SiReact,
 } from '@icons-pack/react-simple-icons';
 import FadeInOnScroll from '@/components/animations/FadeInOnScroll';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 function matchMediaDarkColorScheme(): MediaQueryList {
   return matchMedia('(prefers-color-scheme: dark)');
 }
 
 function Index() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [systemPrefersDarkMode, setSystemPrefersDarkMode] = useState(
     () => matchMediaDarkColorScheme().matches
   );
+
+  // State for drag and drop
+  const [isDragging, setIsDragging] = useState(false);
 
   const matchMediaListener = useCallback(
     (event: MediaQueryListEvent) => {
@@ -40,6 +47,77 @@ function Index() {
       media.removeEventListener('change', matchMediaListener);
     };
   }, [matchMediaListener]);
+
+  // Drag and drop handlers
+  const handleDragEnter = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only hide the overlay if we're leaving the document
+    if (!e.relatedTarget) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(async (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+
+      if (file.size > 100 * 1024 * 1024) {
+        toast({
+          title: 'File too large',
+          description: 'Maximum file size is 100MB.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        navigate('/viewer', {
+          state: {
+            traceData: arrayBuffer,
+            fileName: file.name,
+          },
+        });
+      } catch (error) {
+        toast({
+          title: 'Error reading file',
+          description: 'There was an error reading the trace file.',
+          variant: 'destructive',
+        });
+      }
+    }
+  }, [navigate, toast]);
+
+  useEffect(() => {
+    document.addEventListener('dragenter', handleDragEnter);
+    document.addEventListener('dragleave', handleDragLeave);
+    document.addEventListener('dragover', handleDragOver);
+    document.addEventListener('drop', handleDrop);
+
+    return () => {
+      document.removeEventListener('dragenter', handleDragEnter);
+      document.removeEventListener('dragleave', handleDragLeave);
+      document.removeEventListener('dragover', handleDragOver);
+      document.removeEventListener('drop', handleDrop);
+    };
+  }, [handleDragEnter, handleDragLeave, handleDragOver, handleDrop]);
 
   const colorScheme = useAtom(colorSchemeAtom);
   const isDarkMode =
@@ -95,6 +173,22 @@ function Index() {
         path="/"
         ogType="website"
       />
+
+      {/* Drag and Drop Overlay */}
+      {isDragging && (
+        <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center">
+          <div className="text-center p-8 bg-card/80 backdrop-blur-xl rounded-3xl border-2 border-dashed border-primary shadow-2xl max-w-md mx-4">
+            <div className="p-6 bg-gradient-to-br from-red-500/10 to-yellow-500/10 rounded-2xl border border-red-500/20 w-fit mx-auto mb-6">
+              <UploadCloud className="w-16 h-16 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold mb-3">Try FlameDeck!</h3>
+            <p className="text-muted-foreground">
+              Drop your trace file here to analyze it instantly
+            </p>
+          </div>
+        </div>
+      )}
+
       <Layout footer={pageFooter}>
         {/* Background Elements */}
         <div className="fixed inset-0 -z-10 overflow-hidden">
@@ -149,15 +243,15 @@ function Index() {
                     <ArrowRight className="ml-2 w-5 h-5 md:w-5 md:h-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <a href="#pricing" className="group">
+                <Link to="/viewer" className="group">
                   <Button
                     size="lg"
                     variant="outline"
                     className="text-lg md:text-lg px-8 md:px-8 py-3 md:py-3 border-2 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg"
                   >
-                    View Pricing
+                    Try FlameDeck
                   </Button>
-                </a>
+                </Link>
               </div>
             </div>
           </div>

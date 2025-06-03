@@ -37,6 +37,7 @@ import BillingPage from './pages/settings/BillingPage';
 import { TraceUploadModalProvider } from '@/hooks/useTraceUploadModal';
 import { TraceUploadModal } from '@/components/TraceUploadModal';
 import { OnboardingUpgradeStep } from './pages/Onboarding/OnboardingUpgradeStep';
+import LoggedOutTraceViewerPage from './pages/LoggedOutTraceViewerPage';
 
 // Component to redirect docs pages to external documentation
 function DocsRedirect({ path }: { path: string }) {
@@ -131,6 +132,10 @@ const AppRoutes = () => {
 
         {/* Public Trace Viewer Route - outside ProtectedRoute */}
         <Route path="/traces/:id/view" element={<TraceViewerPage />} />
+
+        {/* Logged Out Trace Viewer Routes */}
+        <Route path="/viewer" element={<LoggedOutTraceViewerPage />} />
+        <Route path="/viewer/trace-viewer" element={<TraceViewerPage />} />
 
         {/* Onboarding Route - Must be outside ProtectedRoute */}
         <Route path="/onboarding/username" element={<UsernameStep />} />

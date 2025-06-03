@@ -101,6 +101,10 @@ const TraceViewerPage: React.FC = () => {
   // Get blobPath from location state
   const blobPathFromState = location.state?.blobPath as string | undefined;
 
+  // Get direct trace data from location state (for logged out uploads)
+  const directTraceData = location.state?.traceData as ArrayBuffer | undefined;
+  const directFileName = location.state?.fileName as string | undefined;
+
   // --- Call comment hook unconditionally ---
   const commentManagement = useCommentManagement(id, isAuthenticated);
   // -----------------------------------------
@@ -121,7 +125,7 @@ const TraceViewerPage: React.FC = () => {
     data: authenticatedTraceData,
     isLoading: isLoadingAuthenticatedTrace,
     error: authenticatedTraceError,
-  } = useTraceDetails(isAuthenticated && !blobPathFromState ? id : null);
+  } = useTraceDetails(isAuthenticated && !blobPathFromState && !directTraceData ? id : null);
 
   // --- Fetch public trace details for unauthenticated users ---
   const {
@@ -131,7 +135,7 @@ const TraceViewerPage: React.FC = () => {
   } = useQuery<ApiResponse<{ id: string; blob_path: string }>, ApiError>({
     queryKey: ['publicTraceDetails', id],
     queryFn: () => traceApi.getPublicTrace(id),
-    enabled: !isAuthenticated && !!id && !blobPathFromState,
+    enabled: !isAuthenticated && !!id && !blobPathFromState && !directTraceData,
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error: ApiError) => {
       // Don't retry on 404-like errors (not found or not public)
@@ -175,10 +179,24 @@ const TraceViewerPage: React.FC = () => {
       if (!blobPath) throw new Error('Blob path is required');
       return getTraceBlob(blobPath);
     },
-    enabled: !!blobPath, // Only enable if blobPath is available
+    enabled: !!blobPath && !directTraceData, // Only enable if blobPath is available and we don't have direct data
     staleTime: Infinity,
     retry: false,
   });
+
+  // Create trace blob data from direct upload if available
+  const finalTraceBlobData = directTraceData && directFileName
+    ? { data: directTraceData, fileName: directFileName }
+    : traceBlobData;
+
+  // Whether we're loading data
+  const isLoading = (isLoadingTraceDetails && !blobPathFromState && !directTraceData) || (isLoadingBlob && !!blobPath && !directTraceData);
+
+  // Combine errors - handle different error types
+  const error = traceDetailsError || (blobError ? { message: blobError.message, code: undefined } : null);
+
+  // Generate a fallback ID for direct uploads
+  const finalId = id || 'direct-upload';
 
   useEffect(() => {
     // Only update view from query params/location state if:
@@ -220,12 +238,6 @@ const TraceViewerPage: React.FC = () => {
     flamegraphThemeAtom.set(theme);
   }, []);
 
-  // Whether we're loading data
-  const isLoading = (isLoadingTraceDetails && !blobPathFromState) || (isLoadingBlob && !!blobPath);
-
-  // Combine errors - handle different error types
-  const error = traceDetailsError || (blobError ? { message: blobError.message, code: undefined } : null);
-
   return (
     <Layout noPadding isProfileView>
       {isLoading && (
@@ -253,7 +265,7 @@ const TraceViewerPage: React.FC = () => {
         />
       )}
 
-      {!isLoading && !error && traceBlobData && id && (
+      {!isLoading && !error && finalTraceBlobData && finalId && (
         <div className="h-full w-full flex flex-col bg-background">
           <div className="flex justify-between items-center flex-shrink-0 border-b z-[1] bg-background px-4 gap-4">
             <Tabs
@@ -283,7 +295,7 @@ const TraceViewerPage: React.FC = () => {
               </TabsList>
             </Tabs>
             <TraceViewerHeaderActions
-              traceId={id}
+              traceId={finalId}
               isAuthenticated={isAuthenticated}
               onShowComments={handleShowComments}
               onShare={handleShareClick}
@@ -297,12 +309,12 @@ const TraceViewerPage: React.FC = () => {
               onReset={() => {
                 console.log('Attempting to reset Speedscope viewer boundary...');
               }}
-              key={id}
+              key={finalId}
             >
               <SpeedscopeViewer
-                traceId={id}
-                traceData={traceBlobData.data}
-                fileName={traceBlobData.fileName}
+                traceId={finalId}
+                traceData={finalTraceBlobData.data}
+                fileName={finalTraceBlobData.fileName}
                 view={selectedView}
                 replyingToCommentId={commentManagement?.replyingToCommentId}
                 onStartReply={commentManagement?.handleStartReply}
@@ -314,25 +326,39 @@ const TraceViewerPage: React.FC = () => {
         </div>
       )}
 
-      {!isLoading && !error && (!traceBlobData || !id) && (
-        <div className="flex items-center justify-center h-full w-full bg-background relative z-10">
-          <p>Trace data could not be loaded (missing path, data, or ID).</p>
-        </div>
+      {!isLoading && !error && (!finalTraceBlobData || !finalId) && (
+        <TraceViewerErrorState
+          title="Unable to Load Trace"
+          message="The trace file could not be loaded. This might be due to a corrupted file, unsupported format, or missing data."
+          actions={[
+            {
+              message: 'Try Another File',
+              href: '/viewer',
+              variant: 'gradient',
+              className: 'bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white',
+            },
+            {
+              message: 'Back to Home',
+              href: '/',
+              variant: 'outline',
+            },
+          ]}
+        />
       )}
 
       {/* Chat Feature - Render based on authentication status */}
-      {!isLoading && !error && traceBlobData && (
+      {!isLoading && !error && finalTraceBlobData && (
         isAuthenticated ? (
-          <ChatContainer traceId={id} initialOpen={chatFromQuery === 'open'} />
+          <ChatContainer traceId={finalId} initialOpen={chatFromQuery === 'open'} />
         ) : (
-          <UnauthenticatedChatTeaser traceId={id} />
+          <UnauthenticatedChatTeaser traceId={finalId} />
         )
       )}
 
       {/* Conditionally render TraceViewerCommentSidebar based on isCommentSidebarOpen */}
       {isAuthenticated && commentManagement && (
         <TraceViewerCommentSidebar
-          traceId={id}
+          traceId={finalId}
           activeView={selectedView}
           isOpen={isCommentSidebarOpen}
           onOpenChange={setIsCommentSidebarOpen}
