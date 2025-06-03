@@ -16,35 +16,30 @@ yarn mintlify dev
 
 ## Deployment Setup
 
-The documentation is hosted on Mintlify at `docs.flamedeck.com` using a custom domain.
+The documentation is hosted on Mintlify and served at `flamedeck.com/docs` via Vercel proxy.
 
 ### Steps to Deploy:
 
 1. **Push to GitHub**: Ensure this docs directory is in your main repository
-
 2. **Connect to Mintlify**:
    - Go to [Mintlify Dashboard](https://dashboard.mintlify.com)
    - Connect your GitHub repository
    - Point to the `apps/docs` directory
    - Set subdomain to `flamedeck`
 
-3. **Configure Custom Domain**:
+3. **Configure Custom Domain** (Optional):
    - In Mintlify dashboard, go to Settings > Custom Domain
-   - Enter `docs.flamedeck.com`
-   - Follow the DNS instructions provided by Mintlify
-   - Add CNAME record: `docs.flamedeck.com` → `cname.mintlify.dev`
+   - This step is optional since we're using Vercel proxy
 
-4. **Update DNS**:
-   - In your domain provider (where flamedeck.com is hosted)
-   - Add the CNAME record as instructed by Mintlify
-   - Wait for DNS propagation (usually 5-30 minutes)
+4. **Deploy Main App**:
+   - Deploy your main app to Vercel as usual
+   - Push to master will build docs and update them
 
 ### How it Works
 
 - Documentation source files are in this directory
 - Mintlify automatically builds and hosts the docs when you push to GitHub
-- Users access docs directly at `docs.flamedeck.com`
-- No proxy or subpath configuration needed
+- Subdomain is set up so docs are deployed to docs.flamedeck.com
 
 ### Files Structure
 
@@ -54,11 +49,10 @@ The documentation is hosted on Mintlify at `docs.flamedeck.com` using a custom d
 
 ## Benefits
 
-- ✅ **Free hosting** on Mintlify's CDN
-- ✅ **Custom subdomain** at `docs.flamedeck.com`
+- ✅ **Free hosting** on Mintlify
+- ✅ **Custom domain** via Vercel proxy
 - ✅ **Automatic deployments** when you push to GitHub
 - ✅ **Local development** with `mintlify dev`
 - ✅ **Beautiful UI** out of the box
 - ✅ **Search functionality** included
-- ✅ **Analytics** and insights from Mintlify
-- ✅ **SSL certificate** automatically managed by Mintlify 
+- ✅ **Analytics** and insights from Mintlify 
