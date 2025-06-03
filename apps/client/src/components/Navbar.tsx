@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Menu } from 'lucide-react';
+import { ChevronRight, Menu, ExternalLink } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { user } = useAuth();
@@ -43,12 +43,26 @@ const Navbar: React.FC = () => {
         <div className="flex items-center pr-2 space-x-4">
           {!user && (
             <>
-              <Link to="/docs" className="text-sm font-medium text-foreground">
-                API Docs
-              </Link>
+              <a
+                href="https://docs.flamedeck.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-foreground inline-flex items-center gap-1"
+              >
+                Docs
+                <ExternalLink className="h-3 w-3" />
+              </a>
               <Link to="/login" className="text-sm font-medium text-foreground flex items-center">
                 Sign in
                 <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+              <Link to="/login">
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white transition-all duration-300 hover:scale-105"
+                >
+                  Create Account
+                </Button>
               </Link>
             </>
           )}
