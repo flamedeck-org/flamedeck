@@ -134,7 +134,7 @@ function LoggedOutTraceViewerPage() {
 
     // If we have initial trace data, navigate immediately to viewer
     if (initialTraceData && initialFileName) {
-        navigate(`/try/trace-viewer`, {
+        navigate(`/viewer/trace-viewer`, {
             state: {
                 traceData: initialTraceData,
                 fileName: initialFileName,

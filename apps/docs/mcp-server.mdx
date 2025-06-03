@@ -1,25 +1,31 @@
 ---
 title: 'MCP Server'
-description: 'Enable AI assistants to analyze performance traces and generate flamegraph visualizations with the Flamechart MCP server.'
+description: 'Enable AI assistants to analyze performance traces and generate flamegraph visualizations'
 ---
 
-The Flamechart MCP (Model Context Protocol) server enables AI assistants to analyze performance traces and generate flamegraph visualizations. It works with both local trace files and remote traces stored on FlameDeck.
+The Flamechart MCP (Model Context Protocol) server enables AI assistants to analyze performance traces and generate flamegraph visualizations. It works with both local trace files and remote traces stored on FlameDeck, across all major trace formats.
+
+<div style={{ position: 'relative', paddingBottom: '62.56%', height: 0, overflow: 'hidden', maxWidth: '100%', marginBottom: '2rem' }}>
+  <iframe 
+    src="https://www.youtube.com/embed/wNoL82YvuAA" 
+    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+    frameBorder="0" 
+    allowFullScreen
+    title="Flamechart MCP Server Demo"
+  />
+</div>
 
 <Info>
 **Works Entirely Offline** - No API key required for local trace files! Only need a FlameDeck API key for analyzing remote traces.
 </Info>
 
+<Tip>
+**Best Model Performance** - For optimal flamegraph analysis, we recommend using AI models with strong image understanding capabilities such as OpenAI's o3. These models can better interpret the visual flamegraph outputs and provide more detailed insights about performance bottlenecks.
+</Tip>
+
 ## Quick Start
 
-### 1. Installation & Setup
-
-The MCP server can be run directly without installation:
-
-```bash
-npx -y @flamedeck/flamechart-mcp
-```
-
-### 2. Configure Your AI Assistant
+### 1. Install the MCP server
 
 <Tabs>
   <Tab title="Cursor">
@@ -52,13 +58,83 @@ npx -y @flamedeck/flamechart-mcp
   </Tab>
 </Tabs>
 
-### 3. Start Analyzing
+### 2. Start Analyzing
 
-Try this prompt in your AI assistant:
+Try this prompt in your AI assistant (use the absolute local file path to your trace file):
 
 ```
 Analyze this trace file and show me the top 10 slowest functions:
 /path/to/your/profile.json
+```
+
+
+## Working with Remote Traces
+
+### Setting Up FlameDeck Integration
+
+<Steps>
+  <Step title="Create an API Key">
+    - Go to [FlameDeck Settings](https://flamedeck.com/settings/api-keys)
+    - Create a new key with `trace:download` permissions
+    - Copy the generated key
+  </Step>
+
+  <Step title="Configure the MCP Server">
+    Add the following to your MCP server configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "flamechart-debug": {
+          "command": "npx",
+          "args": ["-y", "@flamedeck/flamechart-mcp"],
+          "env": {
+            "FLAMEDECK_API_KEY": "your_api_key_here"
+          }
+        }
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Using Remote Traces
+
+Once configured, you can analyze traces directly from FlameDeck URLs:
+
+```
+Analyze this production trace and find performance bottlenecks:
+https://www.flamedeck.com/traces/98508d02-1f2a-4885-9607-ecadceb3d734
+
+Focus on database operations and API endpoints.
+```
+
+## Example Workflows
+
+### Debugging Slow React Rendering
+
+```
+I have a React app that's rendering slowly. Analyze this Chrome DevTools profile:
+/Users/dev/profiles/react-slow-render.json
+
+Please:
+1. Show me the top functions taking the most time
+2. Generate a flamegraph to visualize the call stack
+3. Look for any React-specific bottlenecks like expensive re-renders
+4. Focus on functions in my application code vs React internals
+```
+
+### API Performance Investigation
+
+```
+Our API endpoints are slow. Help me analyze this production trace:
+https://www.flamedeck.com/traces/5e538693-a0b6-40a0-a932-8a6b48c2f269
+
+Investigation goals:
+1. Identify the slowest endpoints
+2. Find database vs application time breakdown
+3. Look for N+1 query patterns
+4. Generate a visual report I can share with the team
 ```
 
 ## Supported Trace Formats
@@ -153,52 +229,6 @@ Create a sandwich view for the "processData" function to understand what's calli
 /path/to/trace.json
 ```
 
-## Working with Remote Traces
-
-### Setting Up FlameDeck Integration
-
-<Steps>
-  <Step title="Create an API Key">
-    - Go to [FlameDeck Settings](https://flamedeck.com/settings/api-keys)
-    - Create a new key with `trace:download` permissions
-    - Copy the generated key
-  </Step>
-
-  <Step title="Configure the MCP Server">
-    For environment variable approach:
-    ```bash
-    export FLAMEDECK_API_KEY="your_api_key_here"
-    npx -y @flamedeck/flamechart-mcp
-    ```
-
-    For direct configuration:
-    ```json
-    {
-      "mcpServers": {
-        "flamechart-debug": {
-          "command": "npx",
-          "args": ["-y", "@flamedeck/flamechart-mcp"],
-          "env": {
-            "FLAMEDECK_API_KEY": "your_api_key_here"
-          }
-        }
-      }
-    }
-    ```
-  </Step>
-</Steps>
-
-### Using Remote Traces
-
-Once configured, you can analyze traces directly from FlameDeck URLs:
-
-```
-Analyze this production trace and find performance bottlenecks:
-https://www.flamedeck.com/traces/98508d02-1f2a-4885-9607-ecadceb3d734
-
-Focus on database operations and API endpoints.
-```
-
 ## Performance Features
 
 ### Smart Caching
@@ -214,45 +244,6 @@ The MCP server includes intelligent caching to improve performance:
 **Performance Boost** - Subsequent tool calls on the same trace are nearly instant thanks to smart caching.
 </Tip>
 
-## Example Workflows
-
-### Debugging Slow React Rendering
-
-```
-I have a React app that's rendering slowly. Analyze this Chrome DevTools profile:
-/Users/dev/profiles/react-slow-render.json
-
-Please:
-1. Show me the top functions taking the most time
-2. Generate a flamegraph to visualize the call stack
-3. Look for any React-specific bottlenecks like expensive re-renders
-4. Focus on functions in my application code vs React internals
-```
-
-### API Performance Investigation
-
-```
-Our API endpoints are slow. Help me analyze this production trace:
-https://www.flamedeck.com/traces/api-performance-issue
-
-Investigation goals:
-1. Identify the slowest endpoints
-2. Find database vs application time breakdown
-3. Look for N+1 query patterns
-4. Generate a visual report I can share with the team
-```
-
-### Memory Leak Detection
-
-```
-Investigate potential memory leaks in this Node.js heap profile:
-/path/to/heap-snapshot.heapprofile
-
-Focus on:
-1. Functions with high memory allocation
-2. Objects that aren't being garbage collected
-3. Create a sandwich view for suspicious allocation patterns
-```
 
 ## Troubleshooting
 
@@ -285,16 +276,7 @@ Focus on:
 
 ### Getting Help
 
-If you encounter issues:
-
-1. **Check the Console**: The MCP server logs detailed information about loading and caching
-2. **Verify File Format**: Ensure your trace is in a supported format
-3. **Test with Sample Data**: Try with a known-good trace file first
-4. **API Key Permissions**: Confirm your FlameDeck API key has the correct scope
-
-<Warning>
-**Large File Performance** - For traces larger than 100MB, consider using time-based filtering to focus on specific time ranges.
-</Warning>
+For technical support or to report issues, please submit a ticket through our [GitHub issue tracker](https://github.com/flamedeck-org/flamedeck/issues).
 
 ## Advanced Usage
 
