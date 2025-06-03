@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
-import { ListTree, LogOut, User as UserIcon, Settings as SettingsIcon, Star, Clock } from 'lucide-react';
+import { ListTree, LogOut, User as UserIcon, Settings as SettingsIcon, Star, Clock, UploadCloud } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useSubscriptionUsage } from '@/hooks/useSubscriptionUsage';
 import { Progress } from '@/components/ui/progress';
@@ -29,6 +29,7 @@ const MINIMIZED_BUTTON_SIZE = 'h-9 w-full px-3';
 const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) => {
   const { user, signOut, profile, profileLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const displayName = useDisplayName(profile, user);
   const { data: usageData, isLoading: isUsageLoading } = useSubscriptionUsage();
 
@@ -78,13 +79,45 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) 
       >
         <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
           <NavLink
-            to="/traces"
-            className={({ isActive }) =>
-              `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 pl-3.5 pr-3 py-2 h-9'} rounded-md text-sm font-medium transition-colors ${isActive
+            to="/viewer"
+            className={({ isActive }) => {
+              // Custom active check for viewer - active when on viewer page or viewing a trace
+              const isViewerActive = isActive ||
+                location.pathname === '/viewer/trace-viewer' ||
+                location.pathname.match(/^\/traces\/[^/]+\/view$/);
+
+              return `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 pl-3.5 pr-3 py-2 h-9'} rounded-md text-sm font-medium transition-colors ${isViewerActive
                 ? 'bg-accent text-accent-foreground'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-              }`
-            }
+                }`;
+            }}
+            aria-label="Viewer"
+          >
+            {minimized ? (
+              <Tooltip disableHoverableContent={false}>
+                <TooltipTrigger asChild>
+                  <UploadCloud className={LIST_ICON_SIZE} />
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={16}>
+                  <p>Viewer</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <UploadCloud className={LIST_ICON_SIZE} />
+            )}
+            {!minimized && <span>Viewer</span>}
+          </NavLink>
+          <NavLink
+            to="/traces"
+            className={({ isActive }) => {
+              // Custom active check for traces - exclude trace viewing paths 
+              const isTracesActive = isActive && !location.pathname.match(/^\/traces\/[^/]+\/view$/);
+
+              return `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 pl-3.5 pr-3 py-2 h-9'} rounded-md text-sm font-medium transition-colors ${isTracesActive
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                }`;
+            }}
             aria-label="Traces"
           >
             {minimized ? (

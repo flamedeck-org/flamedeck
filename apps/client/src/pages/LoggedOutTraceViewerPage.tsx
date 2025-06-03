@@ -5,6 +5,8 @@ import { UploadCloud, ArrowLeft, Zap, Database, Users, ChevronRight } from 'luci
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTraceUploadModal } from '@/hooks/useTraceUploadModal';
 
 interface TraceUploadState {
     isUploading: boolean;
@@ -16,6 +18,8 @@ function LoggedOutTraceViewerPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
+    const { user } = useAuth();
+    const { openModal: openUploadModal } = useTraceUploadModal();
 
     const [uploadState, setUploadState] = useState<TraceUploadState>({
         isUploading: false,
@@ -39,6 +43,13 @@ function LoggedOutTraceViewerPage() {
             return;
         }
 
+        // If user is logged in, use the TraceUploadModal
+        if (user) {
+            openUploadModal(file, null); // null for no specific folder
+            return;
+        }
+
+        // For logged-out users, keep the existing behavior
         setUploadState(prev => ({ ...prev, isUploading: true, progress: 0 }));
 
         try {
@@ -76,7 +87,7 @@ function LoggedOutTraceViewerPage() {
         } finally {
             setUploadState(prev => ({ ...prev, isUploading: false, progress: 0 }));
         }
-    }, [navigate, toast]);
+    }, [navigate, toast, user, openUploadModal]);
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -186,22 +197,50 @@ function LoggedOutTraceViewerPage() {
                                 src="/user-input-required.png"
                                 alt="Drag and drop your trace file"
                                 className="w-64 h-64 object-contain mb-8"
+                                style={{
+                                    animation: 'pulse-custom 4s ease-in-out infinite',
+                                }}
                             />
+                            <style>{`
+                                @keyframes pulse-custom {
+                                    0%, 100% {
+                                        opacity: 0.4;
+                                    }
+                                    50% {
+                                        opacity: 0.6;
+                                    }
+                                }
+                            `}</style>
                             <h1 className="text-4xl font-bold mb-6">Drag & Drop Your Trace</h1>
-                            <p className="text-xl text-muted-foreground text-center max-w-lg mb-8">
+                            <p className="text-xl text-muted-foreground text-center mb-8">
                                 Drop your performance trace file anywhere on this page to get started
                             </p>
-                            <Button
-                                size="lg"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleBrowseClick();
-                                }}
-                                className="text-lg px-8 py-4 bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white shadow-xl transition-all duration-300 hover:scale-105"
-                            >
-                                <UploadCloud className="w-5 h-5 mr-3" />
-                                Choose File to Upload
-                            </Button>
+                            <div className="flex flex-col sm:flex-row gap-4 items-center">
+                                <Button
+                                    size="lg"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleBrowseClick();
+                                    }}
+                                    className="text-lg px-8 py-4 bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white shadow-xl transition-all duration-300 hover:scale-105"
+                                >
+                                    <UploadCloud className="w-5 h-5 mr-3" />
+                                    Choose File to Upload
+                                </Button>
+                                {user && (
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate('/traces');
+                                        }}
+                                        className="text-lg px-8 py-4 border-2 shadow-lg transition-all duration-300 hover:scale-105"
+                                    >
+                                        View Traces
+                                    </Button>
+                                )}
+                            </div>
                             <input
                                 ref={fileInputRef}
                                 type="file"
