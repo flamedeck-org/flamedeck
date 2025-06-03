@@ -10,14 +10,13 @@ import {
 } from '@/components/ui/table';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  FileJson,
   UploadCloud,
   Search,
   X,
   Folder as FolderIcon,
   FolderPlus,
   Loader2,
-  MoreVertical,
+  ExternalLink,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,8 +33,6 @@ import { CreateFolderDialog } from './CreateFolderDialog';
 import { useTraceUploadModal } from '@/hooks/useTraceUploadModal';
 import { useInView } from 'react-intersection-observer';
 import { useToast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { UploadDialog } from '@/components/UploadDialog';
 import { DraggableArea } from '@/components/DraggableArea';
 import type { Folder } from '@/lib/api/types';
 import type { PostgrestError } from '@supabase/supabase-js';
@@ -349,9 +346,15 @@ function TraceListComponent() {
                 </h3>
                 <p className="text-muted-foreground mb-6">
                   Drag and drop your first performance trace file.{' '}
-                  <Link to="/docs/api-keys" className="text-red-500 hover:text-red-400 hover:underline transition-colors font-medium">
+                  <a
+                    href="https://docs.flamedeck.com/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-red-500 hover:text-red-400 hover:underline transition-colors font-medium inline-flex items-center gap-1"
+                  >
                     Learn about our API
-                  </Link>{' '}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>{' '}
                   for programmatic uploads.
                 </p>
                 <div className="flex justify-center gap-3">

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import PricingTable from '@/components/PricingTable';
-import { UploadCloud, Database, BarChart, Search, ArrowRight, Star } from 'lucide-react';
+import { UploadCloud, Database, BarChart, Search, ArrowRight, Star, ExternalLink } from 'lucide-react';
 import SharedPageSEO from '@/components/seo/SharedPageSEO';
 import { useAtom } from '@/lib/speedscope-core/atom';
 import { colorSchemeAtom, ColorScheme } from '@/components/speedscope-ui/theme';
@@ -64,9 +64,15 @@ function Index() {
           <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
             Login
           </Link>
-          <Link to="/docs/api-keys" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
+          <a
+            href="https://docs.flamedeck.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105 inline-flex items-center gap-1"
+          >
             API Docs
-          </Link>
+            <ExternalLink className="w-3 h-3" />
+          </a>
           <a href="mailto:support@flamedeck.com" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
             Support
           </a>
@@ -168,8 +174,8 @@ function Index() {
                     title: "Effortless Upload",
                     description: "Drag & drop traces, or integrate seamlessly with our API & CLI. No complicated setup.",
                     links: [
-                      { text: "API", to: "/docs/api-keys" },
-                      { text: "CLI", to: "/docs/cli-upload" }
+                      { text: "API", to: "https://docs.flamedeck.com/api-keys" },
+                      { text: "CLI", to: "https://docs.flamedeck.com/cli-upload" }
                     ]
                   },
                   {
@@ -196,16 +202,30 @@ function Index() {
                         {feature.description.split(/(\bAPI\b|\bCLI\b)/).map((part, i) => {
                           if (part === 'API' && feature.links) {
                             return (
-                              <Link key={i} to={feature.links[0].to} className="underline hover:text-primary transition-colors">
+                              <a
+                                key={i}
+                                href={feature.links[0].to}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline hover:text-primary transition-colors inline-flex items-center gap-1"
+                              >
                                 {part}
-                              </Link>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
                             );
                           }
                           if (part === 'CLI' && feature.links) {
                             return (
-                              <Link key={i} to={feature.links[1].to} className="underline hover:text-primary transition-colors">
+                              <a
+                                key={i}
+                                href={feature.links[1].to}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline hover:text-primary transition-colors inline-flex items-center gap-1"
+                              >
                                 {part}
-                              </Link>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
                             );
                           }
                           return part;

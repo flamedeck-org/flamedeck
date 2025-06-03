@@ -14,12 +14,6 @@ import { TraceDetail } from './pages/TraceDetail';
 import ApiKeysPage from './pages/settings/ApiKeysPage';
 import NotFound from './pages/NotFound';
 import TraceViewerPage from './pages/TraceViewerPage';
-import DocsApiKeysPage from './pages/DocsApiKeysPage';
-import DocsCliUploadPage from './pages/DocsCliUploadPage';
-import DocsNpmUploadPage from './pages/DocsNpmUploadPage';
-import DocsReactNativePage from './pages/DocsReactNativePage';
-import DocsMcpServerPage from './pages/DocsMcpServerPage';
-import DocsLayout from './components/docs/DocsLayout';
 import { useTheme } from './components/speedscope-ui/theme.tsx';
 import { useAtom } from './lib/speedscope-core/atom';
 import { glCanvasAtom } from './lib/speedscope-core/app-state/index';
@@ -43,6 +37,22 @@ import BillingPage from './pages/settings/BillingPage';
 import { TraceUploadModalProvider } from '@/hooks/useTraceUploadModal';
 import { TraceUploadModal } from '@/components/TraceUploadModal';
 import { OnboardingUpgradeStep } from './pages/Onboarding/OnboardingUpgradeStep';
+
+// Component to redirect docs pages to external documentation
+function DocsRedirect({ path }: { path: string }) {
+  useEffect(() => {
+    window.location.replace(`https://docs.flamedeck.com${path}`);
+  }, [path]);
+
+  return (
+    <div className="flex justify-center items-center h-[calc(100vh-var(--header-height))] w-full">
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-4" />
+        <p className="text-muted-foreground">Redirecting to documentation...</p>
+      </div>
+    </div>
+  );
+}
 
 // --- Component to handle root path logic ---
 function RootHandler() {
@@ -111,15 +121,13 @@ const AppRoutes = () => {
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-cancel" element={<PaymentCancelPage />} />
 
-        {/* Documentation Routes - accessible to all */}
-        <Route path="/docs" element={<DocsLayout />}>
-          <Route index element={<Navigate to="/docs/api-keys" replace />} />
-          <Route path="api-keys" element={<DocsApiKeysPage />} />
-          <Route path="cli-upload" element={<DocsCliUploadPage />} />
-          <Route path="npm-upload" element={<DocsNpmUploadPage />} />
-          <Route path="react-native" element={<DocsReactNativePage />} />
-          <Route path="mcp-server" element={<DocsMcpServerPage />} />
-        </Route>
+        {/* Documentation Redirects - redirect to external docs */}
+        <Route path="/docs" element={<DocsRedirect path="" />} />
+        <Route path="/docs/api-keys" element={<DocsRedirect path="/api-keys" />} />
+        <Route path="/docs/cli-upload" element={<DocsRedirect path="/cli-upload" />} />
+        <Route path="/docs/npm-upload" element={<DocsRedirect path="/npm-upload" />} />
+        <Route path="/docs/react-native" element={<DocsRedirect path="/react-native" />} />
+        <Route path="/docs/mcp-server" element={<DocsRedirect path="/mcp-server" />} />
 
         {/* Public Trace Viewer Route - outside ProtectedRoute */}
         <Route path="/traces/:id/view" element={<TraceViewerPage />} />
