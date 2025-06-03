@@ -52,7 +52,7 @@ const Navbar: React.FC = () => {
                 Docs
                 <ExternalLink className="h-3 w-3" />
               </a>
-              <Link to="/login" className="text-sm font-medium text-foreground flex items-center">
+              <Link to="/login" className="hidden sm:flex text-sm font-medium text-foreground items-center">
                 Sign in
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Link>
@@ -61,7 +61,7 @@ const Navbar: React.FC = () => {
                   size="sm"
                   className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white transition-all duration-300 hover:scale-105"
                 >
-                  Create Account
+                  Get Started
                 </Button>
               </Link>
             </>
