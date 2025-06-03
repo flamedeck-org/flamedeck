@@ -84,8 +84,19 @@ export function addTopFunctionsTool(server: FastMCP) {
                     const selfWeight = frame.getSelfWeight();
                     const totalPerc = totalNonIdle === 0 ? 0 : (100.0 * totalWeight) / totalNonIdle;
                     const selfPerc = totalNonIdle === 0 ? 0 : (100.0 * selfWeight) / totalNonIdle;
+
+                    // Format frame name with file and line info if available
+                    let frameDisplay = frame.name || '(unknown)';
+                    if (frame.file) {
+                        if (frame.line) {
+                            frameDisplay += ` (${frame.file}:${frame.line})`;
+                        } else {
+                            frameDisplay += ` (${frame.file})`;
+                        }
+                    }
+
                     return (
-                        `${offset + index + 1}. ${frame.name || '(unknown)'}: ` +
+                        `${offset + index + 1}. ${frameDisplay}: ` +
                         `Total: ${profile.formatValue(totalWeight)} (${formatPercent(totalPerc)}), ` +
                         `Self: ${profile.formatValue(selfWeight)} (${formatPercent(selfPerc)})`
                     );
