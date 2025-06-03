@@ -27,7 +27,7 @@ function AuthCallbackPage() {
         queryClient.invalidateQueries({ queryKey: ['subscriptionUsage'] }); // Invalidate usage query
 
         // Redirect to the originally intended path or default
-        const redirectTo = sessionStorage.getItem('postLoginRedirectPath') || '/';
+        const redirectTo = sessionStorage.getItem('postLoginRedirectPath') || '/viewer';
         sessionStorage.removeItem('postLoginRedirectPath'); // Clean up
         navigate(redirectTo, { replace: true });
       } else if (event === 'SIGNED_OUT') {
@@ -43,7 +43,7 @@ function AuthCallbackPage() {
           console.log('[AuthCallbackPage] INITIAL_SESSION has data, treating as SIGNED_IN.');
           queryClient.invalidateQueries({ queryKey: ['userProfile'] });
           queryClient.invalidateQueries({ queryKey: ['subscriptionUsage'] });
-          const redirectTo = sessionStorage.getItem('postLoginRedirectPath') || '/';
+          const redirectTo = sessionStorage.getItem('postLoginRedirectPath') || '/viewer';
           sessionStorage.removeItem('postLoginRedirectPath');
           navigate(redirectTo, { replace: true });
         }

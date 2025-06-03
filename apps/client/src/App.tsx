@@ -76,8 +76,8 @@ function RootHandler() {
   }
 
   // If loading is finished and there *is* a user, navigate to the main app section.
-  // ProtectedRoute will then handle the /traces route and any onboarding redirects.
-  return <Navigate to="/traces" replace />;
+  // ProtectedRoute will then handle the /viewer route and any onboarding redirects.
+  return <Navigate to="/viewer" replace />;
 }
 // --- End RootHandler ---
 

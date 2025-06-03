@@ -285,11 +285,16 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
 
         if (onClose) onClose();
 
-        // Navigate to folder (keep existing navigation)
-        if (selectedFolderId) {
-          navigate(`/traces/folder/${selectedFolderId}`);
+        // Navigate directly to trace viewer instead of traces list
+        if (newTraceId) {
+          navigate(`/traces/${newTraceId}/view`);
         } else {
-          navigate('/traces');
+          // Fallback to traces list if no trace ID
+          if (selectedFolderId) {
+            navigate(`/traces/folder/${selectedFolderId}`);
+          } else {
+            navigate('/traces');
+          }
         }
       } catch (error) {
         // Handle thrown StandardApiError or other errors

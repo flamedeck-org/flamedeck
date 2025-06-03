@@ -15,7 +15,7 @@ const Login: React.FC = () => {
     const from =
       location.state?.from?.pathname ||
       sessionStorage.getItem('postLoginRedirectPath') ||
-      '/traces';
+      '/viewer';
     try {
       sessionStorage.setItem('postLoginRedirectPath', from);
     } catch (e) {
@@ -48,7 +48,7 @@ const Login: React.FC = () => {
     const from =
       location.state?.from?.pathname ||
       sessionStorage.getItem('postLoginRedirectPath') ||
-      '/traces';
+      '/viewer';
     try {
       sessionStorage.setItem('postLoginRedirectPath', from);
     } catch (e) {
