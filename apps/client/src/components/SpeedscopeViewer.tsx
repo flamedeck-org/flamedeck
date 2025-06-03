@@ -395,7 +395,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
         </div>
 
         {/* Render sidebar based on current view's selection state */}
-        {currentSelection.cellId && traceId && (
+        {currentSelection.cellId && traceId && isAuthenticated && (
           <CommentSidebar
             traceId={traceId}
             cellId={currentSelection.cellId}
