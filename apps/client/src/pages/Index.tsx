@@ -167,7 +167,7 @@ function Index() {
         <FadeInOnScroll delay={0.1}>
           <div className="py-8 md:py-16 px-4">
             <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 {[
                   {
                     icon: UploadCloud,
@@ -176,78 +176,61 @@ function Index() {
                     links: [
                       { text: "API", to: "https://docs.flamedeck.com/api-keys" },
                       { text: "CLI", to: "https://docs.flamedeck.com/cli-upload" }
-                    ],
-                    accent: "from-red-500 to-red-600",
-                    bg: "from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20"
+                    ]
                   },
                   {
                     icon: Search,
                     title: "AI-Driven Insights",
-                    description: "Performance optimization is hard. Let AI analyze your traces and pinpoint key issues.",
-                    accent: "from-blue-500 to-blue-600",
-                    bg: "from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20"
+                    description: "Performance optimization is hard. Let AI analyze your traces and pinpoint key issues."
                   },
                   {
                     icon: BarChart,
                     title: "Clear Visualizations",
-                    description: "Understand complex data at a glance with interactive flame graphs.",
-                    accent: "from-green-500 to-green-600",
-                    bg: "from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20"
+                    description: "Understand complex data at a glance with interactive flame graphs."
                   }
                 ].map((feature, index) => (
                   <div
                     key={feature.title}
-                    className={`relative p-6 md:p-8 bg-gradient-to-br ${feature.bg} border border-border/30 rounded-3xl shadow-sm`}
+                    className="group p-4 md:p-6 bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:border-primary/30"
                   >
-                    {/* Subtle accent line */}
-                    <div className={`absolute top-0 left-6 right-6 h-0.5 bg-gradient-to-r ${feature.accent} rounded-full`} />
-
-                    <div className="flex flex-col items-start text-left space-y-4 md:space-y-5">
-                      <div className={`p-3 md:p-4 bg-gradient-to-br ${feature.accent} rounded-2xl shadow-sm`}>
-                        <feature.icon className="h-6 w-6 md:h-7 md:w-7 text-white" />
+                    <div className="flex flex-col items-start text-left space-y-2 md:space-y-3">
+                      <div className="p-2 md:p-3 bg-gradient-to-br from-red-500/10 to-yellow-500/10 rounded-xl border border-red-500/20 group-hover:from-red-500/20 group-hover:to-yellow-500/20 transition-all duration-300">
+                        <feature.icon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                       </div>
-
-                      <div className="space-y-3">
-                        <h3 className="text-lg md:text-xl font-bold text-foreground">{feature.title}</h3>
-                        <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                          {feature.description.split(/(\bAPI\b|\bCLI\b)/).map((part, i) => {
-                            if (part === 'API' && feature.links) {
-                              return (
-                                <a
-                                  key={i}
-                                  href={feature.links[0].to}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary underline decoration-primary/30 underline-offset-2 font-medium inline-flex items-center gap-1"
-                                >
-                                  {part}
-                                  <ExternalLink className="w-3 h-3" />
-                                </a>
-                              );
-                            }
-                            if (part === 'CLI' && feature.links) {
-                              return (
-                                <a
-                                  key={i}
-                                  href={feature.links[1].to}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary underline decoration-primary/30 underline-offset-2 font-medium inline-flex items-center gap-1"
-                                >
-                                  {part}
-                                  <ExternalLink className="w-3 h-3" />
-                                </a>
-                              );
-                            }
-                            return part;
-                          })}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Subtle corner decoration */}
-                    <div className="absolute bottom-4 right-4 w-8 h-8 opacity-10">
-                      <div className={`w-full h-full bg-gradient-to-br ${feature.accent} rounded-full`} />
+                      <h3 className="text-base md:text-lg font-bold">{feature.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {feature.description.split(/(\bAPI\b|\bCLI\b)/).map((part, i) => {
+                          if (part === 'API' && feature.links) {
+                            return (
+                              <a
+                                key={i}
+                                href={feature.links[0].to}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline hover:text-primary transition-colors inline-flex items-center gap-1"
+                              >
+                                {part}
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            );
+                          }
+                          if (part === 'CLI' && feature.links) {
+                            return (
+                              <a
+                                key={i}
+                                href={feature.links[1].to}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline hover:text-primary transition-colors inline-flex items-center gap-1"
+                              >
+                                {part}
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            );
+                          }
+                          return part;
+                        })}
+                      </p>
                     </div>
                   </div>
                 ))}
