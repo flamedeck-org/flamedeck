@@ -18,9 +18,9 @@ MCP server for analyzing performance profiles (Go, JavaScript, Python, etc.) usi
 
 ## ✨ Features
 
-- 🔍 **Performance Analysis** - Identify bottlenecks in your code instantly
-- 📊 **Generate Visual Flamegraphs** - Use the strong vision capabilities of reasoning llms to debug performance issues
+- 🔍 **Generate Visual Flamegraphs** - Use the strong vision capabilities of reasoning llms to debug performance issues
 - 🌐 **Multi-Format Support** - Chrome, Firefox, Node.js, pprof, stackprof and more
+- 🔌 **Works Offline** - Only requires an API key if using [flamedeck.com](https://flamedeck.com) for trace hosting
 
 ## 🚀 Quick Start
 
