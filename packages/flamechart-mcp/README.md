@@ -63,6 +63,7 @@ MCP server for analyzing performance profiles (Go, JavaScript, Python, etc.) usi
 }
 ```
 
+> [!NOTE]
 > You will need to create an API key with `trace:download` permissions in your [Flamedeck settings](https://flamedeck.com/settings/api-keys).
 
 > [!TIP]
