@@ -8,7 +8,7 @@ MCP server for analyzing performance profiles (Go, JavaScript, Python, etc.) usi
 
 <div align="center">
 
-[**📖 Documentation**](https://docs.flamedeck.com/mcp-server) • [**🎥 Demo Video**](https://www.youtube.com/watch?v=wNoL82YvuAA) • [**➕ Add to cursor**](https://cursor.com/install-mcp?name=flamedeck&config=eyJjb21tYW5kIjoibnB4IC15IEBmbGFtZWRlY2svZmxhbWVjaGFydC1tY3AifQ%3D%3D) • [**🔑 Get API Key**](https://flamedeck.com/settings/api-keys) 
+[**📖 Documentation**](https://docs.flamedeck.com/mcp-server) • [**🎥 Demo Video**](https://www.youtube.com/watch?v=wNoL82YvuAA) • [**🔑 Get API Key**](https://flamedeck.com/settings/api-keys) 
 
 </div>
 
