@@ -25,7 +25,16 @@ The Flamechart MCP (Model Context Protocol) server enables AI assistants to anal
 
 <Tabs>
   <Tab title="Cursor">
-    Add to your Cursor MCP configuration:
+    Click the button below to add the MCP server to Cursor (requires v1.0+):
+
+  <a href="https://cursor.com/install-mcp?name=flamedeck&config=eyJjb21tYW5kIjoibnB4IC15IEBmbGFtZWRlY2svZmxhbWVjaGFydC1tY3AifQ%3D%3D" className="hidden dark:inline-block border-none">
+    <img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add flamedeck MCP server to Cursor" className="m-0" height="32" />
+  </a>
+  <a href="https://cursor.com/install-mcp?name=flamedeck&config=eyJjb21tYW5kIjoibnB4IC15IEBmbGFtZWRlY2svZmxhbWVjaGFydC1tY3AifQ%3D%3D" className="inline-block dark:hidden border-none">
+    <img src="https://cursor.com/deeplink/mcp-install-light.svg" alt="Add flamedeck MCP server to Cursor" className="m-0" height="32" />
+  </a>
+
+  Or manually add the following to your `~/.cursor/mcp.json` file:
 
     ```json
     {
@@ -59,10 +68,9 @@ The Flamechart MCP (Model Context Protocol) server enables AI assistants to anal
 Try this prompt in your AI assistant (use the absolute local file path to your trace file):
 
 ```
-Analyze this trace file and show me the top 10 slowest functions:
+Root cause the slowness in this trace: 
 /path/to/your/profile.json
 ```
-
 
 ## Working with Remote Traces
 
@@ -76,7 +84,16 @@ Analyze this trace file and show me the top 10 slowest functions:
   </Step>
 
   <Step title="Configure the MCP Server">
-    Add the following to your MCP server configuration:
+        Click the button below to add the MCP configuration to Cursor (requires v1.0+):
+
+  <a href="https://cursor.com/install-mcp?name=flamedeck&config=eyJjb21tYW5kIjoibnB4IC15IEBmbGFtZWRlY2svZmxhbWVjaGFydC1tY3AiLCJlbnYiOnsiRkxBTUVERUNLX0FQSV9LRVkiOiJ5b3VyX2FwaV9rZXlfaGVyZSJ9fQ%3D%3D" className="hidden dark:inline-block border-none">
+    <img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add flamedeck MCP server to Cursor" className="m-0" height="32" />
+  </a>
+  <a href="https://cursor.com/install-mcp?name=flamedeck&config=eyJjb21tYW5kIjoibnB4IC15IEBmbGFtZWRlY2svZmxhbWVjaGFydC1tY3AiLCJlbnYiOnsiRkxBTUVERUNLX0FQSV9LRVkiOiJ5b3VyX2FwaV9rZXlfaGVyZSJ9fQ%3D%3D" className="inline-block dark:hidden border-none">
+    <img src="https://cursor.com/deeplink/mcp-install-light.svg" alt="Add flamedeck MCP server to Cursor" className="m-0" height="32" />
+  </a>
+
+    Or manually add the following to your MCP server configuration:
 
     ```json
     {
