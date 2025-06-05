@@ -65,6 +65,9 @@ MCP server for analyzing performance profiles (Go, JavaScript, Python, etc.) usi
 
 > You will need to create an API key with `trace:download` permissions in your [Flamedeck settings](https://flamedeck.com/settings/api-keys).
 
+> [!TIP]
+> For optimal flamegraph analysis, we recommend using AI models with strong image understanding capabilities such as OpenAI's o3.
+
 ## Practical Examples for Cursor/AI Assistants
 
 ### Analyzing Local Trace Files
