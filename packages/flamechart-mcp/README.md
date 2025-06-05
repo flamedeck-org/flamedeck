@@ -14,7 +14,7 @@ MCP server for analyzing performance profiles (Go, JavaScript, Python, etc.) usi
 
 -----
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/wNoL82YvuAA?si=bi-Cj9vwMPI_GdH4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+![Screenshot of FlameDeck MCP in action](./images/screenshot.png)
 
 ## ✨ Features
 
