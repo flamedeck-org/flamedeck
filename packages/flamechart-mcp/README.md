@@ -1,18 +1,36 @@
-# Flamechart MCP Server
+# 🔥 Flamechart MCP Server
 
-MCP (Model Context Protocol) server for debugging and analyzing a wide range of performance profiles (go, javascript, python, etc) using flamegraphs. Use with local traces or with FlameDeck's hosted trace storage.
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/install-mcp?name=flamedeck&config=eyJjb21tYW5kIjoibnB4IC15IEBmbGFtZWRlY2svZmxhbWVjaGFydC1tY3AifQ%3D%3D)
 
-**Works entirely offline for local trace files** - no API key required! Only need a Flamedeck API key for analyzing remote traces.
+MCP server for analyzing performance profiles (Go, JavaScript, Python, etc.) using flamegraphs. Works entirely offline for local traces or with FlameDeck's hosted storage.
+
+-----
+
+<div align="center">
+
+[**📖 Documentation**](https://docs.flamedeck.com/mcp-server) • [**🎥 Demo Video**](https://www.youtube.com/watch?v=wNoL82YvuAA) • [**➕ Add to cursor**](https://cursor.com/install-mcp?name=flamedeck&config=eyJjb21tYW5kIjoibnB4IC15IEBmbGFtZWRlY2svZmxhbWVjaGFydC1tY3AifQ%3D%3D) • [**🔑 Get API Key**](https://flamedeck.com/settings/api-keys) 
+
+</div>
+
+-----
 
 ![Screenshot of FlameDeck MCP in action](./images/screenshot.png)
 
-## Usage
+## ✨ Features
 
-### With Cursor / Claude Desktop
+- 🔍 **Performance Analysis** - Identify bottlenecks in your code instantly
+- 📊 **Generate Visual Flamegraphs** - Use the strong vision capabilities of reasoning llms to debug performance issues
+- 🌐 **Multi-Format Support** - Chrome, Firefox, Node.js, pprof, stackprof and more
 
-Add the following to your MCP server configuration file:
+## 🚀 Quick Start
 
-**For local files only (no API key needed):**
+### Local Files Only (No API Key)
+
+> Allows you to reference traces stored on your local file system (e.g. /Users/johnsmith/etc)
+
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/install-mcp?name=flamedeck&config=eyJjb21tYW5kIjoibnB4IC15IEBmbGFtZWRlY2svZmxhbWVjaGFydC1tY3AifQ%3D%3D)
+
+**Manual Installation:**
 ```json
 {
   "mcpServers": {
@@ -24,7 +42,13 @@ Add the following to your MCP server configuration file:
 }
 ```
 
-**For remote Flamedeck traces (API key required):**
+### Remote FlameDeck Traces (API Key Required)
+
+> Allows you to reference remote traces hosted at [flamedeck.com](https://flamedeck.com)
+
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/install-mcp?name=flamedeck&config=eyJjb21tYW5kIjoibnB4IC15IEBmbGFtZWRlY2svZmxhbWVjaGFydC1tY3AiLCJlbnYiOnsiRkxBTUVERUNLX0FQSV9LRVkiOiJ5b3VyX2FwaV9rZXlfaGVyZSJ9fQ%3D%3D)
+
+**Manual Installation:**
 ```json
 {
   "mcpServers": {
@@ -69,70 +93,19 @@ Focus on:
 ```
 Our API response times spiked yesterday. Root cause with this production trace:
 https://www.flamedeck.com/traces/abc123...
-
-* You can read through the codebase as you are analyzing to understand execution paths
-* If you can't find any issues, don't make anything up, just say so
 ```
 
-## Available Tools
+## 🛠️ Available Tools
 
-### `get_top_functions`
+| Tool | Description | Use Case |
+|------|-------------|----------|
+| `get_top_functions` | Find slowest functions by self/total time | Identify bottlenecks |
+| `generate_flamegraph_screenshot` | Create visual flamegraph PNG | Share insights, reports |
+| `generate_sandwich_flamegraph_screenshot` | Focus on specific function callers/callees | Deep-dive analysis |
 
-Analyze the slowest functions in a trace file, sorted by either self or total time consumption.
+## 📁 Supported Formats
 
-**Parameters:**
-- `trace` (string): Absolute local file path or Flamedeck URL
-- `sortBy` (string, optional): Sort by 'self' or 'total' time (default: 'total')
-- `offset` (number, optional): 0-indexed offset for pagination (default: 0)
-- `limit` (number, optional): Number of functions to return (default: 15)
-
-**Use cases:** Identifying performance bottlenecks, finding hot paths in your code
-
-### `generate_flamegraph_screenshot`
-
-Generate a flamegraph visualization as a PNG image for viewing a timeline view of function execution
-
-**Parameters:**
-- `trace` (string): Absolute local file path or Flamedeck URL
-- `width` (number, optional): Image width in pixels (default: 1200)
-- `height` (number, optional): Image height in pixels (default: 800)
-- `startTimeMs` (number, optional): Start time for zoomed view
-- `endTimeMs` (number, optional): End time for zoomed view
-- `startDepth` (number, optional): Start depth for zoomed view
-- `mode` (string, optional): Color mode 'light' or 'dark' (default: 'light')
-
-**Use cases:** Creating visuals for reports, sharing performance insights with team
-
-### `generate_sandwich_flamegraph_screenshot`
-
-Generate a sandwich view flamegraph for a specific function, showing both callers and callees.
-
-**Parameters:**
-- `trace` (string): Absolute local file path or Flamedeck URL
-- `frameName` (string): Exact name of the function to focus on
-
-**Use cases:** Deep-diving into specific function performance, understanding call hierarchies
-
-### Supported Trace Formats
-
-The server supports various trace formats through the Speedscope import system:
-
-- **Chrome DevTools** (`.json`)
-- **Firefox Profiler** (`.json`)
-- **Safari Timeline** (`.json`)
-- **Node.js** (`--prof` output)
-- **perf** (Linux perf output)
-- **Instruments** (`.trace` files)
-- **pprof** (Go profiler format)
-- **And many more...**
-
-Files can be gzipped - the server will automatically detect and decompress them.
-
-## Environment Variables
-
-- `FLAMEDECK_API_KEY`: **Only required for remote Flamedeck URL traces**. Create an API key with `trace:download` permissions in your [Flamedeck settings](https://flamedeck.com/settings/api-keys).
-
-**Note:** The MCP server works completely offline when analyzing local trace files - no internet connection or API key needed!
+FlameDeck builds on top of the incredible Speedscope project, and support all trace formats listed [here](https://github.com/jlfwong/speedscope?tab=readme-ov-file#supported-file-formats). Because the code is forked, this may diverge in the future.
 
 ## Development
 
