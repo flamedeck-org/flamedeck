@@ -24,6 +24,8 @@ This monorepo contains:
 *   Backend services using Supabase (database schema, edge functions) (`supabase/`)
 *   Shared code libraries (`packages/`)
 *   A command-line interface (CLI) tool for uploading traces (`cli-rust/`)
+*   A JavaScript/TypeScript client library for uploading traces ([`@flamedeck/upload`](packages/client-uploader/))
+*   An MCP server for AI-powered trace analysis ([`@flamedeck/flamechart-mcp`](packages/flamechart-mcp/))
 
 ## Installing the `flamedeck` CLI
 
