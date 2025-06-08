@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, ArrowLeft, MessageSquareText } from 'lucide-react';
 import { ToolMessageItem } from './ToolMessageItem';
+import { MarkdownMessage } from './MarkdownMessage';
 import { useUpgradeModal } from '@/hooks/useUpgradeModal';
 import type { ChatMessage, ChatWindowHandle } from './ChatWindow';
 
@@ -139,9 +140,12 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
                                                         : 'bg-red-50/90 dark:bg-red-950/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 backdrop-blur-sm'
                                                     : 'bg-muted/80 backdrop-blur-sm text-foreground border border-border/50'
                                             }`}
-                                        style={{ whiteSpace: 'pre-line' }}
                                     >
-                                        {msg.text}
+                                        {msg.sender === 'model' ? (
+                                            <MarkdownMessage content={msg.text} />
+                                        ) : (
+                                            <span style={{ whiteSpace: 'pre-line' }}>{msg.text}</span>
+                                        )}
                                         {msg.sender === 'error' && isLimitError && (
                                             <Button
                                                 variant="default"

@@ -66,8 +66,6 @@ export function colorSchemeToString(scheme: ColorScheme): string {
       return 'Light';
     }
   }
-  // Add a default return or throw an error for exhaustive check
-  throw new Error(`Unhandled ColorScheme: ${scheme}`);
 }
 
 export function ThemeProvider(props: { children: React.ReactNode }) {

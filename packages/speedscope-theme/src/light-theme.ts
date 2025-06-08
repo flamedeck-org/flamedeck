@@ -46,7 +46,8 @@ export const lightTheme: Theme = {
   fgPrimaryColor: Colors.BLACK,
   fgSecondaryColor: Colors.LIGHT_GRAY,
 
-  bgPrimaryColor: Colors.WHITE,
+  // From tailwind theme
+  bgPrimaryColor: '#f1f5f9',
   bgSecondaryColor: Colors.OFF_WHITE,
 
   altFgPrimaryColor: Colors.WHITE,
