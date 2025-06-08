@@ -11,8 +11,7 @@ enum Colors {
   GRAY = '#666666',
   DARK_GRAY = '#222222',
   DARKER_GRAY = '#0C0C0C',
-  // From tailwind theme
-  OFF_BLACK = '#020817',
+  OFF_BLACK = '#060606',
   BLACK = '#000000',
   BLUE = '#00769B',
   PALE_BLUE = '#004E75',
