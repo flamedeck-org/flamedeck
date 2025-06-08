@@ -8,15 +8,9 @@ interface UnauthenticatedChatTeaserProps {
 }
 
 export const UnauthenticatedChatTeaser: FC<UnauthenticatedChatTeaserProps> = ({ traceId }) => {
-    const [isDismissed, setIsDismissed] = useState(false);
-
-    // Check if user has dismissed this before
-    useEffect(() => {
-        const dismissed = localStorage.getItem('chat-teaser-dismissed');
-        if (dismissed === 'true') {
-            setIsDismissed(true);
-        }
-    }, []);
+    const [isDismissed, setIsDismissed] = useState(() => {
+        return localStorage.getItem('chat-teaser-dismissed') === 'true';
+    });
 
     const handleDismiss = () => {
         localStorage.setItem('chat-teaser-dismissed', 'true');
