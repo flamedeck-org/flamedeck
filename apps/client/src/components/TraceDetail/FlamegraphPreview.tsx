@@ -20,24 +20,12 @@ function FlamegraphPreviewImpl({
     darkImagePath,
     className
 }: FlamegraphPreviewProps) {
-    const { theme } = useTheme();
+    const { resolvedTheme } = useTheme();
     const [imageError, setImageError] = useState(false);
     const [imageLoading, setImageLoading] = useState(true);
     const [imageUrl, setImageUrl] = useState<string | null>(null);
 
-    const [resolvedTheme, setResolvedTheme] = useState(theme);
-
-    useEffect(() => {
-        if (theme === 'system') {
-            const isDark = typeof window !== 'undefined' &&
-                window.matchMedia('(prefers-color-scheme: dark)').matches;
-            setResolvedTheme(isDark ? 'dark' : 'light');
-        } else {
-            setResolvedTheme(theme);
-        }
-    }, [theme]);
-
-    // Choose image based on resolved active theme
+    // Choose image based on resolved theme from next-themes (single source of truth)
     const currentImagePath = resolvedTheme === 'dark' ? darkImagePath : lightImagePath;
     // Fallback to the other mode if current mode isn't available
     const fallbackImagePath = resolvedTheme === 'dark' ? lightImagePath : darkImagePath;
