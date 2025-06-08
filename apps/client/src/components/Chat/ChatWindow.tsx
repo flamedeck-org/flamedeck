@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, X } from 'lucide-react';
 import { ToolMessageItem } from './ToolMessageItem';
 import { MessageSquareText } from 'lucide-react';
-import { useUpgradeModal } from '@/hooks/useUpgradeModal';
+
 import { ConversationListView } from './ConversationListView';
 import { ActiveChatView } from './ActiveChatView';
 import type { ChatSession } from '@/lib/api/chatHistory';
@@ -77,7 +77,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     const internalScrollAreaRef = useRef<HTMLDivElement>(null);
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
     const userHasScrolledUpRef = useRef(userHasScrolledUp); // <-- Ref to track the value
-    const { openModal: openUpgradeModal } = useUpgradeModal();
+
 
     const SCROLL_THRESHOLD = 50; // Pixels from bottom to consider "at bottom"
 

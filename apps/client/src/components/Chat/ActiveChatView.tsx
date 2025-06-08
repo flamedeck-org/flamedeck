@@ -138,7 +138,7 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
                         {messages.map((msg) => {
                             const isLimitError =
                                 msg.sender === 'error' &&
-                                ['limit_exceeded', 'lifetime_analyses', 'session_messages'].includes(msg.errorType);
+                                ['limit_exceeded', 'lifetime_analyses', 'session_messages', 'monthly_sessions'].includes(msg.errorType);
 
                             if (msg.sender === 'tool') {
                                 return <ToolMessageItem key={msg.id} message={msg} />;
