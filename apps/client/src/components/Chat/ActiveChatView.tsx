@@ -65,27 +65,7 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
             sendMessage(prompt);
         };
 
-        // Function to format inline code like GitHub while preserving newlines
-        const formatMessageText = (text: string) => {
-            // Split by backticks to handle inline code
-            const parts = text.split('`');
 
-            return parts.map((part, index) => {
-                if (index % 2 === 1) {
-                    // This is inline code
-                    return (
-                        <code
-                            key={index}
-                            className="px-1.5 py-0.5 mx-0.5 bg-muted/60 dark:bg-muted/80 border border-border/40 rounded text-xs font-mono text-foreground/90"
-                        >
-                            {part}
-                        </code>
-                    );
-                }
-                // This is regular text - return as is to preserve whitespace
-                return part;
-            });
-        };
 
         return (
             <div className="h-full flex flex-col">
@@ -161,7 +141,7 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
                                             }`}
                                         style={{ whiteSpace: 'pre-line' }}
                                     >
-                                        {formatMessageText(msg.text)}
+                                        {msg.text}
                                         {msg.sender === 'error' && isLimitError && (
                                             <Button
                                                 variant="default"
