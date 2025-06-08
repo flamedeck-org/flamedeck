@@ -26,7 +26,7 @@ import { useTraceComments } from '@/hooks/useTraceComments';
 import CommentSidebar from './CommentSidebar';
 import type { TraceCommentWithAuthor } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { ChatContainer, UnauthenticatedChatTeaser } from '@/components/Chat';
+import { ChatContainer } from '@/components/Chat';
 import type { CallTreeNode } from '@flamedeck/speedscope-core/profile';
 
 export type SpeedscopeViewType = 'sandwich' | 'time_ordered' | 'left_heavy';
@@ -413,14 +413,7 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
           />
         )}
 
-        {/* Chat Feature - Render based on authentication status */}
-        {!isLoading && !error && profileGroup && (
-          isAuthenticated ? (
-            <ChatContainer traceId={traceId} />
-          ) : (
-            <UnauthenticatedChatTeaser traceId={traceId} />
-          )
-        )}
+
       </div>
     </div>
   );
