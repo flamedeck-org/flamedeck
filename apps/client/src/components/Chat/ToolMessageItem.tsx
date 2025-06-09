@@ -1,8 +1,12 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertCircle, Cog } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertCircle, Cog, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { type ChatMessage } from './ChatWindow'; // Assuming ChatMessage is exported from ChatWindow.tsx
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 
 interface ToolMessageItemProps {
   message: ChatMessage;
@@ -18,9 +22,18 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isFetchingImage, setIsFetchingImage] = useState<boolean>(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const toggleExpand = useCallback(() => {
     setIsExpanded((prev) => !prev);
+  }, []);
+
+  const handleImageClick = useCallback(() => {
+    setIsLightboxOpen(true);
+  }, []);
+
+  const closeLightbox = useCallback(() => {
+    setIsLightboxOpen(false);
   }, []);
 
   useEffect(() => {
@@ -173,13 +186,35 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
                   </p>
                 )}
                 {imageDataUrl && (
-                  <div className="rounded-xl overflow-hidden border-2 border-border/40 shadow-lg">
-                    <img
-                      src={imageDataUrl}
-                      alt={`${message.toolName || 'Tool'} result`}
-                      className="max-w-full h-auto max-h-80 object-contain"
-                    />
-                  </div>
+                  <>
+                    <div className="rounded-xl overflow-hidden border-2 border-border/40 shadow-lg">
+                      <img
+                        src={imageDataUrl}
+                        alt={`${message.toolName || 'Tool'} result`}
+                        className="max-w-full h-auto max-h-80 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={handleImageClick}
+                      />
+                    </div>
+
+                    <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
+                      <DialogContent className="max-w-none w-screen h-screen p-0 bg-black/95 border-0 [&>button]:hidden">
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <button
+                            onClick={closeLightbox}
+                            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                            aria-label="Close lightbox"
+                          >
+                            <X size={24} />
+                          </button>
+                          <img
+                            src={imageDataUrl}
+                            alt={`${message.toolName || 'Tool'} result - Fullscreen`}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </>
                 )}
               </div>
             )}
