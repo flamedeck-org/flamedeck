@@ -141,11 +141,12 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
                                                     : 'bg-muted/80 backdrop-blur-sm text-foreground border border-border/50'
                                             }`}
                                     >
-                                        {msg.sender === 'model' ? (
+                                        {/* TODO: Add markdown support */}
+                                        {/* {msg.sender === 'model' ? (
                                             <MarkdownMessage content={msg.text} />
-                                        ) : (
-                                            <span style={{ whiteSpace: 'pre-line' }}>{msg.text}</span>
-                                        )}
+                                        ) : ( */}
+                                        <span style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</span>
+                                        {/* )} */}
                                         {msg.sender === 'error' && isLimitError && (
                                             <Button
                                                 variant="default"
