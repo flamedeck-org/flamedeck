@@ -1,0 +1,128 @@
+# Example GitHub Actions workflow for performance regression testing
+# Save this as .github/workflows/performance-tests.yml
+
+name: Performance Regression Tests
+
+on:
+  pull_request:
+    branches: [main]
+    # Only run on changes that might affect performance
+    paths:
+      - 'apps/client/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'yarn.lock'
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        
+      - name: Install Playwright browsers
+        run: yarn playwright install chromium
+        
+      - name: Build client app (base branch)
+        run: |
+          git fetch origin main:main
+          git checkout main
+          yarn nx run client:build
+          yarn nx run client:preview &
+          echo "BASE_PID=$!" >> $GITHUB_ENV
+          sleep 10  # Wait for server to start
+          echo "BASE_URL=http://localhost:4173" >> $GITHUB_ENV
+          
+      - name: Build client app (PR branch)
+        run: |
+          git checkout ${{ github.head_ref }}
+          yarn install --frozen-lockfile  # In case dependencies changed
+          yarn nx run client:build
+          yarn nx run client:preview --port 4174 &
+          echo "PR_PID=$!" >> $GITHUB_ENV
+          sleep 10  # Wait for server to start
+          echo "PR_URL=http://localhost:4174" >> $GITHUB_ENV
+          
+      - name: Wait for servers to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f $BASE_URL; do sleep 2; done'
+          timeout 60 bash -c 'until curl -f $PR_URL; do sleep 2; done'
+          
+             - name: Run performance regression tests
+         env:
+           PERFORMANCE_TEST: true
+           BASE_URL: ${{ env.BASE_URL }}
+           PR_URL: ${{ env.PR_URL }}
+           PERFORMANCE_ITERATIONS: 10
+           OUTLIER_REMOVAL_COUNT: 1
+         run: |
+           yarn nx run client:performance:regression
+          
+      - name: Run performance baseline (current branch only)
+        if: failure()  # Run baseline test if regression test failed
+        run: |
+          yarn nx run client:performance:baseline
+          
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ ! -z "$BASE_PID" ]; then kill $BASE_PID || true; fi
+          if [ ! -z "$PR_PID" ]; then kill $PR_PID || true; fi
+          
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-test-results
+          path: |
+            apps/client/e2e/reports/
+            apps/client/test-results/
+            
+  # Quick performance check job for faster feedback
+  quick-performance-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.pull_request.draft == false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        
+      - name: Install Playwright browsers
+        run: yarn playwright install chromium
+        
+      - name: Build and start app
+        run: |
+          yarn nx run client:build
+          yarn nx run client:preview &
+          sleep 10
+          
+      - name: Run performance baseline tests
+        run: yarn nx run client:performance:baseline
+        
+      - name: Upload baseline results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-baseline
+          path: apps/client/e2e/reports/ 

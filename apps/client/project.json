@@ -72,6 +72,27 @@
         "command": "playwright test --debug",
         "cwd": "apps/client"
       }
+    },
+    "performance:regression": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "PERFORMANCE_TEST=true playwright test e2e/specs/performance-regression.spec.ts --grep=\"CI Performance Comparison\"",
+        "cwd": "apps/client"
+      }
+    },
+    "performance:regression-quick": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright test e2e/specs/performance-regression.spec.ts --grep=\"quick\"",
+        "cwd": "apps/client"
+      }
+    },
+    "performance:baseline": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright test e2e/specs/app.spec.ts --grep=\"performance metrics\"",
+        "cwd": "apps/client"
+      }
     }
   }
 }

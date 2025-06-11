@@ -2125,6 +2125,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@flamedeck/client@workspace:apps/client"
   dependencies:
+    "@flamedeck/regression-core": "workspace:*"
+    "@flamedeck/regression-playwright": "workspace:*"
     "@flamedeck/speedscope-core": "workspace:*"
     "@flamedeck/speedscope-import": "workspace:*"
     "@flamedeck/speedscope-theme": "workspace:*"
@@ -2284,6 +2286,37 @@ __metadata:
     canvas: "npm:^3.1.0"
     openai: "npm:^4.98.0"
     tsx: "npm:^4.19.4"
+  languageName: unknown
+  linkType: soft
+
+"@flamedeck/regression-core@workspace:*, @flamedeck/regression-core@workspace:packages/regression-core":
+  version: 0.0.0-use.local
+  resolution: "@flamedeck/regression-core@workspace:packages/regression-core"
+  dependencies:
+    "@types/node": "npm:^20.0.0"
+    "@types/pako": "npm:^2.0.3"
+    fs-extra: "npm:^11.2.0"
+    tslib: "npm:^2.3.0"
+    tsup: "npm:^8.0.0"
+    tsx: "npm:^4.6.0"
+    typescript: "npm:^5.0.0"
+  languageName: unknown
+  linkType: soft
+
+"@flamedeck/regression-playwright@workspace:*, @flamedeck/regression-playwright@workspace:packages/regression-playwright":
+  version: 0.0.0-use.local
+  resolution: "@flamedeck/regression-playwright@workspace:packages/regression-playwright"
+  dependencies:
+    "@flamedeck/regression-core": "workspace:*"
+    "@types/node": "npm:^20.0.0"
+    "@types/pako": "npm:^2.0.3"
+    fs-extra: "npm:^11.2.0"
+    tslib: "npm:^2.3.0"
+    tsup: "npm:^8.0.0"
+    tsx: "npm:^4.6.0"
+    typescript: "npm:^5.0.0"
+  peerDependencies:
+    "@playwright/test": ^1.46.0
   languageName: unknown
   linkType: soft
 

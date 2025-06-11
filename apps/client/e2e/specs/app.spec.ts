@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { PlaywrightPerformanceCollector } from '@flamedeck/regression-playwright';
+import { flamedeckPerformanceConfig } from '../performance-scenarios';
 
 test.describe('App Startup', () => {
     test('should load the homepage successfully', async ({ page }) => {
@@ -51,5 +53,66 @@ test.describe('App Startup', () => {
         await page.setViewportSize({ width: 375, height: 667 });
         await page.waitForLoadState('networkidle');
         await expect(page.locator('body')).toBeVisible();
+    });
+
+    test('should collect performance metrics (informational)', async ({ page }) => {
+        // Set up performance tracking
+        await PlaywrightPerformanceCollector.setupErrorTracking(page);
+
+        await page.goto('/');
+
+        // Wait for page stability 
+        await PlaywrightPerformanceCollector.waitForPageStability(page);
+
+        // Collect performance metrics
+        const metrics = await PlaywrightPerformanceCollector.collectAllMetrics(page);
+
+        // Log metrics for visibility and debugging
+        console.log('📊 Performance Metrics (Current Branch):', {
+            lcp: `${metrics.lcp.toFixed(0)}ms`,
+            cls: metrics.cls.toFixed(3),
+            tbt: `${metrics.tbt.toFixed(0)}ms`,
+            fcp: `${metrics.fcp.toFixed(0)}ms`,
+            ttfb: `${metrics.ttfb.toFixed(0)}ms`,
+            resourceCount: metrics.resourceCount,
+            totalResourceSize: `${(metrics.totalResourceSize / 1024 / 1024).toFixed(2)}MB`
+        });
+
+        // Get performance insights for recommendations
+        const insights = await PlaywrightPerformanceCollector.getPerformanceInsights(page);
+
+        // Log recommendations if any
+        if (insights.recommendations.length > 0) {
+            console.log('💡 Performance Recommendations:', insights.recommendations);
+        }
+
+        // Log critical issues but don't fail (only fail on regressions vs master)
+        if (insights.criticalIssues.length > 0) {
+            console.warn('⚠️ Performance Concerns (not failing):', insights.criticalIssues);
+        }
+
+        console.log(`🎯 Overall Performance Score: ${insights.overallScore.toFixed(0)}/100`);
+
+        // Only assert that we successfully collected metrics (no performance thresholds)
+        expect(metrics.lcp).toBeGreaterThan(0);
+        expect(metrics.resourceCount).toBeGreaterThan(0);
+        expect(typeof metrics.cls).toBe('number');
+    });
+
+    test('should support performance API', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForLoadState('networkidle');
+
+        // Check that all performance APIs are available
+        const apiSupport = await PlaywrightPerformanceCollector.checkApiSupport(page);
+
+        // Log API support for debugging
+        console.log('Performance API Support:', apiSupport);
+
+        // Core Web Vitals should be supported in modern browsers
+        expect(apiSupport.coreWebVitals.lcp).toBe(true);
+        expect(apiSupport.navigationTiming).toBe(true);
+        expect(apiSupport.paintTiming.firstContentfulPaint).toBe(true);
+        expect(apiSupport.resourceTiming).toBe(true);
     });
 }); 

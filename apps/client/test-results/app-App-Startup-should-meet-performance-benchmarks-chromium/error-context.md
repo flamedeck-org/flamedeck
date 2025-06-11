@@ -1,0 +1,171 @@
+# Page snapshot
+
+```yaml
+- dialog "Cookie Consent Prompt":
+  - link "Powered by Termly":
+    - /url: https://termly.io/products/cookie-consent-manager/
+    - img "Powered by Termly"
+  - text: We use essential cookies to make our site work. With your consent, we may also use non-essential cookies to improve user experience and analyze website traffic. By clicking “Accept,” you agree to our website's cookie use as described in our
+  - link "Cookie Policy"
+  - text: . You can change your cookie settings at any time by clicking “
+  - link "Preferences"
+  - text: .”
+  - button "Preferences"
+  - button "Decline"
+  - button "Accept"
+- region "Notifications (F8)":
+  - list
+- region "Notifications alt+T"
+- banner:
+  - link "FlameDeck Logo FlameDeck":
+    - /url: /
+    - img "FlameDeck Logo"
+    - text: FlameDeck
+  - link "Docs":
+    - /url: https://docs.flamedeck.com
+    - text: Docs
+    - img
+  - link "Sign in":
+    - /url: /login
+    - text: Sign in
+    - img
+  - link "Get Started":
+    - /url: /login
+    - button "Get Started"
+  - button "Toggle theme":
+    - img
+    - img
+    - text: Toggle theme
+- banner:
+  - link "FlameDeck Logo FlameDeck":
+    - /url: /
+    - img "FlameDeck Logo"
+    - text: FlameDeck
+  - link "Docs":
+    - /url: https://docs.flamedeck.com
+    - text: Docs
+    - img
+  - link "Sign in":
+    - /url: /login
+    - text: Sign in
+    - img
+  - link "Get Started":
+    - /url: /login
+    - button "Get Started"
+  - button "Toggle theme":
+    - img
+    - img
+    - text: Toggle theme
+- main:
+  - img
+  - text: AI-Powered Performance Analysis
+  - heading "Performance Debugging Made Simple" [level=1]
+  - heading "Performance Debugging Made Simple" [level=1]
+  - paragraph: Upload, store, and analyze performance traces with powerful visualizations. Debug performance issues faster than ever with AI-powered insights.
+  - link "Get Started for Free":
+    - /url: /login
+    - button "Get Started for Free":
+      - text: Get Started for Free
+      - img
+  - link "Try FlameDeck":
+    - /url: /viewer
+    - button "Try FlameDeck"
+  - img
+  - heading "Effortless Upload" [level=3]
+  - paragraph:
+    - text: Drag & drop traces, or integrate seamlessly with our
+    - link "API":
+      - /url: https://docs.flamedeck.com/api-keys
+      - text: API
+      - img
+    - text: "&"
+    - link "CLI":
+      - /url: https://docs.flamedeck.com/cli-upload
+      - text: CLI
+      - img
+    - text: . No complicated setup.
+  - img
+  - heading "AI-Driven Insights" [level=3]
+  - paragraph: Performance optimization is hard. Let AI analyze your traces and pinpoint key issues.
+  - img
+  - heading "Clear Visualizations" [level=3]
+  - paragraph: Understand complex data at a glance with interactive flame graphs.
+  - heading "Why Choose FlameDeck?" [level=2]
+  - img
+  - heading "Store and Manage Performance Profiles" [level=3]
+  - paragraph: Keeping track of profiles when debugging issues with your application is messy and confusing. Organize them all in one place with FlameDeck, making it easy to find what you need, when you need it.
+  - img "FlameDeck homescreen showing trace management"
+  - img
+  - heading "Analyze with AI" [level=3]
+  - paragraph: Performance debugging is hard and time-consuming. FlameDeck uses state-of-the-art AI models to analyze your performance profiles, pinpoint bottlenecks, and provide actionable insights.
+  - img "FlameDeck AI chat analyzing a performance trace"
+  - img
+  - heading "Bring Any Profile" [level=3]
+  - paragraph: FlameDeck supports a wide range of profiling formats from various languages and runtimes. Seamlessly import profiles from Node.js, Chrome, React Native, Go, Rust, and more.
+  - img "Node.js"
+  - text: Node.js
+  - img "Google Chrome"
+  - text: Chrome
+  - img "Rust"
+  - text: Rust
+  - img "Go"
+  - text: Go
+  - img "Python"
+  - text: Python
+  - img "React"
+  - text: React Native
+  - heading "Simple, Transparent Pricing" [level=2]
+  - paragraph: Choose the plan that's right for you
+  - heading "Free" [level=3]
+  - text: $0/month
+  - list:
+    - listitem:
+      - img
+      - text: 3 AI chat conversations per month
+    - listitem:
+      - img
+      - text: 30-day trace retention
+    - listitem:
+      - img
+      - text: 10 uploads per month
+    - listitem:
+      - img
+      - text: Basic collaboration and sharing features
+  - link "Get Started":
+    - /url: /login
+    - button "Get Started"
+  - heading "Pro" [level=3]
+  - text: $15/month
+  - list:
+    - listitem:
+      - img
+      - text: 1,000 total traces
+    - listitem:
+      - img
+      - text: Unlimited trace retention
+    - listitem:
+      - img
+      - text: 30 AI chat conversations per month
+    - listitem:
+      - img
+      - text: Higher message limits for chat conversations
+    - listitem:
+      - img
+      - text: More features coming soon...
+  - link "Get Started":
+    - /url: /login
+    - button "Get Started"
+  - paragraph: © 2025 FlameDeck. All rights reserved.
+  - link "Login":
+    - /url: /login
+  - link "API Docs":
+    - /url: https://docs.flamedeck.com
+    - text: API Docs
+    - img
+  - link "Support":
+    - /url: mailto:support@flamedeck.com
+  - link "Privacy Policy":
+    - /url: /privacy-policy
+  - link "Consent Preferences":
+    - /url: "#"
+```
