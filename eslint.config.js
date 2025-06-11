@@ -38,6 +38,8 @@ export default tseslint.config(
           './packages/flamechart-to-png/tsconfig.json',
           './packages/supabase-integration/tsconfig.json',
           './packages/flamechart-mcp/tsconfig.lib.json',
+          './packages/regression-core/tsconfig.lib.json',
+          './packages/regression-playwright/tsconfig.lib.json',
         ],
         tsconfigRootDir: import.meta.dirname,
       },

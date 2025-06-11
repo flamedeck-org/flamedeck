@@ -1,0 +1,18 @@
+# Playwright test results
+/test-results/
+/reports/
+
+# Playwright traces
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Screenshots and videos
+*.png
+*.webm
+*.mp4
+
+# Temporary files
+*.tmp
+*.temp 

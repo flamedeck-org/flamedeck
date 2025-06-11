@@ -50,6 +50,18 @@
       ],
       "@flamedeck/flamechart-mcp/*": [
         "packages/flamechart-mcp/src/*"
+      ],
+      "@flamedeck/regression-core": [
+        "packages/regression-core/src/index.ts"
+      ],
+      "@flamedeck/regression-core/*": [
+        "packages/regression-core/src/*"
+      ],
+      "@flamedeck/regression-playwright": [
+        "packages/regression-playwright/src/index.ts"
+      ],
+      "@flamedeck/regression-playwright/*": [
+        "packages/regression-playwright/src/*"
       ]
     }
   },

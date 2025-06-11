@@ -1,0 +1,65 @@
+{
+    "name": "@flamedeck/regression-core",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/regression-core/src",
+    "projectType": "library",
+    "release": {
+        "version": {
+            "generatorOptions": {
+                "packageRoot": "packages/regression-core/dist",
+                "currentVersionResolver": "git-tag",
+                "fallbackCurrentVersionResolver": "disk"
+            }
+        }
+    },
+    "tags": [],
+    "targets": {
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": [
+                "{options.outputFile}"
+            ],
+            "inputs": [
+                "default",
+                "{workspaceRoot}/eslint.config.js",
+                "{workspaceRoot}/.prettierrc.cjs",
+                "{workspaceRoot}/tsconfig.base.json"
+            ],
+            "options": {
+                "lintFilePatterns": [
+                    "packages/regression-core/**/*.ts"
+                ]
+            }
+        },
+        "typecheck": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "tsc --noEmit -p packages/regression-core/tsconfig.lib.json"
+            }
+        },
+        "build": {
+            "executor": "nx:run-script",
+            "outputs": [
+                "{projectRoot}/dist"
+            ],
+            "options": {
+                "script": "build"
+            }
+        },
+        "publish": {
+            "executor": "nx:run-commands",
+            "dependsOn": [
+                "build"
+            ],
+            "options": {
+                "command": "npm publish --access public",
+                "cwd": "packages/regression-core/dist"
+            }
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "packages/regression-core/dist"
+            }
+        }
+    }
+}

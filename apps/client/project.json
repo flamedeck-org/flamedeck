@@ -7,7 +7,9 @@
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "inputs": [
         "default",
         "{workspaceRoot}/eslint.config.js",
@@ -15,7 +17,9 @@
         "{workspaceRoot}/tsconfig.base.json"
       ],
       "options": {
-        "lintFilePatterns": ["apps/client/**/*.{ts,tsx,js,jsx}"]
+        "lintFilePatterns": [
+          "apps/client/**/*.{ts,tsx,js,jsx}"
+        ]
       }
     },
     "typecheck": {
@@ -23,6 +27,51 @@
       "options": {
         "command": "tsc --noEmit -p apps/client/tsconfig.app.json"
       }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite",
+        "cwd": "apps/client"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite build",
+        "cwd": "apps/client"
+      },
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
+    },
+    "e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright test",
+        "cwd": "apps/client"
+      }
+    },
+    "e2e:ui": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright test --ui",
+        "cwd": "apps/client"
+      }
+    },
+    "e2e:headed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright test --headed",
+        "cwd": "apps/client"
+      }
+    },
+    "e2e:debug": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright test --debug",
+        "cwd": "apps/client"
+      }
     }
   }
-} 
+}

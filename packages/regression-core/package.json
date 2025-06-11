@@ -1,0 +1,49 @@
+{
+    "name": "@flamedeck/regression-core",
+    "version": "0.0.1",
+    "description": "Core library for regression testing",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "prepublishOnly": "yarn build"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "keywords": [
+        "flamedeck",
+        "regression",
+        "testing"
+    ],
+    "author": "Flamedeck Team",
+    "license": "ISC",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/flamedeck-org/flamedeck.git",
+        "directory": "packages/regression-core"
+    },
+    "homepage": "https://github.com/flamedeck-org/flamedeck/tree/main/packages/regression-core#readme",
+    "bugs": {
+        "url": "https://github.com/flamedeck-org/flamedeck/issues"
+    },
+    "sideEffects": false,
+    "devDependencies": {
+        "tslib": "^2.3.0",
+        "@types/node": "^20.0.0",
+        "@types/pako": "^2.0.3",
+        "fs-extra": "^11.2.0",
+        "tsup": "^8.0.0",
+        "tsx": "^4.6.0",
+        "typescript": "^5.0.0"
+    }
+}
