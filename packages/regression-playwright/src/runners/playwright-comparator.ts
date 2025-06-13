@@ -14,8 +14,14 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
     private browser?: Browser;
     private contexts: Map<string, BrowserContext> = new Map();
     private playwrightConfig: PlaywrightComparisonConfig;
+    private originalScenarios: Map<string, PlaywrightTestScenario> = new Map();
 
     constructor(config: PlaywrightComparisonConfig) {
+        // Store original scenarios for later use
+        config.scenarios.forEach(scenario => {
+            this.originalScenarios.set(scenario.name, scenario);
+        });
+
         // Convert Playwright config to base config
         const baseConfig: ComparisonConfig<PlaywrightMetrics> = {
             iterations: config.iterations,
@@ -61,7 +67,12 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
         treatmentUrl?: string
     ): Promise<PlaywrightMetrics> {
 
-        const playwrightScenario = scenario as PlaywrightTestScenario;
+        // Get the original Playwright scenario with all properties preserved
+        const playwrightScenario = this.originalScenarios.get(scenario.name);
+        if (!playwrightScenario) {
+            throw new Error(`Original scenario not found for: ${scenario.name}`);
+        }
+
         const url = variant === 'base' ? baseUrl : treatmentUrl;
 
         if (!url) {
