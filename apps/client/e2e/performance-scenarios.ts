@@ -9,15 +9,8 @@ export const flamedeckScenarios: PlaywrightTestScenario[] = [
     {
         ...CommonScenarios.homepageLoad(),
         validate: async (page) => {
-            // Ensure Flamedeck branding is loaded
-            const title = await page.title();
-            return title.includes('Flamedeck');
+            await page.waitForSelector('#page-title', { timeout: 5000 });
         },
-        waitForStable: async (page) => {
-            await page.waitForLoadState('networkidle');
-            // Wait for any initial React hydration
-            await page.waitForTimeout(1500);
-        }
     },
 ];
 
