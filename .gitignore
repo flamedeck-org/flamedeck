@@ -40,3 +40,5 @@ tmp/
 .env
 
 prod_schema.sql
+
+test-results
