@@ -24,56 +24,66 @@ export class CoreWebVitalsCollector {
      * Get Largest Contentful Paint (LCP) from the page
      */
     static async getLargestContentfulPaint(page: Page): Promise<number> {
-        const lcp = await page.evaluate(() => {
-            return new Promise<number>((resolve) => {
-                new PerformanceObserver((list) => {
-                    const entries = list.getEntries();
-                    // The last entry is the largest contentful paint
-                    const largestPaintEntry = entries.at(-1) as PerformanceEntry & { startTime: number };
-                    resolve(largestPaintEntry?.startTime || 0);
-                }).observe({
-                    type: 'largest-contentful-paint',
-                    buffered: true
+        try {
+            const lcp = await page.evaluate(() => {
+                return new Promise<number>((resolve) => {
+                    new PerformanceObserver((list) => {
+                        const entries = list.getEntries();
+                        // The last entry is the largest contentful paint
+                        const largestPaintEntry = entries.at(-1) as PerformanceEntry & { startTime: number };
+                        resolve(largestPaintEntry?.startTime || 0);
+                    }).observe({
+                        type: 'largest-contentful-paint',
+                        buffered: true
+                    });
+
+                    // Fallback timeout in case LCP doesn't fire
+                    setTimeout(() => resolve(0), 3000);
                 });
-
-                // Fallback timeout in case LCP doesn't fire
-                setTimeout(() => resolve(0), 5000);
             });
-        });
 
-        return lcp;
+            return lcp;
+        } catch (error) {
+            console.warn('Failed to collect LCP:', error instanceof Error ? error.message : String(error));
+            return 0;
+        }
     }
 
     /**
      * Get Cumulative Layout Shift (CLS) from the page
      */
     static async getCumulativeLayoutShift(page: Page): Promise<number> {
-        const cls = await page.evaluate(() => {
-            return new Promise<number>((resolve) => {
-                let CLS = 0;
+        try {
+            const cls = await page.evaluate(() => {
+                return new Promise<number>((resolve) => {
+                    let CLS = 0;
 
-                new PerformanceObserver((list) => {
-                    const entries = list.getEntries();
+                    new PerformanceObserver((list) => {
+                        const entries = list.getEntries();
 
-                    entries.forEach((entry: any) => {
-                        // Only count layout shifts that didn't happen near a user input
-                        if (!entry.hadRecentInput) {
-                            CLS += entry.value;
-                        }
+                        entries.forEach((entry: any) => {
+                            // Only count layout shifts that didn't happen near a user input
+                            if (!entry.hadRecentInput) {
+                                CLS += entry.value;
+                            }
+                        });
+
+                        resolve(CLS);
+                    }).observe({
+                        type: 'layout-shift',
+                        buffered: true
                     });
 
-                    resolve(CLS);
-                }).observe({
-                    type: 'layout-shift',
-                    buffered: true
+                    // Resolve after a reasonable time to capture layout shifts
+                    setTimeout(() => resolve(CLS), 2000);
                 });
-
-                // Resolve after a reasonable time to capture layout shifts
-                setTimeout(() => resolve(CLS), 3000);
             });
-        });
 
-        return cls;
+            return cls;
+        } catch (error) {
+            console.warn('Failed to collect CLS:', error instanceof Error ? error.message : String(error));
+            return 0;
+        }
     }
 
     /**
@@ -88,44 +98,53 @@ export class CoreWebVitalsCollector {
      * Get detailed long task metrics for TBT calculation
      */
     static async getLongTaskMetrics(page: Page): Promise<LongTaskMetrics> {
-        const longTaskData = await page.evaluate(() => {
-            return new Promise<LongTaskMetrics>((resolve) => {
-                let totalBlockingTime = 0;
-                let longTaskCount = 0;
-                let longestTaskDuration = 0;
+        try {
+            const longTaskData = await page.evaluate(() => {
+                return new Promise<LongTaskMetrics>((resolve) => {
+                    let totalBlockingTime = 0;
+                    let longTaskCount = 0;
+                    let longestTaskDuration = 0;
 
-                new PerformanceObserver((list) => {
-                    const perfEntries = list.getEntries();
+                    new PerformanceObserver((list) => {
+                        const perfEntries = list.getEntries();
 
-                    for (const perfEntry of perfEntries) {
-                        longTaskCount++;
-                        longestTaskDuration = Math.max(longestTaskDuration, perfEntry.duration);
+                        for (const perfEntry of perfEntries) {
+                            longTaskCount++;
+                            longestTaskDuration = Math.max(longestTaskDuration, perfEntry.duration);
 
-                        // Tasks longer than 50ms contribute to blocking time
-                        // We subtract 50ms because the first 50ms of any task is not blocking
-                        totalBlockingTime += Math.max(0, perfEntry.duration - 50);
-                    }
+                            // Tasks longer than 50ms contribute to blocking time
+                            // We subtract 50ms because the first 50ms of any task is not blocking
+                            totalBlockingTime += Math.max(0, perfEntry.duration - 50);
+                        }
 
-                    resolve({
+                        resolve({
+                            longTaskCount,
+                            totalBlockingTime,
+                            longestTaskDuration
+                        });
+                    }).observe({
+                        type: 'longtask',
+                        buffered: true
+                    });
+
+                    // Resolve with current values after timeout if no long tasks
+                    setTimeout(() => resolve({
                         longTaskCount,
                         totalBlockingTime,
                         longestTaskDuration
-                    });
-                }).observe({
-                    type: 'longtask',
-                    buffered: true
+                    }), 3000);
                 });
-
-                // Resolve with current values after timeout if no long tasks
-                setTimeout(() => resolve({
-                    longTaskCount,
-                    totalBlockingTime,
-                    longestTaskDuration
-                }), 5000);
             });
-        });
 
-        return longTaskData;
+            return longTaskData;
+        } catch (error) {
+            console.warn('Failed to collect long task metrics:', error instanceof Error ? error.message : String(error));
+            return {
+                longTaskCount: 0,
+                totalBlockingTime: 0,
+                longestTaskDuration: 0
+            };
+        }
     }
 
     /**

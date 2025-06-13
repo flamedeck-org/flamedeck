@@ -41,4 +41,4 @@ tmp/
 
 prod_schema.sql
 
-test-results/*
+apps/client/test-results/

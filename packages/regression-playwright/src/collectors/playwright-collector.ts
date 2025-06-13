@@ -113,19 +113,19 @@ export class PlaywrightPerformanceCollector {
     /**
      * Wait for the page to be stable for accurate measurements
      */
-    static async waitForPageStability(page: Page, timeout: number = 10000): Promise<void> {
+    static async waitForPageStability(page: Page, timeout: number = 5000): Promise<void> {
         try {
-            // Wait for network to be idle
-            await page.waitForLoadState('networkidle', { timeout });
+            // Wait for network to be idle with shorter timeout
+            await page.waitForLoadState('networkidle', { timeout: Math.min(timeout, 5000) });
 
             // Wait for Core Web Vitals to stabilize
-            await CoreWebVitalsCollector.waitForCoreWebVitals(page, timeout);
+            await CoreWebVitalsCollector.waitForCoreWebVitals(page, Math.min(timeout, 3000));
 
-            // Additional stabilization time
-            await page.waitForTimeout(1000);
+            // Reduced stabilization time for performance tests
+            await page.waitForTimeout(500);
 
         } catch (error) {
-            console.warn('Page stability timeout, proceeding with measurement:', error);
+            console.warn('Page stability timeout, proceeding with measurement:', error instanceof Error ? error.message : String(error));
             // Continue with measurement even if we hit timeout
         }
     }

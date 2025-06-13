@@ -136,6 +136,11 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
                 await PlaywrightPerformanceCollector.waitForPageStability(page);
             }
 
+            // Check if page is still open before collecting metrics
+            if (page.isClosed()) {
+                throw new Error(`Page was closed during scenario execution: ${scenario.name}`);
+            }
+
             // Collect performance metrics
             const metrics = await PlaywrightPerformanceCollector.collectAllMetrics(page);
 
