@@ -73,6 +73,14 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
         const page = await context.newPage();
 
         try {
+            // Debug logging
+            console.log(`[DEBUG] Executing scenario: ${scenario.name}, variant: ${variant}, url: ${url}, path: ${playwrightScenario.path}`);
+
+            // Validate URL before proceeding
+            if (!url || url === 'undefined') {
+                throw new Error(`Invalid URL provided for scenario ${scenario.name} variant ${variant}: ${url}`);
+            }
+
             // Set up error tracking
             await PlaywrightPerformanceCollector.setupErrorTracking(page);
 
@@ -89,6 +97,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
 
             // Navigate to the URL with the scenario path
             const fullUrl = `${url}${playwrightScenario.path}`;
+            console.log(`[DEBUG] Navigating to: ${fullUrl}`);
             await page.goto(fullUrl, { waitUntil: 'networkidle' });
 
             // Run setup if provided
