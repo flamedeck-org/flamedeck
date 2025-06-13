@@ -6,16 +6,18 @@ const isPerformanceTest = !!process.env.PERFORMANCE_TEST;
 
 // Configure base URL and webServer based on environment
 const getWebServerConfig = () => {
-    // If we're in CI and running performance tests, assume external server is running
-    if (isCI && isPerformanceTest) {
+    // If performance testing with external servers (either CI or local with BASE_URL/PR_URL set)
+    if (isPerformanceTest || process.env.BASE_URL || process.env.PR_URL) {
+        console.log('[PLAYWRIGHT CONFIG] Using external servers for performance testing');
         return {
-            baseURL: 'http://localhost:4173', // Preview server port
-            webServer: undefined // Don't start our own server
+            baseURL: process.env.BASE_URL || 'http://localhost:4173', // Use provided URL or default to preview port
+            webServer: undefined // Don't start our own server - external servers are running
         };
     }
 
-    // If we're in CI for quick performance baseline, assume external server is running
+    // If we're in CI but not performance testing, assume external server is running  
     if (isCI) {
+        console.log('[PLAYWRIGHT CONFIG] Using external server for CI');
         return {
             baseURL: 'http://localhost:4173', // Preview server port
             webServer: undefined // Don't start our own server
@@ -23,6 +25,7 @@ const getWebServerConfig = () => {
     }
 
     // Local development - start dev server
+    console.log('[PLAYWRIGHT CONFIG] Starting local dev server');
     return {
         baseURL: 'http://localhost:8080',
         webServer: {
