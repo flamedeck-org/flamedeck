@@ -17,11 +17,6 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
     private originalScenarios: Map<string, PlaywrightTestScenario> = new Map();
 
     constructor(config: PlaywrightComparisonConfig) {
-        // Store original scenarios for later use
-        config.scenarios.forEach(scenario => {
-            this.originalScenarios.set(scenario.name, scenario);
-        });
-
         // Convert Playwright config to base config
         const baseConfig: ComparisonConfig<PlaywrightMetrics> = {
             iterations: config.iterations,
@@ -37,6 +32,11 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
 
         super(baseConfig);
         this.playwrightConfig = config;
+
+        // Store original scenarios for later use (after super() call)
+        config.scenarios.forEach(scenario => {
+            this.originalScenarios.set(scenario.name, scenario);
+        });
     }
 
     /**
