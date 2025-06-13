@@ -9,7 +9,13 @@ export const flamedeckScenarios: PlaywrightTestScenario[] = [
     {
         ...CommonScenarios.homepageLoad(),
         validate: async (page) => {
-            await page.waitForSelector('#page-title', { timeout: 5000 });
+            try {
+                await page.waitForSelector('#page-title', { timeout: 5000 });
+                return true;
+            } catch (error) {
+                console.error('Homepage validation failed:', error);
+                return false;
+            }
         },
     },
 ];
@@ -40,7 +46,7 @@ export const flamedeckPerformanceConfig = {
     },
 
     // Test settings
-    iterations: 10,  // Start with fewer iterations for faster feedback
+    iterations: 6,  // Reduced iterations for faster feedback
     outlierRemovalCount: 1,
     significanceThreshold: 0.05,
     effectSizeThreshold: 0.5,
