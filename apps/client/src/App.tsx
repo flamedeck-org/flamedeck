@@ -172,6 +172,7 @@ const App = () => {
     [theme, glCanvas]
   );
 
+  // blah
   // For testing: you can grab the JWT from here
   // useEffect(() => {
   //   setTimeout(() => {
