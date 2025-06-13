@@ -1,5 +1,41 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Determine if we're in CI or running performance tests
+const isCI = !!process.env.CI;
+const isPerformanceTest = !!process.env.PERFORMANCE_TEST;
+
+// Configure base URL and webServer based on environment
+const getWebServerConfig = () => {
+    // If we're in CI and running performance tests, assume external server is running
+    if (isCI && isPerformanceTest) {
+        return {
+            baseURL: 'http://localhost:4173', // Preview server port
+            webServer: undefined // Don't start our own server
+        };
+    }
+
+    // If we're in CI for quick performance baseline, assume external server is running
+    if (isCI) {
+        return {
+            baseURL: 'http://localhost:4173', // Preview server port
+            webServer: undefined // Don't start our own server
+        };
+    }
+
+    // Local development - start dev server
+    return {
+        baseURL: 'http://localhost:8080',
+        webServer: {
+            command: 'yarn nx run client:dev',
+            url: 'http://localhost:8080',
+            reuseExistingServer: !process.env.CI,
+            timeout: 120 * 1000, // 2 minutes timeout
+        }
+    };
+};
+
+const { baseURL, webServer } = getWebServerConfig();
+
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -21,7 +57,7 @@ export default defineConfig({
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
-        baseURL: 'http://localhost:8080',
+        baseURL,
 
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: 'on-first-retry',
@@ -69,10 +105,5 @@ export default defineConfig({
     ],
 
     /* Run your local dev server before starting the tests */
-    webServer: {
-        command: 'yarn nx run client:dev',
-        url: 'http://localhost:8080',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120 * 1000, // 2 minutes timeout
-    },
+    webServer,
 }); 

@@ -45,6 +45,13 @@
         "{projectRoot}/dist"
       ]
     },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite preview",
+        "cwd": "apps/client"
+      }
+    },
     "e2e": {
       "executor": "nx:run-commands",
       "options": {
