@@ -83,21 +83,21 @@
     "performance:compare": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node e2e/scripts/run-performance-regression.js",
+        "command": "node e2e/scripts/run-performance-regression.cjs",
         "cwd": "apps/client"
       }
     },
     "performance:compare-quick": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node e2e/scripts/run-performance-regression.js --quick",
+        "command": "node e2e/scripts/run-performance-regression.cjs --quick",
         "cwd": "apps/client"
       }
     },
     "performance:compare-vs-develop": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node e2e/scripts/run-performance-regression.js --base develop",
+        "command": "node e2e/scripts/run-performance-regression.cjs --base develop",
         "cwd": "apps/client"
       }
     },
