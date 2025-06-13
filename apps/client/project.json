@@ -73,24 +73,38 @@
         "cwd": "apps/client"
       }
     },
-    "performance:regression": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "PERFORMANCE_TEST=true playwright test e2e/specs/performance-regression.spec.ts --grep=\"CI Performance Comparison\"",
-        "cwd": "apps/client"
-      }
-    },
-    "performance:regression-quick": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "playwright test e2e/specs/performance-regression.spec.ts --grep=\"quick\"",
-        "cwd": "apps/client"
-      }
-    },
     "performance:baseline": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "playwright test e2e/specs/app.spec.ts --grep=\"performance metrics\"",
+        "command": "playwright test e2e/specs/performance-regression.spec.ts --grep=\"Performance Baseline Collection\"",
+        "cwd": "apps/client"
+      }
+    },
+    "performance:compare": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node e2e/scripts/run-performance-regression.js",
+        "cwd": "apps/client"
+      }
+    },
+    "performance:compare-quick": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node e2e/scripts/run-performance-regression.js --quick",
+        "cwd": "apps/client"
+      }
+    },
+    "performance:compare-vs-develop": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node e2e/scripts/run-performance-regression.js --base develop",
+        "cwd": "apps/client"
+      }
+    },
+    "performance:ci": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "PERFORMANCE_TEST=true playwright test e2e/specs/performance-regression.spec.ts --grep=\"CI Performance Comparison\"",
         "cwd": "apps/client"
       }
     }

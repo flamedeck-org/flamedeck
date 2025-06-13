@@ -1,102 +1,270 @@
-# End-to-End Tests
+# End-to-End Testing & Performance Regression Framework
 
-This directory contains Playwright end-to-end tests for the Flamedeck client application, including performance regression testing.
+This directory contains a comprehensive testing framework for Flamedeck that includes both functional E2E tests and statistical performance regression testing.
 
-## Running Tests
+## Quick Start
 
-### Basic E2E Tests
-
+### Basic E2E Testing
 ```bash
-# Run all e2e tests (headless)
-yarn nx run client:e2e
+# Run all E2E tests
+yarn nx e2e client
 
-# Run tests with UI mode (interactive)
-yarn nx run client:e2e:ui
+# Run with UI for debugging
+yarn nx e2e:ui client
 
-# Run tests in headed mode (visible browser)
-yarn nx run client:e2e:headed
-
-# Run tests in debug mode (step through)
-yarn nx run client:e2e:debug
+# Run in headed mode (see browser)
+yarn nx e2e:headed client
 ```
 
-### Performance Tests
+### Performance Testing
 
+#### Collect Performance Baseline (Development)
 ```bash
-# Run performance baseline tests (informational - won't fail on thresholds)
-yarn nx run client:performance:baseline
-
-# Run performance regression tests (ONLY FAILS on statistically significant regressions vs base)
-BASE_URL=http://localhost:4173 PR_URL=http://localhost:4174 yarn nx run client:performance:regression
-
-# Quick performance regression test (fewer scenarios)
-BASE_URL=http://localhost:4173 PR_URL=http://localhost:4174 yarn nx run client:performance:regression-quick
+# Collect current performance metrics (informational only)
+yarn nx performance:baseline client
 ```
 
-## Test Structure
+#### Local Performance Regression Testing
+```bash
+# Compare current branch against main
+yarn nx performance:compare client
 
-- `specs/` - Contains all test files
-  - `app.spec.ts` - Basic functional tests + performance benchmarks
-  - `performance-regression.spec.ts` - Performance comparison tests for CI
-- `fixtures/` - Contains test data and utilities
-- `reports/` - Generated test reports (ignored by git)
-- `performance-scenarios.ts` - Flamedeck-specific performance test scenarios
+# Quick comparison (fewer scenarios & iterations)
+yarn nx performance:compare-quick client
 
-## Writing Tests
+# Compare against a specific branch
+yarn nx performance:compare-vs-develop client
 
-Tests are written using Playwright's test runner. Here's a basic example:
-
-```typescript
-import { test, expect } from '@playwright/test';
-
-test('should do something', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('h1')).toBeVisible();
-});
+# Manual script usage
+node e2e/scripts/run-performance-regression.js --help
 ```
 
-## Configuration
+#### CI Performance Testing
+```bash
+# Used in GitHub Actions
+yarn nx performance:ci client
+```
 
-The Playwright configuration is in `playwright.config.ts` in the client app root. Key settings:
+## Performance Regression Framework
 
-- **Base URL**: `http://localhost:8080`
-- **Test Directory**: `./e2e/specs`
-- **Browsers**: Chrome, Firefox, Safari
-- **Web Server**: Automatically starts the dev server before running tests
+### Overview
 
-## Performance Testing
+The performance regression framework provides statistically rigorous performance testing that:
 
-The performance testing framework measures Core Web Vitals and other performance metrics:
+- **Only fails on statistically significant regressions** (not absolute thresholds)
+- **Eliminates environmental noise** through alternating measurements
+- **Uses statistical tests** (Mann-Whitney U) to detect real performance changes
+- **Handles outliers** automatically through multiple detection methods
+- **Provides confidence intervals** and effect sizes for meaningful interpretation
 
-### Metrics Collected
+### Architecture
+
+The framework consists of two main packages:
+
+- **`@flamedeck/regression-core`**: Platform-agnostic statistical engine
+- **`@flamedeck/regression-playwright`**: Playwright-specific performance collectors
+
+### Key Features
+
+#### Statistical Rigor
+- Mann-Whitney U test for non-parametric comparison
+- Multiple outlier detection methods (trim, IQR, z-score)
+- Cohen's d effect size calculation
+- 95% confidence intervals
+- Configurable significance levels
+
+#### Performance Metrics
 - **Core Web Vitals**: LCP, CLS, TBT
-- **Navigation Timing**: TTFB, DNS lookup, TCP connection
+- **Navigation Timing**: TTFB, DNS, TCP, DOM events
 - **Paint Timing**: First Paint, First Contentful Paint
-- **Resource Metrics**: Load times, sizes, counts
+- **Resource Timing**: Load times, sizes, resource counts
 
-### Performance Regression Testing
-The framework compares performance between base and PR branches using:
-- Statistical analysis (Mann-Whitney U test)
-- Outlier removal for noise reduction  
-- Effect size calculation (Cohen's d)
-- Alternating measurements for fair comparison
+#### Testing Modes
 
-**Important**: Tests only fail on statistically significant regressions, not absolute performance thresholds. This means:
-- ✅ Baseline tests collect metrics for visibility but never fail
-- ⚠️ Regression tests only fail when your PR makes performance significantly worse than master
-- 📊 All performance data is logged for debugging and monitoring
+1. **Local Mode**: Compare current branch against any base branch/commit
+2. **CI Mode**: Statistical comparison between base and PR builds
+3. **Baseline Mode**: Collect metrics for visibility (never fails)
+
+### Local Testing Workflow
+
+The local performance testing automatically:
+
+1. **Stashes uncommitted changes** (if any)
+2. **Builds the base version** (e.g., main branch)
+3. **Builds the current version** (your working branch)
+4. **Runs alternating measurements** for fair comparison
+5. **Performs statistical analysis** using the regression framework
+6. **Reports only statistically significant regressions**
+7. **Restores your working state**
+
+Example output:
+```bash
+🚀 Starting Performance Regression Testing
+📊 Configuration:
+   Base: main
+   Iterations: 5
+   Scenarios: homepage, dashboard
+   Mode: Local
+
+🔄 Switching to base: main
+📦 Installing dependencies for base...
+🏗️ Building base version...
+🔄 Switching back to current version...
+📦 Installing dependencies for current...
+🏗️ Building current version...
+⚡ Running performance regression tests...
+
+📊 Results for homepage:
+  LCP: +2.3% (p=0.234) ✅ OK
+  CLS: -15.2% (p=0.012) ✅ IMPROVEMENT
+  TBT: +45.8% (p=0.003) 🔴 REGRESSION
+
+❌ Performance regression detected! 1 metrics regressed: TBT
+```
 
 ### CI Integration
-See `github-actions-example.yml` for a complete CI workflow that:
-1. Builds both base and PR branches
-2. Runs alternating performance measurements
-3. Reports regressions with statistical confidence
-4. Generates GitHub Actions summaries
 
-## Debugging
+The framework integrates seamlessly with GitHub Actions:
 
-1. Use `yarn nx run client:e2e:debug` to step through tests
-2. Add `await page.pause()` in your test to pause execution
-3. Use `await page.screenshot({ path: 'debug.png' })` to capture screenshots
-4. Check the HTML report in `e2e/reports/` after test runs
-5. For performance debugging, check console output for detailed metrics 
+```yaml
+- name: Performance Regression Test
+  run: |
+    # Build base and PR versions
+    yarn nx build client # Base version
+    yarn nx build client # PR version
+    
+    # Run statistical comparison
+    BASE_URL=${{ base_url }} PR_URL=${{ pr_url }} yarn nx performance:ci client
+```
+
+See `github-actions-example.yml` for a complete CI workflow.
+
+### Configuration
+
+#### Performance Scenarios
+
+Scenarios are defined in `performance-scenarios.ts`:
+
+```typescript
+export const PERFORMANCE_SCENARIOS = [
+  {
+    name: 'homepage',
+    url: 'http://localhost:3000',
+    waitFor: async (page) => {
+      await page.waitForLoadState('networkidle');
+      await page.waitForSelector('[data-testid="hero-section"]');
+    }
+  },
+  // ... more scenarios
+];
+```
+
+#### Framework Configuration
+
+```typescript
+export const flamedeckPerformanceConfig = {
+  iterations: 10,                    // Measurements per branch
+  outlierMethod: 'trim' as const,    // Outlier detection method
+  outlierThreshold: 0.1,             // Remove 10% outliers
+  significanceLevel: 0.05,           // 5% significance level
+  browser: 'chromium' as const,
+  outlierRemovalCount: 1             // Remove 1 outlier per tail
+};
+```
+
+### Understanding Results
+
+#### Statistical Significance
+- **p-value < 0.05**: Statistically significant change
+- **p-value ≥ 0.05**: No significant change (noise)
+
+#### Effect Size (Cohen's d)
+- **< 0.2**: Small effect
+- **0.2-0.5**: Medium effect  
+- **> 0.5**: Large effect
+
+#### Confidence Intervals
+- **95% CI [lower, upper]**: Range where true difference likely lies
+- **Excludes 0**: Significant change
+- **Includes 0**: No significant change
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Build failures**: Ensure both base and current branches build successfully
+2. **Test timeouts**: Increase timeout in playwright.config.ts
+3. **Port conflicts**: The framework uses ports 3001-3002 for local testing
+4. **Git repository required**: Local testing requires a git repository
+
+#### Debug Mode
+
+```bash
+# Run with Playwright debug mode
+yarn nx e2e:debug client
+
+# Verbose script output
+node e2e/scripts/run-performance-regression.js --help
+```
+
+### Advanced Usage
+
+#### Custom Scenarios
+```bash
+# Test specific scenarios
+node e2e/scripts/run-performance-regression.js --scenarios homepage,dashboard
+```
+
+#### Custom Iterations
+```bash
+# More iterations for higher confidence
+node e2e/scripts/run-performance-regression.js --iterations 15
+```
+
+#### Different Base Branch
+```bash
+# Compare against develop instead of main
+node e2e/scripts/run-performance-regression.js --base develop
+```
+
+## Files Structure
+
+```
+e2e/
+├── scripts/
+│   └── run-performance-regression.js    # Main orchestration script
+├── specs/
+│   ├── app.spec.ts                     # Basic E2E tests
+│   └── performance-regression.spec.ts  # Performance tests
+├── fixtures/                           # Test fixtures
+├── reports/                           # Test reports
+├── results/                           # Performance results
+├── performance-scenarios.ts           # Test scenarios definition
+├── playwright.config.ts              # Playwright configuration
+├── github-actions-example.yml        # CI workflow example
+└── README.md                         # This file
+```
+
+## Development Guidelines
+
+### Adding New Scenarios
+
+1. Add scenario to `performance-scenarios.ts`
+2. Include proper wait conditions
+3. Test locally before CI
+
+### Modifying Thresholds
+
+- **Avoid absolute thresholds** - use statistical significance instead
+- **Adjust significance level** in configuration if needed
+- **Consider effect size** for practical significance
+
+### Best Practices
+
+1. **Test locally first** before creating PRs
+2. **Use quick mode** for rapid iteration
+3. **Check baseline metrics** regularly
+4. **Monitor CI performance** over time
+5. **Don't ignore statistical warnings**
+
+For more details on the statistical framework, see the `packages/regression-core` documentation. 

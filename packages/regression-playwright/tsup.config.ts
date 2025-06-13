@@ -2,48 +2,21 @@ import { defineConfig } from 'tsup';
 import fs from 'fs-extra';
 import path from 'path';
 
-export default defineConfig([
-    // Main library entry
-    {
-        entry: ['src/index.ts'],
-        format: ['esm'],
-        dts: true,
-        sourcemap: true,
-        clean: true,
-        minify: false,
-        // Bundle workspace dependencies but exclude native dependencies
-        noExternal: [],
-        external: [],
-        onSuccess: async () => {
-            console.log('Main library build successful!');
-            await generateDistPackageJson();
-        },
+export default defineConfig({
+    entry: ['src/index.ts'],
+    format: ['esm'],
+    dts: true,
+    sourcemap: true,
+    clean: true,
+    minify: false,
+    // Bundle workspace dependencies but exclude native dependencies
+    noExternal: ['@flamedeck/regression-core'],
+    external: ['@playwright/test'],
+    onSuccess: async () => {
+        console.log('Main library build successful!');
+        await generateDistPackageJson();
     },
-    // CLI entry with executable banner
-    {
-        entry: ['src/cli.ts'],
-        format: ['esm'],
-        dts: true,
-        sourcemap: true,
-        clean: false,
-        minify: false,
-        banner: {
-            js: '#!/usr/bin/env node\n',
-        },
-        // Bundle workspace dependencies but exclude native dependencies
-        noExternal: [],
-        external: [],
-        onSuccess: async () => {
-            console.log('CLI build successful!');
-            // Set execute permissions for the CLI file
-            const cliPath = path.resolve(__dirname, 'dist', 'cli.js');
-            if (await fs.pathExists(cliPath)) {
-                await fs.chmod(cliPath, 0o755);
-                console.log('Set execute permissions for cli.js');
-            }
-        },
-    },
-]);
+});
 
 async function generateDistPackageJson() {
     const rootPackageJsonPath = path.resolve(__dirname, 'package.json');
@@ -61,7 +34,6 @@ async function generateDistPackageJson() {
             type: packageJsonContent.type,
             main: './index.js',
             types: './index.d.ts',
-            bin: './cli.js',
             exports: {
                 '.': {
                     types: './index.d.ts',
@@ -72,11 +44,7 @@ async function generateDistPackageJson() {
                 'index.js',
                 'index.js.map',
                 'index.d.ts',
-                'cli.js',
-                'cli.js.map',
-                'cli.d.ts',
                 'README.md',
-                'images/**/*',
             ],
             keywords: packageJsonContent.keywords,
             author: packageJsonContent.author,
