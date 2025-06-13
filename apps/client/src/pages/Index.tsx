@@ -216,7 +216,7 @@ function Index() {
                       <span className="block mt-1">Made Simple</span>
                     </h1>
                   </div>
-                  <h1 className="relative text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight">
+                  <h1 id="page-title" className="relative text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight">
                     Performance Debugging
                     <span className="block bg-gradient-to-r from-red-500 via-red-400 to-yellow-500 bg-clip-text text-transparent mt-1">
                       Made Simple
