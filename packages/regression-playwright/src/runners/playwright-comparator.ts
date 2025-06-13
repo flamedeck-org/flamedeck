@@ -14,6 +14,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
     private browser?: Browser;
     private contexts: Map<string, BrowserContext> = new Map();
     private playwrightConfig: PlaywrightComparisonConfig;
+    private originalScenarios: Map<string, PlaywrightTestScenario> = new Map();
 
     constructor(config: PlaywrightComparisonConfig) {
         // Convert Playwright config to base config
@@ -31,6 +32,11 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
 
         super(baseConfig);
         this.playwrightConfig = config;
+
+        // Store original scenarios for later use (after super() call)
+        config.scenarios.forEach(scenario => {
+            this.originalScenarios.set(scenario.name, scenario);
+        });
     }
 
     /**
@@ -61,7 +67,12 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
         treatmentUrl?: string
     ): Promise<PlaywrightMetrics> {
 
-        const playwrightScenario = scenario as PlaywrightTestScenario;
+        // Get the original Playwright scenario with all properties preserved
+        const playwrightScenario = this.originalScenarios.get(scenario.name);
+        if (!playwrightScenario) {
+            throw new Error(`Original scenario not found for: ${scenario.name}`);
+        }
+
         const url = variant === 'base' ? baseUrl : treatmentUrl;
 
         if (!url) {
@@ -73,6 +84,14 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
         const page = await context.newPage();
 
         try {
+            // Debug logging
+            console.log(`[DEBUG] Executing scenario: ${scenario.name}, variant: ${variant}, url: ${url}, path: ${playwrightScenario.path}`);
+
+            // Validate URL before proceeding
+            if (!url || url === 'undefined') {
+                throw new Error(`Invalid URL provided for scenario ${scenario.name} variant ${variant}: ${url}`);
+            }
+
             // Set up error tracking
             await PlaywrightPerformanceCollector.setupErrorTracking(page);
 
@@ -89,6 +108,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
 
             // Navigate to the URL with the scenario path
             const fullUrl = `${url}${playwrightScenario.path}`;
+            console.log(`[DEBUG] Navigating to: ${fullUrl}`);
             await page.goto(fullUrl, { waitUntil: 'networkidle' });
 
             // Run setup if provided
@@ -114,6 +134,11 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
                 await playwrightScenario.waitForStable(page);
             } else {
                 await PlaywrightPerformanceCollector.waitForPageStability(page);
+            }
+
+            // Check if page is still open before collecting metrics
+            if (page.isClosed()) {
+                throw new Error(`Page was closed during scenario execution: ${scenario.name}`);
             }
 
             // Collect performance metrics
