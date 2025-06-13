@@ -1,6 +1,3 @@
-# Example GitHub Actions workflow for performance regression testing
-# Save this as .github/workflows/performance-tests.yml
-
 name: Performance Regression Tests
 
 on:
@@ -21,6 +18,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history to checkout base branch
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -38,6 +37,7 @@ jobs:
         run: |
           git fetch origin main:main
           git checkout main
+          yarn install --frozen-lockfile
           yarn nx run client:build
           yarn nx run client:preview &
           echo "BASE_PID=$!" >> $GITHUB_ENV
@@ -59,15 +59,15 @@ jobs:
           timeout 60 bash -c 'until curl -f $BASE_URL; do sleep 2; done'
           timeout 60 bash -c 'until curl -f $PR_URL; do sleep 2; done'
           
-             - name: Run performance regression tests
-         env:
-           PERFORMANCE_TEST: true
-           BASE_URL: ${{ env.BASE_URL }}
-           PR_URL: ${{ env.PR_URL }}
-           PERFORMANCE_ITERATIONS: 10
-           OUTLIER_REMOVAL_COUNT: 1
-         run: |
-           yarn nx run client:performance:regression
+      - name: Run performance regression tests
+        env:
+          PERFORMANCE_TEST: true
+          BASE_URL: ${{ env.BASE_URL }}
+          PR_URL: ${{ env.PR_URL }}
+          PERFORMANCE_ITERATIONS: 10
+          OUTLIER_REMOVAL_COUNT: 1
+        run: |
+          yarn nx run client:performance:regression
           
       - name: Run performance baseline (current branch only)
         if: failure()  # Run baseline test if regression test failed
