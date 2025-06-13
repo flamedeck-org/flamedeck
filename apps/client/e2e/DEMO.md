@@ -94,13 +94,13 @@ yarn nx performance:compare-quick client
 yarn nx performance:compare-vs-develop client
 
 # Test specific scenarios only
-node e2e/scripts/run-performance-regression.js --scenarios homepage,dashboard
+node e2e/scripts/run-performance-regression.cjs --scenarios homepage,dashboard
 
 # More iterations for higher confidence
-node e2e/scripts/run-performance-regression.js --iterations 10
+node e2e/scripts/run-performance-regression.cjs --iterations 10
 
 # Get help
-node e2e/scripts/run-performance-regression.js --help
+node e2e/scripts/run-performance-regression.cjs --help
 ```
 
 ## 🚨 When Tests Fail

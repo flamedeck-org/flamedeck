@@ -36,7 +36,7 @@ yarn nx performance:compare-quick client
 yarn nx performance:compare-vs-develop client
 
 # Manual script usage
-node e2e/scripts/run-performance-regression.js --help
+node e2e/scripts/run-performance-regression.cjs --help
 ```
 
 #### CI Performance Testing
@@ -212,19 +212,19 @@ node e2e/scripts/run-performance-regression.js --help
 #### Custom Scenarios
 ```bash
 # Test specific scenarios
-node e2e/scripts/run-performance-regression.js --scenarios homepage,dashboard
+node e2e/scripts/run-performance-regression.cjs --scenarios homepage,dashboard
 ```
 
 #### Custom Iterations
 ```bash
 # More iterations for higher confidence
-node e2e/scripts/run-performance-regression.js --iterations 15
+node e2e/scripts/run-performance-regression.cjs --iterations 15
 ```
 
 #### Different Base Branch
 ```bash
 # Compare against develop instead of main
-node e2e/scripts/run-performance-regression.js --base develop
+node e2e/scripts/run-performance-regression.cjs --base develop
 ```
 
 ## Files Structure
@@ -232,7 +232,7 @@ node e2e/scripts/run-performance-regression.js --base develop
 ```
 e2e/
 ├── scripts/
-│   └── run-performance-regression.js    # Main orchestration script
+│   └── run-performance-regression.cjs    # Main orchestration script
 ├── specs/
 │   ├── app.spec.ts                     # Basic E2E tests
 │   └── performance-regression.spec.ts  # Performance tests
