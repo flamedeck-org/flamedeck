@@ -136,7 +136,10 @@ const Login: React.FC = () => {
                   variant="outline"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-red-500/3 to-yellow-500/3 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
-                  <svg className="w-5 h-5 mr-3 transition-transform group-hover/btn:scale-105" viewBox="0 0 24 24">
+                  <svg
+                    className="w-5 h-5 mr-3 transition-transform group-hover/btn:scale-105"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       fill="#4285F4"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -159,9 +162,7 @@ const Login: React.FC = () => {
               </CardContent>
 
               <CardFooter className="flex flex-col items-center text-center px-8 pb-10">
-                <p className="text-sm text-muted-foreground">
-                  Performance debugging made simple
-                </p>
+                <p className="text-sm text-muted-foreground">Performance debugging made simple</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">
                   Start analyzing your traces in seconds
                 </p>

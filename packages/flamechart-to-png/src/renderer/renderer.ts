@@ -129,7 +129,12 @@ export function renderFlamechart(opts: InternalRenderOptions): void {
   ctx.translate(DEPTH_AXIS_WIDTH_PX, stackFramesStartY); // Translate to where flame frames start
 
   const layersToRender = flamechart.getLayers().slice(startDepth);
-  const frameRenderData: Array<{ params: Parameters<typeof drawFrameText>[0], frame: FlamechartFrame, y: number, rectData: { x: number, rectWidth: number } }> = [];
+  const frameRenderData: Array<{
+    params: Parameters<typeof drawFrameText>[0];
+    frame: FlamechartFrame;
+    y: number;
+    rectData: { x: number; rectWidth: number };
+  }> = [];
 
   layersToRender.forEach((layer, visibleLayerIndex) => {
     let y;
@@ -202,7 +207,7 @@ export function renderFlamechart(opts: InternalRenderOptions): void {
   ctx.save();
   ctx.translate(DEPTH_AXIS_WIDTH_PX, stackFramesStartY); // Translate again to the flame frame area
 
-  frameRenderData.forEach(data => {
+  frameRenderData.forEach((data) => {
     drawFrameText({
       ctx,
       frame: data.frame,

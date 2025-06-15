@@ -32,7 +32,7 @@ export function drawFrameRectangle({
   theme,
   frameToColorBucket,
 }: // font and textPadding are not needed for drawing the rectangle itself
-  DrawFrameParams): { x: number; rectWidth: number } | null {
+DrawFrameParams): { x: number; rectWidth: number } | null {
   if (frame.end <= startWeight || frame.start >= endWeight) {
     return null;
   }
@@ -72,7 +72,10 @@ export function drawFrameText({
   theme,
   rectX,
   rectWidth,
-}: Omit<DrawFrameParams, 'startWeight' | 'endWeight' | 'xFactor' | 'xAxisOffset' | 'frameToColorBucket'> & {
+}: Omit<
+  DrawFrameParams,
+  'startWeight' | 'endWeight' | 'xFactor' | 'xAxisOffset' | 'frameToColorBucket'
+> & {
   rectX: number;
   rectWidth: number;
 }) {

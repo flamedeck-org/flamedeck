@@ -136,9 +136,7 @@ function DeleteFolderDialogComponent({
             </div>
             Permanently Delete Folder?
           </DialogTitle>
-          <DialogDescription className="text-base pl-13">
-            {renderDescription()}
-          </DialogDescription>
+          <DialogDescription className="text-base pl-13">{renderDescription()}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
@@ -160,7 +158,8 @@ function DeleteFolderDialogComponent({
             id="confirm-folder-description"
             className="text-xs text-muted-foreground text-center bg-muted/30 py-1.5 px-3 rounded-lg backdrop-blur-sm"
           >
-            Type <span className="font-semibold text-foreground">{folderName}</span> to enable deletion.
+            Type <span className="font-semibold text-foreground">{folderName}</span> to enable
+            deletion.
           </p>
         </div>
 
@@ -182,9 +181,7 @@ function DeleteFolderDialogComponent({
             aria-label={`Confirm deletion of folder ${folderName}`}
             className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
-            {(isPending || isLoadingContents) && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {(isPending || isLoadingContents) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {!isPending && !isLoadingContents ? 'Delete Permanently' : 'Deleting...'}
           </Button>
         </DialogFooter>

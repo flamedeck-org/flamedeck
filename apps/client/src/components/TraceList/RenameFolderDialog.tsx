@@ -99,7 +99,8 @@ function RenameFolderDialogComponent({
             Enter a new name for the folder{' '}
             <span className="font-bold text-foreground bg-gradient-to-r from-green-500/10 to-blue-500/10 px-2 py-1 rounded-md border border-green-500/20">
               "{currentName}"
-            </span>.
+            </span>
+            .
           </DialogDescription>
         </DialogHeader>
 

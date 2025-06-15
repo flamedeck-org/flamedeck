@@ -98,7 +98,8 @@ function RenameTraceDialogComponent({
             Enter a new scenario name for the trace currently named{' '}
             <span className="font-bold text-foreground bg-gradient-to-r from-blue-500/10 to-purple-500/10 px-2 py-1 rounded-md border border-blue-500/20">
               "{currentScenario || 'N/A'}"
-            </span>.
+            </span>
+            .
           </DialogDescription>
         </DialogHeader>
 

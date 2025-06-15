@@ -16,9 +16,10 @@ const SettingsNavLink: React.FC<SettingsNavLinkProps> = ({ to, label, ariaLabel,
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${isActive
-          ? 'bg-gradient-to-r from-red-500/10 to-yellow-500/10 border border-red-500/30 text-foreground shadow-sm'
-          : 'text-muted-foreground hover:bg-background/80 hover:text-foreground border border-transparent hover:border-border/50'
+        `flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+          isActive
+            ? 'bg-gradient-to-r from-red-500/10 to-yellow-500/10 border border-red-500/30 text-foreground shadow-sm'
+            : 'text-muted-foreground hover:bg-background/80 hover:text-foreground border border-transparent hover:border-border/50'
         } backdrop-blur-sm`
       }
       aria-label={ariaLabel}

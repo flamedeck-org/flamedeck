@@ -47,7 +47,8 @@ const ProtectedRoute = () => {
     subscriptionStatus: subscription?.status, // Added for debugging
   });
 
-  const handleLogout = async () => { // Added handleLogout function
+  const handleLogout = async () => {
+    // Added handleLogout function
     try {
       await signOut();
       navigate('/');
@@ -94,10 +95,17 @@ const ProtectedRoute = () => {
   // New Onboarding Upgrade Step Check
   if (user && profile && profile.username) {
     const selectedPlan = sessionStorage.getItem('flamedeck_selected_plan');
-    console.log('[ProtectedRoute] Checking for upgrade step. Selected Plan:', selectedPlan, 'IsProUser:', isProUser);
+    console.log(
+      '[ProtectedRoute] Checking for upgrade step. Selected Plan:',
+      selectedPlan,
+      'IsProUser:',
+      isProUser
+    );
 
     if (selectedPlan === 'pro' && !isProUser) {
-      console.log('[ProtectedRoute] User selected Pro, is not Pro. Redirecting to /onboarding/upgrade.');
+      console.log(
+        '[ProtectedRoute] User selected Pro, is not Pro. Redirecting to /onboarding/upgrade.'
+      );
       return <Navigate to="/onboarding/upgrade" state={{ from: location }} replace />;
     } else if (selectedPlan === 'pro' && isProUser) {
       // User selected Pro and is already Pro (e.g., completed payment, came back)

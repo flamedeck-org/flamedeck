@@ -4,10 +4,10 @@ import { addFlamegraphSnapshotTool } from './tools/flamegraph-snapshot.js';
 import { addSandwichSnapshotTool } from './tools/sandwich-snapshot.js';
 
 export function createFlamechartMCPServer() {
-    const server = new FastMCP({
-        name: 'Flamechart MCP',
-        version: '0.2.0',
-        instructions: `
+  const server = new FastMCP({
+    name: 'Flamechart MCP',
+    version: '0.2.0',
+    instructions: `
 This MCP server provides tools for analyzing and visualizing performance traces.
 
 Available tools:
@@ -26,18 +26,18 @@ The tools automatically cache loaded profiles in memory for better performance:
 
 The tools will automatically detect and handle gzipped trace files.
     `.trim(),
-    });
+  });
 
-    // Add all tools
-    addTopFunctionsTool(server);
-    addFlamegraphSnapshotTool(server);
-    addSandwichSnapshotTool(server);
+  // Add all tools
+  addTopFunctionsTool(server);
+  addFlamegraphSnapshotTool(server);
+  addSandwichSnapshotTool(server);
 
-    return server;
+  return server;
 }
 
 // Export the server instance for programmatic use
 export const server = createFlamechartMCPServer();
 
 // Export types for external use
-export type { FlamegraphSnapshotResult, ProfileLoadResult, TraceSource } from './types.js'; 
+export type { FlamegraphSnapshotResult, ProfileLoadResult, TraceSource } from './types.js';

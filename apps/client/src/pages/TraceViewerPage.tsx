@@ -153,7 +153,8 @@ const TraceViewerPage: React.FC = () => {
   const isLoadingTraceDetails = isLoadingAuthenticatedTrace || isLoadingPublicTrace;
 
   // Combine errors
-  const traceDetailsError = authenticatedTraceError || publicTraceError || publicTraceApiResponse?.error;
+  const traceDetailsError =
+    authenticatedTraceError || publicTraceError || publicTraceApiResponse?.error;
 
   // Get the trace data (authenticated has full metadata, public only has id/blob_path)
   const traceData = authenticatedTraceData || publicTraceData;
@@ -185,15 +186,19 @@ const TraceViewerPage: React.FC = () => {
   });
 
   // Create trace blob data from direct upload if available
-  const finalTraceBlobData = directTraceData && directFileName
-    ? { data: directTraceData, fileName: directFileName }
-    : traceBlobData;
+  const finalTraceBlobData =
+    directTraceData && directFileName
+      ? { data: directTraceData, fileName: directFileName }
+      : traceBlobData;
 
   // Whether we're loading data
-  const isLoading = (isLoadingTraceDetails && !blobPathFromState && !directTraceData) || (isLoadingBlob && !!blobPath && !directTraceData);
+  const isLoading =
+    (isLoadingTraceDetails && !blobPathFromState && !directTraceData) ||
+    (isLoadingBlob && !!blobPath && !directTraceData);
 
   // Combine errors - handle different error types
-  const error = traceDetailsError || (blobError ? { message: blobError.message, code: undefined } : null);
+  const error =
+    traceDetailsError || (blobError ? { message: blobError.message, code: undefined } : null);
 
   // Generate a fallback ID for direct uploads
   const finalId = id || 'direct-upload';
@@ -202,7 +207,9 @@ const TraceViewerPage: React.FC = () => {
     // Only update view from query params/location state if:
     // 1. This is the initial load, OR
     // 2. The location has actually changed (new query params or state)
-    const newViewFromQuery = new URLSearchParams(location.search).get('view') as SpeedscopeViewType | null;
+    const newViewFromQuery = new URLSearchParams(location.search).get(
+      'view'
+    ) as SpeedscopeViewType | null;
     const newViewFromState = location.state?.initialView as SpeedscopeViewType | undefined;
     const newView = newViewFromQuery || newViewFromState;
 
@@ -246,19 +253,17 @@ const TraceViewerPage: React.FC = () => {
             {/* Animated Loading Icon */}
             <div className="relative">
               <div className="w-16 h-16 border-4 border-muted border-t-primary rounded-full animate-spin"></div>
-              <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-primary/30 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '3s' }}></div>
+              <div
+                className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-primary/30 rounded-full animate-spin"
+                style={{ animationDirection: 'reverse', animationDuration: '3s' }}
+              ></div>
             </div>
 
             {/* Loading Text */}
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-foreground">
-                Loading your trace
-              </h3>
+              <h3 className="text-xl font-semibold text-foreground">Loading your trace</h3>
               <p className="text-muted-foreground">
-                {directTraceData
-                  ? "Processing trace data..."
-                  : "Fetching trace from storage..."
-                }
+                {directTraceData ? 'Processing trace data...' : 'Fetching trace from storage...'}
               </p>
             </div>
           </div>
@@ -267,7 +272,9 @@ const TraceViewerPage: React.FC = () => {
 
       {!isLoading && error && (
         <TraceViewerErrorState
-          title={error?.code === '404' ? 'Trace Not Found or Not Public' : 'Error Loading Trace Data'}
+          title={
+            error?.code === '404' ? 'Trace Not Found or Not Public' : 'Error Loading Trace Data'
+          }
           message={error.message}
           actions={[
             {
@@ -275,11 +282,15 @@ const TraceViewerPage: React.FC = () => {
               href: '/',
               variant: 'outline',
             } as const,
-            ...(id ? [{
-              message: 'Back to Details',
-              href: `/traces/${id}`,
-              variant: 'gradient',
-            } as const] : []),
+            ...(id
+              ? [
+                  {
+                    message: 'Back to Details',
+                    href: `/traces/${id}`,
+                    variant: 'gradient',
+                  } as const,
+                ]
+              : []),
           ]}
         />
       )}
@@ -354,7 +365,8 @@ const TraceViewerPage: React.FC = () => {
               message: 'Try Another File',
               href: '/home',
               variant: 'gradient',
-              className: 'bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white',
+              className:
+                'bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white',
             },
             {
               message: 'Back to Home',
@@ -366,13 +378,14 @@ const TraceViewerPage: React.FC = () => {
       )}
 
       {/* Chat Feature - Render based on authentication status */}
-      {!isLoading && !error && finalTraceBlobData && (
-        isAuthenticated ? (
+      {!isLoading &&
+        !error &&
+        finalTraceBlobData &&
+        (isAuthenticated ? (
           <ChatContainer traceId={finalId} initialOpen={chatFromQuery === 'open'} />
         ) : (
           <UnauthenticatedChatTeaser traceId={finalId} />
-        )
-      )}
+        ))}
 
       {/* Conditionally render TraceViewerCommentSidebar based on isCommentSidebarOpen */}
       {isAuthenticated && commentManagement && (

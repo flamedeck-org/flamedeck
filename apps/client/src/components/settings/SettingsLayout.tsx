@@ -55,9 +55,15 @@ const SettingsLayout = () => {
                       <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                       <span className="flex items-center gap-2 relative z-10">
-                        {currentPageTitle === 'General' && <User className="h-4 w-4 text-blue-400" />}
-                        {currentPageTitle === 'API Keys' && <KeyRound className="h-4 w-4 text-yellow-500" />}
-                        {currentPageTitle === 'Billing' && <CreditCard className="h-4 w-4 text-green-500" />}
+                        {currentPageTitle === 'General' && (
+                          <User className="h-4 w-4 text-blue-400" />
+                        )}
+                        {currentPageTitle === 'API Keys' && (
+                          <KeyRound className="h-4 w-4 text-yellow-500" />
+                        )}
+                        {currentPageTitle === 'Billing' && (
+                          <CreditCard className="h-4 w-4 text-green-500" />
+                        )}
                         {currentPageTitle}
                       </span>
                       <ChevronDown className="h-4 w-4 relative z-10" />

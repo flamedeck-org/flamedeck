@@ -351,7 +351,7 @@ export class FlamechartPanZoomView extends Component<
             x: physicalLabelBounds.left() + LABEL_PADDING_PX,
             y: Math.round(
               physicalLabelBounds.bottom() -
-              (physicalViewSpaceFrameHeight - physicalViewSpaceFontSize) / 2
+                (physicalViewSpaceFrameHeight - physicalViewSpaceFontSize) / 2
             ),
           });
         }

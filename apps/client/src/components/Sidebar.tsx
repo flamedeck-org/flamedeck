@@ -9,7 +9,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
-import { ListTree, LogOut, User as UserIcon, Settings as SettingsIcon, Star, Clock, UploadCloud } from 'lucide-react';
+import {
+  ListTree,
+  LogOut,
+  User as UserIcon,
+  Settings as SettingsIcon,
+  Star,
+  Clock,
+  UploadCloud,
+} from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useSubscriptionUsage } from '@/hooks/useSubscriptionUsage';
 import { Progress } from '@/components/ui/progress';
@@ -70,11 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) 
   return (
     <TooltipProvider delayDuration={0}>
       <aside
-        className={`${mobile
-          ? 'w-full h-full'
-          : minimized
-            ? 'w-16 h-full'
-            : 'w-64 h-full'
+        className={`${mobile ? 'w-full h-full' : minimized ? 'w-16 h-full' : 'w-64 h-full'
           } border-r bg-background flex flex-col z-10 transition-width duration-200 relative z-50`}
       >
         <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
@@ -110,12 +114,13 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) 
           <NavLink
             to="/traces"
             className={({ isActive }) => {
-              // Custom active check for traces - exclude trace viewing paths 
-              const isTracesActive = isActive && !location.pathname.match(/^\/traces\/[^/]+\/view$/);
+              // Custom active check for traces - exclude trace viewing paths
+              const isTracesActive =
+                isActive && !location.pathname.match(/^\/traces\/[^/]+\/view$/);
 
               return `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 pl-3.5 pr-3 py-2 h-9'} rounded-md text-sm font-medium transition-colors ${isTracesActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 }`;
             }}
             aria-label="Traces"
@@ -173,10 +178,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) 
                   </div>
                   <div className="space-y-1.5">
                     <div className="relative">
-                      <Progress
-                        value={monthlyUsagePercent}
-                        className="h-2 bg-muted/80"
-                      />
+                      <Progress value={monthlyUsagePercent} className="h-2 bg-muted/80" />
                       <div
                         className="absolute top-0 left-0 h-2 rounded-full bg-gradient-to-r from-red-500 to-yellow-500 transition-all duration-300"
                         style={{ width: `${Math.min(monthlyUsagePercent, 100)}%` }}
@@ -199,10 +201,7 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) 
                     </span>
                   </div>
                   <div className="relative">
-                    <Progress
-                      value={totalUsagePercent}
-                      className="h-2 bg-muted/80"
-                    />
+                    <Progress value={totalUsagePercent} className="h-2 bg-muted/80" />
                     <div
                       className="absolute top-0 left-0 h-2 rounded-full bg-gradient-to-r from-red-500 to-yellow-500 transition-all duration-300"
                       style={{ width: `${Math.min(totalUsagePercent, 100)}%` }}

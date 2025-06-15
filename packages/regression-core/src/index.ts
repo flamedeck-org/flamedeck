@@ -9,4 +9,4 @@ export { OutlierDetector } from './analyzers/outlier-detector';
 export { CIComparator } from './comparators/ci-comparator';
 
 // Export utilities
-export * from './utils/math'; 
+export * from './utils/math';

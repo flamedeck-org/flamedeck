@@ -1,5 +1,5 @@
 import type { Profile, Frame } from '@flamedeck/speedscope-core/profile';
-import { Flamechart, } from '@flamedeck/speedscope-core/flamechart';
+import { Flamechart } from '@flamedeck/speedscope-core/flamechart';
 import { createCanvas } from 'canvas';
 import type { RenderLeftHeavyFlamechartOptions } from './leftHeavy'; // Assuming this is the base
 import { getFrameToColorBucket, createGetColorBucketForFrame } from './renderer/color';
@@ -14,10 +14,7 @@ import {
   calculateRenderRange,
   calculateFinalCanvasHeight,
 } from './renderer/layout';
-import {
-  renderFlamechart,
-  type InternalRenderMetrics,
-} from './renderer/renderer';
+import { renderFlamechart, type InternalRenderMetrics } from './renderer/renderer';
 import { drawTimeAxis } from './renderer/drawing';
 
 export interface RenderSandwichFlamechartOptions extends RenderLeftHeavyFlamechartOptions {

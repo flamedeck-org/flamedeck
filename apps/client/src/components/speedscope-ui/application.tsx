@@ -10,7 +10,7 @@ import type { Theme } from '@flamedeck/speedscope-theme/types';
 import { ViewMode } from '../../lib/speedscope-core/view-mode';
 import type { ProfileGroupState } from '../../lib/speedscope-core/app-state/profile-group';
 import type { HashParams } from '../../lib/speedscope-core/hash-params';
-import { FlamechartID } from '../../lib/speedscope-core/app-state/profile-group';
+import type { FlamechartID } from '../../lib/speedscope-core/app-state/profile-group';
 
 const importModule = import('@flamedeck/speedscope-import');
 
@@ -18,9 +18,9 @@ const importModule = import('@flamedeck/speedscope-import');
 //
 // We put them all in one place so we can directly control the relative priority
 // of these.
-importModule.then(() => { });
-import('@flamedeck/speedscope-core/demangle-cpp').then(() => { });
-import('source-map').then(() => { });
+importModule.then(() => {});
+import('@flamedeck/speedscope-core/demangle-cpp').then(() => {});
+import('source-map').then(() => {});
 
 interface GLCanvasProps {
   canvasContext: CanvasContext | null;

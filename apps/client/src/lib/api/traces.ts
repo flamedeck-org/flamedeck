@@ -118,7 +118,10 @@ export async function uploadTrace(
   }
 
   // Get the current session for authentication
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
   if (sessionError || !session) {
     throw new StandardApiError('Authentication required to upload files');
   }
@@ -157,16 +160,20 @@ export async function uploadTrace(
 
   // The RPC function returns the trace data, but we need to add owner info for the client
   // Since we're the uploader, we can construct the owner info from the current user
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const traceWithOwner = {
     ...data,
-    owner: user ? {
-      id: user.id,
-      username: user.user_metadata?.username || null,
-      avatar_url: user.user_metadata?.avatar_url || null,
-      first_name: user.user_metadata?.first_name || null,
-      last_name: user.user_metadata?.last_name || null,
-    } : null,
+    owner: user
+      ? {
+          id: user.id,
+          username: user.user_metadata?.username || null,
+          avatar_url: user.user_metadata?.avatar_url || null,
+          first_name: user.user_metadata?.first_name || null,
+          last_name: user.user_metadata?.last_name || null,
+        }
+      : null,
   };
 
   return traceWithOwner as TraceMetadata;
