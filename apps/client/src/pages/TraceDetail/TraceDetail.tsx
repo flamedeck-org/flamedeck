@@ -10,7 +10,16 @@ import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { traceApi } from '@/lib/api';
-import { Eye, ExternalLink, AlertTriangle, MessageSquare, Sparkles, Globe, Lock, Loader2 } from 'lucide-react';
+import {
+  Eye,
+  ExternalLink,
+  AlertTriangle,
+  MessageSquare,
+  Sparkles,
+  Globe,
+  Lock,
+  Loader2,
+} from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
 import PageHeader from '@/components/PageHeader';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -28,7 +37,11 @@ import { useCommentManagement } from '@/hooks/useCommentManagement';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TraceTitle, FlamegraphPreview, TraceDetailHeaderActions } from '@/components/TraceDetail';
-import { commentTypeToViewType, getCommentSectionTitle, structureComments } from './utils/commentUtils';
+import {
+  commentTypeToViewType,
+  getCommentSectionTitle,
+  structureComments,
+} from './utils/commentUtils';
 import { getProfileTypeName } from './utils/profileUtils';
 import { formatUploadDate } from './utils/dateUtils';
 
@@ -159,11 +172,14 @@ export const TraceDetail: React.FC = () => {
               size="sm"
               onClick={() => {
                 const url = `${window.location.origin}/traces/${id}/view`;
-                navigator.clipboard.writeText(url).then(() => {
-                  toast({ title: 'Link copied to clipboard' });
-                }).catch(() => {
-                  toast({ title: 'Failed to copy link', variant: 'destructive' });
-                });
+                navigator.clipboard
+                  .writeText(url)
+                  .then(() => {
+                    toast({ title: 'Link copied to clipboard' });
+                  })
+                  .catch(() => {
+                    toast({ title: 'Failed to copy link', variant: 'destructive' });
+                  });
               }}
             >
               Copy Link
@@ -182,7 +198,7 @@ export const TraceDetail: React.FC = () => {
       toast({
         title: 'Error updating access',
         description: error.message,
-        variant: 'destructive'
+        variant: 'destructive',
       });
     },
   });
@@ -467,31 +483,41 @@ export const TraceDetail: React.FC = () => {
                   <CardContent className="relative pt-6 pb-6 px-6">
                     <div className="flex items-center justify-between mb-6">
                       <div>
-                        <h3 className="text-xl font-bold tracking-tight text-foreground">Trace Overview</h3>
+                        <h3 className="text-xl font-bold tracking-tight text-foreground">
+                          Trace Overview
+                        </h3>
                         <div className="w-12 h-0.5 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full mt-2" />
                       </div>
                       <div className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-red-500/10 to-yellow-500/10 border border-red-500/30 rounded-lg backdrop-blur-sm">
                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                        <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">Active</span>
+                        <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">
+                          Active
+                        </span>
                       </div>
                     </div>
 
                     {/* Key Metrics Row */}
                     <div className="grid grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Duration</div>
+                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                          Duration
+                        </div>
                         <div className="text-2xl font-black bg-gradient-to-r from-red-500 to-yellow-500 bg-clip-text text-transparent leading-none">
                           {formatDuration(trace?.duration_ms)}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Profile Type</div>
+                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                          Profile Type
+                        </div>
                         <div className="text-lg font-bold text-foreground leading-tight">
                           {getProfileTypeName(trace?.profile_type)}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Uploaded</div>
+                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                          Uploaded
+                        </div>
                         <div className="text-lg font-bold text-foreground leading-tight">
                           {formatUploadDate(trace?.uploaded_at)}
                         </div>
@@ -568,7 +594,9 @@ export const TraceDetail: React.FC = () => {
                             Public Access
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {isPublic ? 'Anyone with the link can view' : 'Only people with access can view'}
+                            {isPublic
+                              ? 'Anyone with the link can view'
+                              : 'Only people with access can view'}
                           </div>
                         </div>
                       </div>
@@ -636,11 +664,14 @@ export const TraceDetail: React.FC = () => {
                           <CardContent className="pt-6">
                             <div key="overview">
                               <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-semibold">{getCommentSectionTitle('overview')}</h3>
+                                <h3 className="text-lg font-semibold">
+                                  {getCommentSectionTitle('overview')}
+                                </h3>
                                 {/* No context link for overview */}
                               </div>
                               {/* Render existing overview comments or empty state */}
-                              {groupedComments['overview'] && groupedComments['overview'].length > 0 ? (
+                              {groupedComments['overview'] &&
+                              groupedComments['overview'].length > 0 ? (
                                 groupedComments['overview'].map((comment) => (
                                   <CommentItem
                                     key={comment.id}
@@ -689,7 +720,10 @@ export const TraceDetail: React.FC = () => {
                             }
 
                             return (
-                              <Card key={commentType} className="bg-card/90 backdrop-blur-sm border border-border shadow-sm">
+                              <Card
+                                key={commentType}
+                                className="bg-card/90 backdrop-blur-sm border border-border shadow-sm"
+                              >
                                 <CardContent className="pt-6">
                                   <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-lg font-semibold">{sectionTitle}</h3>
@@ -698,7 +732,7 @@ export const TraceDetail: React.FC = () => {
                                         to={`/traces/${trace.id}/view?view=${viewType}&blob=${encodeURIComponent(trace.blob_path || '')}`}
                                         state={{
                                           initialView: viewType,
-                                          blobPath: trace.blob_path
+                                          blobPath: trace.blob_path,
                                         }}
                                         className={
                                           buttonVariants({ variant: 'outline', size: 'sm' }) +
@@ -744,8 +778,13 @@ export const TraceDetail: React.FC = () => {
                                 <div className="w-2 h-2 bg-red-500 rounded-sm" />
                               </div>
                               <div>
-                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Scenario</div>
-                                <div className="text-sm font-semibold text-foreground truncate" title={trace?.scenario}>
+                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                  Scenario
+                                </div>
+                                <div
+                                  className="text-sm font-semibold text-foreground truncate"
+                                  title={trace?.scenario}
+                                >
                                   {trace?.scenario || 'N/A'}
                                 </div>
                               </div>
@@ -760,16 +799,24 @@ export const TraceDetail: React.FC = () => {
                                   <div className="w-2 h-2 bg-green-500 rounded-sm transform rotate-45" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Git Information</div>
+                                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                    Git Information
+                                  </div>
                                   <div className="flex items-center justify-between">
                                     {trace?.commit_sha && (
-                                      <div className="text-sm font-mono font-semibold text-foreground truncate" title={trace.commit_sha}>
+                                      <div
+                                        className="text-sm font-mono font-semibold text-foreground truncate"
+                                        title={trace.commit_sha}
+                                      >
                                         {trace.commit_sha}
                                       </div>
                                     )}
                                     {trace?.branch && (
                                       <div className="flex items-center space-x-2 ml-4">
-                                        <div className="text-xs text-muted-foreground truncate" title={trace.branch}>
+                                        <div
+                                          className="text-xs text-muted-foreground truncate"
+                                          title={trace.branch}
+                                        >
                                           {trace.branch}
                                         </div>
                                         <div className="px-1.5 py-0.5 bg-green-500/10 border border-green-500/20 rounded-md text-xs font-medium text-green-600">
@@ -790,7 +837,9 @@ export const TraceDetail: React.FC = () => {
                                 <div className="w-2 h-2 bg-blue-500 rounded-sm" />
                               </div>
                               <div>
-                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Upload Date</div>
+                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                  Upload Date
+                                </div>
                                 <div className="text-sm font-semibold text-foreground">
                                   {formatDate(trace?.uploaded_at)}
                                 </div>

@@ -412,8 +412,6 @@ const SpeedscopeViewer: React.FC<SpeedscopeViewerProps> = ({
             isAuthenticated={isAuthenticated}
           />
         )}
-
-
       </div>
     </div>
   );

@@ -28,8 +28,8 @@ export async function fetchChatHistory(
     return []; // Return empty array if no messages found or data is null
   }
 
-  const mappedMessages: ChatMessage[] = dbMessages.map(
-    (dbMsg: Database['public']['Tables']['chat_messages']['Row']) => {
+  const mappedMessages: ChatMessage[] = dbMessages
+    .map((dbMsg: Database['public']['Tables']['chat_messages']['Row']) => {
       let senderType: ChatMessage['sender'] = 'system';
       let toolStatusType: ChatMessage['toolStatus'] | undefined = undefined;
       let resultTypeVal: ChatMessage['resultType'] | undefined = undefined;
@@ -61,15 +61,15 @@ export async function fetchChatHistory(
         resultType: resultTypeVal,
         imageUrl: dbMsg.content_image_url || undefined,
       };
-    }
-  ).filter(msg => {
-    // Filter out empty messages, except for tool messages which might have empty text but have other content
-    if (msg.sender === 'tool') {
-      return true; // Keep tool messages regardless of text content
-    }
-    // For other message types, only keep if there's actual text content
-    return msg.text && msg.text.trim() !== '';
-  });
+    })
+    .filter((msg) => {
+      // Filter out empty messages, except for tool messages which might have empty text but have other content
+      if (msg.sender === 'tool') {
+        return true; // Keep tool messages regardless of text content
+      }
+      // For other message types, only keep if there's actual text content
+      return msg.text && msg.text.trim() !== '';
+    });
 
   return mappedMessages;
 }

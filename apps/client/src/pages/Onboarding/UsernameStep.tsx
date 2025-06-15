@@ -248,8 +248,8 @@ function UsernameStep() {
                   {(availabilityStatus === 'taken' ||
                     availabilityStatus === 'error' ||
                     (!!errors.username && availabilityStatus === 'invalid')) && (
-                      <XCircle className="h-5 w-5 text-red-500" />
-                    )}
+                    <XCircle className="h-5 w-5 text-red-500" />
+                  )}
                 </div>
               </div>
               {/* Conditionally show required error for username */}

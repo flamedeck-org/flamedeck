@@ -35,9 +35,7 @@ export function useTraceAnalysisApi(): UseMutationResult<
   TraceAnalysisPayload
 > {
   return useMutation({
-    mutationFn: async (
-      payload: TraceAnalysisPayload
-    ): Promise<TraceAnalysisApiResponse> => {
+    mutationFn: async (payload: TraceAnalysisPayload): Promise<TraceAnalysisApiResponse> => {
       // Basic validation remains useful here before calling the actual API function
       if (!payload.userId || !payload.traceId || !payload.sessionId) {
         const validationError = new Error(
@@ -57,8 +55,7 @@ export function useTraceAnalysisApi(): UseMutationResult<
       Sentry.withScope((scope) => {
         scope.setTag('api_operation', 'processTurn');
         // Ensure variables is an object before trying to spread or access its properties
-        const safeVariables =
-          typeof variables === 'object' && variables !== null ? variables : {};
+        const safeVariables = typeof variables === 'object' && variables !== null ? variables : {};
         scope.setContext('api_variables', safeVariables as any); // Be mindful of PII
         if (context) {
           scope.setContext('react_query_context', context as any);
@@ -68,4 +65,3 @@ export function useTraceAnalysisApi(): UseMutationResult<
     },
   });
 }
-

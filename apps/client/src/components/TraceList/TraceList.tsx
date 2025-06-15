@@ -73,7 +73,8 @@ function TraceListComponent() {
     threshold: 0,
   });
 
-  const { openModal: openTraceUploadModal, closeModal: closeTraceUploadModal } = useTraceUploadModal();
+  const { openModal: openTraceUploadModal, closeModal: closeTraceUploadModal } =
+    useTraceUploadModal();
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -239,9 +240,7 @@ function TraceListComponent() {
               <X className="h-8 w-8 text-red-500" />
             </div>
             <h3 className="text-lg font-bold mb-2">Error Loading Contents</h3>
-            <p className="text-muted-foreground mb-6">
-              {error.message}
-            </p>
+            <p className="text-muted-foreground mb-6">{error.message}</p>
             <Button
               onClick={() => window.location.reload()}
               className="bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white border-0 transition-all duration-300"
@@ -325,7 +324,9 @@ function TraceListComponent() {
                 </div>
                 <h3 className="text-lg font-bold mb-2">No matching traces found</h3>
                 <p className="text-muted-foreground mb-6">
-                  We couldn't find any traces or folders matching "<span className="font-medium text-foreground">{searchQuery}</span>". Try adjusting your search terms.
+                  We couldn't find any traces or folders matching "
+                  <span className="font-medium text-foreground">{searchQuery}</span>". Try adjusting
+                  your search terms.
                 </p>
                 <Button
                   onClick={handleClearSearch}
@@ -401,10 +402,18 @@ function TraceListComponent() {
             <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow className="bg-background/50 backdrop-blur-sm hover:bg-background/70 border-b border-border">
-                  <TableHead className="pl-6 font-semibold text-foreground w-full md:w-1/2">Name</TableHead>
-                  <TableHead className="font-semibold text-foreground hidden md:table-cell">Owner</TableHead>
-                  <TableHead className="font-semibold text-foreground hidden md:table-cell">Duration</TableHead>
-                  <TableHead className="font-semibold text-foreground hidden md:table-cell">Last Updated</TableHead>
+                  <TableHead className="pl-6 font-semibold text-foreground w-full md:w-1/2">
+                    Name
+                  </TableHead>
+                  <TableHead className="font-semibold text-foreground hidden md:table-cell">
+                    Owner
+                  </TableHead>
+                  <TableHead className="font-semibold text-foreground hidden md:table-cell">
+                    Duration
+                  </TableHead>
+                  <TableHead className="font-semibold text-foreground hidden md:table-cell">
+                    Last Updated
+                  </TableHead>
                   <TableHead className="text-right pr-6 font-semibold text-foreground w-20 md:w-40">
                     <span>Actions</span>
                   </TableHead>
@@ -438,7 +447,9 @@ function TraceListComponent() {
           {isFetchingNextPage && (
             <div className="flex items-center gap-2 px-4 py-2 bg-background/80 backdrop-blur-sm rounded-full border border-border">
               <Loader2 className="h-4 w-4 animate-spin text-red-500" />
-              <span className="text-sm text-muted-foreground font-medium">Loading more traces...</span>
+              <span className="text-sm text-muted-foreground font-medium">
+                Loading more traces...
+              </span>
             </div>
           )}
         </div>

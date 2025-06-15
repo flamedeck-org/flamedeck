@@ -4,7 +4,7 @@ import { peachFlamegraphThemeLight } from './peach/light.ts';
 import { peachFlamegraphThemeDark } from './peach/dark.ts';
 import { iceFlamegraphThemeLight } from './ice/light.ts';
 import { iceFlamegraphThemeDark } from './ice/dark.ts';
-import { FlamegraphThemeName, FlamegraphThemeVariants } from './types.ts';
+import type { FlamegraphThemeName, FlamegraphThemeVariants } from './types.ts';
 
 // Registry mapping theme names to their light/dark implementations
 export const flamegraphThemeRegistry: Partial<

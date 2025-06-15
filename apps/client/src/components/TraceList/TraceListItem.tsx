@@ -174,11 +174,11 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
   const expirationStatus = trace.expires_at
     ? getExpirationStatus(trace.expires_at)
     : {
-      isExpiring: false,
-      daysRemaining: null,
-      expirationDate: null,
-      formattedExpirationDate: null,
-    };
+        isExpiring: false,
+        daysRemaining: null,
+        expirationDate: null,
+        formattedExpirationDate: null,
+      };
 
   return (
     <>
@@ -190,9 +190,7 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
       >
         <TableCell className="font-medium pl-6 py-3 w-full md:w-1/2">
           <div className="flex items-center min-w-0">
-            <div className="flex-shrink-0">
-              {getIconForProfileType(trace.profile_type)}
-            </div>
+            <div className="flex-shrink-0">{getIconForProfileType(trace.profile_type)}</div>
             <span className="truncate">{trace.scenario || 'N/A'}</span>
           </div>
         </TableCell>
@@ -202,7 +200,9 @@ const TraceListItemComponent: React.FC<TraceListItemProps> = ({
             <span className="text-sm truncate">{ownerDisplayName}</span>
           </div>
         </TableCell>
-        <TableCell className="py-4 hidden md:table-cell">{formatDuration(trace.duration_ms)}</TableCell>
+        <TableCell className="py-4 hidden md:table-cell">
+          {formatDuration(trace.duration_ms)}
+        </TableCell>
         <TableCell className="py-4 text-muted-foreground text-sm hidden md:table-cell">
           <div className="flex items-center gap-2">
             {expirationStatus.isExpiring && (

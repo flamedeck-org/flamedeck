@@ -1,1 +1,1 @@
-export * from './TraceUploadModal'; 
+export * from './TraceUploadModal';

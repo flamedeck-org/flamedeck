@@ -427,7 +427,8 @@ function eventListToProfile(
 
     if (b == null) {
       console.warn(
-        `Tried to end frame "${frameInfoForEvent(e, exporterSource).key
+        `Tried to end frame "${
+          frameInfoForEvent(e, exporterSource).key
         }", but the stack was empty. Doing nothing instead.`
       );
       return;

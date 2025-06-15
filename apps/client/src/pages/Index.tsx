@@ -3,7 +3,15 @@ import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import PricingTable from '@/components/PricingTable';
-import { UploadCloud, Database, BarChart, Search, ArrowRight, Star, ExternalLink } from 'lucide-react';
+import {
+  UploadCloud,
+  Database,
+  BarChart,
+  Search,
+  ArrowRight,
+  Star,
+  ExternalLink,
+} from 'lucide-react';
 import SharedPageSEO from '@/components/seo/SharedPageSEO';
 import { useAtom } from '@/lib/speedscope-core/atom';
 import { colorSchemeAtom, ColorScheme } from '@/components/speedscope-ui/theme';
@@ -69,41 +77,44 @@ function Index() {
     e.stopPropagation();
   }, []);
 
-  const handleDrop = useCallback(async (e: DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    async (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
 
-    const files = e.dataTransfer?.files;
-    if (files && files.length > 0) {
-      const file = files[0];
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        const file = files[0];
 
-      if (file.size > 100 * 1024 * 1024) {
-        toast({
-          title: 'File too large',
-          description: 'Maximum file size is 100MB.',
-          variant: 'destructive',
-        });
-        return;
+        if (file.size > 100 * 1024 * 1024) {
+          toast({
+            title: 'File too large',
+            description: 'Maximum file size is 100MB.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          navigate('/viewer', {
+            state: {
+              traceData: arrayBuffer,
+              fileName: file.name,
+            },
+          });
+        } catch (error) {
+          toast({
+            title: 'Error reading file',
+            description: 'There was an error reading the trace file.',
+            variant: 'destructive',
+          });
+        }
       }
-
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        navigate('/viewer', {
-          state: {
-            traceData: arrayBuffer,
-            fileName: file.name,
-          },
-        });
-      } catch (error) {
-        toast({
-          title: 'Error reading file',
-          description: 'There was an error reading the trace file.',
-          variant: 'destructive',
-        });
-      }
-    }
-  }, [navigate, toast]);
+    },
+    [navigate, toast]
+  );
 
   useEffect(() => {
     document.addEventListener('dragenter', handleDragEnter);
@@ -139,7 +150,10 @@ function Index() {
           &copy; {new Date().getFullYear()} FlameDeck. All rights reserved.
         </p>
         <div className="flex space-x-8">
-          <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
+          <Link
+            to="/login"
+            className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105"
+          >
             Login
           </Link>
           <a
@@ -151,13 +165,22 @@ function Index() {
             API Docs
             <ExternalLink className="w-3 h-3" />
           </a>
-          <a href="mailto:support@flamedeck.com" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
+          <a
+            href="mailto:support@flamedeck.com"
+            className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105"
+          >
             Support
           </a>
-          <a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
+          <a
+            href="/privacy-policy"
+            className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105"
+          >
             Privacy Policy
           </a>
-          <a href="#" className="termly-display-preferences text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105">
+          <a
+            href="#"
+            className="termly-display-preferences text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105"
+          >
             Consent Preferences
           </a>
         </div>
@@ -216,7 +239,10 @@ function Index() {
                       <span className="block mt-1">Made Simple</span>
                     </h1>
                   </div>
-                  <h1 id="page-title" className="relative text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight">
+                  <h1
+                    id="page-title"
+                    className="relative text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight"
+                  >
                     Performance Debugging
                     <span className="block bg-gradient-to-r from-red-500 via-red-400 to-yellow-500 bg-clip-text text-transparent mt-1">
                       Made Simple
@@ -265,23 +291,26 @@ function Index() {
                 {[
                   {
                     icon: UploadCloud,
-                    title: "Effortless Upload",
-                    description: "Drag & drop traces, or integrate seamlessly with our API & CLI. No complicated setup.",
+                    title: 'Effortless Upload',
+                    description:
+                      'Drag & drop traces, or integrate seamlessly with our API & CLI. No complicated setup.',
                     links: [
-                      { text: "API", to: "https://docs.flamedeck.com/api-keys" },
-                      { text: "CLI", to: "https://docs.flamedeck.com/cli-upload" }
-                    ]
+                      { text: 'API', to: 'https://docs.flamedeck.com/api-keys' },
+                      { text: 'CLI', to: 'https://docs.flamedeck.com/cli-upload' },
+                    ],
                   },
                   {
                     icon: Search,
-                    title: "AI-Driven Insights",
-                    description: "Performance optimization is hard. Let AI analyze your traces and pinpoint key issues."
+                    title: 'AI-Driven Insights',
+                    description:
+                      'Performance optimization is hard. Let AI analyze your traces and pinpoint key issues.',
                   },
                   {
                     icon: BarChart,
-                    title: "Clear Visualizations",
-                    description: "Understand complex data at a glance with interactive flame graphs."
-                  }
+                    title: 'Clear Visualizations',
+                    description:
+                      'Understand complex data at a glance with interactive flame graphs.',
+                  },
                 ].map((feature, index) => (
                   <div
                     key={feature.title}
@@ -355,9 +384,9 @@ function Index() {
                     <span className="block text-blue-500">Performance Profiles</span>
                   </h3>
                   <p className="text-base md:text-xl text-muted-foreground leading-relaxed">
-                    Keeping track of profiles when debugging issues with your application is messy and
-                    confusing. Organize them all in one place with FlameDeck, making it easy to find
-                    what you need, when you need it.
+                    Keeping track of profiles when debugging issues with your application is messy
+                    and confusing. Organize them all in one place with FlameDeck, making it easy to
+                    find what you need, when you need it.
                   </p>
                 </div>
                 <div className="lg:col-span-3">
@@ -385,9 +414,9 @@ function Index() {
                     <span className="block text-green-500">AI</span>
                   </h3>
                   <p className="text-base md:text-xl text-muted-foreground leading-relaxed">
-                    Performance debugging is hard and time-consuming. FlameDeck uses state-of-the-art
-                    AI models to analyze your performance profiles, pinpoint bottlenecks, and provide
-                    actionable insights.
+                    Performance debugging is hard and time-consuming. FlameDeck uses
+                    state-of-the-art AI models to analyze your performance profiles, pinpoint
+                    bottlenecks, and provide actionable insights.
                   </p>
                 </div>
                 <div className="lg:col-span-3 lg:order-first">
@@ -426,18 +455,40 @@ function Index() {
                     <div className="relative bg-card/80 backdrop-blur-xl rounded-xl md:rounded-3xl shadow-2xl border border-border/50 p-6 md:p-10 group-hover:shadow-3xl transition-all duration-500">
                       <div className="grid grid-cols-3 gap-3 md:gap-6">
                         {[
-                          { name: 'Node.js', icon: SiNodedotjs as React.ElementType, color: 'text-green-500' },
-                          { name: 'Chrome', icon: SiGooglechrome as React.ElementType, color: 'text-blue-500' },
-                          { name: 'Rust', icon: SiRust as React.ElementType, color: 'text-orange-500' },
+                          {
+                            name: 'Node.js',
+                            icon: SiNodedotjs as React.ElementType,
+                            color: 'text-green-500',
+                          },
+                          {
+                            name: 'Chrome',
+                            icon: SiGooglechrome as React.ElementType,
+                            color: 'text-blue-500',
+                          },
+                          {
+                            name: 'Rust',
+                            icon: SiRust as React.ElementType,
+                            color: 'text-orange-500',
+                          },
                           { name: 'Go', icon: SiGo as React.ElementType, color: 'text-cyan-500' },
-                          { name: 'Python', icon: SiPython as React.ElementType, color: 'text-yellow-500' },
-                          { name: 'React Native', icon: SiReact as React.ElementType, color: 'text-blue-400' },
+                          {
+                            name: 'Python',
+                            icon: SiPython as React.ElementType,
+                            color: 'text-yellow-500',
+                          },
+                          {
+                            name: 'React Native',
+                            icon: SiReact as React.ElementType,
+                            color: 'text-blue-400',
+                          },
                         ].map((lang) => (
                           <div
                             key={lang.name}
                             className="group/lang flex flex-col items-center p-3 md:p-6 bg-background/50 backdrop-blur-sm rounded-2xl border border-border/30 hover:border-border/60 transition-all duration-300 hover:scale-105 hover:shadow-lg"
                           >
-                            <lang.icon className={`h-6 w-6 md:h-10 md:w-10 ${lang.color} mb-2 md:mb-3 transition-transform group-hover/lang:scale-110`} />
+                            <lang.icon
+                              className={`h-6 w-6 md:h-10 md:w-10 ${lang.color} mb-2 md:mb-3 transition-transform group-hover/lang:scale-110`}
+                            />
                             <span className="text-xs md:text-sm font-medium text-center text-muted-foreground group-hover/lang:text-foreground transition-colors">
                               {lang.name}
                             </span>
@@ -454,13 +505,18 @@ function Index() {
 
         <FadeInOnScroll delay={0.4}>
           {/* Pricing Section */}
-          <div id="pricing" className="py-16 md:py-32 px-4 bg-gradient-to-br from-background/50 to-secondary/30 backdrop-blur-sm">
+          <div
+            id="pricing"
+            className="py-16 md:py-32 px-4 bg-gradient-to-br from-background/50 to-secondary/30 backdrop-blur-sm"
+          >
             <div className="max-w-7xl mx-auto">
               <div className="text-center mb-12 md:mb-16">
                 <h2 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6">
                   Simple, Transparent Pricing
                 </h2>
-                <p className="text-lg md:text-xl text-muted-foreground">Choose the plan that's right for you</p>
+                <p className="text-lg md:text-xl text-muted-foreground">
+                  Choose the plan that's right for you
+                </p>
                 <div className="w-20 h-1 bg-gradient-to-r from-red-500 to-yellow-500 mx-auto rounded-full mt-4 md:mt-6" />
               </div>
               <PricingTable />

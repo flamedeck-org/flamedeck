@@ -52,7 +52,10 @@ const Navbar: React.FC = () => {
                 Docs
                 <ExternalLink className="h-3 w-3" />
               </a>
-              <Link to="/login" className="hidden sm:flex text-sm font-medium text-foreground items-center">
+              <Link
+                to="/login"
+                className="hidden sm:flex text-sm font-medium text-foreground items-center"
+              >
                 Sign in
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Link>

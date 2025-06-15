@@ -302,7 +302,7 @@ export function importFromChromeCPUProfile(chromeProfile: CPUProfile): Profile {
       lca = shouldPlaceOnTopOfPreviousStack(lca.callFrame.functionName)
         ? lastOf(prevStack)
         : lca.parent || null
-    ) { }
+    ) {}
 
     // Close frames that are no longer open
     while (prevStack.length > 0 && lastOf(prevStack) != lca) {

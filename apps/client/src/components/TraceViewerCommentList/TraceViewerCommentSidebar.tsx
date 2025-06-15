@@ -6,7 +6,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-  SheetClose
+  SheetClose,
 } from '@/components/ui/sheet';
 import { TraceViewerCommentList } from './TraceViewerCommentList';
 import { MessageSquare } from 'lucide-react';

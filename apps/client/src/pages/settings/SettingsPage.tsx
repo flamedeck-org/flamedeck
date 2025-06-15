@@ -247,7 +247,9 @@ function SettingsPage() {
                   <ShieldAlert className="h-5 w-5 text-red-500" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-semibold text-destructive">Danger Zone</CardTitle>
+                  <CardTitle className="text-lg font-semibold text-destructive">
+                    Danger Zone
+                  </CardTitle>
                   <CardDescription className="text-sm">
                     Irreversible account actions
                   </CardDescription>
@@ -277,7 +279,10 @@ function SettingsPage() {
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="shadow-sm hover:shadow-md transition-all duration-300">
+                    <Button
+                      variant="destructive"
+                      className="shadow-sm hover:shadow-md transition-all duration-300"
+                    >
                       Delete Account
                     </Button>
                   </AlertDialogTrigger>

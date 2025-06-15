@@ -186,7 +186,10 @@ function ApiKeysPage() {
                     className="mt-0.5"
                   />
                   <div className="flex-1">
-                    <Label htmlFor={`scope-${scope.id}`} className="text-sm font-medium cursor-pointer leading-tight">
+                    <Label
+                      htmlFor={`scope-${scope.id}`}
+                      className="text-sm font-medium cursor-pointer leading-tight"
+                    >
                       {scope.label}
                     </Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -194,8 +197,7 @@ function ApiKeysPage() {
                         ? 'Allows uploading performance trace files via API'
                         : scope.id === 'trace:download'
                           ? 'Allows downloading trace data and storage objects via API'
-                          : `Allows ${scope.label.toLowerCase()} operations via API`
-                      }
+                          : `Allows ${scope.label.toLowerCase()} operations via API`}
                     </p>
                     <Badge variant="outline" className="mt-1.5 text-xs">
                       {scope.id}
@@ -233,9 +235,7 @@ function ApiKeysPage() {
             </div>
             <div>
               <CardTitle className="text-lg font-bold">Existing API Keys</CardTitle>
-              <CardDescription className="text-sm">
-                Manage your existing API keys.
-              </CardDescription>
+              <CardDescription className="text-sm">Manage your existing API keys.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -255,9 +255,7 @@ function ApiKeysPage() {
                 <AlertCircle className="h-8 w-8 text-red-500" />
               </div>
               <h3 className="text-lg font-bold mb-2">Error Loading API Keys</h3>
-              <p className="text-muted-foreground mb-6">
-                {keysError.message}
-              </p>
+              <p className="text-muted-foreground mb-6">{keysError.message}</p>
               <Button onClick={() => refetchKeys()} variant="outline">
                 Try Again
               </Button>
@@ -292,7 +290,11 @@ function ApiKeysPage() {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="truncate max-w-xs">
-                                  {key.description || <span className="italic text-muted-foreground">No description</span>}
+                                  {key.description || (
+                                    <span className="italic text-muted-foreground">
+                                      No description
+                                    </span>
+                                  )}
                                 </p>
                               </div>
                             </div>
@@ -306,16 +308,24 @@ function ApiKeysPage() {
                               ))}
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm">{formatRelativeDate(key.created_at)}</TableCell>
                           <TableCell className="text-sm">
-                            {key.last_used_at ? formatRelativeDate(key.last_used_at) : (
+                            {formatRelativeDate(key.created_at)}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {key.last_used_at ? (
+                              formatRelativeDate(key.last_used_at)
+                            ) : (
                               <span className="text-muted-foreground">Never</span>
                             )}
                           </TableCell>
                           <TableCell>
                             <Badge
                               variant={key.is_active ? 'default' : 'destructive'}
-                              className={key.is_active ? 'bg-green-100 text-green-800 hover:bg-green-100' : ''}
+                              className={
+                                key.is_active
+                                  ? 'bg-green-100 text-green-800 hover:bg-green-100'
+                                  : ''
+                              }
                             >
                               {key.is_active ? (
                                 <>
@@ -381,7 +391,8 @@ function ApiKeysPage() {
             <AlertDialogDescription className="flex items-start space-x-3 pt-4">
               <AlertCircle className="h-5 w-5 text-yellow-500 mt-1 flex-shrink-0" />
               <span className="text-base">
-                <strong>Important:</strong> Please copy your new API key now. You won't be able to see it again for security reasons.
+                <strong>Important:</strong> Please copy your new API key now. You won't be able to
+                see it again for security reasons.
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -424,31 +435,27 @@ function ApiKeysPage() {
               <span>Revoke API Key</span>
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3 pt-4">
-              <p className="text-base">
-                Are you sure you want to revoke this API key?
-              </p>
+              <p className="text-base">Are you sure you want to revoke this API key?</p>
               <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
                 <p className="font-medium text-sm">
-                  Key: <span className="font-mono">{keyToRevoke?.description || keyToRevoke?.id}</span>
+                  Key:{' '}
+                  <span className="font-mono">{keyToRevoke?.description || keyToRevoke?.id}</span>
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">
-                This action cannot be undone. The key will immediately become inactive and any applications using it will lose access.
+                This action cannot be undone. The key will immediately become inactive and any
+                applications using it will lose access.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={revokeApiKeyMutation.isPending}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={revokeApiKeyMutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRevokeKey}
               disabled={revokeApiKeyMutation.isPending}
               className={buttonVariants({ variant: 'destructive' })}
             >
-              {revokeApiKeyMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {revokeApiKeyMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Revoke Key
             </AlertDialogAction>
           </AlertDialogFooter>

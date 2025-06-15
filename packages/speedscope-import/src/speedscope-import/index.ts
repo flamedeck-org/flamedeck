@@ -243,7 +243,7 @@ async function _importProfileGroup(
   let parsed: any;
   try {
     parsed = contents.parseAsJSON(deps);
-  } catch (e) { }
+  } catch (e) {}
 
   if (parsed) {
     if (parsed['$schema'] === 'https://www.speedscope.app/file-format-schema.json') {
