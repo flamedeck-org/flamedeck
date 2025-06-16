@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, memo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, ArrowLeft, Zap, Database, Users, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -19,7 +19,6 @@ function LoggedOutTraceViewerPage() {
     const location = useLocation();
     const { toast } = useToast();
     const { user } = useAuth();
-    const { openModal: openUploadModal } = useTraceUploadModal();
 
     const [uploadState, setUploadState] = useState<TraceUploadState>({
         isUploading: false,
@@ -43,13 +42,7 @@ function LoggedOutTraceViewerPage() {
             return;
         }
 
-        // If user is logged in, use the TraceUploadModal
-        if (user) {
-            openUploadModal(file, null); // null for no specific folder
-            return;
-        }
-
-        // For logged-out users, keep the existing behavior
+        // For logged-out users, process the file locally
         setUploadState(prev => ({ ...prev, isUploading: true, progress: 0 }));
 
         try {
@@ -87,7 +80,7 @@ function LoggedOutTraceViewerPage() {
         } finally {
             setUploadState(prev => ({ ...prev, isUploading: false, progress: 0 }));
         }
-    }, [navigate, toast, user, openUploadModal]);
+    }, [navigate, toast]);
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -131,6 +124,11 @@ function LoggedOutTraceViewerPage() {
     const handleBrowseClick = useCallback(() => {
         fileInputRef.current?.click();
     }, []);
+
+    // Redirect logged-in users to /home (after all hooks are called)
+    if (user) {
+        return <Navigate to="/home" replace />;
+    }
 
     // If we have initial trace data, navigate immediately to viewer
     if (initialTraceData && initialFileName) {
@@ -227,19 +225,6 @@ function LoggedOutTraceViewerPage() {
                                     <UploadCloud className="w-5 h-5 mr-3" />
                                     Choose File to Upload
                                 </Button>
-                                {user && (
-                                    <Button
-                                        variant="outline"
-                                        size="lg"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigate('/traces');
-                                        }}
-                                        className="text-lg px-8 py-4 border-2 shadow-lg transition-all duration-300 hover:scale-105"
-                                    >
-                                        View Traces
-                                    </Button>
-                                )}
                             </div>
                             <input
                                 ref={fileInputRef}

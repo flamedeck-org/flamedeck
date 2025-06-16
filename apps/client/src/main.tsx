@@ -15,6 +15,10 @@ import 'highlight.js/styles/github-dark.css'; // Dark theme
 import { ThemeProvider as SpeedscopeThemeProvider } from './components/speedscope-ui/theme.tsx'; // Renamed for clarity
 // Import ThemeProvider from next-themes
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { setupAutoPageTracking } from './lib/analytics';
+
+// Initialize analytics
+setupAutoPageTracking();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

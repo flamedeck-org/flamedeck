@@ -50,3 +50,18 @@ VITE_STRIPE_PUBLISHABLE_KEY=<test-perishable-key>
 ```bash
 yarn nx run client:dev
 ```
+
+## Applying Local Database Changes
+
+1. Add a migration file
+2. Run this command:
+
+```bash
+yarn supabase migration up
+```
+
+3. Regen types
+
+```bash
+yarn supabase gen types typescript --local > packages/supabase-integration/src/index.ts
+```

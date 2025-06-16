@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import Index from './pages/Index.tsx';
 import Login from './pages/Login.tsx';
+import Home from './pages/Home.tsx';
 import Traces from './pages/Traces.tsx';
 import { TraceDetail } from './pages/TraceDetail';
 import ApiKeysPage from './pages/settings/ApiKeysPage';
@@ -76,8 +77,8 @@ function RootHandler() {
   }
 
   // If loading is finished and there *is* a user, navigate to the main app section.
-  // ProtectedRoute will then handle the /viewer route and any onboarding redirects.
-  return <Navigate to="/viewer" replace />;
+  // ProtectedRoute will then handle the /home route and any onboarding redirects.
+  return <Navigate to="/home" replace />;
 }
 // --- End RootHandler ---
 
@@ -144,6 +145,7 @@ const AppRoutes = () => {
         {/* Protected Routes - NO LONGER includes the root path "/" */}
         <Route element={<ProtectedRoute />}>
           {/* ProtectedRoute now only guards these specific authenticated paths */}
+          <Route path="/home" element={<Home />} />
           <Route path="/traces" element={<Traces />} />
           <Route path="/traces/folder/:folderId" element={<Traces />} />
           <Route path="/traces/:id" element={<TraceDetail />} />

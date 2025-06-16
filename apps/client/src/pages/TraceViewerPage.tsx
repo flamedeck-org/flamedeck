@@ -352,7 +352,7 @@ const TraceViewerPage: React.FC = () => {
           actions={[
             {
               message: 'Try Another File',
-              href: '/viewer',
+              href: '/home',
               variant: 'gradient',
               className: 'bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white',
             },

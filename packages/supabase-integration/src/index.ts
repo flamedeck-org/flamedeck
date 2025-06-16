@@ -7,8 +7,84 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          device_type: string | null
+          event_name: string | null
+          event_type: string
+          id: string
+          page_path: string | null
+          properties: Json | null
+          referrer: string | null
+          session_id: string
+          timestamp: number
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_name?: string | null
+          event_type: string
+          id?: string
+          page_path?: string | null
+          properties?: Json | null
+          referrer?: string | null
+          session_id: string
+          timestamp: number
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_name?: string | null
+          event_type?: string
+          id?: string
+          page_path?: string | null
+          properties?: Json | null
+          referrer?: string | null
+          session_id?: string
+          timestamp?: number
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -814,6 +890,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       trace_role: ["viewer", "editor", "owner"],

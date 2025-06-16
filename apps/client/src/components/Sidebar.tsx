@@ -79,19 +79,19 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) 
       >
         <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
           <NavLink
-            to="/viewer"
+            to="/home"
             className={({ isActive }) => {
-              // Custom active check for viewer - active when on viewer page or viewing a trace
-              const isViewerActive = isActive ||
-                location.pathname === '/viewer/trace-viewer' ||
+              // Custom active check for home - active when on home page or viewing a trace
+              const isHomeActive = isActive ||
+                location.pathname === '/home' ||
                 location.pathname.match(/^\/traces\/[^/]+\/view$/);
 
-              return `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 pl-3.5 pr-3 py-2 h-9'} rounded-md text-sm font-medium transition-colors ${isViewerActive
+              return `flex items-center ${minimized ? `justify-center ${MINIMIZED_BUTTON_SIZE}` : 'space-x-2 pl-3.5 pr-3 py-2 h-9'} rounded-md text-sm font-medium transition-colors ${isHomeActive
                 ? 'bg-accent text-accent-foreground'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 }`;
             }}
-            aria-label="Viewer"
+            aria-label="Home"
           >
             {minimized ? (
               <Tooltip disableHoverableContent={false}>
@@ -99,13 +99,13 @@ const Sidebar: React.FC<SidebarProps> = ({ minimized = false, mobile = false }) 
                   <UploadCloud className={LIST_ICON_SIZE} />
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={16}>
-                  <p>Viewer</p>
+                  <p>Home</p>
                 </TooltipContent>
               </Tooltip>
             ) : (
               <UploadCloud className={LIST_ICON_SIZE} />
             )}
-            {!minimized && <span>Viewer</span>}
+            {!minimized && <span>Home</span>}
           </NavLink>
           <NavLink
             to="/traces"

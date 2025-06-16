@@ -75,6 +75,7 @@ client_id = "env(GOOGLE_OAUTH_CLIENT_ID)"
 secret = "env(GOOGLE_OAUTH_SECRET)"
 
 [auth]
+site_url = "http://localhost:8080"
 additional_redirect_urls=["http://localhost:8080/auth/callback"]
 
 [storage.buckets.traces]
