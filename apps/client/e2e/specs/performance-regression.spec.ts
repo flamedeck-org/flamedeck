@@ -208,7 +208,7 @@ Summary:
  * Write GitHub Actions summary
  */
 async function writeGitHubSummary(result: any): Promise<void> {
-    const fs = require('fs').promises;
+    const fs = await import('fs').then(m => m.promises);
     const summaryFile = process.env.GITHUB_STEP_SUMMARY;
 
     if (!summaryFile) return;
