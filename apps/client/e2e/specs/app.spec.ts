@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { PlaywrightPerformanceCollector } from '@flamedeck/regression-playwright';
-import { flamedeckPerformanceConfig } from '../performance-scenarios';
 
 test.describe('App Startup', () => {
     test('should load the homepage successfully', async ({ page }) => {
@@ -56,14 +55,25 @@ test.describe('App Startup', () => {
     });
 
     test('should collect performance metrics (informational)', async ({ page }) => {
+        console.log('[DEBUG] Starting baseline performance test');
+        console.log('[DEBUG] Environment variables:', {
+            CI: process.env.CI,
+            PERFORMANCE_TEST: process.env.PERFORMANCE_TEST,
+            BASE_URL: process.env.BASE_URL,
+            PR_URL: process.env.PR_URL
+        });
+
         // Set up performance tracking
         await PlaywrightPerformanceCollector.setupErrorTracking(page);
 
+        console.log('[DEBUG] Navigating to homepage');
         await page.goto('/');
 
+        console.log('[DEBUG] Waiting for page stability');
         // Wait for page stability 
         await PlaywrightPerformanceCollector.waitForPageStability(page);
 
+        console.log('[DEBUG] Collecting performance metrics');
         // Collect performance metrics
         const metrics = await PlaywrightPerformanceCollector.collectAllMetrics(page);
 

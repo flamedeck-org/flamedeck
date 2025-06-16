@@ -21,11 +21,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, actions }) => 
         {subtitle && <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div>}
       </div>
       {/* Actions container - stacks on mobile, aligns right on desktop */}
-      {actions && (
-        <div className="flex-shrink-0 w-full sm:w-auto">
-          {actions}
-        </div>
-      )}
+      {actions && <div className="flex-shrink-0 w-full sm:w-auto">{actions}</div>}
     </div>
   );
 };

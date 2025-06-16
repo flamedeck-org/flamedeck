@@ -9,4 +9,4 @@ export { ResourceTimingCollector } from './collectors/resource-timing';
 export { PlaywrightPerformanceCollector } from './collectors/playwright-collector';
 
 // Export main comparator
-export { PlaywrightCIComparator } from './runners/playwright-comparator'; 
+export { PlaywrightCIComparator } from './runners/playwright-comparator';

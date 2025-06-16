@@ -1,4 +1,4 @@
-import { Color } from '@flamedeck/speedscope-core/color';
+import type { Color } from '@flamedeck/speedscope-core/color';
 
 export interface Theme {
   fgPrimaryColor: string;

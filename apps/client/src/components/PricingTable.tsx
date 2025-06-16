@@ -61,9 +61,7 @@ const PricingTable = () => {
             <div className="mt-6">
               <Link
                 to="/login"
-                className={cn(
-                  'block w-full'
-                )}
+                className={cn('block w-full')}
                 onClick={() => {
                   if (tier.name === 'Pro') {
                     try {
@@ -74,10 +72,7 @@ const PricingTable = () => {
                   }
                 }}
               >
-                <Button
-                  className="w-full"
-                  variant={tier.name === 'Pro' ? 'gradient' : 'outline'}
-                >
+                <Button className="w-full" variant={tier.name === 'Pro' ? 'gradient' : 'outline'}>
                   Get Started
                 </Button>
               </Link>

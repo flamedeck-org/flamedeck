@@ -14,8 +14,8 @@ function BillingPage() {
   const { subscription, isProUser, isLoading: isSubscriptionLoading } = useUserSubscription();
   const [isCreatingPortalSession, setIsCreatingPortalSession] = useState(false);
 
-  const proTier = useMemo(() => subscriptionTiers.find(tier => tier.name === 'Pro'), []);
-  const freeTier = useMemo(() => subscriptionTiers.find(tier => tier.name === 'Free'), []);
+  const proTier = useMemo(() => subscriptionTiers.find((tier) => tier.name === 'Pro'), []);
+  const freeTier = useMemo(() => subscriptionTiers.find((tier) => tier.name === 'Free'), []);
 
   const handleManageBilling = useCallback(async () => {
     if (
@@ -176,14 +176,16 @@ function BillingPage() {
                         </h3>
                         <div className="flex items-center gap-2">
                           <div
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${subscription.status === 'active' || subscription.status === 'trialing'
-                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                              : subscription.status === 'past_due'
-                                ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-                                : 'bg-red-100 text-red-700 border border-red-200'
-                              }`}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                              subscription.status === 'active' || subscription.status === 'trialing'
+                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                : subscription.status === 'past_due'
+                                  ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                                  : 'bg-red-100 text-red-700 border border-red-200'
+                            }`}
                           >
-                            {subscription.status === 'active' || subscription.status === 'trialing' ? (
+                            {subscription.status === 'active' ||
+                            subscription.status === 'trialing' ? (
                               <Check className="h-3 w-3" />
                             ) : subscription.status === 'past_due' ? (
                               <Loader2 className="h-3 w-3" />
@@ -191,7 +193,9 @@ function BillingPage() {
                               <Zap className="h-3 w-3" />
                             )}
                             <span className="capitalize">
-                              {subscription.status === 'trialing' ? 'Trial Active' : subscription.status || 'N/A'}
+                              {subscription.status === 'trialing'
+                                ? 'Trial Active'
+                                : subscription.status || 'N/A'}
                             </span>
                           </div>
                         </div>
@@ -236,9 +240,7 @@ function BillingPage() {
                           </div>
                           <div>
                             <p className="text-sm font-medium">Billing Cycle</p>
-                            <p className="text-sm text-muted-foreground">
-                              Monthly billing
-                            </p>
+                            <p className="text-sm text-muted-foreground">Monthly billing</p>
                           </div>
                         </div>
                       )}
@@ -251,7 +253,8 @@ function BillingPage() {
                       <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                         <Loader2 className="h-4 w-4 text-yellow-600" />
                         <p className="text-sm text-yellow-700 font-medium">
-                          Your subscription is set to cancel at the end of the current billing period.
+                          Your subscription is set to cancel at the end of the current billing
+                          period.
                         </p>
                       </div>
                     )}

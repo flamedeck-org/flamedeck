@@ -19,19 +19,19 @@ interface Code {
   type: 'CODE' | 'CPP' | 'JS' | 'SHARED_LIB';
   timestamp?: number;
   kind?:
-  | 'Bultin'
-  | 'BytecodeHandler'
-  | 'Handler'
-  | 'KeyedLoadIC'
-  | 'KeyedStoreIC'
-  | 'LoadGlobalIC'
-  | 'LoadIC'
-  | 'Opt'
-  | 'StoreIC'
-  | 'Stub'
-  | 'Unopt'
-  | 'Builtin'
-  | 'RegExp';
+    | 'Bultin'
+    | 'BytecodeHandler'
+    | 'Handler'
+    | 'KeyedLoadIC'
+    | 'KeyedStoreIC'
+    | 'LoadGlobalIC'
+    | 'LoadIC'
+    | 'Opt'
+    | 'StoreIC'
+    | 'Stub'
+    | 'Unopt'
+    | 'Builtin'
+    | 'RegExp';
   func?: number;
   tm?: number;
 }

@@ -3,10 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertCircle, Cog, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { type ChatMessage } from './ChatWindow'; // Assuming ChatMessage is exported from ChatWindow.tsx
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface ToolMessageItemProps {
   message: ChatMessage;
@@ -115,11 +112,13 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
     borderColor = 'border-blue-300/40 dark:border-blue-600/40';
   } else if (message.toolStatus === 'success' || message.toolStatus === 'success_with_warning') {
     StatusIcon = <CheckCircle2 size={18} className="mr-2 text-green-500" />;
-    bgColor = 'bg-gradient-to-br from-slate-50/80 to-gray-50/80 dark:from-slate-950/40 dark:to-gray-950/40 backdrop-blur-sm';
+    bgColor =
+      'bg-gradient-to-br from-slate-50/80 to-gray-50/80 dark:from-slate-950/40 dark:to-gray-950/40 backdrop-blur-sm';
     borderColor = 'border-green-300/40 dark:border-green-600/40';
   } else if (message.toolStatus === 'error') {
     StatusIcon = <AlertCircle size={18} className="mr-2 text-red-500" />;
-    bgColor = 'bg-gradient-to-br from-red-50/80 to-red-50/80 dark:from-red-950/30 dark:to-red-950/30 backdrop-blur-sm';
+    bgColor =
+      'bg-gradient-to-br from-red-50/80 to-red-50/80 dark:from-red-950/30 dark:to-red-950/30 backdrop-blur-sm';
     borderColor = 'border-red-300/40 dark:border-red-600/40';
     textColor = 'text-red-700 dark:text-red-300';
   }
@@ -161,7 +160,14 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
               </span>
             )}
             {message.toolStatus !== 'running' &&
-              (isExpanded ? <ChevronUp size={18} className="opacity-70 hover:opacity-100 transition-opacity" /> : <ChevronDown size={18} className="opacity-70 hover:opacity-100 transition-opacity" />)}
+              (isExpanded ? (
+                <ChevronUp size={18} className="opacity-70 hover:opacity-100 transition-opacity" />
+              ) : (
+                <ChevronDown
+                  size={18}
+                  className="opacity-70 hover:opacity-100 transition-opacity"
+                />
+              ))}
           </span>
         </button>
 
@@ -169,7 +175,9 @@ export const ToolMessageItem: React.FC<ToolMessageItemProps> = ({ message }) => 
         {(isExpanded || message.toolStatus === 'running') && (
           <div className="px-4 pb-4 border-t border-border/20">
             {shouldDisplayText && message.text && (
-              <div className="whitespace-pre-wrap break-words mt-3 text-sm leading-relaxed">{message.text}</div>
+              <div className="whitespace-pre-wrap break-words mt-3 text-sm leading-relaxed">
+                {message.text}
+              </div>
             )}
 
             {message.resultType === 'image' && message.toolStatus !== 'running' && (

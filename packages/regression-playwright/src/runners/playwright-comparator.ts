@@ -1,9 +1,11 @@
-import { Page, Browser, BrowserContext, chromium } from '@playwright/test';
-import { CIComparator, ComparisonConfig, TestScenario } from '@flamedeck/regression-core';
-import {
+import type { Browser, BrowserContext } from '@playwright/test';
+import { Page, chromium } from '@playwright/test';
+import type { ComparisonConfig, TestScenario } from '@flamedeck/regression-core';
+import { CIComparator } from '@flamedeck/regression-core';
+import type {
     PlaywrightMetrics,
     PlaywrightTestScenario,
-    PlaywrightComparisonConfig
+    PlaywrightComparisonConfig,
 } from '../types';
 import { PlaywrightPerformanceCollector } from '../collectors/playwright-collector';
 
@@ -14,6 +16,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
     private browser?: Browser;
     private contexts: Map<string, BrowserContext> = new Map();
     private playwrightConfig: PlaywrightComparisonConfig;
+    private originalScenarios: Map<string, PlaywrightTestScenario> = new Map();
 
     constructor(config: PlaywrightComparisonConfig) {
         // Convert Playwright config to base config
@@ -22,15 +25,20 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
             outlierRemovalCount: config.outlierRemovalCount,
             significanceThreshold: config.significanceThreshold,
             effectSizeThreshold: config.effectSizeThreshold,
-            scenarios: config.scenarios.map(scenario => ({
+            scenarios: config.scenarios.map((scenario) => ({
                 name: scenario.name,
                 description: scenario.description,
-                execute: scenario.execute
-            }))
+                execute: scenario.execute,
+            })),
         };
 
         super(baseConfig);
         this.playwrightConfig = config;
+
+        // Store original scenarios for later use (after super() call)
+        config.scenarios.forEach((scenario) => {
+            this.originalScenarios.set(scenario.name, scenario);
+        });
     }
 
     /**
@@ -60,8 +68,12 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
         baseUrl?: string,
         treatmentUrl?: string
     ): Promise<PlaywrightMetrics> {
+        // Get the original Playwright scenario with all properties preserved
+        const playwrightScenario = this.originalScenarios.get(scenario.name);
+        if (!playwrightScenario) {
+            throw new Error(`Original scenario not found for: ${scenario.name}`);
+        }
 
-        const playwrightScenario = scenario as PlaywrightTestScenario;
         const url = variant === 'base' ? baseUrl : treatmentUrl;
 
         if (!url) {
@@ -73,6 +85,18 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
         const page = await context.newPage();
 
         try {
+            // Debug logging
+            console.log(
+                `[DEBUG] Executing scenario: ${scenario.name}, variant: ${variant}, url: ${url}, path: ${playwrightScenario.path}`
+            );
+
+            // Validate URL before proceeding
+            if (!url || url === 'undefined') {
+                throw new Error(
+                    `Invalid URL provided for scenario ${scenario.name} variant ${variant}: ${url}`
+                );
+            }
+
             // Set up error tracking
             await PlaywrightPerformanceCollector.setupErrorTracking(page);
 
@@ -89,6 +113,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
 
             // Navigate to the URL with the scenario path
             const fullUrl = `${url}${playwrightScenario.path}`;
+            console.log(`[DEBUG] Navigating to: ${fullUrl}`);
             await page.goto(fullUrl, { waitUntil: 'networkidle' });
 
             // Run setup if provided
@@ -100,6 +125,42 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
             if (playwrightScenario.validate) {
                 const isValid = await playwrightScenario.validate(page);
                 if (!isValid) {
+                    // Take screenshot on validation failure for debugging
+                    try {
+                        const fs = await import('fs').then(m => m.promises);
+                        const path = await import('path');
+
+                        // Debug: show current working directory
+                        console.log(`[DEBUG] Current working directory: ${process.cwd()}`);
+
+                        // Ensure test-results directory exists
+                        const testResultsDir = 'test-results';
+                        try {
+                            await fs.mkdir(testResultsDir, { recursive: true });
+                        } catch (mkdirError) {
+                            // Directory might already exist, ignore error
+                        }
+
+                        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                        const screenshotPath = path.join(testResultsDir, `validation-failure-${scenario.name}-${variant}-${timestamp}.png`);
+
+                        await page.screenshot({
+                            path: screenshotPath,
+                            fullPage: true
+                        });
+
+                        console.log(`[DEBUG] Validation failure screenshot saved: ${path.resolve(screenshotPath)}`);
+
+                        // Also save page HTML for debugging
+                        const htmlPath = path.join(testResultsDir, `validation-failure-${scenario.name}-${variant}-${timestamp}.html`);
+                        const html = await page.content();
+                        await fs.writeFile(htmlPath, html);
+                        console.log(`[DEBUG] Page HTML saved: ${path.resolve(htmlPath)}`);
+
+                    } catch (screenshotError) {
+                        console.warn('Failed to capture validation failure artifacts:', screenshotError);
+                    }
+
                     throw new Error(`Page validation failed for scenario: ${scenario.name}`);
                 }
             }
@@ -116,11 +177,15 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
                 await PlaywrightPerformanceCollector.waitForPageStability(page);
             }
 
+            // Check if page is still open before collecting metrics
+            if (page.isClosed()) {
+                throw new Error(`Page was closed during scenario execution: ${scenario.name}`);
+            }
+
             // Collect performance metrics
             const metrics = await PlaywrightPerformanceCollector.collectAllMetrics(page);
 
             return metrics;
-
         } catch (error) {
             console.error(`Error executing scenario ${scenario.name} for ${variant}:`, error);
             throw error;
@@ -138,7 +203,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
         this.browser = await chromium.launch({
             headless: browserOptions.headless ?? true,
             slowMo: browserOptions.slowMo,
-            timeout: browserOptions.timeout || 30000
+            timeout: browserOptions.timeout || 30000,
         });
     }
 
@@ -157,7 +222,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
         const contextOptions: any = {
             ignoreHTTPSErrors: true,
             // Set global timeout
-            timeout: this.playwrightConfig.globalTimeout || 30000
+            timeout: this.playwrightConfig.globalTimeout || 30000,
         };
 
         // Apply device emulation if specified
@@ -179,7 +244,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
                 offline: false,
                 downloadThroughput: this.playwrightConfig.networkThrottling.downloadThroughput,
                 uploadThroughput: this.playwrightConfig.networkThrottling.uploadThroughput,
-                latency: this.playwrightConfig.networkThrottling.latency
+                latency: this.playwrightConfig.networkThrottling.latency,
             });
             await cdp.detach();
         }
@@ -219,10 +284,10 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
             scenarios: [],
             browserOptions: {
                 headless: true,
-                timeout: 30000
+                timeout: 30000,
             },
             globalTimeout: 30000,
-            ...options
+            ...options,
         };
     }
 
@@ -239,7 +304,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
             baseUrl,
             treatmentUrl,
             scenarios,
-            ...options
+            ...options,
         });
 
         const comparator = new PlaywrightCIComparator(config);
@@ -280,7 +345,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
                 }
 
                 // Small delay between measurements
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise((resolve) => setTimeout(resolve, 1000));
             }
 
             return { baseMetrics, treatmentMetrics };
@@ -301,7 +366,7 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
             baseUrl: url,
             treatmentUrl: url, // Same URL for baseline
             scenarios,
-            iterations: iterations * 2 // Double since we're only using base measurements
+            iterations: iterations * 2, // Double since we're only using base measurements
         });
 
         const comparator = new PlaywrightCIComparator(config);
@@ -314,17 +379,12 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
                 const metrics: PlaywrightMetrics[] = [];
 
                 for (let i = 0; i < iterations; i++) {
-                    const measurement = await comparator.executeScenario(
-                        scenario,
-                        'base',
-                        url,
-                        url
-                    );
+                    const measurement = await comparator.executeScenario(scenario, 'base', url, url);
 
                     metrics.push(measurement);
 
                     // Small delay between measurements
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
                 }
 
                 results.set(scenario.name, metrics);
@@ -335,4 +395,4 @@ export class PlaywrightCIComparator extends CIComparator<PlaywrightMetrics> {
             await comparator.cleanup();
         }
     }
-} 
+}

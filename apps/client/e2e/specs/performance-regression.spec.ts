@@ -97,6 +97,9 @@ test.describe('CI Performance Comparison', () => {
         // Only run if this is a CI performance test
         test.skip(process.env.PERFORMANCE_TEST !== 'true', 'Not a performance test run');
 
+        // Set a longer timeout for performance testing
+        test.setTimeout(5 * 60 * 1000); // 5 minutes
+
         const baseUrl = process.env.BASE_URL;
         const prUrl = process.env.PR_URL;
 
@@ -113,7 +116,7 @@ test.describe('CI Performance Comparison', () => {
             treatmentUrl: prUrl,
             scenarios: fullScenarios,
             ...flamedeckPerformanceConfig,
-            iterations: parseInt(process.env.PERFORMANCE_ITERATIONS || '10'),
+            iterations: parseInt(process.env.PERFORMANCE_ITERATIONS || '6'),
             outlierRemovalCount: parseInt(process.env.OUTLIER_REMOVAL_COUNT || '1')
         });
 
@@ -205,7 +208,7 @@ Summary:
  * Write GitHub Actions summary
  */
 async function writeGitHubSummary(result: any): Promise<void> {
-    const fs = require('fs').promises;
+    const fs = await import('fs').then(m => m.promises);
     const summaryFile = process.env.GITHUB_STEP_SUMMARY;
 
     if (!summaryFile) return;

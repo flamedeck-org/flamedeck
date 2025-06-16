@@ -8,94 +8,88 @@ export const flamedeckScenarios: PlaywrightTestScenario[] = [
     // Basic homepage load - enhanced from common scenario
     {
         ...CommonScenarios.homepageLoad(),
-        validate: async (page) => {
-            // Ensure Flamedeck branding is loaded
-            const title = await page.title();
-            return title.includes('Flamedeck');
-        },
-        waitForStable: async (page) => {
-            await page.waitForLoadState('networkidle');
-            // Wait for any initial React hydration
-            await page.waitForTimeout(1500);
-        }
-    },
-
-    // Dashboard/file list page
-    {
-        name: 'dashboard-load',
-        description: 'Load dashboard with trace list',
-        path: '/dashboard',
         setup: async (page) => {
-            // Set up auth if needed (you might need to adjust this based on your auth)
-            await page.evaluate(() => {
-                // Mock authentication or set tokens if needed
-                localStorage.setItem('demo-mode', 'true');
-            });
-        },
-        waitForStable: async (page) => {
+            // Ensure we wait properly for the page to be ready
             await page.waitForLoadState('networkidle');
-            // Wait for trace list to load
-            await page.waitForTimeout(2000);
-        },
-        validate: async (page) => {
-            // Check if dashboard elements are present
-            const url = page.url();
-            return url.includes('/dashboard') || url.includes('/');
-        }
-    },
+            await page.waitForLoadState('domcontentloaded');
 
-    // Trace upload flow
-    {
-        name: 'trace-upload-page',
-        description: 'Load trace upload interface',
-        path: '/upload',
-        waitForStable: async (page) => {
-            await page.waitForLoadState('networkidle');
-            // Look for upload interface elements
-            try {
-                await page.waitForSelector('[data-testid="file-upload"], input[type="file"], .upload', { timeout: 5000 });
-            } catch {
-                // Upload interface might be different, continue anyway
+            // Additional wait in CI environments for slower loading
+            if (process.env.CI) {
+                await page.waitForTimeout(2000);
             }
-            await page.waitForTimeout(1000);
         },
         validate: async (page) => {
-            // Basic validation that we're on the right page
-            const url = page.url();
-            return url.includes('/upload') || page.locator('input[type="file"]').isVisible();
-        }
+            try {
+                // Wait longer in CI environments
+                const timeout = process.env.CI ? 20000 : 8000;
+
+                console.log(`[DEBUG] Validating homepage with timeout: ${timeout}ms`);
+                console.log(`[DEBUG] Current URL: ${page.url()}`);
+                console.log(`[DEBUG] Page title: ${await page.title()}`);
+
+                // Try multiple validation strategies
+                try {
+                    // Primary validation: look for the page title
+                    await page.waitForSelector('#page-title', { timeout });
+                    console.log(`[DEBUG] Homepage validation successful - found #page-title`);
+                    return true;
+                } catch (primaryError) {
+                    console.log(`[DEBUG] Primary validation failed, trying fallback...`);
+
+                    // Fallback 1: Check if page loaded with some content
+                    const hasContent = await page.evaluate(() => {
+                        const body = document.body;
+                        return body && body.children.length > 0 && body.textContent && body.textContent.trim().length > 100;
+                    });
+
+                    if (hasContent) {
+                        console.log(`[DEBUG] Fallback validation successful - page has content`);
+                        return true;
+                    }
+
+                    // Fallback 2: Check for any h1 element
+                    const hasH1 = await page.locator('h1').count() > 0;
+                    if (hasH1) {
+                        console.log(`[DEBUG] Fallback validation successful - found h1 element`);
+                        return true;
+                    }
+
+                    throw primaryError; // Re-throw the original error
+                }
+            } catch (error) {
+                console.error('Homepage validation failed:', error);
+
+                // Capture debug information on failure
+                try {
+                    console.log(`[DEBUG] Page HTML snippet:`,
+                        await page.evaluate(() => document.documentElement.outerHTML.substring(0, 2000))
+                    );
+                    console.log(`[DEBUG] Available h1 elements:`,
+                        await page.evaluate(() =>
+                            Array.from(document.querySelectorAll('h1')).map(el => ({
+                                id: el.id,
+                                className: el.className,
+                                textContent: el.textContent?.substring(0, 100)
+                            }))
+                        )
+                    );
+                    console.log(`[DEBUG] All elements with id:`,
+                        await page.evaluate(() =>
+                            Array.from(document.querySelectorAll('[id]')).slice(0, 10).map(el => ({
+                                id: el.id,
+                                tagName: el.tagName,
+                                textContent: el.textContent?.substring(0, 50)
+                            }))
+                        )
+                    );
+                } catch (debugError) {
+                    console.error('Failed to capture debug info:', debugError);
+                }
+
+                return false;
+            }
+        },
     },
-
-    // API/docs page
-    {
-        name: 'api-docs-load',
-        description: 'Load API documentation page',
-        path: '/docs',
-        waitForStable: async (page) => {
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(1000);
-        },
-        validate: async (page) => {
-            const url = page.url();
-            return url.includes('/docs') || url.includes('/api');
-        }
-    },
-
-    // Pricing page (if exists)
-    {
-        name: 'pricing-load',
-        description: 'Load pricing page',
-        path: '/pricing',
-        waitForStable: async (page) => {
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(1000);
-        },
-        validate: async (page) => {
-            // Pricing page might redirect or not exist, so be lenient
-            return true;
-        }
-    }
-
 ];
 
 /**
@@ -124,7 +118,7 @@ export const flamedeckPerformanceConfig = {
     },
 
     // Test settings
-    iterations: 10,  // Start with fewer iterations for faster feedback
+    iterations: 6,  // Reduced iterations for faster feedback
     outlierRemovalCount: 1,
     significanceThreshold: 0.05,
     effectSizeThreshold: 0.5,

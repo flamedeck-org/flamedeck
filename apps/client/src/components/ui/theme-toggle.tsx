@@ -46,9 +46,11 @@ export function ThemeToggle() {
           }}
           icon={<Sun className="h-4 w-4 text-yellow-500" />}
           iconVariant="accent"
-          rightContent={(theme === 'light' || speedscopeColorScheme === ColorScheme.LIGHT) && (
-            <Check className="h-4 w-4 text-red-500" />
-          )}
+          rightContent={
+            (theme === 'light' || speedscopeColorScheme === ColorScheme.LIGHT) && (
+              <Check className="h-4 w-4 text-red-500" />
+            )
+          }
         >
           Light
         </DropdownMenuItem>
@@ -60,9 +62,11 @@ export function ThemeToggle() {
           }}
           icon={<Moon className="h-4 w-4 text-blue-400" />}
           iconVariant="secondary"
-          rightContent={(theme === 'dark' || speedscopeColorScheme === ColorScheme.DARK) && (
-            <Check className="h-4 w-4 text-red-500" />
-          )}
+          rightContent={
+            (theme === 'dark' || speedscopeColorScheme === ColorScheme.DARK) && (
+              <Check className="h-4 w-4 text-red-500" />
+            )
+          }
         >
           Dark
         </DropdownMenuItem>
@@ -74,9 +78,11 @@ export function ThemeToggle() {
           }}
           icon={<Monitor className="h-4 w-4 text-muted-foreground" />}
           iconVariant="default"
-          rightContent={(theme === 'system' || speedscopeColorScheme === ColorScheme.SYSTEM) && (
-            <Check className="h-4 w-4 text-red-500" />
-          )}
+          rightContent={
+            (theme === 'system' || speedscopeColorScheme === ColorScheme.SYSTEM) && (
+              <Check className="h-4 w-4 text-red-500" />
+            )
+          }
         >
           System
         </DropdownMenuItem>

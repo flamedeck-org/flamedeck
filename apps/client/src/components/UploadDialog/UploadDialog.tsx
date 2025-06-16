@@ -244,7 +244,7 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
         // ARCHITECTURAL CHANGE: Send processed speedscope file instead of original
         // This reduces upload size significantly and saves on upload costs since speedscope
         // format is much more compact than original trace files.
-        // 
+        //
         // Note: The server will still need to:
         // 1. Detect that this is already a speedscope file (not raw)
         // 2. Skip the speedscope-import processing step
@@ -313,7 +313,9 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
           // Show user-friendly error messages based on error code
           if (apiError.code === 'P0002') {
             toastTitle = 'Upload Limit Reached';
-            toastDescription = apiError.hint || 'You have reached your monthly upload limit. Upgrade your plan or wait until the next cycle.';
+            toastDescription =
+              apiError.hint ||
+              'You have reached your monthly upload limit. Upgrade your plan or wait until the next cycle.';
             upgradeAction = (
               <ToastAction altText="Upgrade plan" onClick={openUpgradeModal}>
                 Upgrade
@@ -321,7 +323,8 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
             );
           } else if (apiError.code === 'P0003') {
             toastTitle = 'Storage Limit Reached';
-            toastDescription = 'You have reached your storage limit. Please delete older traces or upgrade your plan.';
+            toastDescription =
+              'You have reached your storage limit. Please delete older traces or upgrade your plan.';
           } else {
             toastDescription = errorMessage;
           }
@@ -418,8 +421,9 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
 
       <form onSubmit={handleRHFSubmit(onSubmit)} className="space-y-6">
         <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${file ? 'border-primary/50' : 'border-border hover:border-primary/30'
-            } ${isProcessing ? 'cursor-wait' : ''}`}
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+            file ? 'border-primary/50' : 'border-border hover:border-primary/30'
+          } ${isProcessing ? 'cursor-wait' : ''}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         >
@@ -509,8 +513,8 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
             {...register('scenario', { required: 'Scenario is required' })}
             className={cn(
               errors.scenario &&
-              dirtyFields.scenario &&
-              'border-destructive focus-visible:ring-destructive'
+                dirtyFields.scenario &&
+                'border-destructive focus-visible:ring-destructive'
             )}
           />
           {errors.scenario && dirtyFields.scenario && (

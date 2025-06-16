@@ -163,7 +163,7 @@ export async function uploadTraceToApi(options: UploadOptions): Promise<UploadRe
   }
 
   // Type assertion/validation for success payload
-  const successPayload = responseBody as { id?: string;[key: string]: unknown };
+  const successPayload = responseBody as { id?: string; [key: string]: unknown };
 
   if (typeof successPayload?.id !== 'string' || !successPayload.id) {
     console.error('Invalid success response format from API:', responseBody);

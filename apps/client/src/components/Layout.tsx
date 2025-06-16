@@ -68,7 +68,7 @@ const Layout: React.FC<LayoutProps> = ({
         <main
           className={`flex-1 h-full ${scrollClasses} ${mainPaddingClasses} ${conditionalElevation} ${className}`}
         >
-          <div className={`mx-auto h-full w-full ${(!user || noPadding) ? '' : 'xl:max-w-7xl'}`}>
+          <div className={`mx-auto h-full w-full ${!user || noPadding ? '' : 'xl:max-w-7xl'}`}>
             {children}
             {footer && <div className="mt-auto m-[-1.5em] md:m-[-2em]">{footer}</div>}
           </div>

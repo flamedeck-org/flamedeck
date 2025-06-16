@@ -1,11 +1,6 @@
 import * as React from 'react';
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, X } from 'lucide-react';
-import { ToolMessageItem } from './ToolMessageItem';
-import { MessageSquareText } from 'lucide-react';
 
 import { ConversationListView } from './ConversationListView';
 import { ActiveChatView } from './ActiveChatView';
@@ -68,7 +63,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
       sendMessage,
       isLoading,
       isStreaming,
-      suggestionPrompts
+      suggestionPrompts,
     },
     ref
   ) => {
@@ -77,7 +72,6 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     const internalScrollAreaRef = useRef<HTMLDivElement>(null);
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
     const userHasScrolledUpRef = useRef(userHasScrolledUp); // <-- Ref to track the value
-
 
     const SCROLL_THRESHOLD = 50; // Pixels from bottom to consider "at bottom"
 

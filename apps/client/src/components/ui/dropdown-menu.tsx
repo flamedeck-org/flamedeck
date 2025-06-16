@@ -99,20 +99,18 @@ const DropdownMenuItem = React.forwardRef<
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
           {icon && (
-            <div className={cn(
-              'w-8 h-8 rounded-lg flex items-center justify-center border',
-              iconVariants[iconVariant]
-            )}>
+            <div
+              className={cn(
+                'w-8 h-8 rounded-lg flex items-center justify-center border',
+                iconVariants[iconVariant]
+              )}
+            >
               {icon}
             </div>
           )}
           <span className="font-medium">{children}</span>
         </div>
-        {rightContent && (
-          <div className="ml-6">
-            {rightContent}
-          </div>
-        )}
+        {rightContent && <div className="ml-6">{rightContent}</div>}
       </div>
     </DropdownMenuPrimitive.Item>
   );
