@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'; // Changed to npm import
 import { type Database } from '@flamedeck/supabase-integration'; // Import generated DB types
 
-import { getDurationMsFromProfileGroup } from '@flamedeck/speedscope-import'; // Assuming this workspace import resolves
+import { getDurationMsFromProfileGroup } from '@flamedeck/import'; // Assuming this workspace import resolves
 
 import { parseProfileBuffer, type ProfileLoadResult } from './profile-loader'; // Using the new Node.js version
 import {

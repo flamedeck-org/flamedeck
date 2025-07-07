@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@flamedeck/speedscope-import': path.resolve(
+      '@flamedeck/import': path.resolve(
         __dirname,
         '../../packages/speedscope-import/src'
       ),

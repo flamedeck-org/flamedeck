@@ -11,8 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@flamedeck/import": "workspace:*",
     "@flamedeck/speedscope-core": "workspace:*",
-    "@flamedeck/speedscope-import": "workspace:*",
     "@flamedeck/speedscope-theme": "workspace:*",
     "@flamedeck/supabase-integration": "workspace:*",
     "@hookform/resolvers": "^3.9.0",

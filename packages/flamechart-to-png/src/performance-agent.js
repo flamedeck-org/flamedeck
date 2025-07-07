@@ -545,7 +545,7 @@ async function main() {
   if (!profileFilePath || !outputDir) {
     console.error(
       'Usage: node packages/flamechart-to-png/src/performance-agent.js <path-to-profile-file> <output-directory>\n' +
-        'Ensure OPENAI_API_KEY environment variable is set.'
+      'Ensure OPENAI_API_KEY environment variable is set.'
     );
     process.exit(1);
   }
@@ -566,7 +566,7 @@ async function main() {
     const fileContent = await fs.readFile(resolvedProfilePath, 'utf-8');
 
     // Dynamically import the necessary function
-    const { importProfileGroupFromText } = await import('@flamedeck/speedscope-import');
+    const { importProfileGroupFromText } = await import('@flamedeck/import');
 
     const importResult = await importProfileGroupFromText(
       path.basename(resolvedProfilePath),

@@ -3,10 +3,21 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "declaration": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
+    "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
-    "allowSyntheticDefaultImports": true
+    "noEmit": true,
+    "rootDir": "../../"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
 }

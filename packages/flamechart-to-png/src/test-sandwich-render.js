@@ -74,7 +74,7 @@ async function main() {
     console.log(`Loading profile from: ${profileFilePath}`);
     const fileContent = await fs.readFile(profileFilePath, 'utf-8');
 
-    const { importProfileGroupFromText } = await import('@flamedeck/speedscope-import');
+    const { importProfileGroupFromText } = await import('@flamedeck/import');
 
     const importResult = await importProfileGroupFromText(
       path.basename(profileFilePath),

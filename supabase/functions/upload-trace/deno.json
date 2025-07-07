@@ -7,7 +7,7 @@
     "uint8array-json-parser": "npm:uint8array-json-parser@^0.0.2",
     "long": "npm:long@^5.2.3",
     "zod": "npm:zod@^3.22.4",
-    "@flamedeck/speedscope-import/": "../../../packages/speedscope-import/src/",
+    "@flamedeck/import/": "../../../packages/speedscope-import/src/",
     "@flamedeck/speedscope-core/": "../../../packages/speedscope-core/src/"
   }
 }

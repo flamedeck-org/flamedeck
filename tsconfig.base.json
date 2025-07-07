@@ -21,7 +21,7 @@
       "@/*": [
         "apps/client/src/*"
       ],
-      "@flamedeck/speedscope-import": [
+      "@flamedeck/import": [
         "packages/speedscope-import/src/index.ts"
       ],
       "@flamedeck/speedscope-core/*": [

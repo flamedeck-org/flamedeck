@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { type ProfileType } from '@flamedeck/speedscope-import';
+import { type ProfileType } from '@flamedeck/import';
 import { processAndPrepareTraceUpload } from '../utils';
 
 interface UseTraceProcessorProps {

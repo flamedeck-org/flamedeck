@@ -8,7 +8,7 @@ import {
   renderSandwichFlamechart,
   type RenderSandwichFlamechartOptions,
 } from '@flamedeck/flamechart-to-png';
-import { importProfileGroupFromText } from '@flamedeck/speedscope-import';
+import { importProfileGroupFromText } from '@flamedeck/import';
 import type { Frame } from '@flamedeck/speedscope-core/profile';
 import type { FlamegraphThemeName } from '@flamedeck/speedscope-theme/types';
 import pako from 'pako';

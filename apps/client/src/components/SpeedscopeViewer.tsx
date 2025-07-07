@@ -3,7 +3,7 @@ import {
   importProfilesFromArrayBuffer,
   importProfileGroupFromText,
   type ImporterDependencies, // Import type via alias
-} from '@flamedeck/speedscope-import';
+} from '@flamedeck/import';
 import * as pako from 'pako'; // Import pako for client-side use
 import { JSON_parse } from 'uint8array-json-parser'; // Import parser for client-side use
 import Long from 'long'; // Import Long for client-side

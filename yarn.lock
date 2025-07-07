@@ -2125,10 +2125,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@flamedeck/client@workspace:apps/client"
   dependencies:
+    "@flamedeck/import": "workspace:*"
     "@flamedeck/regression-core": "workspace:*"
     "@flamedeck/regression-playwright": "workspace:*"
     "@flamedeck/speedscope-core": "workspace:*"
-    "@flamedeck/speedscope-import": "workspace:*"
     "@flamedeck/speedscope-theme": "workspace:*"
     "@flamedeck/supabase-integration": "workspace:*"
     "@hookform/resolvers": "npm:^3.9.0"
@@ -2226,8 +2226,8 @@ __metadata:
   resolution: "@flamedeck/flamechart-mcp@workspace:packages/flamechart-mcp"
   dependencies:
     "@flamedeck/flamechart-to-png": "workspace:*"
+    "@flamedeck/import": "workspace:*"
     "@flamedeck/speedscope-core": "workspace:*"
-    "@flamedeck/speedscope-import": "workspace:*"
     "@types/node": "npm:^20.0.0"
     "@types/pako": "npm:^2.0.3"
     canvas: "npm:^3.1.0"
@@ -2251,7 +2251,7 @@ __metadata:
   resolution: "@flamedeck/flamechart-server@workspace:apps/flamechart-server"
   dependencies:
     "@flamedeck/flamechart-to-png": "workspace:*"
-    "@flamedeck/speedscope-import": "workspace:*"
+    "@flamedeck/import": "workspace:*"
     "@flamedeck/supabase-integration": "workspace:*"
     "@langchain/core": "npm:^0.3.55"
     "@langchain/langgraph": "npm:^0.2.72"
@@ -2277,8 +2277,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@flamedeck/flamechart-to-png@workspace:packages/flamechart-to-png"
   dependencies:
+    "@flamedeck/import": "workspace:*"
     "@flamedeck/speedscope-core": "workspace:*"
-    "@flamedeck/speedscope-import": "workspace:*"
     "@flamedeck/speedscope-theme": "workspace:*"
     "@langchain/core": "npm:^0.3.55"
     "@langchain/langgraph": "npm:^0.2.72"
@@ -2286,6 +2286,24 @@ __metadata:
     canvas: "npm:^3.1.0"
     openai: "npm:^4.98.0"
     tsx: "npm:^4.19.4"
+  languageName: unknown
+  linkType: soft
+
+"@flamedeck/import@workspace:*, @flamedeck/import@workspace:packages/speedscope-import":
+  version: 0.0.0-use.local
+  resolution: "@flamedeck/import@workspace:packages/speedscope-import"
+  dependencies:
+    "@flamedeck/speedscope-core": "workspace:*"
+    "@types/long": "npm:^4.0.2"
+    "@types/pako": "npm:^2.0.3"
+    fs-extra: "npm:^11.2.0"
+    long: "npm:^5.3.2"
+    pako: "npm:^2.1.0"
+    protobufjs: "npm:^7.5.0"
+    source-map: "npm:^0.7.4"
+    tsup: "npm:^8.0.0"
+    typescript: "npm:^5.0.0"
+    uint8array-json-parser: "npm:^0.0.2"
   languageName: unknown
   linkType: soft
 
@@ -2339,21 +2357,6 @@ __metadata:
   resolution: "@flamedeck/speedscope-gl@workspace:packages/speedscope-gl"
   dependencies:
     "@flamedeck/speedscope-core": "workspace:*"
-  languageName: unknown
-  linkType: soft
-
-"@flamedeck/speedscope-import@workspace:*, @flamedeck/speedscope-import@workspace:packages/speedscope-import":
-  version: 0.0.0-use.local
-  resolution: "@flamedeck/speedscope-import@workspace:packages/speedscope-import"
-  dependencies:
-    "@flamedeck/speedscope-core": "workspace:*"
-    "@types/long": "npm:^4.0.2"
-    "@types/pako": "npm:^2.0.3"
-    long: "npm:^5.3.2"
-    pako: "npm:^2.1.0"
-    protobufjs: "npm:^7.5.0"
-    source-map: "npm:^0.7.4"
-    uint8array-json-parser: "npm:^0.0.2"
   languageName: unknown
   linkType: soft
 

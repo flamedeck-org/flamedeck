@@ -7,7 +7,7 @@ import {
   type ImporterDependencies,
   importProfilesFromArrayBuffer,
   type ProfileType,
-} from '@flamedeck/speedscope-import'; // Adjusted for typical monorepo workspace pathing
+} from '@flamedeck/import'; // Adjusted for typical monorepo workspace pathing
 import { ProfileGroup } from '@flamedeck/speedscope-core/profile'; // Adjusted for typical monorepo workspace pathing
 
 // Define the expected return type

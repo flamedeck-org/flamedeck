@@ -47,8 +47,14 @@
       "group": "Upload Methods",
       "pages": [
         "cli-upload",
-        "npm-upload",
         "react-native"
+      ]
+    },
+    {
+      "group": "NPM Packages",
+      "pages": [
+        "npm-upload",
+        "npm-import"
       ]
     },
     {

@@ -1,0 +1,332 @@
+---
+title: 'NPM Import Package'
+description: 'Parse and analyze performance profiles from any format using the @flamedeck/import NPM package. Supports Chrome DevTools, pprof, Firefox, and many more formats.'
+---
+
+The `@flamedeck/import` package provides a simple, unified API for importing performance profiles from various profiling tools and formats. It automatically detects the format and converts the data into the standard Speedscope format for analysis.
+
+## Installation
+
+You can install the package using npm or yarn:
+
+```bash
+npm install @flamedeck/import
+# or
+yarn add @flamedeck/import
+```
+
+## Basic Usage
+
+The core of the library is the `importProfile` function that automatically handles format detection and Node.js dependency setup.
+
+### Simple Example
+
+```typescript
+import { importProfile } from '@flamedeck/import';
+import { readFileSync } from 'fs';
+
+// Import from a file (automatically detects format)
+const profileData = readFileSync('profile.cpuprofile', 'utf8');
+const result = await importProfile(profileData, 'profile.cpuprofile');
+
+if (result.profileGroup) {
+  console.log('Profile type:', result.profileType);
+  console.log('Number of profiles:', result.profileGroup.profiles.length);
+  
+  const profile = result.profileGroup.profiles[0];
+  console.log('Profile name:', profile.getName());
+  console.log('Total execution time:', profile.formatValue(profile.getTotalWeight()));
+  console.log('Time units:', profile.getWeightUnit());
+}
+```
+
+### Binary Data Example
+
+The package also handles binary profile formats:
+
+```typescript
+import { importProfile } from '@flamedeck/import';
+import { readFileSync } from 'fs';
+
+// Import binary data (like pprof files)
+const binaryData = readFileSync('profile.pprof'); 
+const result = await importProfile(binaryData, 'profile.pprof');
+
+console.log('Detected format:', result.profileType); // e.g., 'pprof'
+```
+
+## Supported Formats
+
+The package supports all the same formats as [Speedscope](https://github.com/jlfwong/speedscope):
+
+<CardGroup cols={2}>
+  <Card title="Chrome DevTools" icon="chrome">
+    CPU Profiles (`.cpuprofile`), Timeline traces, Heap profiles
+  </Card>
+  <Card title="Firefox Profiler" icon="firefox">
+    Firefox profiler JSON format
+  </Card>
+  <Card title="pprof" icon="google">
+    Go, C++, Java profiles via pprof protocol buffers
+  </Card>
+  <Card title="Node.js" icon="node-js">
+    V8 profiler logs and CPU profiles
+  </Card>
+  <Card title="Safari" icon="safari">
+    Safari Timeline recordings
+  </Card>
+  <Card title="Ruby" icon="gem">
+    Stackprof JSON format
+  </Card>
+  <Card title="macOS Instruments" icon="apple">
+    Deep copy text exports and trace directories
+  </Card>
+  <Card title="Linux Perf" icon="linux">
+    Perf script output and collapsed stacks
+  </Card>
+</CardGroup>
+
+**Complete format list:**
+- `chrome-cpuprofile` - Chrome DevTools CPU Profile
+- `chrome-timeline` - Chrome Timeline/Tracing format  
+- `chrome-heap-profile` - Chrome Heap Profile
+- `pprof` - Protocol buffer format (Go, C++, etc.)
+- `firefox` - Firefox Profiler format
+- `safari` - Safari profiler format
+- `stackprof` - Ruby Stackprof format
+- `instruments-deepcopy` - macOS Instruments text export
+- `instruments-trace` - macOS Instruments trace directory
+- `linux-perf` - Linux perf script output
+- `collapsed-stack` - Collapsed stack format
+- `v8-prof-log` - V8 profiler log format
+- `haskell` - Haskell GHC profiler format
+- `trace-event` - Generic trace event format
+- `callgrind` - Valgrind Callgrind format
+- `papyrus` - Papyrus profiler format
+
+## API Reference
+
+### `importProfile(input, fileName)`
+
+<ParamField path="input" type="string | ArrayBuffer | Buffer" required>
+  Profile data as string (for JSON formats), ArrayBuffer, or Node.js Buffer
+</ParamField>
+
+<ParamField path="fileName" type="string" required>
+  The original filename (used for format detection)
+</ParamField>
+
+**Returns:** `Promise<ImportResult>`
+
+### ImportResult
+
+```typescript
+interface ImportResult {
+  profileGroup: ProfileGroup | null;
+  profileType: ProfileType;
+}
+```
+
+<ParamField path="profileGroup" type="ProfileGroup | null">
+  Contains the parsed profile data, or `null` if parsing failed
+</ParamField>
+
+<ParamField path="profileType" type="ProfileType">
+  The detected profile format (e.g., 'chrome-cpuprofile', 'pprof', etc.)
+</ParamField>
+
+### ProfileGroup
+
+When parsing succeeds, `profileGroup` contains:
+
+```typescript
+interface ProfileGroup {
+  name: string;           // Name of the profile group
+  indexToView: number;    // Index of the profile to view by default (usually 0)
+  profiles: Profile[];    // Array of parsed profiles
+}
+```
+
+### Profile
+
+Each profile provides comprehensive performance data:
+
+<ParamField path="getName()" type="() => string">
+  Get the profile name
+</ParamField>
+
+<ParamField path="getTotalWeight()" type="() => number">
+  Get total execution time/samples
+</ParamField>
+
+<ParamField path="getTotalNonIdleWeight()" type="() => number">
+  Get total time excluding idle
+</ParamField>
+
+<ParamField path="getWeightUnit()" type="() => ValueUnit">
+  Get time units ('nanoseconds', 'milliseconds', etc.)
+</ParamField>
+
+<ParamField path="formatValue(value)" type="(value: number) => string">
+  Format a value with proper units
+</ParamField>
+
+<ParamField path="forEachFrame(fn)" type="(fn: (frame: Frame) => void) => void">
+  Iterate over all frames in the profile
+</ParamField>
+
+<ParamField path="forEachCall(openFrame, closeFrame)" type="(openFrame, closeFrame) => void">
+  Walk the call timeline in execution order
+</ParamField>
+
+<ParamField path="forEachCallGrouped(openFrame, closeFrame)" type="(openFrame, closeFrame) => void">
+  Walk the grouped/sorted call tree (for flamegraph-like analysis)
+</ParamField>
+
+## Advanced Usage
+
+### Performance Analysis
+
+Find the hottest functions in your profile:
+
+```typescript
+const result = await importProfile(profileData, 'profile.cpuprofile');
+
+if (result.profileGroup) {
+  const profile = result.profileGroup.profiles[0];
+  
+  // Get basic metrics
+  console.log('Total execution time:', profile.formatValue(profile.getTotalWeight()));
+  console.log('Time units:', profile.getWeightUnit());
+  
+  // Analyze individual frames
+  const hotFrames = [];
+  profile.forEachFrame(frame => {
+    if (frame.getSelfWeight() > 1000) { // Frames with >1000 units of self time
+      hotFrames.push({
+        name: frame.name,
+        selfTime: frame.getSelfWeight(),
+        totalTime: frame.getTotalWeight(),
+        file: frame.file,
+        line: frame.line
+      });
+    }
+  });
+  
+  // Sort by self time (hottest first)
+  hotFrames.sort((a, b) => b.selfTime - a.selfTime);
+  console.log('Hottest functions:', hotFrames.slice(0, 10));
+}
+```
+
+### Call Tree Analysis
+
+Walk through the execution timeline:
+
+```typescript
+const profile = result.profileGroup.profiles[0];
+
+// Walk the timeline in execution order
+profile.forEachCall(
+  (node, startTime) => {
+    console.log(`${startTime}ms: Entering ${node.frame.name}`);
+  },
+  (node, endTime) => {
+    console.log(`${endTime}ms: Exiting ${node.frame.name}`);
+  }
+);
+
+// Walk the grouped/sorted call tree (for flamegraph-like analysis)
+profile.forEachCallGrouped(
+  (node, startTime) => {
+    const selfTime = node.getSelfWeight();
+    const totalTime = node.getTotalWeight();
+    console.log(`${node.frame.name}: ${selfTime}ms self, ${totalTime}ms total`);
+  },
+  (node, endTime) => {
+    // Frame completed
+  }
+);
+```
+
+### Caller/Callee Analysis
+
+Understand function relationships:
+
+```typescript
+// Find who calls a specific function
+const targetFrame = { key: 'myFunction', name: 'myFunction' };
+const callerProfile = profile.getInvertedProfileForCallersOf(targetFrame);
+console.log('Functions that call myFunction:');
+callerProfile.forEachFrame(frame => {
+  console.log(`${frame.name}: ${frame.getTotalWeight()}ms`);
+});
+
+// Find what a function calls
+const calleeProfile = profile.getProfileForCalleesOf(targetFrame);
+console.log('Functions called by myFunction:');
+calleeProfile.forEachFrame(frame => {
+  console.log(`${frame.name}: ${frame.getTotalWeight()}ms`);
+});
+```
+
+### Flattening Recursion
+
+Remove recursive calls for cleaner analysis:
+
+```typescript
+// Remove recursive calls for cleaner analysis
+const flatProfile = profile.getProfileWithRecursionFlattened();
+console.log('Profile with recursion flattened:');
+console.log('Total time:', flatProfile.formatValue(flatProfile.getTotalWeight()));
+```
+
+## Integration with FlameDeck
+
+The `@flamedeck/import` package works seamlessly with other FlameDeck tools:
+
+```typescript
+import { importProfile } from '@flamedeck/import';
+import { uploadTraceToApi } from '@flamedeck/upload';
+
+// Parse a local profile
+const result = await importProfile(profileData, 'profile.cpuprofile');
+
+// Upload it to FlameDeck for collaboration
+if (result.profileGroup) {
+  await uploadTraceToApi({
+    apiKey: process.env.FLAMEDECK_API_KEY,
+    traceData: profileData,
+    fileName: 'profile.cpuprofile',
+    scenario: 'Performance Analysis Session'
+  });
+}
+```
+
+<Tip>
+The import package is perfect for local analysis and preprocessing before uploading to FlameDeck for team collaboration.
+</Tip>
+
+## Error Handling
+
+Always wrap import calls in try-catch blocks:
+
+```typescript
+try {
+  const result = await importProfile(profileData, fileName);
+  
+  if (!result.profileGroup) {
+    console.warn(`Failed to parse profile: ${result.profileType}`);
+    return;
+  }
+  
+  // Process the profile...
+} catch (error) {
+  console.error('Import failed:', error);
+  // Handle the error appropriately
+}
+```
+
+## TypeScript Support
+
+The package includes full TypeScript definitions for all interfaces and classes, providing excellent IDE support and type safety for your profiling analysis code. 

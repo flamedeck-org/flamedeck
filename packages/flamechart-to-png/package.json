@@ -5,8 +5,8 @@
   "type": "module",
   "main": "./src/index.ts",
   "dependencies": {
+    "@flamedeck/import": "workspace:*",
     "@flamedeck/speedscope-core": "workspace:*",
-    "@flamedeck/speedscope-import": "workspace:*",
     "@flamedeck/speedscope-theme": "workspace:*",
     "canvas": "^3.1.0"
   },

@@ -1,17 +1,46 @@
 {
-  "name": "@flamedeck/speedscope-import",
-  "version": "0.0.1",
-  "private": true,
+  "name": "@flamedeck/import",
+  "version": "0.1.0",
+  "description": "Speedscope import utilities for parsing various performance profile formats",
   "type": "module",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./package.json": "./package.json"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "files": [
     "dist",
-    "src"
+    "README.md"
   ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "yarn build"
+  },
+  "keywords": [
+    "speedscope",
+    "profiling",
+    "performance",
+    "flamegraph",
+    "import",
+    "parsing",
+    "flamedeck"
+  ],
+  "author": "Flamedeck Team",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flamedeck-org/flamedeck.git",
+    "directory": "packages/speedscope-import"
+  },
+  "homepage": "https://github.com/flamedeck-org/flamedeck/tree/main/packages/speedscope-import#readme",
+  "bugs": {
+    "url": "https://github.com/flamedeck-org/flamedeck/issues"
+  },
+  "sideEffects": false,
   "dependencies": {
     "@flamedeck/speedscope-core": "workspace:*",
     "long": "^5.3.2",
@@ -22,6 +51,9 @@
   },
   "devDependencies": {
     "@types/long": "^4.0.2",
-    "@types/pako": "^2.0.3"
+    "@types/pako": "^2.0.3",
+    "fs-extra": "^11.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
   }
 }

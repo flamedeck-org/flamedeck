@@ -49,8 +49,8 @@
     "sideEffects": false,
     "dependencies": {
         "@flamedeck/flamechart-to-png": "workspace:*",
+        "@flamedeck/import": "workspace:*",
         "@flamedeck/speedscope-core": "workspace:*",
-        "@flamedeck/speedscope-import": "workspace:*",
         "canvas": "^3.1.0",
         "fastmcp": "^2.1.4",
         "long": "^5.2.3",

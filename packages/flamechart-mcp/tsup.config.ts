@@ -14,7 +14,7 @@ export default defineConfig([
     // Bundle workspace dependencies but exclude native dependencies
     noExternal: [
       '@flamedeck/speedscope-core',
-      '@flamedeck/speedscope-import',
+      '@flamedeck/import',
       '@flamedeck/flamechart-to-png',
     ],
     external: ['canvas'],
@@ -37,7 +37,7 @@ export default defineConfig([
     // Bundle workspace dependencies but exclude native dependencies
     noExternal: [
       '@flamedeck/speedscope-core',
-      '@flamedeck/speedscope-import',
+      '@flamedeck/import',
       '@flamedeck/flamechart-to-png',
     ],
     external: ['canvas'],

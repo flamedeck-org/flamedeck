@@ -36,10 +36,10 @@ Before running test scripts or using the package in other parts of the monorepo,
 yarn nx run @flamedeck/flamechart-to-png:build
 ```
 
-If you encounter issues with dependencies like `@flamedeck/speedscope-import`, you might also need to build them explicitly:
+If you encounter issues with dependencies like `@flamedeck/import`, you might also need to build them explicitly:
 
 ```bash
-yarn nx run @flamedeck/speedscope-import:build
+yarn nx run @flamedeck/import:build
 ```
 
 ## Testing Scripts

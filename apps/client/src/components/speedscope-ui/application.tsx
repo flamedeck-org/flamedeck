@@ -12,15 +12,15 @@ import type { ProfileGroupState } from '../../lib/speedscope-core/app-state/prof
 import type { HashParams } from '../../lib/speedscope-core/hash-params';
 import type { FlamechartID } from '../../lib/speedscope-core/app-state/profile-group';
 
-const importModule = import('@flamedeck/speedscope-import');
+const importModule = import('@flamedeck/import');
 
 // Force eager loading of a few code-split modules.
 //
 // We put them all in one place so we can directly control the relative priority
 // of these.
-importModule.then(() => {});
-import('@flamedeck/speedscope-core/demangle-cpp').then(() => {});
-import('source-map').then(() => {});
+importModule.then(() => { });
+import('@flamedeck/speedscope-core/demangle-cpp').then(() => { });
+import('source-map').then(() => { });
 
 interface GLCanvasProps {
   canvasContext: CanvasContext | null;

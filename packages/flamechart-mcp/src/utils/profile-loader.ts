@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import {
   importProfileGroupFromText,
   type ImporterDependencies,
-} from '@flamedeck/speedscope-import';
+} from '@flamedeck/import';
 import pako from 'pako';
 import Long from 'long';
 import { JSON_parse } from 'uint8array-json-parser';
