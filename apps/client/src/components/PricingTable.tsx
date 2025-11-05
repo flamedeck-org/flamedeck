@@ -43,7 +43,12 @@ const PricingTable = () => {
           )}
         >
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
+              {tier.name === 'Pro' && (
+                <Badge variant="secondary">Coming Soon</Badge>
+              )}
+            </div>
             <div className="mt-2">
               <span className="text-4xl font-bold">${tier.price}</span>
               <span className="text-muted-foreground">/month</span>
@@ -59,23 +64,22 @@ const PricingTable = () => {
               ))}
             </ul>
             <div className="mt-6">
-              <Link
-                to="/login"
-                className={cn('block w-full')}
-                onClick={() => {
-                  if (tier.name === 'Pro') {
-                    try {
-                      sessionStorage.setItem('flamedeck_selected_plan', 'pro');
-                    } catch (e) {
-                      console.error('Failed to set sessionStorage:', e);
-                    }
-                  }
-                }}
-              >
-                <Button className="w-full" variant={tier.name === 'Pro' ? 'gradient' : 'outline'}>
-                  Get Started
-                </Button>
-              </Link>
+              {tier.name === 'Pro' ? (
+                <div className="flex flex-col gap-2">
+                  <Button className="w-full" variant="outline" disabled>
+                    Coming Soon
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Pro tier will be available soon
+                  </p>
+                </div>
+              ) : (
+                <Link to="/login" className={cn('block w-full')}>
+                  <Button className="w-full" variant="outline">
+                    Get Started
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>

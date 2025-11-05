@@ -44,16 +44,16 @@ function SidebarActionButtonsImpl({ minimized = false }: SidebarActionButtonsPro
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                variant="primary-outline" // Or another appropriate variant
+                variant="outline"
                 className={`${MINIMIZED_BUTTON_SIZE} flex items-center justify-center`}
-                onClick={openUpgradeModal}
-                aria-label="Upgrade to Pro"
+                disabled
+                aria-label="Pro Coming Soon"
               >
                 <Zap className={ICON_SIZE} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={4}>
-              <p>Upgrade to Pro</p>
+              <p>Pro Coming Soon</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -61,12 +61,12 @@ function SidebarActionButtonsImpl({ minimized = false }: SidebarActionButtonsPro
     }
     return (
       <Button
-        variant="gradient"
+        variant="outline"
         className="w-full space-x-2 flex items-center justify-center"
-        onClick={openUpgradeModal}
+        disabled
       >
         <Zap className="h-4 w-4" />
-        <span>Upgrade to Pro</span>
+        <span>Pro Coming Soon</span>
       </Button>
     );
   }

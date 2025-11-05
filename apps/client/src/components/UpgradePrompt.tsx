@@ -125,55 +125,41 @@ function UpgradePromptImpl({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Pricing */}
-      <div className="text-center">
-        <div className="text-3xl font-bold text-primary">${proTierDetails.price}</div>
-        <div className="text-sm text-muted-foreground">per month</div>
+      {/* Coming Soon Banner */}
+      <div className="text-center space-y-4">
+        <Crown className="h-12 w-12 text-muted-foreground mx-auto" />
+        <div>
+          <div className="text-2xl font-bold mb-2">Pro Tier Coming Soon</div>
+          <p className="text-muted-foreground">
+            We're working on bringing you premium features. Stay tuned!
+          </p>
+        </div>
       </div>
 
-      {/* Features */}
-      <div className="space-y-3">
+      {/* Features Preview */}
+      <div className="space-y-3 opacity-60">
+        <div className="text-sm font-semibold text-center">What's Coming:</div>
         {proTierDetails.features.map((feature) => (
           <div key={feature} className="flex items-start gap-3">
-            <Check className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{feature}</span>
+            <Check className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <span className="text-sm text-muted-foreground">{feature}</span>
           </div>
         ))}
       </div>
 
       {/* Action Buttons */}
       <div className="space-y-3 pt-2">
-        <Button
-          type="button"
-          variant="gradient"
-          className="w-full h-11 font-semibold"
-          onClick={handleUpgrade}
-          disabled={isLoading || !proPlanId}
-        >
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Crown className="mr-2 h-4 w-4" />
-          )}
-          {isLoading ? 'Processing...' : 'Upgrade to Pro'}
-        </Button>
-
-        {showMaybeLater && (
+        {showMaybeLater && onMaybeLater && (
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             onClick={onMaybeLater}
-            disabled={isLoading}
             className="w-full"
           >
-            Maybe Later
+            Close
           </Button>
         )}
       </div>
-
-      <p className="text-xs text-center text-muted-foreground">
-        Cancel anytime • Instant activation
-      </p>
     </div>
   );
 }

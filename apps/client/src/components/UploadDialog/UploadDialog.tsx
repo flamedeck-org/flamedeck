@@ -315,16 +315,11 @@ export function UploadDialog({ initialFolderId, initialFile, onClose }: UploadDi
             toastTitle = 'Upload Limit Reached';
             toastDescription =
               apiError.hint ||
-              'You have reached your monthly upload limit. Upgrade your plan or wait until the next cycle.';
-            upgradeAction = (
-              <ToastAction altText="Upgrade plan" onClick={openUpgradeModal}>
-                Upgrade
-              </ToastAction>
-            );
+              'You have reached your monthly upload limit. Please wait until the next cycle or contact support for assistance.';
           } else if (apiError.code === 'P0003') {
             toastTitle = 'Storage Limit Reached';
             toastDescription =
-              'You have reached your storage limit. Please delete older traces or upgrade your plan.';
+              'You have reached your storage limit. Please delete older traces or contact support for assistance.';
           } else {
             toastDescription = errorMessage;
           }
