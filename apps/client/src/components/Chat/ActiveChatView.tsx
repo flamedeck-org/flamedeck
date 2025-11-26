@@ -152,17 +152,19 @@ export const ActiveChatView = forwardRef<ChatWindowHandle, ActiveChatViewProps>(
                     <span style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</span>
                     {/* )} */}
                     {msg.sender === 'error' && isLimitError && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openUpgradeModal();
-                        }}
-                        className="mt-3 ml-auto block bg-gradient-to-r from-red-500 to-yellow-500 hover:from-red-600 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                      >
-                        Upgrade to Pro
-                      </Button>
+                      <div className="mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled
+                          className="ml-auto block"
+                        >
+                          Pro Coming Soon
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Pro tier will be available soon with higher limits
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -8,12 +8,10 @@ interface UpgradeButtonProps extends Omit<ButtonProps, 'onClick' | 'title' | 'ch
 }
 
 function UpgradeButton({ title, children, ...props }: UpgradeButtonProps) {
-  const { openModal } = useUpgradeModal();
-
-  const buttonContent = children || title || 'Upgrade to Pro';
+  const buttonContent = children || title || 'Pro Coming Soon';
 
   return (
-    <Button variant="gradient" onClick={openModal} {...props}>
+    <Button variant="outline" disabled {...props}>
       {buttonContent}
     </Button>
   );

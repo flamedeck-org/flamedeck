@@ -54,8 +54,8 @@ function OnboardingUpgradeStepImpl() {
     <div className="flex items-center justify-center min-h-screen bg-background z-10 p-4">
       <div className="w-full max-w-md bg-card rounded-lg border p-6 shadow-sm">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold mb-2">You're one step away!</h1>
-          <p className="text-muted-foreground">Complete your upgrade to unlock all Pro features.</p>
+          <h1 className="text-2xl font-bold mb-2">Pro Tier Coming Soon!</h1>
+          <p className="text-muted-foreground">We're working on bringing you premium features.</p>
         </div>
 
         <UpgradePrompt

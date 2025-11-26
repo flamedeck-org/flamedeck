@@ -84,11 +84,11 @@ function BillingPage() {
           </div>
         </div>
 
-        {/* Pro Plan - Upgrade */}
+        {/* Pro Plan - Coming Soon */}
         <div className="bg-gradient-to-br from-primary/5 via-primary/3 to-primary/5 rounded-lg border-2 border-primary/20 p-6 relative shadow-sm">
           <div className="absolute -top-3 left-6">
-            <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
-              Recommended
+            <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-medium">
+              Coming Soon
             </span>
           </div>
 
@@ -99,7 +99,7 @@ function BillingPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-primary">Pro Plan</h3>
-                <p className="text-sm text-muted-foreground">Unlock full potential</p>
+                <p className="text-sm text-muted-foreground">Available soon</p>
               </div>
             </div>
             <div className="text-right">
@@ -108,22 +108,21 @@ function BillingPage() {
             </div>
           </div>
 
-          <div className="space-y-3 mb-6">
+          <div className="space-y-3 mb-6 opacity-60">
             {proTier.features.map((feature) => (
               <div key={feature} className="flex items-start gap-3">
-                <Check className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                <span className="text-sm leading-relaxed font-medium">{feature}</span>
+                <Check className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <span className="text-sm leading-relaxed text-muted-foreground">{feature}</span>
               </div>
             ))}
           </div>
 
-          <UpgradeButton className="w-full h-12 text-base font-semibold shadow-sm">
-            <Crown className="mr-2 h-4 w-4" />
-            Upgrade to Pro
-          </UpgradeButton>
+          <Button variant="outline" disabled className="w-full h-12 text-base font-semibold shadow-sm">
+            Coming Soon
+          </Button>
 
           <p className="text-xs text-center text-muted-foreground mt-3">
-            Cancel anytime • Instant activation
+            Pro tier will be available soon
           </p>
         </div>
       </div>
